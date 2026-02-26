@@ -1,0 +1,9 @@
+package com.moriba.skultem.application.dto;
+
+import java.time.Instant;
+
+import com.moriba.skultem.domain.model.vo.Level;
+
+public record ClassDTO(String id, String name, int levelOrder, ClassDTO nextClass, Level level, boolean terminal, Instant createdAt, Instant updatedAt) {
+
+}

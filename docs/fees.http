@@ -1,0 +1,139 @@
+POST http://localhost:8080/api/v1/fee
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "academicYearId": "ACY-2026-0001",
+  "name": "JSS 1 Fees",
+  "amount": 4500
+}
+
+###
+POST http://localhost:8080/api/v1/payment
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "feeId": "FES-2026-0002",
+  "studentId": "STD-2026-0001",
+  "amount": 250,
+  "method": "CASH",
+  "referenceNo": "TR-9878-3487"
+}
+
+### Create Fee Discount
+POST http://localhost:8080/api/v1/fee/discount
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "name": "Discount For Aruna Kargbo For First term",
+  "feeId": "FES-2026-0003",
+  "studentId": "STD-2026-0002",
+  "value": 200,
+  "kind": "AMOUNT",
+  "expiryDate": "2026-04-30"
+}
+
+###
+GET http://localhost:8080/api/v1/payment/student/STD-2026-0001/FES-2026-0001
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/payment
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/payment/student/STD-2026-0002
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/fee/ledger?page=1
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/fee/ledger/report
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/report/finance/outstanding?studentId=STD-2026-0002
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/report/finance/outstanding/list?studentId=STD-2026-0002
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/fee/discount
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### Calculate Fee Discount Report
+GET http://localhost:8080/api/v1/fee/discount/report
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+POST http://localhost:8080/api/v1/fee/structure
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "feeCategory": "FEC-2026-0002",
+  "termId": "TRM-2026-0001",
+  "amount": 1250,
+  "dueDate": "2026-03-15",
+  "allowInstallment": true,
+  "description": "Computer Course Fee"
+}
+
+###
+GET http://localhost:8080/api/v1/fee/structure
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/fee/structure/count/FES-2026-0002
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### Count Student Fees
+GET http://localhost:8080/api/v1/fee/student/STD-2026-0001
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/academic_year?&size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/academic_year/ACY-2026-0001
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+PUT http://localhost:8080/api/v1/academic_year/ACY-2026-0001

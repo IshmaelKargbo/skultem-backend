@@ -1,0 +1,9 @@
+### List Class subject by class
+GET http://localhost:8080/api/v1/class-subject/CLS-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### List Class Subject by School
+GET http://localhost:8080/api/v1/class-subject?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001

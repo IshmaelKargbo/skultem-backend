@@ -1,0 +1,22 @@
+POST http://localhost:8080/api/v1/user
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "role": "TEACHER",
+  "givenNames": "Michel",
+  "familyName": "Kamara",
+  "password": "Isho@2024",
+  "email": "michel004@gmail.com"
+}
+
+###
+GET http://localhost:8080/api/v1/user?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/user/USR-2026-0003
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001

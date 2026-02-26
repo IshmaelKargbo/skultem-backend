@@ -1,0 +1,30 @@
+POST http://localhost:8080/api/v1/term
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "name": "2027/2028",
+  "endDate": "2027-03-30",
+  "startDate": "2027-01-01",
+  "academicYearId": "ACY-2026-0001"
+}
+
+
+###
+GET http://localhost:8080/api/v1/term/academic-year/ACY-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/term?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/academic_year/ACY-2026-0001
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+PUT http://localhost:8080/api/v1/academic_year/ACY-2026-0001

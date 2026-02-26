@@ -1,0 +1,31 @@
+POST http://localhost:8080/api/v1/stream
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "name": "Art"
+}
+
+###
+GET http://localhost:8080/api/v1/stream?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/stream/subject?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/stream/subject/STM-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/section/class/CLS-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/class/CLS-2026-0001

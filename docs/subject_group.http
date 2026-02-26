@@ -1,0 +1,29 @@
+POST http://localhost:8080/api/v1/subject-group
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "name": "Art Core",
+  "level": "SSS",
+  "streamId": "STM-2026-0001",
+  "required": true,
+  "minSelection": 1,
+  "maxSelection": 1,
+  "displayOrder": 1
+}
+
+###
+GET http://localhost:8080/api/v1/subject-group?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### List Subject Group by classId
+GET http://localhost:8080/api/v1/subject-group/class/CLS-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### List Subject Group by streamId
+GET http://localhost:8080/api/v1/subject-group/stream/STM-2026-0001?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001

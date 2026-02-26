@@ -1,0 +1,24 @@
+POST http://localhost:8080/api/v1/school
+Content-Type: application/json
+
+{
+  "name": "Kings Way Int",
+  "domain": "kings-way",
+  "email": "ishmaelkargbo5@outlook.com",
+  "city": "Freetown",
+  "phone": "+2327638010",
+  "chiefdom": "Central 1",
+  "region": "Western Area",
+  "district": "Western Urba",
+  "givenNames": "Ishmael",
+  "familyName": "Kargbo",
+  "password": "Isho@2024",
+  "street": "48 Sumaila Town"
+}
+
+###
+GET http://localhost:8080/api/v1/school?size=0
+X-User-Id: USR-2026-0001
+
+###
+GET http://localhost:8080/api/v1/school/SCL-2026-0001

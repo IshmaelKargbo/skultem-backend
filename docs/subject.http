@@ -1,0 +1,15 @@
+POST http://localhost:8080/api/v1/subject
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "name": "Home Sciance",
+  "code": "HSC"
+}
+
+
+###
+GET http://localhost:8080/api/v1/subject?size=10
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001

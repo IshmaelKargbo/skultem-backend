@@ -1,0 +1,63 @@
+POST http://localhost:8080/api/v1/teacher
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "city": "Freetown",
+  "phone": "+23276573898",
+  "chiefdom": "Central 1",
+  "region": "Western Area",
+  "district": "Western Urba",
+  "email": "mohamedkamara@gmail.com",
+  "givenNames": "Mohamed",
+  "familyName": "Kamara",
+  "staffId": "KN-3268",
+  "street": "105 Free Street"
+}
+
+
+###
+POST http://localhost:8080/api/v1/teacher/assignment/session/CLS-2026-0005-2026-0004
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "teacherId": "THR-2026-0003"
+}
+
+###
+POST http://localhost:8080/api/v1/teacher/assignment/subject/CSN-2026-0001
+Content-Type: application/json
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+{
+  "assignments": [
+    {
+      "teacherId": "THR-2026-0002",
+      "subjectId": "SUB-2026-0001"
+    }
+  ]
+}
+
+###
+GET http://localhost:8080/api/v1/teacher/subject/THR-2026-0002?size=0
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+### List Teacher subject by sessionId
+GET http://localhost:8080/api/v1/teacher/subject/session/CSN-2026-0001?size=0
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/teacher/subject/detail/THR-2026-0002
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
+
+###
+GET http://localhost:8080/api/v1/teacher/THR-2026-0002
+X-User-Id: USR-2026-0001
+X-School-Id: SCL-2026-0001
