@@ -37,6 +37,8 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
+    private String hint;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;

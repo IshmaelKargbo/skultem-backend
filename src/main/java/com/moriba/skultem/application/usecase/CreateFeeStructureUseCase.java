@@ -37,61 +37,95 @@ public class CreateFeeStructureUseCase {
         private final ReferenceGeneratorUsecase rg;
 
         public FeeStructureDTO execute(StructureRecord param) {
-
                 var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("academic year not found"));
+                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
                 var category = feeCategoryRepo.findByIdAndSchool(param.feeCategory(), param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("fee category not found"));
+                                .orElseThrow(() -> new NotFoundException("Fee category not found"));
 
                 var term = termRepo.findByIdAndAcademicYearIdAndSchoolId(
-                                param.termId, academicYear.getId(), param.schoolId)
-                                .orElseThrow(() -> new NotFoundException("no term found"));
+                                param.termId(),
+                                academicYear.getId(),
+                                param.schoolId())
+                                .orElseThrow(() -> new NotFoundException("Term not found"));
 
                 var clazz = param.classId() != null
                                 ? classRepo.findByIdAndSchool(param.classId(), param.schoolId())
-                                                .orElseThrow(() -> new NotFoundException("class not found"))
+                                                .orElseThrow(() -> new NotFoundException("Class not found"))
                                 : null;
 
                 var id = rg.generate("FEE_STRUCTURE", "FES");
 
-                var fee = FeeStructure.create(id, param.schoolId(), clazz, term, category, academicYear, param.dueDate,
-                                param.amount, param.description, param.allowInstallment);
+                var fee = FeeStructure.create(
+                                id,
+                                param.schoolId(),
+                                clazz,
+                                term,
+                                category,
+                                academicYear,
+                                param.dueDate(),
+                                param.amount(),
+                                param.description(),
+                                param.allowInstallment());
 
                 repo.save(fee);
 
-                // 🔥 Assign to students
                 List<Enrollment> enrollments;
 
-                if (param.classId() != null) {
-                        enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(param.classId(),
-                                        academicYear.getId(), param.schoolId());
+                if (clazz != null) {
+                        enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(
+                                        clazz.getId(),
+                                        academicYear.getId(),
+                                        param.schoolId());
                 } else {
-                        enrollments = enrollmentRepo.findAllByAcademicSchoolId(academicYear.getId(), param.schoolId());
+                        enrollments = enrollmentRepo.findAllByAcademicSchoolId(
+                                        academicYear.getId(),
+                                        param.schoolId());
                 }
 
-                List<StudentFee> studentFees = enrollments.stream()
-                                .map(enrollment -> StudentFee.create(rg.generate("STUDENT_FEE", "STF"), param.schoolId,
-                                                enrollment, enrollment.getStudent(), fee, null))
-                                .toList();
+                for (Enrollment enrollment : enrollments) {
+                        if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(param.schoolId(),
+                                        enrollment.getId(), enrollment.getStudent().getId(), id)) {
+                                continue;
+                        }
 
-                for (StudentFee studentFee : studentFees) {
-                        var description = Generate.generateLedgerDescription(TransactionType.FEE_ASSINMENT,
-                                        term.getName(), fee.getCategory().getName(),
-                                        studentFee.getStudent().getGivenNames(),
-                                        studentFee.getStudent().getFamilyName(),
-                                        studentFee.getStudent().getAdmissionNumber(), param.amount());
+                        var studentFee = StudentFee.create(
+                                        rg.generate("STUDENT_FEE", "STF"),
+                                        param.schoolId(),
+                                        enrollment,
+                                        enrollment.getStudent(),
+                                        fee,
+                                        null);
 
                         studentFeeRepo.save(studentFee);
-                        createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
-                                        studentFee.getStudent().getId(), term.getId(), TransactionType.FEE_ASSINMENT,
-                                        Direction.DEBIT, param.amount(), id, description, Instant.now());
+
+                        var description = Generate.generateLedgerDescription(
+                                        TransactionType.FEE_ASSINMENT,
+                                        term.getName(),
+                                        category.getName(),
+                                        enrollment.getStudent().getGivenNames(),
+                                        enrollment.getStudent().getFamilyName(),
+                                        enrollment.getStudent().getAdmissionNumber(),
+                                        param.amount());
+
+                        createStudentLedgerUsercase.createEntry(
+                                        param.schoolId(),
+                                        academicYear.getId(),
+                                        enrollment.getStudent().getId(),
+                                        term.getId(),
+                                        TransactionType.FEE_ASSINMENT,
+                                        Direction.DEBIT,
+                                        param.amount(),
+                                        fee.getId(),
+                                        description,
+                                        Instant.now());
                 }
 
                 return FeeStructureMapper.toDTO(fee);
         }
 
-        public record StructureRecord(String schoolId,
+        public record StructureRecord(
+                        String schoolId,
                         String classId,
                         String feeCategory,
                         String termId,

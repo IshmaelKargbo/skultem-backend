@@ -3,6 +3,7 @@ package com.moriba.skultem.domain.model;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import com.moriba.skultem.domain.model.vo.Gender;
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
 import lombok.Getter;
@@ -16,11 +17,6 @@ public class Student extends AggregateRoot<String> {
     private Gender gender;
     private LocalDate dateOfBirth;
     private Status status;
-
-    public enum Gender {
-        MALE,
-        FEMALE
-    }
 
     public enum Status {
         ACTIVE, GRADUATED, TRANSFERRED, SUSPENDED, DELETED

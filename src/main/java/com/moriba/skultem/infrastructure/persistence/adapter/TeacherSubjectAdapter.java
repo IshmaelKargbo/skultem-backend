@@ -43,7 +43,7 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
     }
 
     @Override
-    public Page<TeacherSubject> findByTeacherIdAndClassSessionId(String teacherId, String classSessionId,
+    public Page<TeacherSubject> findAllByTeacherIdAndClassSessionId(String teacherId, String classSessionId,
             Pageable pageable) {
         return repo.findAllByTeacher_IdAndSessionId(teacherId, classSessionId, pageable)
                 .map(TeacherSubjectMapper::toDomain);
@@ -86,5 +86,27 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
             Pageable pageable) {
         return repo.findAllBySession_AcademicYear_IdAndSchoolId(academicYearId, schoolId, pageable)
                 .map(TeacherSubjectMapper::toDomain);
+    }
+
+    @Override
+    public Optional<TeacherSubject> findBySubjectIdAndSessionIdAndSchoolId(String subjectId, String sessionId,
+            String schoolId) {
+        return repo.findBySubject_IdAndSession_IdAndSchoolId(subjectId, sessionId, schoolId)
+                .map(TeacherSubjectMapper::toDomain);
+    }
+
+    @Override
+    public Optional<TeacherSubject> findByIdAndSchoolId(String id, String schoolId) {
+        return repo.findByIdAndSchoolId(id, schoolId).map(TeacherSubjectMapper::toDomain);
+    }
+
+    @Override
+    public void deleteByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId) {
+        repo.deleteBySession_Clazz_IdAndSubject_IdAndSchoolId(classId, subjectId, schoolId);
+    }
+
+    @Override
+    public void deleteByStreamIdAndSubjectIdAndSchoolId(String streamId, String subjectId, String schoolId) {
+        repo.deleteBySession_Stream_IdAndSubject_IdAndSchoolId(streamId, subjectId, schoolId);
     }
 }

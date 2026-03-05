@@ -48,8 +48,6 @@ public class TermEntity {
     @Column(nullable = false)
     private String schoolId;
 
-    private Boolean active;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;

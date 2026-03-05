@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -38,7 +39,8 @@ public class FeeStructureAdapter implements FeeStructureRepository {
 
     @Override
     public Page<FeeStructure> findBySchoolAndClass(String schoolId, String classId, Pageable pageable) {
-        return repo.findAllByClazz_IdAndSchoolIdOrderByCreatedAtDesc(classId, schoolId, pageable).map(FeeStructureMapper::toDomain);
+        return repo.findAllByClazz_IdAndSchoolIdOrderByCreatedAtDesc(classId, schoolId, pageable)
+                .map(FeeStructureMapper::toDomain);
     }
 
     @Override
@@ -50,13 +52,21 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     @Override
     public Page<FeeStructure> findBySchoolAndAcademicAndClass(String schoolId, String academicYearId, String classId,
             Pageable pageable) {
-        return repo.findAllByAcademicYear_IdAndClazz_IdAndSchoolIdOrderByCreatedAtDesc(academicYearId, classId, schoolId, pageable)
+        return repo
+                .findAllByAcademicYear_IdAndClazz_IdAndSchoolIdOrderByCreatedAtDesc(academicYearId, classId, schoolId,
+                        pageable)
                 .map(FeeStructureMapper::toDomain);
     }
 
     @Override
     public Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(FeeStructureMapper::toDomain);
+    }
+
+    @Override
+    public List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId) {
+        return repo.findApplicableFees(schoolId, academicYearId, classId).stream().map(FeeStructureMapper::toDomain)
+                .toList();
     }
 
 }

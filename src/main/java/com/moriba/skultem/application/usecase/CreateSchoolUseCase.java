@@ -49,7 +49,7 @@ public class CreateSchoolUseCase {
         } else {
             var userId = rg.generate("USER", "USR");
             var password = passwordEncoder.encode(ownerDto.password());
-            user = User.create(userId, owner.givenNames(), owner.familyName(), owner.email(), password);
+            user = User.create(userId, owner.givenNames(), owner.familyName(), owner.email(), password, "");
             userRepo.save(user);
         }
 
@@ -62,6 +62,7 @@ public class CreateSchoolUseCase {
         schoolUserRepo.save(schoolUser);
 
         return new SchoolDTO(school.getId(), school.getName(), school.getDomain(), school.getAddress(),
-                school.getOwner(), school.getStatus(), school.getCreatedAt(), school.getUpdatedAt());
+                school.getOwner(), school.getStatus(), school.getGradingScale(), school.getCreatedAt(),
+                school.getUpdatedAt());
     }
 }

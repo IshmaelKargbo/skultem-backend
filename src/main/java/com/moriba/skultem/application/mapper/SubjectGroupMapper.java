@@ -28,8 +28,7 @@ public class SubjectGroupMapper {
             classId = clazz.id();
         }
 
-        return new SubjectGroupDTO(param.getId(), param.getName(), param.getLevel().toString(), className,
-                classId, streamName, streamId, param.getRequired(), param.getMinSelection(), param.getMaxSelection(),
-                param.getDisplayOrder(), param.getCreatedAt(), param.getUpdatedAt());
+        return new SubjectGroupDTO(param.getId(), param.getName(), className,
+                classId, streamName, streamId, param.getTotalSelection(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

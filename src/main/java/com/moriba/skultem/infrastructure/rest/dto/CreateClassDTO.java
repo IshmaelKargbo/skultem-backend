@@ -14,5 +14,6 @@ public record CreateClassDTO(
                 @NotNull(message = "Level order is required") Integer levelOrder,
 
                 @NotNull(message = "Sections are required") @NotEmpty(message = "At least one section is required") List<@NotBlank(message = "Section name cannot be blank") String> sections,
-                List<String> streams) {
+                List<String> streams,
+                String assessmentTemplateId) {
 }

@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassSessionDTO;
@@ -59,12 +60,13 @@ public class ListClassSessionBySchoolUseCase {
 
                     var clazz = e.getClazz();
                     String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
+                    String grade = "Grade " + clazz.getDisplayOrder();
 
                     long count = enrollmentRepo.findAllByClassAndAcademicSchoolId(classId, academicYear.getId(), school)
                             .size();
 
                     return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, count, streamName,
-                            streamId, sectionName, sectionId, classLevel);
+                            streamId, sectionName, sectionId, classLevel, grade);
                 });
     }
 }

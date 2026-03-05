@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Term;
+import com.moriba.skultem.domain.model.Term.Status;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.infrastructure.persistence.entity.TermEntity;
 import com.moriba.skultem.infrastructure.persistence.jpa.TermJpaRepository;
@@ -39,7 +40,7 @@ public class TermAdapter implements TermRepository {
 
     @Override
     public Page<Term> findAllBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(TermMapper::toDomain);
+        return repo.findAllBySchoolIdOrderByTermNumberAsc(schoolId, pageable).map(TermMapper::toDomain);
     }
 
     @Override
@@ -49,13 +50,8 @@ public class TermAdapter implements TermRepository {
     }
 
     @Override
-    public void deactivateAllBySchoolId(String schoolId) {
-        repo.deactivateAllBySchoolId(schoolId);
-    }
-
-    @Override
     public Page<Term> findAllBySchoolIdAndAcademicYear(String schoolId, String academicYear, Pageable pageable) {
-        return repo.findAllByAcademicYearIdAndSchoolId(academicYear, schoolId, pageable).map(TermMapper::toDomain);
+        return repo.findAllByAcademicYearIdAndSchoolIdOrderByTermNumberAsc(academicYear, schoolId, pageable).map(TermMapper::toDomain);
     }
 
     @Override
@@ -70,11 +66,26 @@ public class TermAdapter implements TermRepository {
 
     @Override
     public List<Term> findByAcademicYearIdAndSchool(String academicYearId, String schoolId) {
-        return repo.findAllByAcademicYearIdAndSchoolId(academicYearId, schoolId).stream().map(TermMapper::toDomain).toList();
+        return repo.findAllByAcademicYearIdAndSchoolIdOrderByTermNumberAsc(academicYearId, schoolId).stream().map(TermMapper::toDomain).toList();
     }
 
     @Override
     public Optional<Term> findByIdAndAcademicYearIdAndSchoolId(String id, String academicYearId, String schoolId) {
         return repo.findByIdAndAcademicYear_IdAndSchoolId(id, academicYearId, schoolId).map(TermMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Term> findFirstBySchoolIdAndStatus(String schoolId, Status status) {
+        return repo.findFirstBySchoolIdAndStatusOrderByTermNumberAsc(schoolId, status).map(TermMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Term> findByTernNumberAndAcademicYearIdAndSchoolId(int termNumber, String academicYearId, String schoolId) {
+        return repo.findByTermNumberAndAcademicYear_IdAndSchoolId(termNumber, academicYearId, schoolId).map(TermMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Term> findActiveBySchoolAndAcademicYear(String school, String academicYearId) {
+        return repo.findActiveTerm(academicYearId, school).map(TermMapper::toDomain);
     }
 }

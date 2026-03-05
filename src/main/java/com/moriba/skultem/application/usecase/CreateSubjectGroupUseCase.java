@@ -15,46 +15,63 @@ import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class CreateSubjectGroupUseCase {
+
     private final SubjectGroupRepository repo;
     private final ClassRepository classRepo;
     private final StreamRepository streamRepo;
     private final ReferenceGeneratorUsecase rg;
 
-    public SubjectGroupDTO execute(String schoolId, String name, String level, String classId, String streamId,
-            boolean required, int minSelection, int maxSelection, int displayOrder) {
-        if (minSelection > maxSelection) {
-            throw new RuleException("minSelection cannot exceed maxSelection");
-        }
+    public SubjectGroupDTO execute(
+            String schoolId,
+            String name,
+            String classId,
+            String streamId,
+            int totalSelection) {
 
         Clazz clazz = null;
         Stream stream = null;
 
-        Level levelEnum = Level.valueOf(level);
-        if (levelEnum == Level.SSS) {
-            if (streamId == null || streamId.isBlank()) {
-                throw new RuleException("stream is required for SSS subject group");
+        if (streamId != null && !streamId.isBlank()) {
+
+            stream = streamRepo.findByIdAndSchoolId(streamId, schoolId)
+                    .orElseThrow(() -> new RuleException("Stream not found"));
+        }
+
+        else if (classId != null && !classId.isBlank()) {
+
+            clazz = classRepo.findByIdAndSchool(classId, schoolId)
+                    .orElseThrow(() -> new RuleException("Class not found"));
+
+            if (clazz.getLevel() == Level.PRIMARY) {
+                throw new RuleException("Subject groups are not allowed for PRIMARY level");
             }
 
-            stream = streamRepo.findByIdAndSchoolId(streamId, schoolId).orElseThrow(() -> new RuleException("stream not found"));
-            clazz = null;
-        } else {
-            if (classId == null || classId.isBlank()) {
-                throw new RuleException("class is required for PRIMARY/JSS subject group");
+            if (clazz.getLevel() == Level.SSS) {
+                throw new RuleException("For SSS classes, subject group must be assigned to a stream");
             }
-            clazz = classRepo.findByIdAndSchool(classId, schoolId).orElseThrow(() -> new RuleException("class not found"));
-            
-            stream = null;
+        }
+
+        else {
+            throw new RuleException("Either class or stream must be provided");
         }
 
         var id = rg.generate("SUBJECT_GROUP", "SBG");
-        var record = SubjectGroup.create(id, schoolId, name, levelEnum, clazz, stream, required, minSelection,
-                maxSelection, displayOrder);
+
+        var record = SubjectGroup.create(
+                id,
+                schoolId,
+                name,
+                clazz,
+                stream,
+                totalSelection
+        );
+
         repo.save(record);
+
         return SubjectGroupMapper.toDTO(record);
     }
 }

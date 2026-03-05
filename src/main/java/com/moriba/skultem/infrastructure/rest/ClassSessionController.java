@@ -24,13 +24,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import com.moriba.skultem.application.usecase.ListUnassignClassBySchoolUseCase;
+
 @RestController
-@RequestMapping("/api/v1/class/session")
+@RequestMapping({"/api/v1/class/session", "/api/v1/class-session"})
 @RequiredArgsConstructor
 public class ClassSessionController {
 
     private final CreateClassSessionUseCase createClassSessionUseCase;
     private final ListClassSessionBySchoolUseCase listClassSessionBySchoolUseCase;
+    private final ListUnassignClassBySchoolUseCase listUnassignClassBySchoolUseCase;
     private final GetClassSessionUseCase getClassSessionUseCase;
 
     @PostMapping
@@ -49,6 +52,23 @@ public class ClassSessionController {
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
         var res = listClassSessionBySchoolUseCase.execute(school, page - 1, size);
+        var list = res.getContent();
+        Map<String, Object> meta = Map.of(
+                "page", res.getNumber() + 1,
+                "size", res.getSize(),
+                "count", res.getTotalElements(),
+                "pages", res.getTotalPages());
+
+        return new ApiResponse<>("success", 200, "Class sessions fetched successfully", list, meta);
+    }
+
+    @GetMapping({"/unassign", "/unassigned"})
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    public ApiResponse<List<ClassSessionDTO>> listUnassign(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true, defaultValue = "10") Integer size,
+            @RequestParam(required = true, defaultValue = "1") Integer page) {
+        var res = listUnassignClassBySchoolUseCase.execute(school, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

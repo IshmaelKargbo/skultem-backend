@@ -22,7 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
-@RequestMapping("/api/v1/teacher/assignment")
+@RequestMapping({"/api/v1/teacher/assignment", "/api/v1/teacher-assignment"})
 @RequiredArgsConstructor
 public class TeacherAssignmentController {
     private final AssignTeacherToClassUseCase assignTeacherToClassUseCase;
@@ -45,7 +45,7 @@ public class TeacherAssignmentController {
             @PathVariable String classSessionId,
             @Valid @RequestBody AssignSubjectToTeacherDTO param) {
         List<SubjectAssignment> list = param.assignments().stream()
-                .map(e -> new SubjectAssignment(e.teacherId(), e.subjectId())).toList();
+                .map(e -> new SubjectAssignment(e.id(), e.teacherId(), e.subjectId())).toList();
         assignSubjectToTeacherUseCase.execute(school, classSessionId, list);
         return new ApiResponse<>("success", 200, "Subject assigned to teacher successfully", null);
     }

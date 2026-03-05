@@ -27,6 +27,7 @@ public class CreateClassUseCase {
     private final StreamRepository streamRepo;
     private final AcademicYearRepository academicYearRepo;
     private final SectionRepository sectionRepo;
+    private final AssessmentTemplateRepository assessmentTemplateRepo;
     private final ReferenceGeneratorUsecase rg;
 
     public ClassDTO execute(
@@ -35,6 +36,7 @@ public class CreateClassUseCase {
             int levelOrder,
             List<String> sectionIds,
             List<String> streamIds,
+            String assessmentTemplateId,
             String level) {
 
         // 1️⃣ Check for duplicates
@@ -53,7 +55,13 @@ public class CreateClassUseCase {
         // 3️⃣ Create Class
         Level levelEnum = Level.valueOf(level.toUpperCase());
         String classId = rg.generate("CLASS", "CLS");
-        Clazz clazz = Clazz.create(classId, school, name, levelEnum, levelOrder);
+        AssessmentTemplate template = null;
+        if (assessmentTemplateId != null && !assessmentTemplateId.isBlank()) {
+            template = assessmentTemplateRepo.findByIdAndSchoolId(assessmentTemplateId, school)
+                    .orElseThrow(() -> new NotFoundException("Assessment template not found"));
+        }
+
+        Clazz clazz = Clazz.create(classId, school, template, name, levelEnum, levelOrder);
         classRepo.save(clazz);
 
         // 4️⃣ Fetch Sections once

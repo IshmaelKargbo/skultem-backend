@@ -28,35 +28,37 @@ public class ClassSubjectMapper {
         }
 
         return new ClassSubject(param.getId(), param.getSchoolId(), clazz, subject,
-                group, param.getMandatory(), param.getCreatedAt(), param.getUpdatedAt());
+                group, param.getMandatory(), param.getLocked(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
-    public static ClassSubjectEntity toEntity(ClassSubject args) {
+    public static ClassSubjectEntity toEntity(ClassSubject param) {
         ClassEntity clazz = null;
         SubjectEntity subject = null;
         SubjectGroupEntity group = null;
 
-        if (args.getClazz() != null) {
-            clazz = ClassMapper.toEntity(args.getClazz());
+        if (param.getClazz() != null) {
+            clazz = ClassMapper.toEntity(param.getClazz());
         }
 
-        if (args.getSubject() != null) {
-            subject = SubjectMapper.toEntity(args.getSubject());
+        if (param.getSubject() != null) {
+            subject = SubjectMapper.toEntity(param.getSubject());
         }
 
-        if (args.getGroup() != null) {
-            group = SubjectGroupMapper.toEntity(args.getGroup());
+        if (param.getGroup() != null) {
+            group = SubjectGroupMapper.toEntity(param.getGroup());
         }
 
         return ClassSubjectEntity.builder()
-                .id(args.getId())
-                .schoolId(args.getSchoolId())
+                .id(param.getId())
+                .schoolId(param.getSchoolId())
                 .clazz(clazz)
                 .subject(subject)
                 .group(group)
-                .mandatory(args.getMandatory())
-                .createdAt(args.getCreatedAt())
-                .updatedAt(args.getUpdatedAt())
+                .locked(param.getLocked())
+                .mandatory(param.getMandatory())
+                .createdAt(param.getCreatedAt())
+                .updatedAt(param.getUpdatedAt())
                 .build();
     }
 }
+

@@ -9,6 +9,6 @@ public class TeacherMapper {
         UserDTO user = UserMapper.toDTO(param.getUser());
 
         return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getStaffId(),
-                user, param.getAddress(), param.getStatus().toString(), param.getCreatedAt(), param.getUpdatedAt());
+                user, param.getStreet(), param.getCity(), param.getStatus().toString(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

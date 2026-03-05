@@ -34,7 +34,7 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> findBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolId(schoolId, pageable).map(ClassSessionMapper::toDomain);
+        return repo.findAllBySchoolIdOrderByClazz_LevelOrderAsc(schoolId, pageable).map(ClassSessionMapper::toDomain);
     }
 
     @Override
@@ -102,14 +102,14 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     @Override
     public Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
             Pageable pageable) {
-        return repo.findBySchoolIdAndAcademicYear_Id(schoolId, academicYearId, pageable)
+        return repo.findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
 
     @Override
     public List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
             String schoolId) {
-        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolId(classId, academicYearId, schoolId)
+        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAsc(classId, academicYearId, schoolId)
                 .stream()
                 .map(ClassSessionMapper::toDomain)
                 .toList();
@@ -120,5 +120,11 @@ public class ClassSessionAdapter implements ClassSessionRepository {
             String schoolId) {
         return repo.findByAcademicYear_IdAndClazz_IdAndSchoolId(academic, classId, schoolId)
                 .map(ClassSessionMapper::toDomain);
+    }
+
+    @Override
+    public Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
+            Pageable pageable) {
+                return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable).map(ClassSessionMapper::toDomain);
     }
 }

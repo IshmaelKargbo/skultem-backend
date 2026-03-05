@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import java.math.BigDecimal;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -115,7 +117,7 @@ public class FeeController {
 
         @GetMapping("/student/{studentId}")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT')")
-        public ApiResponse<Double> countStudentFees(
+        public ApiResponse<BigDecimal> countStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId) {
 

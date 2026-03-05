@@ -55,4 +55,20 @@ public class Term extends AggregateRoot<String> {
         this.status = Status.CLOSED;
         touch(Instant.now());
     }
+
+    public void activate() {
+        if (this.status == Status.CLOSED) {
+            throw new IllegalStateException("Closed term cannot be activated");
+        }
+        this.status = Status.ACTIVE;
+        touch(Instant.now());
+    }
+
+    public void markUpcoming() {
+        if (this.status == Status.CLOSED) {
+            return;
+        }
+        this.status = Status.UPCOMING;
+        touch(Instant.now());
+    }
 }

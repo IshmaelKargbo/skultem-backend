@@ -31,7 +31,7 @@ public class StreamSubjectMapper {
         }
 
         return new StreamSubject(param.getId(), param.getSchoolId(), stream, subject,
-                group, param.getMandatory(), param.getCreatedAt(), param.getUpdatedAt());
+                group, param.getMandatory(), param.getLocked(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static StreamSubjectEntity toEntity(StreamSubject param) {
@@ -56,6 +56,7 @@ public class StreamSubjectMapper {
                 .schoolId(param.getSchoolId())
                 .stream(stream)
                 .subject(subject)
+                .locked(param.getLocked())
                 .group(group)
                 .mandatory(param.getMandatory())
                 .createdAt(param.getCreatedAt())

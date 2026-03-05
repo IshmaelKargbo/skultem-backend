@@ -33,7 +33,7 @@ public class EnrollmentMapper {
         }
 
         if (param.getStudent() != null) {
-            student = StudentMapper.toDTO(param.getStudent());
+            student = StudentMapper.toDTO(param.getStudent(), param);
         }
 
         if (param.getAcademicYear() != null) {

@@ -2,23 +2,22 @@ package com.moriba.skultem.application.usecase;
 
 import org.springframework.stereotype.Service;
 
-import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.application.mapper.SchoolMapper;
 import com.moriba.skultem.domain.repository.SchoolRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class GetSchoolByUserUseCase {
+public class ResolveScoreGradeUseCase {
 
-    private final SchoolRepository repo;
+    private final SchoolRepository schoolRepository;
 
-    public SchoolDTO execute(String id) {
-        var record = repo.findById(id)
+    public String execute(String schoolId, int score) {
+        var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
-        return SchoolMapper.toDTO(record);
+        return school.resolveGrade(score);
     }
 }

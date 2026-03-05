@@ -12,7 +12,13 @@ public interface TeacherSubjectRepository {
 
         void save(TeacherSubject domain);
 
+        void deleteByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
+
+        void deleteByStreamIdAndSubjectIdAndSchoolId(String streamId, String subjectId, String schoolId);
+
         Optional<TeacherSubject> findById(String id);
+
+        Optional<TeacherSubject> findByIdAndSchoolId(String id, String schoolId);
 
         Optional<TeacherSubject> findOneByTeacherIdAndSchoolId(String teacherId, String schoolId);
 
@@ -23,14 +29,17 @@ public interface TeacherSubjectRepository {
 
         Page<TeacherSubject> findAllBySchoolId(String schoolId, Pageable pageable);
 
-        Page<TeacherSubject> findAllBySchoolIdAndAcademicYearId(String schoolId, String academicYearId, Pageable pageable);
+        Page<TeacherSubject> findAllBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
+                        Pageable pageable);
 
         Page<TeacherSubject> findByTeacherId(String teacherId, Pageable pageable);
 
-        Page<TeacherSubject> findByTeacherIdAndClassSessionId(
+        Page<TeacherSubject> findAllByTeacherIdAndClassSessionId(
                         String teacherId, String classSessionId, Pageable pageable);
 
         List<TeacherSubject> findByTeacherIdAndSchoolId(String teacherId, String schoolId);
+
+        Optional<TeacherSubject> findBySubjectIdAndSessionIdAndSchoolId(String subjectId, String academicYearId, String schoolId);
 
         Page<TeacherSubject> findByClassSessionIdAndSchoolId(String sessionId, String schoolId, Pageable pageable);
 

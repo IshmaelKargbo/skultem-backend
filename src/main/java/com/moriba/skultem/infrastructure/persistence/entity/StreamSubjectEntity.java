@@ -40,7 +40,10 @@ public class StreamSubjectEntity {
     private SubjectGroupEntity group;
 
     private Boolean mandatory;
-    
+
+    @Column(nullable = false)
+    private Boolean locked;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -36,6 +36,7 @@ X-School-Id: SCL-2026-0001
     },
     {
       "subjectId": "SUB-2026-0003",
+      "groupId": "SGR-2026-0002",
       "mandatory": false
     }
   ]

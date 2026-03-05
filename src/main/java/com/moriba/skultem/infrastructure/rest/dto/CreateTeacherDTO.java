@@ -19,13 +19,9 @@ public record CreateTeacherDTO(
 
                 @NotBlank(message = "Street is required") @Size(min = 5, max = 255, message = "Street must be between 5 and 255 characters") String street,
 
-                @NotBlank(message = "Region is required") @Size(min = 2, max = 100, message = "Region must be between 2 and 100 characters") String region,
+                @NotBlank(message = "City is required") @Size(min = 2, max = 100, message = "City must be between 2 and 100 characters") String city,
 
-                @NotBlank(message = "District is required") @Size(min = 2, max = 100, message = "District must be between 2 and 100 characters") String district,
-
-                @NotBlank(message = "Chiefdom is required") @Size(min = 2, max = 150, message = "Chiefdom must be between 2 and 150 characters") String chiefdom,
-
-                @NotBlank(message = "City is required") @Size(min = 2, max = 100, message = "City must be between 2 and 100 characters") String city
+                String classMaster
 
 ) {
 }

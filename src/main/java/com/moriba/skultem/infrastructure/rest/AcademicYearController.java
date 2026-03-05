@@ -28,7 +28,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
-@RequestMapping("/api/v1/academic_year")
+@RequestMapping({"/api/v1/academic_year", "/api/v1/academic-year"})
 @RequiredArgsConstructor
 public class AcademicYearController {
 
@@ -46,7 +46,7 @@ public class AcademicYearController {
             throw new RuleException("End date must be after start date");
         }
         var res = createAcadamicYearUseCase.execute(school, param.name(), param.startDate(), param.endDate());
-        return new ApiResponse<AcademicYearDTO>("success", 200, "Academic year created successfully", res);
+        return new ApiResponse<>("success", 200, "Academic year created successfully", res);
     }
 
     @GetMapping
@@ -63,7 +63,7 @@ public class AcademicYearController {
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
 
-        return new ApiResponse<List<AcademicYearDTO>>("success", 200, "Academic year fetched successfully", list, meta);
+        return new ApiResponse<>("success", 200, "Academic year fetched successfully", list, meta);
     }
 
     @PutMapping("/{id}")
@@ -72,7 +72,7 @@ public class AcademicYearController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
         var res = activeAcademicYearUseCase.execute(id);
-        return new ApiResponse<AcademicYearDTO>("success", 200, "Academic year set active successfully", res);
+        return new ApiResponse<>("success", 200, "Academic year set active successfully", res);
     }
 
     @GetMapping("/{id}")
@@ -81,6 +81,6 @@ public class AcademicYearController {
             @PathVariable String id,
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getAcademicYearUseCase.execute(id);
-        return new ApiResponse<AcademicYearDTO>("success", 200, "Academic year fetched successfully", res);
+        return new ApiResponse<>("success", 200, "Academic year fetched successfully", res);
     }
 }

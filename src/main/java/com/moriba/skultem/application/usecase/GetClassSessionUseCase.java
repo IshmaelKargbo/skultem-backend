@@ -52,11 +52,12 @@ public class GetClassSessionUseCase {
 
         var clazz = domain.getClazz();
         String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
+        String grade = "Grade " + clazz.getDisplayOrder();
 
         long count = enrollmentRepo.findAllByClassAndAcademicSchoolId(classId, academicYear.getId(), school)
                 .size();
 
         return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, count, streamName,
-                streamId, sectionName, sectionId, classLevel);
+                streamId, sectionName, sectionId, classLevel, grade);
     }
 }

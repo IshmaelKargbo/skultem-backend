@@ -69,7 +69,7 @@ X-User-Id: USR-2026-0001
 X-School-Id: SCL-2026-0001
 
 ###
-GET http://localhost:8080/api/v1/report/finance/outstanding?studentId=STD-2026-0002
+GET http://localhost:8080/api/v1/report/finance/outstanding?studentId=STD-2026-0005
 Content-Type: application/json
 X-User-Id: USR-2026-0001
 X-School-Id: SCL-2026-0001

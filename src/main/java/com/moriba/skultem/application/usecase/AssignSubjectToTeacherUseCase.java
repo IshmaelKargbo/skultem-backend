@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Teacher.Status;
-import com.moriba.skultem.domain.model.Subject;
+import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
@@ -18,6 +18,7 @@ import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
+import com.moriba.skultem.domain.repository.EnrollmentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,90 +28,112 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AssignSubjectToTeacherUseCase {
 
-        private final TeacherRepository teacherRepo;
-        private final ClassSessionRepository sessionRepo;
-        private final AcademicYearRepository academicYearRepo;
-        private final ClassSubjectRepository classSubjectRepo;
-        private final StreamSubjectRepository streamSubjectRepo;
-        private final SubjectRepository subjectRepo;
-        private final TeacherSubjectRepository repo;
-        private final ReferenceGeneratorUsecase referenceGenerator;
+    private final TeacherRepository teacherRepo;
+    private final ClassSessionRepository sessionRepo;
+    private final AcademicYearRepository academicYearRepo;
+    private final ClassSubjectRepository classSubjectRepo;
+    private final StreamSubjectRepository streamSubjectRepo;
+    private final SubjectRepository subjectRepo;
+    private final TeacherSubjectRepository repo;
+    private final EnrollmentRepository enrollmentRepo;
+    private final ReferenceGeneratorUsecase referenceGenerator;
+    private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
 
-        public void execute(String schoolId, String sessionId, List<SubjectAssignment> assignments) {
-                var academicYear = academicYearRepo
-                                .findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new NotFoundException("Academic year not found"));
+    public void execute(String schoolId, String sessionId, List<SubjectAssignment> assignments) {
 
-                if (academicYear.isLocked()) {
-                        throw new RuleException("Cannot assign subjects in a locked academic year");
-                }
+        var academicYear = academicYearRepo
+                .findActiveBySchool(schoolId)
+                .orElseThrow(() -> new NotFoundException("Academic year not found"));
 
-                var session = sessionRepo.findByIdAndSchoolId(sessionId, schoolId)
-                                .orElseThrow(() -> new NotFoundException("Class session not found"));
-
-                if (assignments.stream().anyMatch(a -> a.teacherId() == null || a.subjectId() == null)) {
-                        throw new RuleException("All assignments must have a teacherId and subjectId");
-                }
-
-                Map<String, Set<String>> teacherToSubjects = assignments.stream()
-                                .collect(Collectors.groupingBy(
-                                                SubjectAssignment::teacherId,
-                                                Collectors.mapping(SubjectAssignment::subjectId, Collectors.toSet())));
-
-                for (var entry : teacherToSubjects.entrySet()) {
-                        String teacherId = entry.getKey();
-                        Set<String> incomingSubjectIds = entry.getValue();
-
-                        var teacher = teacherRepo.findByIdAndSchoolId(teacherId, schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Teacher not found"));
-
-                        if (teacher.getStatus() != Status.ACTIVE) {
-                                throw new RuleException("Only active teachers can be assigned subjects");
-                        }
-
-                        List<TeacherSubject> existingAssignments = repo
-                                        .findByTeacherIdAndClassSessionId(teacherId, sessionId, Pageable.unpaged())
-                                        .getContent();
-                        Set<String> existingSubjectIds = existingAssignments.stream()
-                                        .map(ts -> ts.getSubject().getId())
-                                        .collect(Collectors.toSet());
-
-                        for (String subjectId : incomingSubjectIds) {
-                                boolean subjectValid;
-                                if (session.getStream() == null || session.getStream().getId() == null) {
-                                        subjectValid = classSubjectRepo.existsByClassIdAndSubjectIdAndSchoolId(
-                                                        session.getClazz().getId(), subjectId, schoolId);
-                                } else {
-                                        subjectValid = streamSubjectRepo.existsByStreamIdAndSubjectIdAndSchoolId(
-                                                        session.getStream().getId(), subjectId, schoolId);
-                                }
-                                if (!subjectValid) {
-                                        throw new RuleException(
-                                                        "Subject does not belong to this class/stream: " + subjectId);
-                                }
-
-                                if (!existingSubjectIds.contains(subjectId)) {
-                                        Subject subject = subjectRepo.findByIdAndSchoolId(subjectId, schoolId)
-                                                        .orElseThrow(() -> new NotFoundException(
-                                                                        "Subject not found: " + subjectId));
-
-                                        String id = referenceGenerator.generate("TEACHER_SUBJECT", "TSB");
-                                        var record = TeacherSubject.create(id, schoolId, session, teacher, subject);
-                                        repo.save(record);
-                                }
-                        }
-
-                        for (TeacherSubject existing : existingAssignments) {
-                                String existingSubjectId = existing.getSubject().getId();
-                                if (!incomingSubjectIds.contains(existingSubjectId)) {
-                                        repo.delete(existing);
-                                }
-                        }
-                }
+        if (academicYear.isLocked()) {
+            throw new RuleException("Cannot assign subjects in a locked academic year");
         }
 
-        public record SubjectAssignment(
-                        String teacherId,
-                        String subjectId) {
+        var session = sessionRepo.findByIdAndSchoolId(sessionId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+        if (assignments.stream().anyMatch(a -> a.teacherId() == null || a.subjectId() == null)) {
+            throw new RuleException("TeacherId and SubjectId are required");
         }
+
+        List<TeacherSubject> existingList = repo
+                .findByClassSessionIdAndSchoolId(sessionId, schoolId, Pageable.unpaged())
+                .getContent();
+
+        Map<String, TeacherSubject> existingById = existingList.stream()
+                .collect(Collectors.toMap(TeacherSubject::getId, ts -> ts));
+
+        Set<String> incomingIds = new HashSet<>();
+
+        for (SubjectAssignment assignment : assignments) {
+
+            boolean subjectValid;
+            if (session.getStream() == null) {
+                subjectValid = classSubjectRepo.existsByClassIdAndSubjectIdAndSchoolId(
+                        session.getClazz().getId(),
+                        assignment.subjectId(),
+                        schoolId);
+            } else {
+                subjectValid = streamSubjectRepo.existsByStreamIdAndSubjectIdAndSchoolId(
+                        session.getStream().getId(),
+                        assignment.subjectId(),
+                        schoolId);
+            }
+
+            if (!subjectValid) {
+                var id = assignment.subjectId();
+                throw new RuleException("Subject does not belong to this class/stream: " + id);
+            }
+
+            var teacher = teacherRepo.findByIdAndSchoolId(assignment.teacherId(), schoolId)
+                    .orElseThrow(() -> new NotFoundException("Teacher not found"));
+
+            if (teacher.getStatus() != Status.ACTIVE) {
+                throw new RuleException("Only active teachers can be assigned");
+            }
+
+            TeacherSubject teacherSubject;
+            if (assignment.id() != null) {
+                var existing = existingById.get(assignment.id());
+                if (existing == null) {
+                    throw new NotFoundException("TeacherSubject not found: " + assignment.id());
+                }
+
+                existing.changeTeacher(teacher);
+                repo.save(existing);
+                incomingIds.add(existing.getId());
+                teacherSubject = existing;
+            } else {
+                var subject = subjectRepo.findByIdAndSchoolId(assignment.subjectId(), schoolId)
+                        .orElseThrow(() -> new NotFoundException("Subject not found"));
+
+                String id = referenceGenerator.generate("TEACHER_SUBJECT", "TSB");
+                teacherSubject = TeacherSubject.create(id, schoolId, session, teacher, subject);
+                repo.save(teacherSubject);
+                incomingIds.add(id);
+            }
+
+            var enrollments = enrollmentRepo.findAllByClassAndSchoolId(
+                    session.getClazz().getId(),
+                    schoolId,
+                    Pageable.unpaged()).getContent();
+
+            for (Enrollment enrollment : enrollments) {
+                try {
+                    provisionStudentAssessmentsUseCase.execute(enrollment);
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+        }
+
+        for (TeacherSubject existing : existingList) {
+            if (!incomingIds.contains(existing.getId())) {
+                repo.delete(existing);
+            }
+        }
+    }
+
+    public record SubjectAssignment(String id, String teacherId, String subjectId) {
+    }
 }

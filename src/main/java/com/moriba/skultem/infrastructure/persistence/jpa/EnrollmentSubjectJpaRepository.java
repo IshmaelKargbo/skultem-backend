@@ -23,4 +23,6 @@ public interface EnrollmentSubjectJpaRepository
         Page<EnrollmentSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
         
         List<EnrollmentSubjectEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
+
+        void deleteByEnrollment_IdAndSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 }

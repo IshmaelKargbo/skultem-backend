@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.TermDTO;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.CreateTermUseCase;
+import com.moriba.skultem.application.usecase.ActivateTermUseCase;
 import com.moriba.skultem.application.usecase.ListTermByAcademicYearIdUseCase;
 import com.moriba.skultem.application.usecase.ListTermBySchoolIdUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +33,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 public class TermController {
 
     private final CreateTermUseCase createTermUseCase;
+    private final ActivateTermUseCase activateTermUseCase;
     private final ListTermBySchoolIdUseCase listTermBySchoolIdUseCase;
     private final ListTermByAcademicYearIdUseCase listTermAcademicYearIdUseCase;
 
@@ -42,9 +45,9 @@ public class TermController {
         if (param.endDate().isBefore(param.startDate())) {
             throw new RuleException("End date must be after start date");
         }
-        var res = createTermUseCase.execute(school, param.academicYearId(), param.name(), param.startDate(),
+        var res = createTermUseCase.execute(school, param.name(), param.startDate(),
                 param.endDate());
-        return new ApiResponse<TermDTO>("success", 200, "Term created successfully", res);
+        return new ApiResponse<>("success", 200, "Term created successfully", res);
     }
 
     @GetMapping
@@ -61,7 +64,7 @@ public class TermController {
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
 
-        return new ApiResponse<List<TermDTO>>("success", 200, "Terms fetched successfully", list, meta);
+        return new ApiResponse<>("success", 200, "Terms fetched successfully", list, meta);
     }
 
     @GetMapping("/academic-year/{academicYearId}")
@@ -79,6 +82,15 @@ public class TermController {
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
 
-        return new ApiResponse<List<TermDTO>>("success", 200, "Terms fetched successfully", list, meta);
+        return new ApiResponse<>("success", 200, "Terms fetched successfully", list, meta);
+    }
+
+    @PutMapping("/{id}/activate")
+    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    public ApiResponse<TermDTO> activate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = activateTermUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Term activated successfully", res);
     }
 }

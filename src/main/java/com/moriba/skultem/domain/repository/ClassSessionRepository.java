@@ -26,18 +26,25 @@ public interface ClassSessionRepository {
         boolean existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIsNullAndSchoolId(
                         String classId, String academicYearId, String sectionId, String schoolId);
 
+        Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
+                        Pageable pageable);
+
         Page<ClassSession> findBySchoolId(String schoolId, Pageable pageable);
 
         Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId, Pageable pageable);
 
-        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId, String schoolId);
+        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
+                        String schoolId);
 
-        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(String classId, String academicYearId, String sectionId, String schoolId);
-        
-        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(String classId, String academicYearId, String sectionId, String streamId, String schoolId);
-        
-        List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId, String schoolId);
-        
+        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(String classId,
+                        String academicYearId, String sectionId, String schoolId);
+
+        Optional<ClassSession> findByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(String classId,
+                        String academicYearId, String sectionId, String streamId, String schoolId);
+
+        List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
+                        String schoolId);
+
         long countBySchoolId(String schoolId);
 
         long countAll();

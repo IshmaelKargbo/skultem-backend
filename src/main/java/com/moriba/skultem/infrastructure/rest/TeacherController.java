@@ -15,7 +15,6 @@ import com.moriba.skultem.application.usecase.GetTeacherUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectByTeacherUseCase;
-import com.moriba.skultem.domain.model.vo.Address;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateTeacherDTO;
 
@@ -48,10 +47,9 @@ public class TeacherController {
     public ApiResponse<TeacherDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateTeacherDTO param) {
-        var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = createTeacherUseCase.execute(school, param.givenNames(), param.familyName(), param.staffId(),
-                param.email(), param.phone(), address);
-        return new ApiResponse<>("success", 200, "Teacher created successfully", res);
+                param.email(), param.phone(), param.street(), param.city(), param.classMaster());
+        return new ApiResponse<>("success", 200, "Teacher created successfully. Password is generated automatically.", res);
     }
 
     @GetMapping
@@ -105,7 +103,7 @@ public class TeacherController {
             @PathVariable String sessionId,
             @RequestParam(required = true, defaultValue = "1") int page,
             @RequestParam(required = true, defaultValue = "10") int size) {
-        var res = listTeacherSubjectBySessionUseCase.execute(school, sessionId, page, size);
+        var res = listTeacherSubjectBySessionUseCase.execute(school, sessionId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

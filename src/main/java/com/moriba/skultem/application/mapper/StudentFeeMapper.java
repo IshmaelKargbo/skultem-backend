@@ -12,8 +12,8 @@ public class StudentFeeMapper {
             return null;
 
         FeeStructureDTO fee = FeeStructureMapper.toDTO(param.getFee());
-        StudentDTO student = StudentMapper.toDTO(param.getStudent());
         EnrollmentDTO enrollment = EnrollmentMapper.toDTO(param.getEnrollment());
+        StudentDTO student = StudentMapper.toDTO(param.getStudent(), param.getEnrollment());
 
         return new StudentFeeDTO(param.getId(), student, fee, enrollment, param.getCreatedAt(),
                 param.getUpdatedAt());

@@ -8,6 +8,10 @@ public class Formate {
         return value.stripTrailingZeros().toPlainString();
     }
 
+    public static double formateDouble(double value) {
+        return Math.round(value * 100) / 100.00;
+    }
+
     public static String buildClassDisplayName(ClassSession clazz) {
 
         String baseName = clazz.getClazz().getName();

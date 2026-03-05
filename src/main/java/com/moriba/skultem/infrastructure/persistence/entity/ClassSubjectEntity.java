@@ -41,6 +41,8 @@ public class ClassSubjectEntity {
     private SubjectGroupEntity group;
 
     private Boolean mandatory;
+
+    private Boolean locked;
     
     private Instant createdAt;
 

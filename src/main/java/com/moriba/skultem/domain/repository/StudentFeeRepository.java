@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +16,7 @@ public interface StudentFeeRepository {
 
         Optional<StudentFee> findByIdAndSchoolId(String id);
 
-        Double sumTotalFeeByStudent(String studentId, String schoolId);
+        BigDecimal sumTotalFeeByStudent(String studentId, String schoolId);
 
         boolean existsBySchoolAndEnrollmentAndStudentAndFee(String schoolId, String enrollmentId, String studentId,
                         String feeId);

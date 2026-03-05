@@ -44,9 +44,9 @@ public class StudentController {
     public ApiResponse<StudentDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateStudentDTO param) {
-        var args = new CreateStudent(school, param.givenNames(), param.familyName(), param.academicNumber(),
+        var args = new CreateStudent(param.classSessionId(), school, param.givenNames(), param.familyName(), param.academicNumber(),
                 Gender.valueOf(param.gender()), param.dateOfBirth());
-        var res = createStudentUseCase.execute(args);
+        var res = createStudentUseCase.execute(args, param.selectedOptionIds());
         return new ApiResponse<>("success", 200, "Student created successfully", res);
     }
 

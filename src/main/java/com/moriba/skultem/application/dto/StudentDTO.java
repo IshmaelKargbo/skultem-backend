@@ -7,5 +7,5 @@ import com.moriba.skultem.domain.model.Student.Gender;
 import com.moriba.skultem.domain.model.Student.Status;
 
 public record StudentDTO(String id, String admissionNumber, String givenNames, String familyName, Gender gender,
-        LocalDate dateOfBirth, Status status, Instant createdAt, Instant updatedAt) {
+        LocalDate dateOfBirth, String classId, String className, Status status, Instant createdAt, Instant updatedAt) {
 }

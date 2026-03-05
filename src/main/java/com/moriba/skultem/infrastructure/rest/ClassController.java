@@ -19,9 +19,11 @@ import com.moriba.skultem.application.dto.ClassMasterDTO;
 import com.moriba.skultem.application.dto.ClassOverviewDTO;
 import com.moriba.skultem.application.dto.ClassSectionDTO;
 import com.moriba.skultem.application.dto.ClassStreamDTO;
+import com.moriba.skultem.application.dto.ClassSubjectResponse;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.CreateClassUseCase;
 import com.moriba.skultem.application.usecase.GetClassOverviewUseCase;
+import com.moriba.skultem.application.usecase.GetClassSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetClassUseCase;
 import com.moriba.skultem.application.usecase.GetCurrentClassMasterUseCase;
 import com.moriba.skultem.application.usecase.ListClassBySchoolUseCase;
@@ -29,9 +31,11 @@ import com.moriba.skultem.application.usecase.ListClassSectionByClassUseCase;
 import com.moriba.skultem.application.usecase.ListClassStreamByIdUseCase;
 import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
+import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.NextClassDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTemplateDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,9 +51,11 @@ public class ClassController {
     private final ListClassStreamByIdUseCase listClassStreamByIdUseCase;
     private final ListClassSectionByClassUseCase listClassSectionByClassUseCase;
     private final GetClassUseCase getClassUseCase;
+    private final GetClassSubjectUseCase getClassSubjectUseCase;
     private final GetClassOverviewUseCase getClassOverviewUseCase;
     private final GetCurrentClassMasterUseCase getCurrentClassMasterUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
+    private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
@@ -57,7 +63,7 @@ public class ClassController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateClassDTO param) {
         var res = createClassUseCase.execute(school, param.name(), param.levelOrder(), param.sections(),
-                param.streams(), param.level());
+                param.streams(), param.assessmentTemplateId(), param.level());
         return new ApiResponse<>("success", 200, "Class created successfully", res);
     }
 
@@ -88,6 +94,16 @@ public class ClassController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Classes fetched successfully", list, meta);
+    }
+
+    @GetMapping("/subject/{classId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    public ApiResponse<ClassSubjectResponse> listClassSubject(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classId,
+            @RequestParam(required = false) String streamId) {
+        var res = getClassSubjectUseCase.execute(school, classId, streamId);
+        return new ApiResponse<>("success", 200, "Class masters fetched successfully", res);
     }
 
     @GetMapping("/master/{classId}")
@@ -142,5 +158,15 @@ public class ClassController {
             @PathVariable String id) {
         var res = getClassOverviewUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
+    }
+
+    @PutMapping("/{id}/template")
+    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    public ApiResponse<ClassDTO> updateTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateClassTemplateDTO param) {
+        var res = updateClassTemplateUseCase.execute(school, id, param.templateId());
+        return new ApiResponse<>("success", 200, "Class template updated successfully", res);
     }
 }

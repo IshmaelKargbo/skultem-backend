@@ -11,34 +11,26 @@ import lombok.Getter;
 public class SubjectGroup extends AggregateRoot<String> {
     private String schoolId;
     private String name;
+    private Level level;
     private Stream stream;
     private Clazz clazz;
-    private Boolean required;
-    private int minSelection;
-    private int maxSelection;
-    private int displayOrder;
-    private Level level;
+    private int totalSelection;
 
-    public SubjectGroup(String id, String schoolId, String name, Level level, Clazz clazz, Stream stream,
-            Boolean required, int minSelection, int maxSelection, int displayOrder, Instant createdAt,
+    public SubjectGroup(String id, String schoolId, String name, Clazz clazz, Stream stream,
+            int totalSelection, Instant createdAt,
             Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
-        this.level = level;
         this.schoolId = schoolId;
         this.stream = stream;
         this.clazz = clazz;
-        this.required = required;
-        this.minSelection = minSelection;
-        this.maxSelection = maxSelection;
-        this.displayOrder = displayOrder;
+        this.totalSelection = totalSelection;
         touch(updatedAt);
     }
 
-    public static SubjectGroup create(String id, String schoolId, String name, Level level, Clazz clazz,
-            Stream stream, Boolean required, int minSelection, int maxSelection, int displayOrder) {
+    public static SubjectGroup create(String id, String schoolId, String name, Clazz clazz,
+            Stream stream, int totalSelection) {
         Instant now = Instant.now();
-        return new SubjectGroup(id, schoolId, name, level, clazz, stream, required, minSelection, maxSelection,
-                displayOrder, now, now);
+        return new SubjectGroup(id, schoolId, name, clazz, stream, totalSelection, now, now);
     }
 }

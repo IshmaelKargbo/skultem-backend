@@ -2,12 +2,8 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Level;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -34,10 +30,6 @@ public class SubjectGroupEntity {
     @Column(nullable = false)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Level level;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stream_id")
     private StreamEntity stream;
@@ -47,16 +39,7 @@ public class SubjectGroupEntity {
     private ClassEntity clazz;
 
     @Column(nullable = false)
-    private Boolean required;
-
-    @Column(nullable = false)
-    private int minSelection;
-
-    @Column(nullable = false)
-    private int maxSelection;
-
-    @Column(nullable = false)
-    private int displayOrder;
+    private int totalSelection;
 
     private Instant createdAt;
     private Instant updatedAt;

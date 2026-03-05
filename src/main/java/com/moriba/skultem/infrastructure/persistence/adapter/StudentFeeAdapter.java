@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,7 +80,7 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     }
 
     @Override
-    public Double sumTotalFeeByStudent(String studentId, String schoolId) {
+    public BigDecimal sumTotalFeeByStudent(String studentId, String schoolId) {
         return repo.sumTotalFeeByStudent(studentId, schoolId);
     }
 

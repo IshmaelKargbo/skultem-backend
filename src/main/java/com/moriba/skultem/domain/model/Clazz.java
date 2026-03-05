@@ -13,6 +13,7 @@ public class Clazz extends AggregateRoot<String> {
     private String schoolId;
     private String name;
     private Level level;
+    private AssessmentTemplate template;
     private Boolean terminal;
     private int displayOrder;
     private Clazz nextClass;
@@ -23,11 +24,12 @@ public class Clazz extends AggregateRoot<String> {
         DELETED
     }
 
-    public Clazz(String id, String school, String name, Level level, int displayOrder, Clazz nextClass,
+    public Clazz(String id, String school, AssessmentTemplate template, String name, Level level, int displayOrder, Clazz nextClass,
             Boolean terminal, Status status, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.schoolId = school;
+        this.template = template;
         this.level = level;
         this.displayOrder = displayOrder;
         this.nextClass = nextClass;
@@ -36,9 +38,9 @@ public class Clazz extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static Clazz create(String id, String school, String name, Level level, int displayOrder) {
+    public static Clazz create(String id, String school, AssessmentTemplate template, String name, Level level, int displayOrder) {
         Instant now = Instant.now();
-        return new Clazz(id, school, name, level, displayOrder, null, false, Status.ACTIVE, now, now);
+        return new Clazz(id, school, template, name, level, displayOrder, null, false, Status.ACTIVE, now, now);
     }
 
     public void setTerminal(boolean state) {
@@ -48,6 +50,11 @@ public class Clazz extends AggregateRoot<String> {
 
     public void setNextClass(Clazz nextClass) {
         this.nextClass = nextClass;
+        touch(Instant.now());
+    }
+
+    public void setTemplate(AssessmentTemplate template) {
+        this.template = template;
         touch(Instant.now());
     }
 

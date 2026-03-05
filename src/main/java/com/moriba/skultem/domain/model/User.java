@@ -15,6 +15,7 @@ public class User extends AggregateRoot<String> {
     private String givenNames;
     private String familyName;
     private String password;
+    private String hint;
     private Status status;
 
     public enum Status {
@@ -23,21 +24,21 @@ public class User extends AggregateRoot<String> {
         DELETED
     }
 
-    public User(String id, String givenNames, String familyName, String email, String password,
-            Status status, Instant createdAt,
-            Instant updatedAt) {
+    public User(String id, String givenNames, String familyName, String email, String password, String hint,
+            Status status, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.givenNames = givenNames;
         this.familyName = familyName;
         this.email = email;
         this.password = password;
+        this.hint = hint;
         this.status = status;
         touch(updatedAt);
     }
 
-    public static User create(String id, String givenNames, String familyName, String email, String password) {
+    public static User create(String id, String givenNames, String familyName, String email, String password, String hint) {
         Instant now = Instant.now();
-        return new User(id, givenNames, familyName, email, password, Status.ACTIVE, now, now);
+        return new User(id, givenNames, familyName, email, password, hint, Status.ACTIVE, now, now);
     }
 
     public String getName() {

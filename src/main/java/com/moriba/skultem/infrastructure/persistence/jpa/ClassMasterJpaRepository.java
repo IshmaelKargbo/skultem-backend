@@ -34,5 +34,7 @@ public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntit
 
         Page<ClassMasterEntity> findAllBySession_Id(String sessionId, Pageable pageable);
 
+        Optional<ClassMasterEntity> findAllBySession_IdAndSchoolId(String sessionId, String schoolId);
+
         long countBySchoolId(String schoolId);
 }

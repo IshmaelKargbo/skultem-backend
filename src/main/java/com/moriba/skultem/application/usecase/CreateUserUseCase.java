@@ -29,7 +29,7 @@ public class CreateUserUseCase {
         } else {
             var id = rg.generate("USER", "USR");
             var passwordHash = passwordEncoder.encode(password);
-            user = User.create(id, givenNames, familyName, email, passwordHash);
+            user = User.create(id, givenNames, familyName, email, passwordHash, "");
             repo.save(user);
         }
 

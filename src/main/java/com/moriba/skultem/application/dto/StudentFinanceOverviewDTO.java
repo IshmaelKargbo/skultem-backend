@@ -5,7 +5,7 @@ import java.util.List;
 
 public record StudentFinanceOverviewDTO(
         StudentDTO student,
-        Double assignedFeeTotal,
+        BigDecimal assignedFeeTotal,
         BigDecimal totalPaid,
         BigDecimal totalDiscount,
         BigDecimal totalOutstanding,

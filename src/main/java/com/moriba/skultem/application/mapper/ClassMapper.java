@@ -15,7 +15,11 @@ public class ClassMapper {
             nextClass = toDTO(param.getNextClass());
         }
 
+        var template = param.getTemplate();
         return new ClassDTO(param.getId(), param.getName(), param.getDisplayOrder(), nextClass,
-                param.getLevel(), param.getTerminal(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getLevel(),
+                template != null ? template.getId() : null,
+                template != null ? template.getName() : null,
+                param.getTerminal(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

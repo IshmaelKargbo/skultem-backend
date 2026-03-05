@@ -20,9 +20,8 @@ public class SubjectGroupMapper {
             clazz = ClassMapper.toDomain(param.getClazz());
         }
 
-        return new SubjectGroup(param.getId(), param.getSchoolId(), param.getName(), param.getLevel(),
-                clazz, stream, param.getRequired(), param.getMinSelection(),
-                param.getMaxSelection(), param.getDisplayOrder(), param.getCreatedAt(), param.getUpdatedAt());
+        return new SubjectGroup(param.getId(), param.getSchoolId(), param.getName(), clazz, stream,
+                param.getTotalSelection(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static SubjectGroupEntity toEntity(SubjectGroup param) {
@@ -41,13 +40,9 @@ public class SubjectGroupMapper {
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .name(param.getName())
-                .level(param.getLevel())
+                .totalSelection(param.getTotalSelection())
                 .clazz(clazz)
                 .stream(stream)
-                .required(param.getRequired())
-                .minSelection(param.getMinSelection())
-                .maxSelection(param.getMaxSelection())
-                .displayOrder(param.getDisplayOrder())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

@@ -2,9 +2,6 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import com.moriba.skultem.domain.model.Teacher.Status;
 
 import jakarta.persistence.Column;
@@ -34,13 +31,17 @@ public class TeacherEntity {
     @Column(nullable = false)
     private String schoolId;
 
+    @Column(nullable = false)
     private String staffId;
 
+    @Column(nullable = false)
     private String phone;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private String address;
+    @Column(nullable = false)
+    private String street;
+
+    @Column(nullable = false)
+    private String city;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

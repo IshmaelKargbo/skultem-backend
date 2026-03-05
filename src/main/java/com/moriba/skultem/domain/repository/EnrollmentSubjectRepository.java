@@ -24,4 +24,6 @@ public interface EnrollmentSubjectRepository {
     long countAll();
 
     void delete(EnrollmentSubject domain);
+
+    void deleteByEnrollmentIdAndSubjectIdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 }

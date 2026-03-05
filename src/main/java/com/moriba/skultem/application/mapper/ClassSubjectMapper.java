@@ -23,6 +23,6 @@ public class ClassSubjectMapper {
         }
 
         return new ClassSubjectDTO(param.getId(), param.getSchoolId(), className, classId, subjectName, subjectId, groupName, groupId, teacherName, teacherId,
-                param.getMandatory());
+                param.getMandatory(), param.getLocked());
     }
 }

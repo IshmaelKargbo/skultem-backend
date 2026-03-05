@@ -13,14 +13,16 @@ public class StreamSubject extends AggregateRoot<String> {
     private Subject subject;
     private SubjectGroup group;
     private Boolean mandatory;
+    private Boolean locked;
 
     public StreamSubject(String id, String schoolId, Stream stream, Subject subject, SubjectGroup group,
-            Boolean mandatory, Instant createdAt, Instant updatedAt) {
+            Boolean mandatory, Boolean locked, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.stream = stream;
         this.subject = subject;
         this.group = group;
+        this.locked = locked;
         this.mandatory = mandatory;
         touch(updatedAt);
     }
@@ -28,12 +30,21 @@ public class StreamSubject extends AggregateRoot<String> {
     public static StreamSubject create(String id, String schoolId, Stream stream, Subject subject, SubjectGroup group,
             Boolean mandatory) {
         Instant now = Instant.now();
-        return new StreamSubject(id, schoolId, stream, subject, group, mandatory, now, now);
+        return new StreamSubject(id, schoolId, stream, subject, group, mandatory, false, now, now);
     }
 
-    public void update(SubjectGroup group, Boolean mandatory) {
+    public void update(Subject subject, SubjectGroup group, Boolean mandatory) {
         this.group = group;
+        this.subject = subject;
         this.mandatory = mandatory;
         touch(Instant.now());
+    }
+
+    public void lock() {
+        this.locked = true;
+    }
+
+    public boolean isLocked() {
+        return Boolean.TRUE.equals(this.locked);
     }
 }

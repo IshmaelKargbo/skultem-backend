@@ -1,12 +1,12 @@
-POST http://localhost:8080/api/v1/enrollment
+POST http://localhost:8080/api/v1/enrollment/class
 Content-Type: application/json
 X-User-Id: USR-2026-0001
 X-School-Id: SCL-2026-0001
 
 {
   "classId": "CLS-2026-0002",
-  "studentId": "STD-2026-0002",
-  "sectionId": "CLS-2026-0002-2026-0003",
+  "sectionId": "SCT-2026-0001",
+  "students": ["STD-2026-0002"],
   "streamId": "STM-2026-0001"
 }
 
@@ -19,16 +19,6 @@ X-School-Id: SCL-2026-0001
 
 {
   "optionalSubjects": []
-}
-
-###
-POST http://localhost:8080/api/v1/enrollment/stream/ERM-2026-0002
-Content-Type: application/json
-X-User-Id: USR-2026-0001
-X-School-Id: SCL-2026-0001
-
-{
-  "optionalSubjects": ["SUB-2026-0003"]
 }
 
 ###

@@ -40,6 +40,9 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
         List<EnrollmentEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolId(String classId, String academicYearId,
                         String schoolId);
 
+        List<EnrollmentEntity> findAllByStream_IdAndAcademicYear_IdAndSchoolId(String streamId, String academicYearId,
+                        String schoolId);
+
         List<EnrollmentEntity> findAllByStudentIdAndClazz_IdAndSection_IdAndAcademicYear_IdAndStream_IdAndSchoolId(
                         String studentId,
                         String classId, String sectionId, String academicYearId, String streamId, String schoolId);

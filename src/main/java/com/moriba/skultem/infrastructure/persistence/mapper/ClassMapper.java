@@ -1,7 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.mapper;
 
 import com.moriba.skultem.domain.model.Clazz;
+import com.moriba.skultem.domain.model.AssessmentTemplate;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassEntity;
+import com.moriba.skultem.infrastructure.persistence.entity.AssessmentTemplateEntity;
 
 public class ClassMapper {
     public static Clazz toDomain(ClassEntity param) {
@@ -10,14 +12,20 @@ public class ClassMapper {
         }
 
         Clazz nextClass = null;
+        AssessmentTemplate template = null;
 
         if (param.getNextClass() != null) {
             nextClass = toDomain(param.getNextClass());
         }
 
+        if (param.getTemplate() != null) {
+            template = AssessmentTemplateMapper.toDomain(param.getTemplate());
+        }
+
         return new Clazz(
                 param.getId(),
                 param.getSchoolId(),
+                template,
                 param.getName(),
                 param.getLevel(),
                 param.getLevelOrder(),
@@ -34,9 +42,14 @@ public class ClassMapper {
         }
 
         ClassEntity nextClass = null;
+        AssessmentTemplateEntity template = null;
 
         if (param.getNextClass() != null) {
             nextClass = toEntity(param.getNextClass());
+        }
+
+        if (param.getTemplate() != null) {
+            template = AssessmentTemplateMapper.toEntity(param.getTemplate());
         }
 
         return ClassEntity.builder()
@@ -44,6 +57,7 @@ public class ClassMapper {
                 .name(param.getName())
                 .schoolId(param.getSchoolId())
                 .levelOrder(param.getDisplayOrder())
+                .template(template)
                 .level(param.getLevel())
                 .nextClass(nextClass)
                 .terminal(Boolean.TRUE.equals(param.getTerminal()))

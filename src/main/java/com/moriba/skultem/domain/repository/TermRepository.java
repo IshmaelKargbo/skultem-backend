@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Term;
+import com.moriba.skultem.domain.model.Term.Status;
 
 public interface TermRepository {
     void save(Term domain);
@@ -15,15 +16,19 @@ public interface TermRepository {
 
     Optional<Term> findByIdAndSchoolId(String id, String school);
 
+    Optional<Term> findActiveBySchoolAndAcademicYear(String school, String academicYearId);
+
     Optional<Term> findByIdAndAcademicYearIdAndSchoolId(String id, String academicYearId, String schoolId);
+
+    Optional<Term> findByTernNumberAndAcademicYearIdAndSchoolId(int termNumber, String academicYearId, String schoolId);
+
+    Optional<Term> findFirstBySchoolIdAndStatus(String schoolId, Status status);
 
     boolean existsByAcademicYearIdAndTermNumber(String academicYearId, int termNumber);
 
     List<Term> findByAcademicYearIdAndSchool(String academicYearId, String schoolId);
 
     boolean existsByNameAndSchoolId(String name, String schoolId);
-
-    void deactivateAllBySchoolId(String schoolId);
    
     Page<Term> findAllBySchoolId(String schoolId, Pageable pageable);
     

@@ -35,6 +35,7 @@ public class SelectClassSubjectsUseCase {
     private final SubjectGroupRepository subjectGroupRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
     private final ReferenceGeneratorUsecase referenceGenerator;
+    private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
 
     public void execute(ClassSubjectSelection param) {
 
@@ -70,7 +71,6 @@ public class SelectClassSubjectsUseCase {
                 .filter(cs -> cs.getGroup() != null)
                 .toList();
 
-        // Auto add required subjects
         for (ClassSubject cs : requiredSubjects) {
 
             String subjectId = cs.getSubject().getId();
@@ -86,6 +86,7 @@ public class SelectClassSubjectsUseCase {
         }
 
         if (optionalSubjects.isEmpty()) {
+            provisionStudentAssessmentsUseCase.execute(enrollment);
             return;
         }
 
@@ -134,14 +135,14 @@ public class SelectClassSubjectsUseCase {
 
             long selectedCount = selectionCountPerGroup.getOrDefault(groupId, 0L);
 
-            if (selectedCount < group.getMinSelection()) {
+            if (selectedCount < group.getTotalSelection()) {
                 throw new RuleException(
-                        "Minimum selection not met for group: " + group.getName());
+                        "Total selection not met for group: " + group.getName());
             }
 
-            if (selectedCount > group.getMaxSelection()) {
+            if (selectedCount > group.getTotalSelection()) {
                 throw new RuleException(
-                        "Maximum selection exceeded for group: " + group.getName());
+                        "Total selection exceeded for group: " + group.getName());
             }
         }
 
@@ -164,6 +165,8 @@ public class SelectClassSubjectsUseCase {
                                 enrollment.getStudent()));
             }
         }
+
+        provisionStudentAssessmentsUseCase.execute(enrollment);
     }
 
     public record ClassSubjectSelection(

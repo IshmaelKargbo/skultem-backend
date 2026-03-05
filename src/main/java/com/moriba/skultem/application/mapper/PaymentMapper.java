@@ -7,7 +7,7 @@ import com.moriba.skultem.domain.model.Payment;
 
 public class PaymentMapper {
     public static PaymentDTO toDTO(Payment param) {
-        StudentDTO student = StudentMapper.toDTO(param.getStudent());
+        StudentDTO student = StudentMapper.toDTO(param.getStudent(), null);
         FeeStructureDTO fee = FeeStructureMapper.toDTO(param.getFee());
 
         return new PaymentDTO(param.getId(), student, fee, param.getAmount(), param.getPaidAt(), param.getMethod(),

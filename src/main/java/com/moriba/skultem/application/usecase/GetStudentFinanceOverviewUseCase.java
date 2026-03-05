@@ -22,10 +22,12 @@ public class GetStudentFinanceOverviewUseCase {
 
     public StudentFinanceOverviewDTO execute(String schoolId, String studentId, int recentPaymentSize) {
         var student = getStudentUseCase.execute(studentId, schoolId);
-        Double assignedFeeTotal = countStudentFeesUseCase.execute(schoolId, studentId);
+        BigDecimal assignedFeeTotal = countStudentFeesUseCase.execute(schoolId, studentId);
         if (assignedFeeTotal == null) {
-            assignedFeeTotal = 0.0;
+            assignedFeeTotal = BigDecimal.ZERO;
         }
+
+        System.out.println(assignedFeeTotal.doubleValue());
 
         List<OutstandingBalanceDTO> fees = financeReportUseCase.outstandingForStudent(schoolId, studentId);
         List<PaymentDTO> recentPayments = financeReportUseCase.paymentHistory(

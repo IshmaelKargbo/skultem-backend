@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ public interface StudentFeeJpaRepository extends JpaRepository<StudentFeeEntity,
         WHERE f.student.id = :studentId
         AND f.schoolId = :schoolId
     """)
-    Double sumTotalFeeByStudent(String studentId, String schoolId);
+    BigDecimal sumTotalFeeByStudent(String studentId, String schoolId);
 
     Page<StudentFeeEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 

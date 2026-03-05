@@ -4,11 +4,13 @@ X-User-Id: USR-2026-0001
 X-School-Id: SCL-2026-0001
 
 {
-  "academicNumber": "KVH-4563-276",
-  "givenNames": "Rahom Bai",
-  "familyName": "Kargbo",
-  "gender": "MALE",
-  "dateOfBirth": "2010-10-21"
+  "academicNumber": "KVH-7863-276",
+  "givenNames": "Hannah",
+  "familyName": "Bangura",
+  "gender": "FEMALE",
+  "dateOfBirth": "2010-10-21",
+  "classSessionId": "CSN-2026-0001",
+  "selectedOptionIds": ["SUB-2026-0008", "SUB-2026-0009"]
 }
 
 
@@ -34,7 +36,7 @@ X-School-Id: SCL-2026-0001
 }
 
 ###
-GET http://localhost:8080/api/v1/teacher?size=0
+GET http://localhost:8080/api/v1/student?size=0
 X-User-Id: USR-2026-0001
 X-School-Id: SCL-2026-0001
 

@@ -18,6 +18,12 @@ public interface TeacherSubjectJpaRepository extends JpaRepository<TeacherSubjec
 
     Page<TeacherSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
+    Optional<TeacherSubjectEntity> findByIdAndSchoolId(String id, String schoolId);
+
+    void deleteBySession_Clazz_IdAndSubject_IdAndSchoolId(String classId, String subjectId, String schoolId);
+
+    void deleteBySession_Stream_IdAndSubject_IdAndSchoolId(String streamId, String subjectId, String schoolId);
+
     Page<TeacherSubjectEntity> findAllByTeacherId(String teacherId, Pageable pageable);
 
     Page<TeacherSubjectEntity> findAllBySubjectId(String subjectId, Pageable pageable);
@@ -25,6 +31,8 @@ public interface TeacherSubjectJpaRepository extends JpaRepository<TeacherSubjec
     Page<TeacherSubjectEntity> findAllBySessionIdAndSchoolId(String sessionId, String schoolId, Pageable pageable);
 
     List<TeacherSubjectEntity> findByTeacher_IdAndSchoolId(String teacherId, String schoolId);
+
+    Optional<TeacherSubjectEntity> findBySubject_IdAndSession_IdAndSchoolId(String subjectId, String sessionId, String schoolId);
 
     Optional<TeacherSubjectEntity> findOneByTeacher_IdAndSchoolId(String teacherId, String schoolId);
 

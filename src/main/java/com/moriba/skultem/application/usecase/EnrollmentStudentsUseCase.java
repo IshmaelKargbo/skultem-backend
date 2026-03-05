@@ -4,10 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
-import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.*;
@@ -23,10 +21,10 @@ public class EnrollmentStudentsUseCase {
         private final StudentRepository studentRepo;
         private final ClassSectionRepository sectionRepo;
         private final ClassStreamRepository streamRepo;
-        private final EnrollmentRepository enrollmentRepo;
         private final ClassRepository classRepo;
         private final AcademicYearRepository academicYearRepo;
-        private final ReferenceGeneratorUsecase rg;
+        private final EnrollmentCreationService enrollmentCreationService;
+        private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
 
         public void execute(EnrollData param) {
 
@@ -63,36 +61,20 @@ public class EnrollmentStudentsUseCase {
                                                 .orElseThrow(() -> new NotFoundException("Stream not found"));
                                 stream = res.getStream();
 
-                                if (enrollmentRepo
-                                                .existsByStudentIdAndClassIdAndSectionIdAndAcademicYearIdAndStreamIdAndSchoolId(
-                                                                student.getId(), clazz.getId(),
-                                                                section.getSection().getId(),
-                                                                academicYear.getId(),
-                                                                stream.getId(), param.schoolId)) {
-                                        throw new AlreadyExistsException(
-                                                        "Enrollment already exists for this student in this stream");
-                                }
-
                         } else {
                                 if (param.streamId != null && !param.streamId.isBlank()) {
                                         throw new RuleException("Stream is not allowed for this class");
                                 }
-
-                                if (enrollmentRepo
-                                                .existsByStudentIdAndClassIdAndSectionIdAndAcademicYearIdAndSchoolIdAndStreamIdIsNull(
-                                                                student.getId(), clazz.getId(),
-                                                                section.getSection().getId(),
-                                                                academicYear.getId(), param.schoolId)) {
-                                        throw new AlreadyExistsException("Enrollment already exists for this student");
-                                }
                         }
 
-                        var enrollmentId = rg.generate("ENROLLMENT", "ERM");
-                        var enrollment = Enrollment.create(enrollmentId, param.schoolId, student, clazz,
+                        var enrollment = enrollmentCreationService.create(
+                                        param.schoolId,
+                                        student,
+                                        clazz,
                                         section.getSection(),
-                                        academicYear, stream);
-
-                        enrollmentRepo.save(enrollment);
+                                        academicYear,
+                                        stream);
+                        provisionStudentAssessmentsUseCase.execute(enrollment);
                 }
         }
 

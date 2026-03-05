@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -12,7 +13,10 @@ public interface FeeStructureRepository {
 
     Optional<FeeStructure> findByIdAndSchoolId(String id, String schoolId);
 
-    boolean existsBySchoolAndAcademicYearAndTermAndClassAndCategory(String schoolId, String academicYearId, String termId, String classId, String categorId);
+    List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId);
+
+    boolean existsBySchoolAndAcademicYearAndTermAndClassAndCategory(String schoolId, String academicYearId,
+            String termId, String classId, String categorId);
 
     Page<FeeStructure> findBySchoolAndClass(String schoolId, String classId, Pageable pageable);
 
@@ -20,5 +24,6 @@ public interface FeeStructureRepository {
 
     Page<FeeStructure> findBySchoolAndAcademic(String schoolId, String academicYearId, Pageable pageable);
 
-    Page<FeeStructure> findBySchoolAndAcademicAndClass(String schoolId, String academicYearId, String classId, Pageable pageable);
+    Page<FeeStructure> findBySchoolAndAcademicAndClass(String schoolId, String academicYearId, String classId,
+            Pageable pageable);
 }

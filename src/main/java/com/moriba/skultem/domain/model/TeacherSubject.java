@@ -31,4 +31,9 @@ public class TeacherSubject extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new TeacherSubject(id, school, session, teacher, subject, now, now, now);
     }
+
+    public void changeTeacher(Teacher teacher) {
+        this.teacher = teacher;
+        touch(Instant.now());
+    }
 }

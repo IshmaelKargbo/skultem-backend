@@ -39,7 +39,7 @@ public class UserController {
             @Valid @RequestBody CreateUserDTO param) {
         var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(),
                 param.password(), param.role());
-        return new ApiResponse<UserDTO>("success", 200, "User created successfully", res);
+        return new ApiResponse<>("success", 200, "User created successfully", res);
     }
 
     @GetMapping
@@ -57,7 +57,7 @@ public class UserController {
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
 
-        return new ApiResponse<List<UserDTO>>("success", 200, "Users fetched successfully", list, meta);
+        return new ApiResponse<>("success", 200, "Users fetched successfully", list, meta);
     }
 
     @GetMapping("/{id}")
@@ -66,6 +66,6 @@ public class UserController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
         var res = getUserUseCase.execute(id);
-        return new ApiResponse<UserDTO>("success", 200, "User fetched successfully", res);
+        return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }
 }

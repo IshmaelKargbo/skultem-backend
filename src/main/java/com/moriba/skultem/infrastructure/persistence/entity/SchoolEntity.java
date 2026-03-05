@@ -42,6 +42,10 @@ public class SchoolEntity {
     @Column(columnDefinition = "jsonb")
     private String owner;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String gradingScale;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;

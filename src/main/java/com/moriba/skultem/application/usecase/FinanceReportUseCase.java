@@ -18,6 +18,7 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.PaymentMapper;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
@@ -34,6 +35,7 @@ public class FinanceReportUseCase {
         private final PaymentRepository paymentRepo;
         private final FeeStructureRepository feeRepo;
         private final FeeDiscountRepository discountRepo;
+        private final EnrollmentRepository enrollmentRepo;
         private final StudentRepository studentRepo;
         private final AcademicYearRepository academicYearRepo;
 
@@ -50,9 +52,12 @@ public class FinanceReportUseCase {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
+                var enrollment = enrollmentRepo
+                                .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
+                                .orElseThrow(() -> new RuleException("Active academic year not found"));
+
                 var fees = feeRepo
-                                .findBySchoolAndAcademic(schoolId, academicYear.getId(), Pageable.unpaged())
-                                .getContent();
+                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId());
 
                 LocalDate today = LocalDate.now();
 
@@ -92,9 +97,12 @@ public class FinanceReportUseCase {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
+                var enrollment = enrollmentRepo
+                                .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
+                                .orElseThrow(() -> new RuleException("Active academic year not found"));
+
                 var fees = feeRepo
-                                .findBySchoolAndAcademic(schoolId, academicYear.getId(), Pageable.unpaged())
-                                .getContent();
+                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId());
 
                 LocalDate today = LocalDate.now();
 

@@ -11,6 +11,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TermMapper;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.Term;
+import com.moriba.skultem.domain.model.Term.Status;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 
@@ -24,10 +25,10 @@ public class CreateTermUseCase {
     private final TermRepository repo;
     private final ReferenceGeneratorUsecase rg;
 
-    public TermDTO execute(String schoolId, String academicYearId, String name, LocalDate startDate,
+    public TermDTO execute(String schoolId, String name, LocalDate startDate,
             LocalDate endDate) {
 
-        AcademicYear year = academicYearRepo.findByIdAndSchoolId(academicYearId, schoolId)
+        AcademicYear year = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Academic year not found"));
 
         if (startDate.isBefore(year.getStartDate())) {
@@ -40,7 +41,7 @@ public class CreateTermUseCase {
             throw new IllegalArgumentException("Term start date must be before term end date");
         }
 
-        var existingTerms = repo.findByAcademicYearIdAndSchool(academicYearId, schoolId);
+        var existingTerms = repo.findByAcademicYearIdAndSchool(year.getId(), schoolId);
 
         if (existingTerms.size() >= 3) {
             throw new AlreadyExistsException("Cannot create more than 3 terms for this academic year");
@@ -64,8 +65,12 @@ public class CreateTermUseCase {
         });
 
         var id = rg.generate("TERM", "TRM");
-        var term = Term.create(id, schoolId, year, name, termNumber, Term.Status.UPCOMING, startDate,
-                endDate);
+        Status status = Status.UPCOMING;
+
+        if (existingTerms.isEmpty()) status = Status.ACTIVE;
+
+        var term = Term.create(id, schoolId, year, name, termNumber,
+                status, startDate, endDate);
         repo.save(term);
 
         return TermMapper.toDTO(term);

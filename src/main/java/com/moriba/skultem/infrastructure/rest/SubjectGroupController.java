@@ -28,74 +28,74 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/subject-group")
 @RequiredArgsConstructor
 public class SubjectGroupController {
-    private final CreateSubjectGroupUseCase createSubjectGroupUseCase;
-    private final ListSubjectGroupBySchoolUseCase listSubjectGroupBySchoolUseCase;
-    private final ListSubjectGroupByClassUseCase listSubjectGroupByClassUseCase;
-    private final ListSubjectGroupByStreamUseCase listSubjectGroupByStreamUseCase;
+        private final CreateSubjectGroupUseCase createSubjectGroupUseCase;
+        private final ListSubjectGroupBySchoolUseCase listSubjectGroupBySchoolUseCase;
+        private final ListSubjectGroupByClassUseCase listSubjectGroupByClassUseCase;
+        private final ListSubjectGroupByStreamUseCase listSubjectGroupByStreamUseCase;
 
-    @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
-    public ApiResponse<SubjectGroupDTO> create(
-        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-        @Valid @RequestBody CreateSubjectGroupDTO param) {
-        var res = createSubjectGroupUseCase.execute(school, param.name(), param.level(), param.classId(),
-                param.streamId(), param.required(), param.minSelection(), param.maxSelection(), param.displayOrder());
-        return new ApiResponse<>("success", 200, "Subject group created successfully", res);
-    }
+        @PostMapping
+        @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+        public ApiResponse<SubjectGroupDTO> create(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @Valid @RequestBody CreateSubjectGroupDTO param) {
+                var res = createSubjectGroupUseCase.execute(school, param.name(), param.classId(),
+                                param.streamId(), param.totalSelection());
+                return new ApiResponse<>("success", 200, "Subject group created successfully", res);
+        }
 
-    @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
-    public ApiResponse<List<SubjectGroupDTO>> list(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listSubjectGroupBySchoolUseCase.execute(school, page - 1, size);
-        var list = res.getContent();
-        Map<String, Object> meta = Map.of(
-                "page", res.getNumber() + 1,
-                "size", res.getSize(),
-                "count", res.getTotalElements(),
-                "pages", res.getTotalPages());
+        @GetMapping
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        public ApiResponse<List<SubjectGroupDTO>> list(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                var res = listSubjectGroupBySchoolUseCase.execute(school, page - 1, size);
+                var list = res.getContent();
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
 
-        return new ApiResponse<>("success", 200, "Subject groups fetched successfully", list,
-                meta);
-    }
-    
-    @GetMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
-    public ApiResponse<List<SubjectGroupDTO>> listByClass(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable(required = true) String classId,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listSubjectGroupByClassUseCase.execute(school, classId, page - 1, size);
-        var list = res.getContent();
-        Map<String, Object> meta = Map.of(
-                "page", res.getNumber() + 1,
-                "size", res.getSize(),
-                "count", res.getTotalElements(),
-                "pages", res.getTotalPages());
+                return new ApiResponse<>("success", 200, "Subject groups fetched successfully", list,
+                                meta);
+        }
 
-        return new ApiResponse<>("success", 200, "Subject groups by class fetched successfully", list,
-                meta);
-    }
+        @GetMapping("/class/{classId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        public ApiResponse<List<SubjectGroupDTO>> listByClass(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable(required = true) String classId,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                var res = listSubjectGroupByClassUseCase.execute(school, classId, page - 1, size);
+                var list = res.getContent();
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
 
-    @GetMapping("/stream/{streamId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
-    public ApiResponse<List<SubjectGroupDTO>> listByStream(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable(required = true) String streamId,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listSubjectGroupByStreamUseCase.execute(school, streamId, page - 1, size);
-        var list = res.getContent();
-        Map<String, Object> meta = Map.of(
-                "page", res.getNumber() + 1,
-                "size", res.getSize(),
-                "count", res.getTotalElements(),
-                "pages", res.getTotalPages());
+                return new ApiResponse<>("success", 200, "Subject groups by class fetched successfully", list,
+                                meta);
+        }
 
-        return new ApiResponse<>("success", 200, "Subject groups by stream fetched successfully", list,
-                meta);
-    }
+        @GetMapping("/stream/{streamId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        public ApiResponse<List<SubjectGroupDTO>> listByStream(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable(required = true) String streamId,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                var res = listSubjectGroupByStreamUseCase.execute(school, streamId, page - 1, size);
+                var list = res.getContent();
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+
+                return new ApiResponse<>("success", 200, "Subject groups by stream fetched successfully", list,
+                                meta);
+        }
 }

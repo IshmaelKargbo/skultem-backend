@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.moriba.skultem.application.usecase.AssignStreamSubjectsUseCase;
+import com.moriba.skultem.application.usecase.AssignSubjectsToStreamUseCase;
 import com.moriba.skultem.application.usecase.AssignSubjectsToClassUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignSubjectsDTO;
@@ -20,11 +20,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/assignment")
+@RequestMapping({"/api/v1/assignment", "/api/v1/subject-assignment"})
 @RequiredArgsConstructor
 public class SubjectAssignmentController {
     private final AssignSubjectsToClassUseCase assignSubjectsToClassUseCase;
-    private final AssignStreamSubjectsUseCase assignStreamSubjectsUseCase;
+    private final AssignSubjectsToStreamUseCase assignStreamSubjectsUseCase;
 
     @PostMapping("/class/{classId}")
     @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
@@ -57,8 +57,8 @@ public class SubjectAssignmentController {
                 dto.mandatory());
     }
 
-    private AssignStreamSubjectsUseCase.SubjectAssignment toStreamAssignment(SubjectAssignmentDTO dto) {
-        return new AssignStreamSubjectsUseCase.SubjectAssignment(dto.subjectId(), dto.groupId(),
+    private AssignSubjectsToStreamUseCase.SubjectAssignment toStreamAssignment(SubjectAssignmentDTO dto) {
+        return new AssignSubjectsToStreamUseCase.SubjectAssignment(dto.subjectId(), dto.groupId(),
                 dto.mandatory());
     }
 }

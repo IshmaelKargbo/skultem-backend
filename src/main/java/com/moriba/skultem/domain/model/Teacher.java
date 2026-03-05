@@ -2,7 +2,8 @@ package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Address;
+import com.moriba.skultem.domain.model.vo.Gender;
+import com.moriba.skultem.domain.model.vo.Title;
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
 import lombok.Getter;
@@ -11,8 +12,11 @@ import lombok.Getter;
 public class Teacher extends AggregateRoot<String> {
     private String schoolId;
     private String phone;
-    private Address address;
+    private String street;
+    private String city;
     private String staffId;
+    private Gender gender;
+    private Title title;
     private User user;
     private Status status;
 
@@ -22,22 +26,25 @@ public class Teacher extends AggregateRoot<String> {
         DELETED
     }
 
-    public Teacher(String id, String schoolId, String phone, Address address, String staffId, User user,
+    public Teacher(String id, String schoolId, Title title, String phone, String street, String city, Gender gender, String staffId, User user,
             Status status, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.user = user;
         this.phone = phone;
-        this.address = address;
+        this.city = city;
+        this.street = street;
+        this.gender = gender;
         this.staffId = staffId;
+        this.title = title;
         this.status = status;
         touch(updatedAt);
     }
 
-    public static Teacher create(String id, String schoolId, String phone,
-            Address address, String staffId, User user) {
+    public static Teacher create(String id, String schoolId, Title title, String phone,
+            String street, String city, Gender gender, String staffId, User user) {
         Instant now = Instant.now();
-        return new Teacher(id, schoolId, phone, address, staffId, user, Status.ACTIVE, now,
+        return new Teacher(id, schoolId, title, phone, street, city, gender, staffId, user, Status.ACTIVE, now,
                 now);
     }
 
