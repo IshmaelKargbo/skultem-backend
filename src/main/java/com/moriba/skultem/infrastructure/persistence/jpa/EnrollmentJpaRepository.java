@@ -37,8 +37,8 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
 
         Page<EnrollmentEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
-        List<EnrollmentEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolId(String classId, String academicYearId,
-                        String schoolId);
+        Page<EnrollmentEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolId(String classId, String academicYearId,
+                        String schoolId, Pageable pageable);
 
         List<EnrollmentEntity> findAllByStream_IdAndAcademicYear_IdAndSchoolId(String streamId, String academicYearId,
                         String schoolId);

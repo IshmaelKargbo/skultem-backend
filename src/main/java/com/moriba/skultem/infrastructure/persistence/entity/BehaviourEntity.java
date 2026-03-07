@@ -2,7 +2,7 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.Behaviour;
+import com.moriba.skultem.domain.model.vo.Kind;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,7 +41,7 @@ public class BehaviourEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Behaviour.Kind kind;
+    private Kind kind;
 
     @Column(nullable = false)
     private String note;

@@ -16,7 +16,7 @@ public class BehaviourMapper {
         BehaviourCategory category = BehaviourCategoryMapper.toDomain(param.getCategory());
         Enrollment enrollment = EnrollmentMapper.toDomain(param.getEnrollment());
 
-        return new Behaviour(param.getId(), param.getSchoolId(), enrollment, param.getKind(), category, param.getCreatedAt(), param.getUpdatedAt());
+        return new Behaviour(param.getId(), param.getSchoolId(), enrollment, param.getKind(), category, param.getNote(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static BehaviourEntity toEntity(Behaviour param) {
@@ -31,7 +31,9 @@ public class BehaviourMapper {
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .category(category)
+                .kind(param.getKind())
                 .enrollment(enrollment)
+                .note(param.getNote())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

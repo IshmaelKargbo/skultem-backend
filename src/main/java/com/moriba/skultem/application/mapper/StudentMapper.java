@@ -24,7 +24,7 @@ public class StudentMapper {
             className = baseName + ")";
         }
 
-        return new StudentDTO(param.getId(), param.getAdmissionNumber(), param.getGivenNames(), param.getFamilyName(),
+        return new StudentDTO(param.getId(), enrollment.getId(), param.getAdmissionNumber(), param.getGivenNames(), param.getFamilyName(),
                 param.getGender(), param.getDateOfBirth(), classId, className, param.getStatus(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }

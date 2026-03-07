@@ -17,7 +17,7 @@ public interface EnrollmentRepository {
 
     Optional<Enrollment> findByClassAndStudentAndSchoolId(String classId, String studentId, String schoolId);
 
-    List<Enrollment> findAllByClassAndAcademicSchoolId(String classId, String academicYearId, String schoolId);
+    Page<Enrollment> findAllByClassAndAcademicSchoolId(String classId, String academicYearId, String schoolId, Pageable pageable);
 
     List<Enrollment> findAllByAcademicSchoolId(String academicYearId, String schoolId);
 

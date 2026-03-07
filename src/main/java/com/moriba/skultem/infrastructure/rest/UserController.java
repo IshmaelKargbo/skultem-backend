@@ -68,4 +68,14 @@ public class UserController {
         var res = getUserUseCase.execute(id);
         return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }
+
+    @GetMapping("/me")
+    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    public ApiResponse<UserDTO> me(
+        @AuthenticationPrincipal(expression = "userId") String userId,
+        @AuthenticationPrincipal(expression = "activeSchoolId") String school
+    ) {
+        var res = getUserUseCase.execute(userId);
+        return new ApiResponse<>("success", 200, "User fetched successfully", res);
+    }
 }

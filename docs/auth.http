@@ -1,0 +1,16 @@
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "domain": "kings-way",
+  "email": "ishmaelkargbo5@outlook.com",
+  "password": "Isho@2024"
+}
+
+###
+POST http://localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4NmViMTJlNS1mNTZmLTQyYTgtOGI4Yy1iMGI5N2EyZTFlYWYiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3Mjg5ODIxMCwiZXhwIjoxNzczNTAzMDEwfQ.p_Iqvr9pfsd62ZVhs7Z_t-G-EWwzLCYZuwjtdZVmqrA"
+}

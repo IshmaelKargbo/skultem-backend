@@ -27,8 +27,9 @@ public interface SchoolUserJpaRepository extends JpaRepository<SchoolUserEntity,
         from SchoolUserEntity su
         join fetch su.user
         where su.user.id = :userId
+        and su.schoolId = :schoolId
     """)
-    List<SchoolUserEntity> findAllByUserIdWithUser(String userId);
+    List<SchoolUserEntity> findAllByUserIdWithUser(String userId, String schoolId);
 
 
     @Query("""

@@ -2,6 +2,7 @@ package com.moriba.skultem.application.usecase;
 
 import java.time.LocalDate;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.domain.repository.AttendanceRepository;
@@ -26,7 +27,7 @@ public class DeleteClassSessionAttendanceUseCase {
         var enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(
                 classSession.getClazz().getId(),
                 classSession.getAcademicYear().getId(),
-                schoolId);
+                schoolId, Pageable.unpaged()).getContent();
 
         long deleted = 0;
         for (var enrollment : enrollments) {

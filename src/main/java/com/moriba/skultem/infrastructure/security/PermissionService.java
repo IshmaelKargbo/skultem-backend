@@ -113,13 +113,9 @@ public class PermissionService {
 
         Role role = currentRole();
 
-        if (role == Role.SCHOOL_ADMIN ||
+        return role == Role.SCHOOL_ADMIN ||
                 role == Role.ACCOUNTANT ||
-                role == Role.TEACHER) {
-            return true;
-        }
-
-        return false;
+                role == Role.TEACHER;
     }
 
     public boolean canAccessTeacher(String teacherId) {

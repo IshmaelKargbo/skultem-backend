@@ -29,11 +29,6 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     }
 
     @Override
-    public List<SchoolUser> findAllByUser(String userId) {
-        return repo.findAllByUserIdWithUser(userId).stream().map(SchoolUserMapper::toDomain).toList();
-    }
-
-    @Override
     public boolean existsBySchoolAndUser(String schoolId, String userId) {
         return repo.existsBySchoolIdAndUser_Id(schoolId, userId);
     }
@@ -46,5 +41,10 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     @Override
     public Optional<SchoolUser> findOneByUser(String userId) {
         return repo.findOneByUserIdWithUser(userId).map(SchoolUserMapper::toDomain);
+    }
+
+    @Override
+    public List<SchoolUser> findAllByUser_IdAndSchoolId(String userId, String schoolId) {
+        return repo.findAllByUserIdWithUser(userId, schoolId).stream().map(SchoolUserMapper::toDomain).toList();
     }
 }

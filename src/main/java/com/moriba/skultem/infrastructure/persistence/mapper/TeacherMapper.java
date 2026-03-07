@@ -13,7 +13,7 @@ public class TeacherMapper {
             user = UserMapper.toDomain(param.getUser());
         }
 
-        return new Teacher(param.getId(), param.getSchoolId(), param.getPhone(), param.getStreet(), param.getCity(), param.getStaffId(),
+        return new Teacher(param.getId(), param.getSchoolId(), param.getTitle(), param.getPhone(), param.getStreet(), param.getCity(), param.getGender(), param.getStaffId(),
                 user, param.getStatus(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -23,6 +23,7 @@ public class TeacherMapper {
         if (param.getUser() != null) {
             user = UserMapper.toEntity(param.getUser());
         }
+
         return TeacherEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
@@ -30,6 +31,8 @@ public class TeacherMapper {
                 .city(param.getCity())
                 .street(param.getStreet())
                 .staffId(param.getStaffId())
+                .title(param.getTitle())
+                .gender(param.getGender())
                 .phone(param.getPhone())
                 .status(param.getStatus())
                 .createdAt(param.getCreatedAt())

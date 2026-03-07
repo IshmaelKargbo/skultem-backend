@@ -51,4 +51,9 @@ public class SchoolAdapter implements SchoolRepository {
     public long countAll() {
         return repo.count();
     }
+
+    @Override
+    public Optional<School> findByDomain(String domain) {
+        return repo.findByDomainIgnoreCase(domain).map(SchoolMapper::toDomain);
+    }
 }

@@ -17,6 +17,8 @@ public interface SchoolRepository {
 
     Page<School> findAll(Pageable pageable);
 
+    Optional<School> findByDomain(String domain);
+
     void delete(School domain);
 
     long countAll();

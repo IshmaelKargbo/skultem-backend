@@ -10,7 +10,7 @@ public interface SchoolUserRepository {
 
     Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId);
 
-    List<SchoolUser> findAllByUser(String userId);
+    List<SchoolUser> findAllByUser_IdAndSchoolId(String userId, String schoolId);
 
     Optional<SchoolUser> findOneByUser(String userId);
 

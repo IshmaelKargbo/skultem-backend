@@ -8,7 +8,8 @@ public class TeacherMapper {
     public static TeacherDTO toDTO(Teacher param) {
         UserDTO user = UserMapper.toDTO(param.getUser());
 
-        return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getStaffId(),
-                user, param.getStreet(), param.getCity(), param.getStatus().toString(), param.getCreatedAt(), param.getUpdatedAt());
+        return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getGender(), param.getTitle(),
+                param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(), param.getCreatedAt(),
+                param.getUpdatedAt());
     }
 }

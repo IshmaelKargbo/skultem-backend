@@ -23,7 +23,7 @@ public class Parent extends AggregateRoot<String> {
         DELETED
     }
 
-    public Parent(String id, String schoolId, String phone, String street, String city, String fatherName, String motherName, User user,
+    public Parent(String id, String schoolId, String phone, String street, String city, String fatherName, String motherName, User user, Status status,
             Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
@@ -31,6 +31,7 @@ public class Parent extends AggregateRoot<String> {
         this.phone = phone;
         this.city = city;
         this.street = street;
+        this.status = status;
         this.fatherName = fatherName;
         this.motherName = motherName;
         touch(updatedAt);
@@ -38,7 +39,7 @@ public class Parent extends AggregateRoot<String> {
 
     public static Parent create(String id, String schoolId, String phone, String street, String city, String fatherName, String motherName, User user) {
         Instant now = Instant.now();
-        return new Parent(id, schoolId, phone, street, city, fatherName, motherName, user, now, now);
+        return new Parent(id, schoolId, phone, street, city, fatherName, motherName, user, Status.ACTIVE, now, now);
     }
 
     public void softDelete() {

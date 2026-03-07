@@ -3,6 +3,8 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 import java.time.Instant;
 
 import com.moriba.skultem.domain.model.Teacher.Status;
+import com.moriba.skultem.domain.model.vo.Gender;
+import com.moriba.skultem.domain.model.vo.Title;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +48,14 @@ public class TeacherEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Title title;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

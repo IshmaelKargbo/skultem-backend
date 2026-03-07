@@ -13,5 +13,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.BehaviourCategoryEnt
 public interface BehaviourCategoryJpaRepository extends JpaRepository<BehaviourCategoryEntity, String> {
     Page<BehaviourCategoryEntity> findAllBySchoolIdOrderByCreatedAtAsc(String schoolId, Pageable pageable);
 
+    boolean existsByNameIgnoreCaseAndSchoolId(String name, String school);
+
     Optional<BehaviourCategoryEntity> findByIdAndSchoolId(String id, String schoolId);
 }

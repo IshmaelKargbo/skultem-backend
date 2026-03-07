@@ -3,8 +3,8 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 import java.time.Instant;
 import java.time.LocalDate;
 
-import com.moriba.skultem.domain.model.Student.Gender;
 import com.moriba.skultem.domain.model.Student.Status;
+import com.moriba.skultem.domain.model.vo.Gender;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,5 +1,15 @@
 package com.moriba.skultem.domain.model.vo;
 
 public enum Title {
-    MR, MRS, MS, DR, PROF, REV, ENG
+    MR,
+    MRS,
+    MISS,
+    MS,
+    DR,
+    PROF,
+    REV,
+    HON,
+    ENG,
+    SIR,
+    MADAM
 }

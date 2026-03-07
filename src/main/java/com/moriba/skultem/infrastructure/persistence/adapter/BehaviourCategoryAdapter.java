@@ -1,6 +1,8 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -27,6 +29,16 @@ public class BehaviourCategoryAdapter implements BehaviourCategoryRepository {
     @Override
     public Page<BehaviourCategory> findAllSchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtAsc(schoolId, pageable).map(BehaviourCategoryMapper::toDomain);
+    }
+
+    @Override
+    public boolean existsByNameAndSchool(String name, String schoolId) {
+        return repo.existsByNameIgnoreCaseAndSchoolId(name, schoolId);
+    }
+
+    @Override
+    public Optional<BehaviourCategory> findByIdAndSchoolId(String id, String schoolId) {
+        return repo.findByIdAndSchoolId(id, schoolId).map(BehaviourCategoryMapper::toDomain);
     }
 
     

@@ -1,4 +1,7 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
+
   application:
     name: skultem
   threads:
@@ -15,6 +18,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        
+security:
+  jwt:
+    secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
+    access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}
+    refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}
 
 management:
   endpoints:

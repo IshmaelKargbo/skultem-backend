@@ -22,7 +22,7 @@ import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetStudentUseCase;
 import com.moriba.skultem.application.usecase.ListStudentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
-import com.moriba.skultem.domain.model.Student.Gender;
+import com.moriba.skultem.domain.model.vo.Gender;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStudentDTO;
 

@@ -106,7 +106,7 @@ public class GetClassSessionAttendanceUseCase {
         return enrollmentRepo.findAllByClassAndAcademicSchoolId(
                 classSession.getClazz().getId(),
                 classSession.getAcademicYear().getId(),
-                schoolId).stream().filter(enrollment -> {
+                schoolId, Pageable.unpaged()).stream().filter(enrollment -> {
                     boolean sectionMatch = enrollment.getSection() != null
                             && classSession.getSection() != null
                             && enrollment.getSection().getId().equals(classSession.getSection().getId());

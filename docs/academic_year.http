@@ -1,7 +1,6 @@
 POST http://localhost:8080/api/v1/academic_year
 Content-Type: application/json
-X-User-Id: USR-2026-0001
-X-School-Id: SCL-2026-0001
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6IjllY2YzNzQ4LWNlYmYtNDEzZi04Y2E1LTZiZmY0ZDE2M2Q3ZiIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzI4OTM1MTIsImV4cCI6MTc3Mjg5NDQxMn0.IbCZmyecxPN8_RtyYEuO0df_iYzJHzRzqkYNSuA1W2g
 
 {
   "name": "2027/2028",
@@ -9,11 +8,9 @@ X-School-Id: SCL-2026-0001
   "startDate": "2027-01-01"
 }
 
-
 ###
 GET http://localhost:8080/api/v1/academic_year?&size=10
-X-User-Id: USR-2026-0001
-X-School-Id: SCL-2026-0001
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6Ijg2ZWIxMmU1LWY1NmYtNDJhOC04YjhjLWIwYjk3YTJlMWVhZiIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzI4OTkzOTEsImV4cCI6MTc3MjkwMDI5MX0.XyhxRvhUS0bfCUZTCaRgcAWM3-9BxzzXJblh2w8eCgs
 
 ###
 GET http://localhost:8080/api/v1/academic_year/ACY-2026-0001

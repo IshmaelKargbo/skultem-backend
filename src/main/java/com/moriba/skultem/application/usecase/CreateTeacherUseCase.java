@@ -13,6 +13,8 @@ import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.User;
+import com.moriba.skultem.domain.model.vo.Gender;
+import com.moriba.skultem.domain.model.vo.Title;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
@@ -37,7 +39,8 @@ public class CreateTeacherUseCase {
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
 
-    public TeacherDTO execute(String schoolId, String givenNames, String familyName, String staffId, String email,
+    public TeacherDTO execute(String schoolId, Title title, String givenNames, String familyName, Gender gender,
+            String staffId, String email,
             String phone, String street, String city, String classMaster) {
         var password = generatePassword();
 
@@ -68,18 +71,20 @@ public class CreateTeacherUseCase {
         schoolUserRepo.save(schoolUser);
 
         var teacherId = rg.generate("TEACHER", "THR");
-        var teacher = Teacher.create(teacherId, schoolId, phone, street, city, staffId, user);
+        var teacher = Teacher.create(teacherId, schoolId, title, phone, street, city, gender, staffId, user);
         repo.save(teacher);
 
         if (!classMaster.isEmpty() && !classMaster.isBlank()) {
-            var clazz = classSessionRepo.findByIdAndSchoolId(classMaster, schoolId).orElseThrow(() -> new NotFoundException("class not found"));
+            var clazz = classSessionRepo.findByIdAndSchoolId(classMaster, schoolId)
+                    .orElseThrow(() -> new NotFoundException("class not found"));
             String streamId = "";
 
             if (clazz.getStream() != null) {
                 streamId = clazz.getStream().getId();
             }
 
-            assignTeacherToClassUseCase.execute(schoolId, clazz.getClazz().getId(), teacherId, clazz.getSection().getId(), streamId);
+            assignTeacherToClassUseCase.execute(schoolId, clazz.getClazz().getId(), teacherId,
+                    clazz.getSection().getId(), streamId);
         }
 
         return TeacherMapper.toDTO(teacher);

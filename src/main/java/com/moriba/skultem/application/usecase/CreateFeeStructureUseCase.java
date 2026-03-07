@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeStructureDTO;
@@ -76,7 +77,8 @@ public class CreateFeeStructureUseCase {
                         enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(
                                         clazz.getId(),
                                         academicYear.getId(),
-                                        param.schoolId());
+                                        param.schoolId(), Pageable.unpaged())
+                                        .getContent();
                 } else {
                         enrollments = enrollmentRepo.findAllByAcademicSchoolId(
                                         academicYear.getId(),
