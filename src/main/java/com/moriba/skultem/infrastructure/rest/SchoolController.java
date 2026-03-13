@@ -12,7 +12,7 @@ import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.usecase.CreateSchoolUseCase;
 import com.moriba.skultem.application.usecase.GetSchoolUseCase;
 import com.moriba.skultem.application.usecase.ListSchoolUseCase;
-import com.moriba.skultem.domain.model.vo.Address;
+import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateSchoolDTO;
 

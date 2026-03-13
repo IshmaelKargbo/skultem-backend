@@ -1,21 +1,24 @@
 package com.moriba.skultem.infrastructure.security;
 
-import java.security.Key;
 import java.util.Date;
 import java.util.List;
+
+import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.moriba.skultem.domain.model.Role;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
 
-    private final Key key;
+    private final SecretKey key;
     private final long accessExpiration;
     private final long refreshExpiration;
 
@@ -30,36 +33,35 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(String userId, String schoolId, List<Role> roles, String sessionId) {
-
         List<String> roleNames = roles.stream().map(Role::name).toList();
 
         return Jwts.builder()
-                .setSubject(userId)
+                .subject(userId)
                 .claim("sch", schoolId)
                 .claim("sid", sessionId)
                 .claim("roles", roleNames)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessExpiration))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + accessExpiration))
                 .signWith(key)
                 .compact();
     }
 
     public String generateRefreshToken(String sessionId) {
         return Jwts.builder()
-                .setSubject(sessionId)
+                .subject(sessionId)
                 .claim("type", "refresh")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
                 .signWith(key)
                 .compact();
     }
 
     public Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
+        return Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public boolean validateAccessToken(String token, String userId) {
@@ -86,8 +88,7 @@ public class JwtUtil {
         if ("refresh".equals(claims.get("type", String.class))) {
             throw new IllegalArgumentException("Cannot extract userId from refresh token");
         }
-
-        return parseClaims(token).getSubject();
+        return claims.getSubject();
     }
 
     public String extractSessionId(String token) {
@@ -95,8 +96,7 @@ public class JwtUtil {
         if ("refresh".equals(claims.get("type", String.class))) {
             return claims.getSubject();
         }
-
-        return parseClaims(token).get("sid", String.class);
+        return claims.get("sid", String.class);
     }
 
     public boolean isRefreshToken(String token) {

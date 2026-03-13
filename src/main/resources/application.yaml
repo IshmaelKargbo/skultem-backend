@@ -1,29 +1,37 @@
 spring:
   main:
     allow-bean-definition-overriding: true
-
   application:
     name: skultem
+  
   threads:
     virtual:
       enabled: true
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/skultem}
     username: ${DB_USER:moriba}
     password: ${DB_PASS:moriba@2024}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
         
 security:
   jwt:
+    # Ensure this is at least 256-bit for HS256
     secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
-    access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}
-    refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}
+    access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}        # 15 mins
+    refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}  # 7 days
 
 management:
   endpoints:

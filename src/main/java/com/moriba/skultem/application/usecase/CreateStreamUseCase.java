@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.StreamDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.mapper.StreamMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.repository.StreamRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 public class CreateStreamUseCase {
     private final StreamRepository repo;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "STREAM_CREATED")
     public StreamDTO execute(String schoolId, String name, String description) {
         if (repo.existsByNameAndSchool(name, schoolId)) {
             throw new AlreadyExistsException("stream already exist");
@@ -25,6 +29,15 @@ public class CreateStreamUseCase {
         var id = rg.generate("STREAM", "STM");
         var record = Stream.create(id, name, schoolId, description);
         repo.save(record);
+
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.CLASS,
+                "New stream created",
+                record.getName(),
+                null,
+                record.getId());
+
         return StreamMapper.toDTO(record);
     }
 }

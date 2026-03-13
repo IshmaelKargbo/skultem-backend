@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Teacher.Status;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
@@ -18,6 +19,7 @@ import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 
 import jakarta.transaction.Transactional;
@@ -38,7 +40,9 @@ public class AssignSubjectToTeacherUseCase {
     private final EnrollmentRepository enrollmentRepo;
     private final ReferenceGeneratorUsecase referenceGenerator;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "ASSIGNED_SUBJECT_TO_TEACHER")
     public void execute(String schoolId, String sessionId, List<SubjectAssignment> assignments) {
 
         var academicYear = academicYearRepo
@@ -132,6 +136,16 @@ public class AssignSubjectToTeacherUseCase {
                 repo.delete(existing);
             }
         }
+
+        String streamName = session.getStream() != null ? session.getStream().getName() : "No stream";
+        String meta = "assignedCount=" + incomingIds.size();
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.SUBJECT,
+                "Subjects assigned to teachers",
+                session.getClazz().getName() + " - " + session.getSection().getName() + " - " + streamName,
+                meta,
+                session.getId());
     }
 
     public record SubjectAssignment(String id, String teacherId, String subjectId) {

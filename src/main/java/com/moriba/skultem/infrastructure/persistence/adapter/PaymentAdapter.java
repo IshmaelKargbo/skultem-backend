@@ -1,11 +1,15 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.PaymentJpaRepository;
@@ -52,5 +56,15 @@ public class PaymentAdapter implements PaymentRepository {
     @Override
     public BigDecimal sumPaymentsByStudentThisYear(String studentId, String academicYearId) {
         return repo.sumPaymentsByStudentThisYear(studentId, academicYearId);
+    }
+
+    @Override
+    public BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end) {
+        return repo.sumPaymentsBySchoolAndDateRange(schoolId, start, end);
+    }
+
+    @Override
+    public List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId) {
+        return repo.sumRevenueByCategory(schoolId);
     }
 }

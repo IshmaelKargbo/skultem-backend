@@ -3,6 +3,8 @@ package com.moriba.skultem.infrastructure.persistence.adapter;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.UserSession;
@@ -33,6 +35,11 @@ public class UserSessionAdapter implements UserSessionRepository {
     public List<UserSession> findAllByUserAndSchoolIdAndActive(String userId, String schoolId, boolean active) {
         return repo.findAllByUser_IdAndSchoolIdAndActive(userId, schoolId, active).stream()
                 .map(UserSessionMapper::toDomain).toList();
+    }
+
+    @Override
+    public Page<UserSession> findAllBySchoolId(String schoolId, Pageable pageable) {
+        return repo.findAllBySchoolId(schoolId, pageable).map(UserSessionMapper::toDomain);
     }
 
 }

@@ -6,6 +6,7 @@ import com.moriba.skultem.application.dto.ClassDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.ClassMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
@@ -22,6 +23,7 @@ public class UpdateClassTemplateUseCase {
     private final AssessmentTemplateRepository assessmentTemplateRepository;
     private final AssessmentScoreRepository assessmentScoreRepository;
 
+    @AuditLogAnnotation(action = "CLASS_TEMPLATE_UPDATED")
     public ClassDTO execute(String schoolId, String classId, String templateId) {
         var clazz = classRepository.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));

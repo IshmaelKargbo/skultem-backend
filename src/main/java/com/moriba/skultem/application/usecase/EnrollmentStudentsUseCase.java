@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Stream;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.*;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

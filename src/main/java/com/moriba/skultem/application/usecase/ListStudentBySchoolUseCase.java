@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.StudentMapper;
+import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
@@ -32,7 +33,7 @@ public class ListStudentBySchoolUseCase {
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
         return repo.findBySchoolId(schoolId, pageable).map(e -> {
-            var enrollment = enrollmentRepo
+            Enrollment enrollment = enrollmentRepo
                     .findByStudentAndAcademicYearAndSchoolId(e.getId(), academicYear.getId(), schoolId)
                     .orElseThrow(() -> new NotFoundException("enrollment not found"));
             return StudentMapper.toDTO(e, enrollment);

@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.moriba.skultem.domain.model.School;
-import com.moriba.skultem.domain.model.vo.Address;
-import com.moriba.skultem.domain.model.vo.GradeBand;
-import com.moriba.skultem.domain.model.vo.Owner;
+import com.moriba.skultem.domain.vo.Address;
+import com.moriba.skultem.domain.vo.GradeBand;
+import com.moriba.skultem.domain.vo.Owner;
 import com.moriba.skultem.infrastructure.persistence.entity.SchoolEntity;
 
 public class SchoolMapper {

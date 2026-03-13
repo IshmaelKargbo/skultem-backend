@@ -2,9 +2,9 @@ package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Gender;
-import com.moriba.skultem.domain.model.vo.Title;
 import com.moriba.skultem.domain.shared.AggregateRoot;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Title;
 
 import lombok.Getter;
 

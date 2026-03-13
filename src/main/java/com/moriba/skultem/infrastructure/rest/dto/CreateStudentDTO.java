@@ -15,6 +15,8 @@ public record CreateStudentDTO(
 
                 @NotBlank(message = "Class is required") String classSessionId,
 
+                @NotBlank(message = "Parent is required") String parentId,
+
                 @NotBlank(message = "Academic number is required") String academicNumber,
 
                 @NotBlank(message = "Gender is required") @Pattern(regexp = "MALE|FEMALE", message = "Gender must be MALE or FEMALE") String gender,

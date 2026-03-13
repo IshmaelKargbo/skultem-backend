@@ -5,27 +5,48 @@ import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Student;
 
 public class StudentMapper {
+
     public static StudentDTO toDTO(Student param, Enrollment enrollment) {
-        String className = "N/A", classId = "";
 
-        if (enrollment != null
-                && enrollment.getClazz() != null
-                && enrollment.getSection() != null) {
+        String className = "N/A";
+        String classId = "";
+        String enrollmentId = null;
 
-            classId = enrollment.getClazz().getId();
+        if (enrollment != null) {
 
-            String baseName = enrollment.getClazz().getName()
-                    + " (" + enrollment.getSection().getName();
+            enrollmentId = enrollment.getId();
 
-            if (enrollment.getStream() != null) {
-                baseName += " - " + enrollment.getStream().getName();
+            if (enrollment.getClazz() != null && enrollment.getSection() != null) {
+
+                classId = enrollment.getClazz().getId();
+
+                String baseName = enrollment.getClazz().getName()
+                        + " (" + enrollment.getSection().getName();
+
+                if (enrollment.getStream() != null) {
+                    baseName += " - " + enrollment.getStream().getName();
+                }
+
+                className = baseName + ")";
             }
-
-            className = baseName + ")";
         }
 
-        return new StudentDTO(param.getId(), enrollment.getId(), param.getAdmissionNumber(), param.getGivenNames(), param.getFamilyName(),
-                param.getGender(), param.getDateOfBirth(), classId, className, param.getStatus(), param.getCreatedAt(),
-                param.getUpdatedAt());
+        return new StudentDTO(
+                param.getId(),
+                enrollmentId,
+                param.getAdmissionNumber(),
+                param.getGivenNames(),
+                param.getFamilyName(),
+                param.getGender(),
+                param.getDateOfBirth(),
+                classId,
+                className,
+                param.getParent().getUser().getName(),
+                param.getParent().getFatherName(),
+                param.getParent().getMotherName(),
+                param.getStatus(),
+                param.getCreatedAt(),
+                param.getUpdatedAt()
+        );
     }
 }

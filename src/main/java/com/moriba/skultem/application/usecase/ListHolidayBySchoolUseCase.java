@@ -21,7 +21,7 @@ public class ListHolidayBySchoolUseCase {
     public Page<HolidayDTO> execute(String schoolId, int page, int size) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
-            pageable = PageRequest.of(page, size);
+            pageable = PageRequest.of(page - 1, size);
         }
         return repo.findAllBySchoolId(schoolId, pageable).map(HolidayMapper::toDTO);
     }

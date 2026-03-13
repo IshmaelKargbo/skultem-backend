@@ -15,7 +15,8 @@ import com.moriba.skultem.application.usecase.GetTeacherUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectByTeacherUseCase;
-import com.moriba.skultem.domain.model.vo.Title;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Title;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateTeacherDTO;
 
@@ -30,7 +31,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySessionUseCase;
-import com.moriba.skultem.domain.model.vo.Gender;
 
 @RestController
 @RequestMapping("/api/v1/teacher")

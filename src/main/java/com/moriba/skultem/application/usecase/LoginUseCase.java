@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.LoginResponse;
 import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.AuditLog;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.UserSession;
 import com.moriba.skultem.domain.repository.SchoolRepository;
@@ -28,13 +30,15 @@ public class LoginUseCase {
 
         private static final int MAX_SESSIONS = 3;
 
-        private final UserRepository repo;
-        private final SchoolRepository schoolRepo;
-        private final SchoolUserRepository schoolUserRepo;
-        private final UserSessionRepository sessionRepo;
-        private final JwtUtil jwt;
+        private final UserRepository userRepository;
+        private final SchoolRepository schoolRepository;
+        private final SchoolUserRepository schoolUserRepository;
+        private final UserSessionRepository sessionRepository;
+        private final AuditUseCase auditUseCase;
+        private final JwtUtil jwtUtil;
         private final PasswordEncoder passwordEncoder;
 
+        @AuditLogAnnotation(action = "LOGIN_ATTEMPT")
         public LoginResponse execute(
                         String domain,
                         String email,
@@ -46,17 +50,18 @@ public class LoginUseCase {
                         String browser,
                         String userAgent) {
 
-                var school = schoolRepo.findByDomain(domain)
+                var school = schoolRepository.findByDomain(domain)
                                 .orElseThrow(() -> new NotFoundException("School not found"));
 
-                var user = repo.findByEmail(email)
+                var user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new AccessDeniedException("Invalid email or password"));
 
                 if (!passwordEncoder.matches(password, user.getPassword())) {
                         throw new AccessDeniedException("Invalid email or password");
                 }
 
-                List<SchoolUser> schoolUsers = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school.getId());
+                List<SchoolUser> schoolUsers = schoolUserRepository.findAllByUser_IdAndSchoolId(user.getId(),
+                                school.getId());
 
                 if (schoolUsers.isEmpty()) {
                         throw new AccessDeniedException("Invalid email or password");
@@ -64,21 +69,16 @@ public class LoginUseCase {
 
                 var roles = schoolUsers.stream()
                                 .map(SchoolUser::getRole)
+                                .distinct()
                                 .toList();
 
-                List<UserSession> activeSessions = sessionRepo.findAllByUserAndSchoolIdAndActive(user.getId(), school.getId(),
+                List<UserSession> activeSessions = sessionRepository.findAllByUserAndSchoolIdAndActive(
+                                user.getId(),
+                                school.getId(),
                                 true);
 
                 if (activeSessions.size() >= MAX_SESSIONS) {
-
-                        UserSession oldestSession = activeSessions.stream()
-                                        .min(Comparator.comparing(UserSession::getCreatedAt))
-                                        .orElse(null);
-
-                        if (oldestSession != null) {
-                                oldestSession.deactivate();
-                                sessionRepo.save(oldestSession);
-                        }
+                        deactivateOldestSession(activeSessions);
                 }
 
                 String sessionId = UUID.randomUUID().toString();
@@ -94,16 +94,28 @@ public class LoginUseCase {
                                 browser,
                                 userAgent);
 
-                sessionRepo.save(session);
+                sessionRepository.save(session);
 
-                String accessToken = jwt.generateAccessToken(
+                String accessToken = jwtUtil.generateAccessToken(
                                 user.getId(),
                                 school.getId(),
                                 roles,
                                 sessionId);
 
-                String refreshToken = jwt.generateRefreshToken(sessionId);
+                String refreshToken = jwtUtil.generateRefreshToken(sessionId);
+
+                auditUseCase.log("LOGIN_SUCCESS", user.getId(), school.getId(), AuditLog.Status.SUCCESS,
+                                "User logged in: " + user.getEmail());
 
                 return new LoginResponse(accessToken, refreshToken);
+        }
+
+        private void deactivateOldestSession(List<UserSession> sessions) {
+                sessions.stream()
+                                .min(Comparator.comparing(UserSession::getCreatedAt))
+                                .ifPresent(session -> {
+                                        session.deactivate();
+                                        sessionRepository.save(session);
+                                });
         }
 }

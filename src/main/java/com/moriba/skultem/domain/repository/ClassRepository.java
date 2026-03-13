@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Clazz;
-import com.moriba.skultem.domain.model.vo.Level;
+import com.moriba.skultem.domain.vo.Level;
 
 public interface ClassRepository {
     void save(Clazz domain);

@@ -1,6 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
-import com.moriba.skultem.domain.model.vo.ReferenceSequenceId;
+import com.moriba.skultem.domain.vo.ReferenceSequenceId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

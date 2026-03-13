@@ -65,7 +65,7 @@ public class HolidayController {
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-        var res = listHolidayBySchoolUseCase.execute(school, page - 1, size);
+        var res = listHolidayBySchoolUseCase.execute(school, page, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.model.Clazz.Status;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassEntity;
 
 @Repository

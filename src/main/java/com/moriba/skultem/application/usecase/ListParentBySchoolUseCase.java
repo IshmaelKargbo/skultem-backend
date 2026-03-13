@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.ParentDTO;
 import com.moriba.skultem.application.mapper.ParentMapper;
 import com.moriba.skultem.domain.repository.ParentRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -20,8 +21,9 @@ public class ListParentBySchoolUseCase {
     public Page<ParentDTO> execute(String schoolId, int page, int size) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
-            pageable = PageRequest.of(page, size);
+            pageable = PageRequest.of(page - 1, size);
         }
+
         return repo.findBySchool(schoolId, pageable).map(ParentMapper::toDTO);
     }
 }

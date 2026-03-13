@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.FeeCategoryDTO;
 import com.moriba.skultem.application.dto.FeeDiscountDTO;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
+import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.dto.StudentLedgerPagedDTO;
+import com.moriba.skultem.application.usecase.AssignFeeToStudentUseCase;
+import com.moriba.skultem.application.usecase.AssignFeeToStudentUseCase.AssignFeeToStudentRecord;
 import com.moriba.skultem.application.usecase.CountStudentByFeeUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeCategoryUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase;
@@ -20,6 +23,7 @@ import com.moriba.skultem.application.usecase.ListFeeCategoryBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentLedgerBySchoolUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.AssignFeeToStudentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeDiscountDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeStructureDTO;
@@ -62,6 +66,7 @@ public class FeeController {
         private final CreateFeeDiscountUseCase createFeeDiscountUseCase;
         private final CountStudentByFeeUseCase countStudentByFeeUseCase;
         private final StudentLedgerReportUseCase studentLedgerReportUseCase;
+        private final AssignFeeToStudentUseCase assignFeeToStudentUseCase;
 
         @PostMapping("/category")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT')")
@@ -82,6 +87,16 @@ public class FeeController {
                                 param.dueDate(), param.allowInstallment(), param.description());
                 var res = createFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
+        }
+
+        @PostMapping("/structure/assign")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT')")
+        public ApiResponse<StudentFeeDTO> assignStructureToStudent(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @Valid @RequestBody AssignFeeToStudentDTO param) {
+                var payload = new AssignFeeToStudentRecord(school, param.studentId(), param.feeId());
+                var res = assignFeeToStudentUseCase.execute(payload);
+                return new ApiResponse<>("success", 200, "Fee assigned to student successfully", res);
         }
 
         @GetMapping("/structure")

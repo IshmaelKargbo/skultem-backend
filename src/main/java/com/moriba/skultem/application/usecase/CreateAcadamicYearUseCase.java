@@ -10,6 +10,8 @@ import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.mapper.AcademicYearMapper;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -18,6 +20,7 @@ public class CreateAcadamicYearUseCase {
 
     private final AcademicYearRepository repo;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
     public AcademicYearDTO execute(String school, String name, LocalDate startDate, LocalDate endDate) {
         if (repo.existsByNameAndSchool(name, school)) {
@@ -33,6 +36,14 @@ public class CreateAcadamicYearUseCase {
         }
 
         repo.save(academicYear);
+
+        logActivityUseCase.log(
+                school,
+                ActivityType.SCHOOL,
+                "Academic year created",
+                academicYear.getName() + " (" + academicYear.getStartDate() + " - " + academicYear.getEndDate() + ")",
+                null,
+                academicYear.getId());
 
         return AcademicYearMapper.toDTO(academicYear);
     }

@@ -11,12 +11,14 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.repository.*;
+import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -36,7 +38,9 @@ public class CreateFeeStructureUseCase {
         private final StudentFeeRepository studentFeeRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final ReferenceGeneratorUsecase rg;
+        private final LogActivityUseCase logActivityUseCase;
 
+        @AuditLogAnnotation(action = "FEE_STRUCTURE_CREATED")
         public FeeStructureDTO execute(StructureRecord param) {
                 var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
@@ -85,6 +89,9 @@ public class CreateFeeStructureUseCase {
                                         param.schoolId());
                 }
 
+                int assignedCount = 0;
+                BigDecimal totalAssignedAmount = BigDecimal.ZERO;
+
                 for (Enrollment enrollment : enrollments) {
                         if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(param.schoolId(),
                                         enrollment.getId(), enrollment.getStudent().getId(), id)) {
@@ -121,7 +128,22 @@ public class CreateFeeStructureUseCase {
                                         fee.getId(),
                                         description,
                                         Instant.now());
+
+                        assignedCount += 1;
+                        totalAssignedAmount = totalAssignedAmount.add(param.amount());
                 }
+
+                String className = clazz != null ? clazz.getName() : "All classes";
+                String meta = "assignedCount=" + assignedCount
+                                + ";targetCount=" + enrollments.size()
+                                + ";totalAmount=" + totalAssignedAmount;
+                logActivityUseCase.log(
+                                param.schoolId(),
+                                ActivityType.FEES,
+                                "Fee structure created",
+                                category.getName() + " - " + term.getName() + " - " + className,
+                                meta,
+                                fee.getId());
 
                 return FeeStructureMapper.toDTO(fee);
         }

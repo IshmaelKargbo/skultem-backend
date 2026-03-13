@@ -9,6 +9,7 @@ import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.PaymentMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.model.Payment.PaymentMethod;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -17,7 +18,9 @@ import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
+import com.moriba.skultem.utils.MoneyUtil;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +35,9 @@ public class RecordPaymentUseCase {
         private final StudentRepository studentRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final ReferenceGeneratorUsecase rg;
+        private final LogActivityUseCase logActivityUseCase;
 
+        @AuditLogAnnotation(action = "PAYMENT_RECORED")
         public PaymentDTO execute(PaymentRecord param) {
                 var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("no academic year found"));
@@ -42,7 +47,7 @@ public class RecordPaymentUseCase {
                                 .orElseThrow(() -> new RuleException("fee not found"));
 
                 var paidSoFar = paymentRepo.sumPaymentsByStudentAndFee(param.studentId(), param.feeId());
-                var outstanding = fee.getAmount().subtract(paidSoFar);
+                BigDecimal outstanding = fee.getAmount().subtract(paidSoFar);
 
                 if (param.amount.compareTo(outstanding) > 0) {
                         throw new RuleException("payment cannot exceed outstanding balance");
@@ -53,14 +58,22 @@ public class RecordPaymentUseCase {
                                 param.referenceNo(), param.note(), Instant.now());
                 paymentRepo.save(payment);
 
-                var description = Generate.generateLedgerDescription(TransactionType.PAYMENT,
+                String description = Generate.generateLedgerDescription(TransactionType.PAYMENT,
                                 fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),
                                 student.getFamilyName(), student.getAdmissionNumber(), param.amount());
 
-               
                 createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
                                 student.getId(), fee.getTerm().getId(), TransactionType.PAYMENT,
                                 Direction.CREDIT, param.amount, id, description, Instant.now());
+
+                var currency = MoneyUtil.format(param.amount);
+                logActivityUseCase.log(
+                                param.schoolId(),
+                                ActivityType.FEES,
+                                fee.getTerm().getName() + " fees collected",
+                                currency + " from " + student.getGivenNames() + " " + student.getFamilyName(),
+                                null,
+                                id);
 
                 return PaymentMapper.toDTO(payment);
         }

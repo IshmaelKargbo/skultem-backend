@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.moriba.skultem.domain.model.vo.KindCount;
+import com.moriba.skultem.domain.vo.KindCount;
 import com.moriba.skultem.infrastructure.persistence.entity.BehaviourEntity;
 
 @Repository

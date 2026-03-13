@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -62,5 +63,10 @@ public class AttendanceAdapter implements AttendanceRepository {
     public Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String academicYear,
             String schoolId, Pageable pageable) {
                 return repo.fetchDailyClassAttendanceSummary(schoolId, classId, academicYear, null, null, pageable);
+    }
+
+    @Override
+    public List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end) {
+        return repo.weeklyAttendance(schoolId, start, end);
     }
 }

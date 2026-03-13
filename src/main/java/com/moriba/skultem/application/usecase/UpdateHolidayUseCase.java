@@ -8,6 +8,7 @@ import com.moriba.skultem.application.dto.HolidayDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.HolidayMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Holiday.Kind;
 import com.moriba.skultem.domain.repository.HolidayRepository;
 
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class UpdateHolidayUseCase {
     private final HolidayRepository repo;
 
+    @AuditLogAnnotation(action = "HOLIDAY_UPDATED")
     public HolidayDTO execute(String schoolId, String id, String name, LocalDate date, Kind kind, boolean fixed) {
         var holiday = repo.findByIdAndSchool(id, schoolId)
                 .orElseThrow(() -> new NotFoundException("Holiday not found"));

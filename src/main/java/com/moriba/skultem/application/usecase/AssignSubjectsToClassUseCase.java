@@ -12,11 +12,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
@@ -26,6 +26,8 @@ import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +47,9 @@ public class AssignSubjectsToClassUseCase {
     private final TeacherSubjectRepository teacherSubjectRepository;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "ASSIGNED_SUBJECT_TO_CLASS")
     public void execute(String schoolId, String classId, List<SubjectAssignment> assignments) {
 
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
@@ -180,6 +184,15 @@ public class AssignSubjectsToClassUseCase {
 
         // Sync enrolled students for remaining and new subjects
         syncAssessmentsForEnrolledStudents(schoolId, classId, assignments, incomingSubjects, removedSubjectIds);
+
+        String meta = "assignedCount=" + incomingSubjects.size() + ";removedCount=" + removedSubjectIds.size();
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.SUBJECT,
+                "Subjects assigned to class",
+                clazz.getName(),
+                meta,
+                clazz.getId());
     }
 
     private void syncAssessmentsForEnrolledStudents(

@@ -10,6 +10,7 @@ import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.TeacherJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.TeacherMapper;
+
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -57,5 +58,10 @@ public class TeacherAdapter implements TeacherRepository {
     @Override
     public Optional<Teacher> findByIdAndSchoolId(String id, String school) {
         return repo.findByIdAndSchoolId(id, school).map(TeacherMapper::toDomain);
+    }
+
+    @Override
+    public long countAllBySchool(String schoolId) {
+        return repo.countBySchoolId(schoolId);
     }
 }

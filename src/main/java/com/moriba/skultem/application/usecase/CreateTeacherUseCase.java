@@ -9,16 +9,18 @@ import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.User;
-import com.moriba.skultem.domain.model.vo.Gender;
-import com.moriba.skultem.domain.model.vo.Title;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Title;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,9 @@ public class CreateTeacherUseCase {
     private final AssignTeacherToClassUseCase assignTeacherToClassUseCase;
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "TEACHER_CREATED")
     public TeacherDTO execute(String schoolId, Title title, String givenNames, String familyName, Gender gender,
             String staffId, String email,
             String phone, String street, String city, String classMaster) {
@@ -86,6 +90,14 @@ public class CreateTeacherUseCase {
             assignTeacherToClassUseCase.execute(schoolId, clazz.getClazz().getId(), teacherId,
                     clazz.getSection().getId(), streamId);
         }
+
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.TEACHER,
+                "New teacher added",
+                user.getGivenNames() + " " + user.getFamilyName() + " - " + teacher.getStaffId(),
+                null,
+                teacher.getId());
 
         return TeacherMapper.toDTO(teacher);
     }

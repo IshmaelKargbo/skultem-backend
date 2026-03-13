@@ -12,6 +12,7 @@ import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.AssessmentMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Assessment;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
@@ -26,6 +27,7 @@ public class AssignAssessmentsToTemplateUseCase {
     private final AssessmentTemplateRepository templateRepo;
     private final AssessmentRepository assessmentRepo;
 
+    @AuditLogAnnotation(action = "ASSIGNED_ASSESSMENT_TO_TEMPLATE")
     public AssessmentTemplateDTO execute(String schoolId, String templateId, List<AssessmentInput> assignments) {
         var template = templateRepo.findByIdAndSchoolId(templateId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Assessment template not found"));

@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Behaviour;
-import com.moriba.skultem.domain.model.vo.KindCount;
 import com.moriba.skultem.domain.repository.BehaviourRepository;
+import com.moriba.skultem.domain.vo.KindCount;
 import com.moriba.skultem.infrastructure.persistence.jpa.BehaviourJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.BehaviourMapper;
 

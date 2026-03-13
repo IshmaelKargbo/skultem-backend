@@ -10,8 +10,8 @@ import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Section;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
+import com.moriba.skultem.domain.vo.Level;
 
 import lombok.RequiredArgsConstructor;
 

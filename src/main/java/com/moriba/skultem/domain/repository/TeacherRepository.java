@@ -23,4 +23,6 @@ public interface TeacherRepository {
     Page<Teacher> findBySchool(String schoolId, Pageable pageable);
 
     long countAll();
+
+    long countAllBySchool(String schoolid);
 }

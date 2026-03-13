@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.FeeDiscount;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -18,6 +19,7 @@ import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -35,7 +37,9 @@ public class CreateFeeDiscountUseCase {
         private final FeeDiscountRepository repo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final ReferenceGeneratorUsecase rg;
+        private final LogActivityUseCase logActivityUseCase;
 
+        @AuditLogAnnotation(action = "FEE_DISCOUNT_CREATED")
         public void execute(DiscountRecord param) {
 
                 var student = studentRepo.findByIdAndSchoolId(param.studentId(), param.schoolId())
@@ -78,6 +82,14 @@ public class CreateFeeDiscountUseCase {
                                 param.value(), student, param.expiryDate(), enrollment, fee, param.reason);
 
                 repo.save(feeDiscount);
+
+                logActivityUseCase.log(
+                                param.schoolId(),
+                                ActivityType.FEES,
+                                "Fee discount created",
+                                student.getGivenNames() + " " + student.getFamilyName() + " - " + fee.getCategory().getName(),
+                                null,
+                                feeDiscount.getId());
 
                 var description = Generate.generateLedgerDescription(TransactionType.DISCOUNT,
                                 fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),

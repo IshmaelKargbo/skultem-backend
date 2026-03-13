@@ -18,11 +18,11 @@ import com.moriba.skultem.application.mapper.SubjectMapper;
 import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.StreamSubject;
 import com.moriba.skultem.domain.model.SubjectGroup;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassStreamRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

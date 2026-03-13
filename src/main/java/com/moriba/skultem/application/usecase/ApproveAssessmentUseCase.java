@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.AssessmentApprovalRequestRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository;
 
@@ -18,6 +19,7 @@ public class ApproveAssessmentUseCase {
     private final AssessmentApprovalRequestRepository approvalRepo;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
 
+    @AuditLogAnnotation(action = "ASSESSMENT_APPROVED")
     public void execute(String schoolId, String approvalRequestId, String note) {
 
         var approvalRequest = approvalRepo

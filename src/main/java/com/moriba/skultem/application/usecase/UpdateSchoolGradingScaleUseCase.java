@@ -8,8 +8,9 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.GradeBandDTO;
 import com.moriba.skultem.application.dto.GradingScaleDTO;
 import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.domain.model.vo.GradeBand;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.SchoolRepository;
+import com.moriba.skultem.domain.vo.GradeBand;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class UpdateSchoolGradingScaleUseCase {
 
     private final SchoolRepository schoolRepository;
 
+    @AuditLogAnnotation(action = "GRADE_SCALE_UPDATED")
     public GradingScaleDTO execute(String schoolId, List<GradeBandDTO> bands) {
         var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));

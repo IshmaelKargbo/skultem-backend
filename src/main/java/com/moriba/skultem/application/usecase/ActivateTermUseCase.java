@@ -7,6 +7,7 @@ import com.moriba.skultem.application.dto.TermDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.TermMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository;
@@ -23,6 +24,7 @@ public class ActivateTermUseCase {
     private final TermRepository termRepository;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepository;
 
+    @AuditLogAnnotation(action = "TERM_ACTIVATED")
     public TermDTO execute(String schoolId, String termId) {
         var target = termRepository.findByIdAndSchoolId(termId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Term not found"));

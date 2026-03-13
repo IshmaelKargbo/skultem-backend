@@ -18,11 +18,11 @@ import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.dto.StudentFinanceOverviewDTO;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase.CreateStudent;
+import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetStudentUseCase;
 import com.moriba.skultem.application.usecase.ListStudentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
-import com.moriba.skultem.domain.model.vo.Gender;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStudentDTO;
 
@@ -45,7 +45,7 @@ public class StudentController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateStudentDTO param) {
         var args = new CreateStudent(param.classSessionId(), school, param.givenNames(), param.familyName(), param.academicNumber(),
-                Gender.valueOf(param.gender()), param.dateOfBirth());
+                Gender.valueOf(param.gender()), param.parentId(), param.dateOfBirth());
         var res = createStudentUseCase.execute(args, param.selectedOptionIds());
         return new ApiResponse<>("success", 200, "Student created successfully", res);
     }

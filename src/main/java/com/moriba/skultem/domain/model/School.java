@@ -6,10 +6,10 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.moriba.skultem.application.error.RuleException;
-import com.moriba.skultem.domain.model.vo.Address;
-import com.moriba.skultem.domain.model.vo.GradeBand;
-import com.moriba.skultem.domain.model.vo.Owner;
 import com.moriba.skultem.domain.shared.AggregateRoot;
+import com.moriba.skultem.domain.vo.Address;
+import com.moriba.skultem.domain.vo.GradeBand;
+import com.moriba.skultem.domain.vo.Owner;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

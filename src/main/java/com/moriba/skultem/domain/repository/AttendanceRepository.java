@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -20,9 +21,12 @@ public interface AttendanceRepository {
 
     boolean existsByEnrollmentAndDateAndSchoolId(String enrollmentId, LocalDate date, String schoolId);
 
-    Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String academicYear, String schoolId, Pageable pageable);
+    Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String academicYear, String schoolId,
+            Pageable pageable);
 
     Page<Attendance> findBySchoolId(String schoolId, Pageable pageable);
 
     Page<Attendance> findByEnrollmentAndSchoolId(String enrollmentId, String schoolId, Pageable pageable);
+
+    List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end);
 }

@@ -20,4 +20,6 @@ public interface TeacherJpaRepository extends JpaRepository<TeacherEntity, Strin
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 
     Page<TeacherEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+
+    long countBySchoolId(String schoolId);
 }

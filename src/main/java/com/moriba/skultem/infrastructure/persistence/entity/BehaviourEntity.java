@@ -2,7 +2,7 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Kind;
+import com.moriba.skultem.domain.vo.Kind;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

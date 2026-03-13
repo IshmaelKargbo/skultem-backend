@@ -25,8 +25,8 @@ import com.moriba.skultem.application.usecase.CreateBehaviourUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourCategoryBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ReportBehaviourByClassUseCase;
-import com.moriba.skultem.domain.model.vo.Kind;
-import com.moriba.skultem.domain.model.vo.KindCount;
+import com.moriba.skultem.domain.vo.Kind;
+import com.moriba.skultem.domain.vo.KindCount;
 import com.moriba.skultem.infrastructure.rest.dto.CreateBehaviourCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateBehaviourDTO;
 

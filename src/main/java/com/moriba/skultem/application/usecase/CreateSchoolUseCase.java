@@ -10,11 +10,12 @@ import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.User;
-import com.moriba.skultem.domain.model.vo.Address;
-import com.moriba.skultem.domain.model.vo.Owner;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Address;
+import com.moriba.skultem.domain.vo.Owner;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -30,6 +31,7 @@ public class CreateSchoolUseCase {
     private final SchoolUserRepository schoolUserRepo;
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
+    private final LogActivityUseCase logActivityUseCase;
 
     public SchoolDTO execute(String name, String domain, Address address, OwnerDTO ownerDto) {
         var cleanDomain = Generate.generateSubdomain(domain);
@@ -42,6 +44,14 @@ public class CreateSchoolUseCase {
         var owner = new Owner(ownerDto.givenNames(), ownerDto.familyName(), ownerDto.email(), ownerDto.phone());
         var school = School.create(id, name, cleanDomain, address, owner);
         repo.save(school);
+
+        logActivityUseCase.log(
+                school.getId(),
+                ActivityType.SCHOOL,
+                "School created",
+                school.getName(),
+                null,
+                school.getId());
 
         User user;
         if (userRepo.existsByEmail(ownerDto.email())) {

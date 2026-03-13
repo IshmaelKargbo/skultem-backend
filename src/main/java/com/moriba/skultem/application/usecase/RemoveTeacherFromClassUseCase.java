@@ -4,9 +4,11 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +21,7 @@ public class RemoveTeacherFromClassUseCase {
     private final ClassSessionRepository sessionRepo;
     private final AcademicYearRepository academicYearRepo;
 
+    @AuditLogAnnotation(action = "TEACHER_REMOVED")
     public void execute(String id, String schoolId) {
 
         var record = repo.findByIdAndSchoolId(id, schoolId)

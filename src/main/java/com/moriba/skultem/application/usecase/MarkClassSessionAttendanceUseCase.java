@@ -14,6 +14,7 @@ import com.moriba.skultem.application.dto.AttendanceDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.AttendanceMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Attendance;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Enrollment;
@@ -37,14 +38,15 @@ public class MarkClassSessionAttendanceUseCase {
     private final EnrollmentRepository enrollmentRepo;
     private final ReferenceGeneratorUsecase rg;
 
+    @AuditLogAnnotation(action = "CLASS_ATTENDANCE_MARKED")
     public List<AttendanceDTO> execute(
             String schoolId,
             String classSessionId,
             LocalDate date,
             boolean holiday,
             List<MarkRecord> records) {
-       var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new NotFoundException("No active academic year found"));
+        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                .orElseThrow(() -> new NotFoundException("No active academic year found"));
 
         var classSession = classSessionRepo.findByIdAndSchoolId(classSessionId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class session not found"));

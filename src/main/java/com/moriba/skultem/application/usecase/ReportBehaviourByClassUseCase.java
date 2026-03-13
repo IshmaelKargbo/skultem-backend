@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.domain.model.vo.KindCount;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.BehaviourRepository;
+import com.moriba.skultem.domain.vo.KindCount;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

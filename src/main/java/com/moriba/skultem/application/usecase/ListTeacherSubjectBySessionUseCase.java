@@ -10,11 +10,11 @@ import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherSubjectMapper;
 import com.moriba.skultem.domain.model.TeacherSubject;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

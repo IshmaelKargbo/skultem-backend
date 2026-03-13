@@ -9,11 +9,13 @@ import com.moriba.skultem.application.dto.TermDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TermMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.Term.Status;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +26,9 @@ public class CreateTermUseCase {
     private final AcademicYearRepository academicYearRepo;
     private final TermRepository repo;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action="TERM_CREATED")
     public TermDTO execute(String schoolId, String name, LocalDate startDate,
             LocalDate endDate) {
 
@@ -72,6 +76,14 @@ public class CreateTermUseCase {
         var term = Term.create(id, schoolId, year, name, termNumber,
                 status, startDate, endDate);
         repo.save(term);
+
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.SCHOOL,
+                "Term created",
+                term.getName() + " (" + term.getTermNumber() + ")",
+                null,
+                term.getId());
 
         return TermMapper.toDTO(term);
     }

@@ -4,13 +4,16 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 import com.moriba.skultem.domain.model.Student.Status;
-import com.moriba.skultem.domain.model.vo.Gender;
+import com.moriba.skultem.domain.vo.Gender;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,6 +40,10 @@ public class StudentEntity {
 
     @Column(nullable = false)
     private String familyName;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", nullable = false)
+    private ParentEntity parent;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.dto;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 public record AttendanceHistoryDTO(
@@ -7,5 +8,8 @@ public record AttendanceHistoryDTO(
                 String classId,
                 String className,
                 Long presentCount,
-                Long totalCount) {
+                Long totalCount,
+                Instant createdAt,
+                Instant updatedAt
+                ) {
 }

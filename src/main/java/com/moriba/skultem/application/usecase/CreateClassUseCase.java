@@ -8,9 +8,11 @@ import com.moriba.skultem.application.dto.ClassDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.ClassMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.*;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.*;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,9 @@ public class CreateClassUseCase {
     private final SectionRepository sectionRepo;
     private final AssessmentTemplateRepository assessmentTemplateRepo;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "CLASS_CREATED")
     public ClassDTO execute(
             String school,
             String name,
@@ -121,6 +125,14 @@ public class CreateClassUseCase {
         }
 
         sessionRepo.saveAll(sessionsToSave);
+
+        logActivityUseCase.log(
+                school,
+                ActivityType.CLASS,
+                "New class created",
+                clazz.getName() + " (" + clazz.getLevel().name() + ")",
+                null,
+                clazz.getId());
 
         return ClassMapper.toDTO(clazz);
     }

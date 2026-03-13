@@ -22,6 +22,6 @@ public class StreamSubjctMapper {
         }
 
         return new StreamSubjectDTO(param.getId(), param.getSchoolId(), streamName, streamId, subjectName, subjectId,
-                groupName, groupId, param.getMandatory());
+                groupName, groupId, param.getMandatory(), param.getLocked());
     }
 }

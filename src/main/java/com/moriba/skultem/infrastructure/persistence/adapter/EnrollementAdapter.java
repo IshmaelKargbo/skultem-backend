@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
+import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.infrastructure.persistence.jpa.EnrollmentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.EnrollmentMapper;
 
@@ -118,4 +121,32 @@ public class EnrollementAdapter implements EnrollmentRepository {
                 .map(EnrollmentMapper::toDomain).toList();
     }
 
+    @Override
+    public long countByAcademicSchoolId(String academicYearId, String schoolId) {
+        return repo.countByAcademicYear_IdAndSchoolId(academicYearId, schoolId);
+    }
+
+    @Override
+    public long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date) {
+        return repo.countBySchoolIdAndAcademicYear_IdAndCreatedAtBefore(schoolId, academicYearId, date);
+    }
+
+    @Override
+    public List<Enrollment> findBySchoolIdAndAcademicYearAndCreatedAtBetween(String schoolId, String academicYearId,
+            Instant start, Instant end) {
+        return repo.findAllBySchoolIdAndAcademicYear_IdAndCreatedAtBetween(schoolId, academicYearId, start, end)
+                .stream()
+                .map(EnrollmentMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Page<Enrollment> runStudentReport(String schoolId, String academicYearId, String classId, String sectionId,
+            String streamId, Enrollment.Status status, Gender gender, String studentName, String admissionNumber,
+            LocalDate dobFrom, LocalDate dobTo, Pageable pageable) {
+        return repo
+                .runStudentReport(schoolId, academicYearId, classId, sectionId, streamId, status, gender, studentName,
+                        admissionNumber, dobFrom, dobTo, pageable)
+                .map(EnrollmentMapper::toDomain);
+    }
 }

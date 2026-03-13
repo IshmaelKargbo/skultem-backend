@@ -28,9 +28,10 @@ public class ListBehaviourBySchoolUseCase {
             pageable = PageRequest.of(page, size);
         }
 
-        if (classId != null && !classId.isEmpty())
+        if (classId == null || classId.isEmpty()) {
             return repo.findAllAcademicYearAndSchoolId(academicYear.getId(), schoolId, pageable)
                     .map(BehaviourMapper::toDTO);
+        }
 
         return repo.findAllAcademicYearAndClassIdAndSchoolId(academicYear.getId(), classId, schoolId, pageable)
                 .map(BehaviourMapper::toDTO);

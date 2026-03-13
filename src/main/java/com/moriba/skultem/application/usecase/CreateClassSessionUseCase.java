@@ -8,12 +8,12 @@ import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSection;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Stream;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSectionRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

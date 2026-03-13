@@ -2,6 +2,7 @@ package com.moriba.skultem.application.usecase;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -20,8 +21,11 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.StudentMapper;
 import com.moriba.skultem.application.mapper.SubjectMapper;
+import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.ClassSubject;
+import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
 import com.moriba.skultem.domain.model.FeeStructure;
@@ -32,16 +36,18 @@ import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
-import com.moriba.skultem.domain.model.vo.Gender;
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentSubjectRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -58,12 +64,15 @@ public class CreateStudentUseCase {
     private final SubjectRepository subjectRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
     private final FeeStructureRepository feeStructureRepo;
+    private final ParentRepository parentRepo;
     private final StudentFeeRepository studentFeeRepo;
     private final EnrollmentCreationService enrollmentCreationService;
     private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
+    @AuditLogAnnotation(action = "STUDENT_CREATED")
     public StudentDTO execute(CreateStudent param, List<String> selectedOptionIds) {
         selectedOptionIds = selectedOptionIds == null
                 ? List.of()
@@ -71,6 +80,9 @@ public class CreateStudentUseCase {
                         .filter(id -> id != null && !id.isBlank())
                         .distinct()
                         .toList();
+
+        var parent = parentRepo.findByIdAndSchoolId(param.parentId(), param.schoolId())
+                .orElseThrow(() -> new NotFoundException("Parent not found"));
 
         var session = classSessionRepo
                 .findByIdAndSchoolId(param.classId(), param.schoolId())
@@ -89,6 +101,7 @@ public class CreateStudentUseCase {
                 param.givenNames().trim(),
                 param.familyName().trim(),
                 param.gender(),
+                parent,
                 param.dateOfBirth());
         repo.save(student);
 
@@ -96,6 +109,14 @@ public class CreateStudentUseCase {
         enrolledSubjects(enrollment, selectedOptionIds);
         provisionStudentAssessmentsUseCase.execute(enrollment);
         applyFees(enrollment);
+
+        logActivityUseCase.log(
+                param.schoolId(),
+                ActivityType.STUDENT,
+                "New student enrolled",
+                student.getGivenNames() + " " + student.getFamilyName() + " - " + enrollment.getClazz().getName(),
+                null,
+                student.getId());
 
         return StudentMapper.toDTO(student, enrollment);
     }
@@ -112,12 +133,15 @@ public class CreateStudentUseCase {
     }
 
     private void applyFees(Enrollment enrollment) {
-        var student = enrollment.getStudent();
-        var academicYear = enrollment.getAcademicYear();
-        var clazz = enrollment.getClazz();
-        var schoolId = enrollment.getSchoolId();
+        Student student = enrollment.getStudent();
+        AcademicYear academicYear = enrollment.getAcademicYear();
+        Clazz clazz = enrollment.getClazz();
+        String schoolId = enrollment.getSchoolId();
 
         List<FeeStructure> fees = feeStructureRepo.findApplicableFees(schoolId, academicYear.getId(), clazz.getId());
+
+        int assignedCount = 0;
+        BigDecimal totalAssignedAmount = BigDecimal.ZERO;
 
         for (FeeStructure fee : fees) {
             if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(schoolId, enrollment.getId(),
@@ -148,6 +172,20 @@ public class CreateStudentUseCase {
                     fee.getId(),
                     description,
                     Instant.now());
+
+            assignedCount += 1;
+            totalAssignedAmount = totalAssignedAmount.add(fee.getAmount());
+        }
+
+        if (assignedCount > 0) {
+            String meta = "assignedCount=" + assignedCount + ";totalAmount=" + totalAssignedAmount;
+            logActivityUseCase.log(
+                    schoolId,
+                    ActivityType.FEES,
+                    "Fees assigned to student",
+                    student.getGivenNames() + " " + student.getFamilyName(),
+                    meta,
+                    student.getId());
         }
     }
 
@@ -287,6 +325,7 @@ public class CreateStudentUseCase {
             String familyName,
             String admissionNumber,
             Gender gender,
+            String parentId,
             LocalDate dateOfBirth) {
     }
 }

@@ -1,13 +1,17 @@
 package com.moriba.skultem.domain.repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment;
 
 public interface PaymentRepository {
+
     void save(Payment domain);
 
     Page<Payment> findByStudent(String studentId, Pageable pageable);
@@ -21,4 +25,8 @@ public interface PaymentRepository {
     BigDecimal sumPaymentsByStudentThisYear(String studentId, String academicYearId);
 
     BigDecimal sumPaymentsBySchool(String schoolId);
+
+    BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end);
+
+    List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId);
 }

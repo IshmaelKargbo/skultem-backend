@@ -2,8 +2,8 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.model.Clazz.Status;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

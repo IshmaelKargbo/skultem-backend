@@ -2,8 +2,8 @@ package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.vo.Level;
 import com.moriba.skultem.domain.shared.AggregateRoot;
+import com.moriba.skultem.domain.vo.Level;
 
 import lombok.Getter;
 

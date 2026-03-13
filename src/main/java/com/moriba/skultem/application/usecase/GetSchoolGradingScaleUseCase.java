@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.GradeBandDTO;
 import com.moriba.skultem.application.dto.GradingScaleDTO;
 import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.domain.model.vo.GradeBand;
 import com.moriba.skultem.domain.repository.SchoolRepository;
+import com.moriba.skultem.domain.vo.GradeBand;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

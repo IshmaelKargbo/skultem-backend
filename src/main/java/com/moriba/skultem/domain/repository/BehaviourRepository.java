@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Behaviour;
-import com.moriba.skultem.domain.model.vo.KindCount;
+import com.moriba.skultem.domain.vo.KindCount;
 
 public interface BehaviourRepository {
     void save(Behaviour domain);
