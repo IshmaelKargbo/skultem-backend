@@ -1,5 +1,8 @@
 package com.moriba.skultem.application.mapper;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Student;
@@ -31,6 +34,11 @@ public class StudentMapper {
             }
         }
 
+        Integer age = null;
+        if (param.getDateOfBirth() != null) {
+            age = Period.between(param.getDateOfBirth(), LocalDate.now()).getYears();
+        }
+
         return new StudentDTO(
                 param.getId(),
                 enrollmentId,
@@ -39,6 +47,7 @@ public class StudentMapper {
                 param.getFamilyName(),
                 param.getGender(),
                 param.getDateOfBirth(),
+                age,
                 classId,
                 className,
                 param.getParent().getUser().getName(),

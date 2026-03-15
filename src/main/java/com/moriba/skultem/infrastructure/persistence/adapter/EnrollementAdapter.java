@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
-import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.EnrollmentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.EnrollmentMapper;
 
@@ -141,12 +140,8 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
-    public Page<Enrollment> runStudentReport(String schoolId, String academicYearId, String classId, String sectionId,
-            String streamId, Enrollment.Status status, Gender gender, String studentName, String admissionNumber,
-            LocalDate dobFrom, LocalDate dobTo, Pageable pageable) {
-        return repo
-                .runStudentReport(schoolId, academicYearId, classId, sectionId, streamId, status, gender, studentName,
-                        admissionNumber, dobFrom, dobTo, pageable)
+    public Page<Enrollment> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
                 .map(EnrollmentMapper::toDomain);
     }
 }

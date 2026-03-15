@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.TeacherSubject;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface TeacherSubjectRepository {
 
@@ -39,9 +40,12 @@ public interface TeacherSubjectRepository {
 
         List<TeacherSubject> findByTeacherIdAndSchoolId(String teacherId, String schoolId);
 
-        Optional<TeacherSubject> findBySubjectIdAndSessionIdAndSchoolId(String subjectId, String academicYearId, String schoolId);
+        Optional<TeacherSubject> findBySubjectIdAndSessionIdAndSchoolId(String subjectId, String academicYearId,
+                        String schoolId);
 
         Page<TeacherSubject> findByClassSessionIdAndSchoolId(String sessionId, String schoolId, Pageable pageable);
 
         void delete(TeacherSubject domain);
+
+        Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.rest.dto;
 
 import java.time.Instant;
-import java.util.Map;
 
 import lombok.Getter;
 
@@ -11,10 +10,10 @@ public class ApiResponse<T> {
     private int code;
     private String message;
     private T data;
-    private Map<String, Object> meta;
+    private Object meta;
     private Instant timestamp;
 
-    public ApiResponse(String status, int code, String message, T data, Map<String, Object> meta, Instant timestamp) {
+    public ApiResponse(String status, int code, String message, T data, Object meta, Instant timestamp) {
         this.status = status;
         this.code = code;
         this.message = message;
@@ -23,7 +22,7 @@ public class ApiResponse<T> {
         this.timestamp = timestamp;
     }
 
-    public ApiResponse(String status, int code, String message, T data, Map<String, Object> meta) {
+    public ApiResponse(String status, int code, String message, T data, Object meta) {
         this(status, code, message, data, meta, Instant.now());
     }
 

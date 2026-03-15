@@ -6,13 +6,14 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.EnrollmentSubjectEntity;
 
 @Repository
 public interface EnrollmentSubjectJpaRepository
-                extends JpaRepository<EnrollmentSubjectEntity, String> {
+                extends JpaRepository<EnrollmentSubjectEntity, String>, JpaSpecificationExecutor<EnrollmentSubjectEntity> {
 
         boolean existsByEnrollment_IdAndSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 
@@ -21,7 +22,7 @@ public interface EnrollmentSubjectJpaRepository
         long countByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
 
         Page<EnrollmentSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
-        
+
         List<EnrollmentSubjectEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
 
         void deleteByEnrollment_IdAndSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);

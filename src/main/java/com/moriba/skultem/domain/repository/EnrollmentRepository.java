@@ -1,7 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,7 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Enrollment;
-import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface EnrollmentRepository {
         void save(Enrollment domain);
@@ -56,8 +55,5 @@ public interface EnrollmentRepository {
 
         long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date);
 
-        Page<Enrollment> runStudentReport(
-                        String schoolId, String academicYearId, String classId, String sectionId,
-                        String streamId, Enrollment.Status status, Gender gender, String studentName,
-                        String admissionNumber, LocalDate dobFrom, LocalDate dobTo, Pageable pageable);
+        Page<Enrollment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

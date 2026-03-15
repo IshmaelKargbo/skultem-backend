@@ -66,5 +66,4 @@ public class EnrollementSubjectAdapter implements EnrollmentSubjectRepository {
     public void deleteByEnrollmentIdAndSubjectIdAndSchoolId(String enrollmentId, String subjectId, String schoolId) {
         repo.deleteByEnrollment_IdAndSubject_IdAndSchoolId(enrollmentId, subjectId, schoolId);
     }
-
 }

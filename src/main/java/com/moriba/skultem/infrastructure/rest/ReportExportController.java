@@ -118,6 +118,8 @@ public class ReportExportController {
             @RequestParam int size,
             @RequestBody RunReportDTO param) {
         var res = reportExportService.runReport(school, param, page, size);
-        return new ApiResponse<>("success", 200, "Report generated successfully", res);
+        var data = res.get("data");
+        var meta = res.get("meta");
+        return new ApiResponse<>("success", 200, "Report generated successfully", data, meta);
     }
 }

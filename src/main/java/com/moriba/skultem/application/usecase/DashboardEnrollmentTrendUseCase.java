@@ -1,7 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

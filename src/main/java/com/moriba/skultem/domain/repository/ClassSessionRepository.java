@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.ClassSession;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface ClassSessionRepository {
         void save(ClassSession domain);
@@ -48,4 +49,6 @@ public interface ClassSessionRepository {
         long countBySchoolId(String schoolId);
 
         long countAll();
+
+        Page<ClassSession> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

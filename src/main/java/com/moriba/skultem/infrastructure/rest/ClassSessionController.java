@@ -38,7 +38,7 @@ public class ClassSessionController {
 
     @PostMapping
     @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
-    public ApiResponse<Object> create(
+    public ApiResponse<ClassSessionDTO> create(
         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
         @Valid @RequestBody CreateClassSessionDTO param) {
         createClassSessionUseCase.execute(school, param.classId(), param.academicYear(), param.streamId(), param.sectionId());

@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,9 +11,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import com.moriba.skultem.domain.model.Enrollment;
-import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.EnrollmentEntity;
+import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
 @Repository
 public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity, String>,
@@ -75,68 +74,11 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
         long countBySchoolIdAndAcademicYear_IdAndCreatedAtBefore(String schoolId, String academicYearId, Instant date);
 
         // ------------------- SPECIFICATION-BASED REPORT -------------------
-        default Page<EnrollmentEntity> runStudentReport(
-                        String schoolId,
-                        String academicYearId,
-                        String classId,
-                        String sectionId,
-                        String streamId,
-                        Enrollment.Status status,
-                        Gender gender,
-                        String studentName,
-                        String admissionNumber,
-                        LocalDate dobFrom,
-                        LocalDate dobTo,
-                        Pageable pageable) {
+        default Page<EnrollmentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+                Specification<EnrollmentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
-                Specification<EnrollmentEntity> spec = Specification
-                                .where((root, query, cb) -> cb.equal(root.get("schoolId"), schoolId));
-
-                if (academicYearId != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("academicYear").get("id"),
-                                        academicYearId));
-                }
-
-                if (classId != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("clazz").get("id"), classId));
-                }
-
-                if (sectionId != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("section").get("id"), sectionId));
-                }
-
-                if (streamId != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("stream").get("id"), streamId));
-                }
-
-                if (status != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
-                }
-
-                if (gender != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("student").get("gender"), gender));
-                }
-
-                if (studentName != null && !studentName.isBlank()) {
-                        String pattern = "%" + studentName.toLowerCase() + "%";
-                        spec = spec.and((root, query, cb) -> cb.or(
-                                        cb.like(cb.lower(root.get("student").get("familyName")), pattern),
-                                        cb.like(cb.lower(root.get("student").get("givenNames")), pattern)));
-                }
-
-                if (admissionNumber != null) {
-                        spec = spec.and((root, query, cb) -> cb.equal(root.get("student").get("admissionNumber"),
-                                        admissionNumber));
-                }
-
-                if (dobFrom != null) {
-                        spec = spec.and((root, query, cb) -> cb
-                                        .greaterThanOrEqualTo(root.get("student").get("dateOfBirth"), dobFrom));
-                }
-
-                if (dobTo != null) {
-                        spec = spec.and((root, query, cb) -> cb
-                                        .lessThanOrEqualTo(root.get("student").get("dateOfBirth"), dobTo));
+                if (filters != null && !filters.isEmpty()) {
+                        spec = spec.and(FilterSpecificationBuilder.build(filters));
                 }
 
                 return findAll(spec, pageable);

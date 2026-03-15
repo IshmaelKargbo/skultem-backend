@@ -1,6 +1,6 @@
 ###
-POST http://localhost:8080/api/v1/report/export/run?page=1&&size=200
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6IjJmMzhjYTZlLWJmYTktNDg5Ni1hZGM3LWE2ZWMzZTQ1NDYyNSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM0MDcyMTAsImV4cCI6MTc3MzQwODExMH0.-lrRYs4-je3FYkf2crls2oaiw_d3CqztPlwP0abH53c
+POST http://localhost:8080/api/v1/report/export/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImI1ODE5OGVlLWFiN2QtNGFkZi04YWI4LWUxN2MzZmQ3ZDFhOSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM1MDQ4MDgsImV4cCI6MTc3MzUwNTcwOH0.FwLfeOo3VequtKeWTJGep4C4GBKk14zf_2LydYQfpIg
 Content-Type: application/json
 
 {
@@ -9,7 +9,7 @@ Content-Type: application/json
     {
       "field": "class",
       "operator": "EQUALS",
-      "value": "CLS-2026-0001"
+      "value": "CLS-2026-0003"
     },
     {
       "field": "gender",

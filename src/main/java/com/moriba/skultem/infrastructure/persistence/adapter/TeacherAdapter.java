@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.TeacherJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.TeacherMapper;
 
@@ -63,5 +65,11 @@ public class TeacherAdapter implements TeacherRepository {
     @Override
     public long countAllBySchool(String schoolId) {
         return repo.countBySchoolId(schoolId);
+    }
+
+    @Override
+    public Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runTeacherReport(schoolId, filters, pageable)
+                .map(TeacherMapper::toDomain);
     }
 }

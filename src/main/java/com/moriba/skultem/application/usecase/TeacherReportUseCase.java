@@ -8,10 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
-import com.moriba.skultem.application.dto.StudentDTO;
-import com.moriba.skultem.application.mapper.StudentMapper;
-import com.moriba.skultem.domain.model.Enrollment;
-import com.moriba.skultem.domain.repository.EnrollmentRepository;
+import com.moriba.skultem.application.dto.TeacherDTO;
+import com.moriba.skultem.application.mapper.TeacherMapper;
+import com.moriba.skultem.domain.model.Teacher;
+import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.Filter;
 
 import jakarta.transaction.Transactional;
@@ -20,22 +20,22 @@ import lombok.RequiredArgsConstructor;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class StudentReportUseCase {
+public class TeacherReportUseCase {
 
-    private final EnrollmentRepository repo;
+    private final TeacherRepository repo;
 
-    public Page<StudentDTO> execute(ReportBuilderDTO request, int page, int size) {
+    public Page<TeacherDTO> execute(ReportBuilderDTO request, int page, int size) {
 
         Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
 
         List<Filter> filters = request.filters();
 
-        Page<Enrollment> enrollments = repo.runReport(
+        Page<Teacher> enrollments = repo.runReport(
                 request.schoolId(),
                 filters,
                 pageable
         );
 
-        return enrollments.map(e -> StudentMapper.toDTO(e.getStudent(), e));
+        return enrollments.map(e -> TeacherMapper.toDTO(e));
     }
 }

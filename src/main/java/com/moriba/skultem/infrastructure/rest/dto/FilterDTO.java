@@ -9,15 +9,13 @@ import jakarta.validation.constraints.NotBlank;
 public record FilterDTO(
                 @NotBlank(message = "Field is required") String field,
 
-                FilterOperator operator,
+                @NotBlank(message = "Operator is required") FilterOperator operator,
 
-                // single value operators (=, !=, contains)
+                @NotBlank(message = "Type is required") String type,
+
                 String value,
 
-                // range operators (between dates or numbers)
-                String from,
-                String to,
+                String valueTo,
 
-                // multi-select operators (IN, NOT_IN)
                 List<String> values) {
 }

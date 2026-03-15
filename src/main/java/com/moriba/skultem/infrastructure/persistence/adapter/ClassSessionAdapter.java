@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSessionEntity;
 import com.moriba.skultem.infrastructure.persistence.jpa.ClassSessionJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.ClassSessionMapper;
@@ -126,5 +127,11 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     public Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
             Pageable pageable) {
                 return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable).map(ClassSessionMapper::toDomain);
+    }
+
+    @Override
+    public Page<ClassSession> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(ClassSessionMapper::toDomain);
     }
 }

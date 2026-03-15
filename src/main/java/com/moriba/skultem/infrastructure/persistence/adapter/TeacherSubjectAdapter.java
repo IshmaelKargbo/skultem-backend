@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.TeacherSubjectJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.TeacherSubjectMapper;
 
@@ -108,5 +109,11 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
     @Override
     public void deleteByStreamIdAndSubjectIdAndSchoolId(String streamId, String subjectId, String schoolId) {
         repo.deleteBySession_Stream_IdAndSubject_IdAndSchoolId(streamId, subjectId, schoolId);
+    }
+
+    @Override
+    public Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(TeacherSubjectMapper::toDomain);
     }
 }

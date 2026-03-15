@@ -19,7 +19,7 @@ public record CreateTeacherDTO(
 
                 @NotBlank(message = "Gender is required") @Pattern(regexp = "MALE|FEMALE", message = "Gender must be MALE or FEMALE") String gender,
 
-                @NotBlank(message = "Title is required") @Pattern(regexp = "MR|MRS|MS|DR|PROF|REV|ENG", message = "Title must be MR, MRS, MS, DR, PROF, REV or ENG") String title,
+                @NotBlank(message = "Title is required") @Pattern(regexp = "MR|MRS|MISS|MS|DR|PROF|REV|ENG", message = "Title must be MR, MRS, MISS, MS, DR, PROF, REV or ENG") String title,
 
                 @NotBlank(message = "Street is required") @Size(min = 5, max = 255, message = "Street must be between 5 and 255 characters") String street,
 
