@@ -51,4 +51,16 @@ public class Attendance extends AggregateRoot<String> {
         this.holiday = holiday;
         touch(Instant.now());
     }
+
+    public String getState() {
+        if (isPresent())
+            return "Present";
+        if (isExcused())
+            return "Excused";
+        if (isHoliday())
+            return "Holiday";
+        if (isLate())
+            return "Late";
+        return "Absent";
+    }
 }

@@ -62,7 +62,6 @@ public class DateSpecification {
 
             Instant startOfDay  = toStartOfDay(value);
             Instant endOfDay    = toEndOfDay(value);
-            Instant startOfDay2 = toStartOfDay(valueTo);
             Instant endOfDay2   = toEndOfDay(valueTo);
 
             return switch (operator) {

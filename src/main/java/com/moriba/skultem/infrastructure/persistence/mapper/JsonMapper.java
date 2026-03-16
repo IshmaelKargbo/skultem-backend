@@ -1,10 +1,13 @@
 package com.moriba.skultem.infrastructure.persistence.mapper;
 
+import java.util.List;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 public class JsonMapper {
+
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .findAndRegisterModules()
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -12,9 +15,11 @@ public class JsonMapper {
     private JsonMapper() {
     }
 
+    // Convert Object -> JSON
     public static String toJson(Object value) {
-        if (value == null)
+        if (value == null) {
             return null;
+        }
 
         try {
             return MAPPER.writeValueAsString(value);
@@ -23,9 +28,11 @@ public class JsonMapper {
         }
     }
 
+    // Convert JSON -> Object
     public static <T> T fromJson(String json, Class<T> type) {
-        if (json == null || json.isBlank())
+        if (json == null || json.isBlank()) {
             return null;
+        }
 
         try {
             return MAPPER.readValue(json, type);
@@ -35,14 +42,32 @@ public class JsonMapper {
         }
     }
 
+    // Convert JSON -> Generic type
     public static <T> T fromJson(String json, TypeReference<T> type) {
-        if (json == null || json.isBlank())
+        if (json == null || json.isBlank()) {
             return null;
+        }
 
         try {
             return MAPPER.readValue(json, type);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to deserialize JSON", e);
+        }
+    }
+
+    // Convert JSON -> List<T>
+    public static <T> List<T> fromJsonList(String json, Class<T> type) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            return MAPPER.readValue(
+                    json,
+                    MAPPER.getTypeFactory().constructCollectionType(List.class, type));
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to deserialize JSON to List<" + type.getSimpleName() + ">", e);
         }
     }
 }

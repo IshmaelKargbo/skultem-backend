@@ -10,11 +10,15 @@ public class AssessmentScoreMapper {
                 param.getId(),
                 param.getAssessment().getName(),
                 param.getAssessment().getId(),
+                param.getCycle().getTerm().getName(),
+                param.getStudentAssessment().getEnrollment().getStudent().getName(),
+                param.getStudentAssessment().getTeacherSubject().getTeacher().getUser().getName(),
+                param.getStudentAssessment().getTeacherSubject().getSubject().getName(),
+                param.getStudentAssessment().getEnrollment().getClazz().getName(),
                 param.getScore(),
                 param.getWeight(),
                 param.getWeightedScore(),
                 param.getStatus().name(),
-                grade
-        );
+                grade);
     }
 }

@@ -14,5 +14,7 @@ public interface AssessmentRepository {
 
     List<Assessment> findAllByTemplateIdAndSchoolId(String templateId, String schoolId);
 
+    List<Assessment> findAllBySchoolId(String schoolId);
+
     Optional<Assessment> findById(String id);
 }

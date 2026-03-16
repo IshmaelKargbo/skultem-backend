@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
 import com.moriba.skultem.domain.model.Attendance;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface AttendanceRepository {
     void save(Attendance domain);
@@ -29,4 +30,6 @@ public interface AttendanceRepository {
     Page<Attendance> findByEnrollmentAndSchoolId(String enrollmentId, String schoolId, Pageable pageable);
 
     List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end);
+
+    Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

@@ -2,7 +2,11 @@ package com.moriba.skultem.domain.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.moriba.skultem.domain.model.AssessmentScore;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface AssessmentScoreRepository {
     void save(AssessmentScore domain);
@@ -22,4 +26,6 @@ public interface AssessmentScoreRepository {
     boolean existsGradeActivityByClassIdAndSchoolId(String classId, String schoolId);
 
     boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
+
+    Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

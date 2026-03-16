@@ -23,6 +23,7 @@ import com.moriba.skultem.application.dto.ReportTableDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.ClassReportUseCase;
+import com.moriba.skultem.application.usecase.GradeReportUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
@@ -55,6 +56,7 @@ public class ReportExportService {
         private final StudentReportUseCase studentReportUseCase;
         private final TeacherReportUseCase teacherReportUseCase;
         private final ClassReportUseCase classReportUseCase;
+        private final GradeReportUseCase gradeReportUseCase;
         private final SubjectReportUseCase subjectReportUseCase;
         private final ListFeeStructureBySchoolUseCase listFeeStructureBySchoolUseCase;
         private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
@@ -220,6 +222,8 @@ public class ReportExportService {
                         case "teachers" -> buildTeachersTable(report, page, size);
                         case "classes" -> buildClassesTable(report, page, size);
                         case "subjects" -> buildSubjectTable(report, page, size);
+                        case "attendances" -> buildAttendanceTable(report, page, size);
+                        case "grades" -> buildGradesTable(report, page, size);
                         default -> throw new NotFoundException("Unsupported report type");
                 };
         }
@@ -294,6 +298,19 @@ public class ReportExportService {
                                 "meta", meta);
         }
 
+        private Map<String, Object> buildGradesTable(ReportBuilderDTO param, int page, int size) {
+                var res = gradeReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
         private Map<String, Object> buildTeachersTable(ReportBuilderDTO param, int page, int size) {
                 var res = teacherReportUseCase.execute(param, page, size);
                 Map<String, Object> meta = Map.of(
@@ -322,6 +339,19 @@ public class ReportExportService {
 
         private Map<String, Object> buildSubjectTable(ReportBuilderDTO param, int page, int size) {
                 var res = subjectReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
+        private Map<String, Object> buildAttendanceTable(ReportBuilderDTO param, int page, int size) {
+                var res = attendanceReportUseCase.execute(param, page, size);
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
                                 "size", res.getSize(),

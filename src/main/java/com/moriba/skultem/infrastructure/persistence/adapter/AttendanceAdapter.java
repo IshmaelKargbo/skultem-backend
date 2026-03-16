@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
 import com.moriba.skultem.domain.model.Attendance;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.AttendanceJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.AttendanceMapper;
 
@@ -68,5 +69,11 @@ public class AttendanceAdapter implements AttendanceRepository {
     @Override
     public List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end) {
         return repo.weeklyAttendance(schoolId, start, end);
+    }
+
+    @Override
+    public Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(AttendanceMapper::toDomain);
     }
 }

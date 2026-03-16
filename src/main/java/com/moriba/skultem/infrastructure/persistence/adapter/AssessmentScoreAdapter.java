@@ -2,11 +2,14 @@ package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.AssessmentScoreJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.AssessmentScoreMapper;
 import lombok.RequiredArgsConstructor;
@@ -107,4 +110,9 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
                         ClassSubjectAssessmentLifeCycle.Status.DRAFT);
     }
 
+    @Override
+    public Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(AssessmentScoreMapper::toDomain);
+    }
 }

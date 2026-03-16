@@ -17,6 +17,7 @@ import com.moriba.skultem.application.dto.AssessmentApprovalRequestDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleAdvanceDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleOverviewDTO;
+import com.moriba.skultem.application.dto.AssessmentDTO;
 import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
 import com.moriba.skultem.application.dto.ActiveAssessmentCycleDTO;
 import com.moriba.skultem.application.dto.GradeBandDTO;
@@ -98,6 +99,14 @@ public class AssessmentController {
             @RequestParam(required = true) String termId) {
         var res = listAssessmentUseCase.execute(school, subjectId, termId);
         return new ApiResponse<>("success", 200, "Assessments fetch successfully", res);
+    }
+
+    @GetMapping("/list")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    public ApiResponse<List<AssessmentDTO>> listAssessment(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = listAssessmentUseCase.executeAssessment(school);
+        return new ApiResponse<>("success", 200, "Assessments list fetch successfully", res);
     }
 
 

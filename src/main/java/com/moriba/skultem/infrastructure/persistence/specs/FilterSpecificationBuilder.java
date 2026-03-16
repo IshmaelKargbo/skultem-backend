@@ -43,6 +43,11 @@ public class FilterSpecificationBuilder {
                     filter.value(),
                     filter.values());
 
+            case "boolean" -> BooleanSpecification.build(
+                    field,
+                    filter.operator(),
+                    parseBoolean(filter.value()));
+
             case "number" -> NumberSpecification.build(
                     field,
                     filter.operator(),
@@ -50,7 +55,6 @@ public class FilterSpecificationBuilder {
                     filter.valueTo());
 
             case "date", "instant", "age" -> DateSpecification.build(filter);
-
 
             default -> null;
         };
@@ -76,5 +80,12 @@ public class FilterSpecificationBuilder {
             }
         }
         return result.toString();
+    }
+
+    private static Boolean parseBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return Boolean.parseBoolean(value);
     }
 }

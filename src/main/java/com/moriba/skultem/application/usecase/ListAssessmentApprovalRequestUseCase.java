@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.AssessmentApprovalRequestDTO;
 import com.moriba.skultem.application.dto.AssessmentScoreDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.mapper.AssessmentScoreMapper;
 import com.moriba.skultem.domain.model.AssessmentApprovalRequest;
 import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
@@ -44,16 +45,7 @@ public class ListAssessmentApprovalRequestUseCase {
                         List<AssessmentScoreDTO> scoreDTOs = scores.stream()
                                         .map(s -> {
                                                 String grade = resolveScoreGradeUseCase.execute(schoolId, s.getScore());
-                                                return new AssessmentScoreDTO(
-                                                                s.getId(),
-                                                                s.getStudentAssessment().getEnrollment().getStudent()
-                                                                                .getName(),
-                                                                s.getAssessment().getName(),
-                                                                s.getScore(),
-                                                                s.getWeight(),
-                                                                s.getWeightedScore(),
-                                                                s.getStatus().name(),
-                                                                grade);
+                                                return AssessmentScoreMapper.toDTO(s, grade);
                                         }).collect(Collectors.toList());
 
                         int totalStudents = scores.size();

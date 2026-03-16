@@ -3,11 +3,9 @@ package com.moriba.skultem.infrastructure.persistence.mapper;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.AuditLog;
 import com.moriba.skultem.domain.model.User;
-import com.moriba.skultem.domain.model.UserSession;
 import com.moriba.skultem.infrastructure.persistence.entity.AcademicYearEntity;
 import com.moriba.skultem.infrastructure.persistence.entity.AuditLogEntity;
 import com.moriba.skultem.infrastructure.persistence.entity.UserEntity;
-import com.moriba.skultem.infrastructure.persistence.entity.UserSessionEntity;
 
 public class AuditLogMapper {
     public static AuditLog toDomain(AuditLogEntity param) {

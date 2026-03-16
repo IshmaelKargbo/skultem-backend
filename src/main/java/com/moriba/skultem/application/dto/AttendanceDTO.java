@@ -5,14 +5,12 @@ import java.time.LocalDate;
 
 public record AttendanceDTO(
         String id,
-        String schoolId,
-        EnrollmentDTO enrollment,
+        String studentId,
+        String student,
+        String clazz,
         LocalDate date,
-        boolean present,
-        boolean excused,
-        boolean late,
+        String state,
         String reason,
-        boolean holiday,
         Instant createdAt,
         Instant updatedAt) {
 }

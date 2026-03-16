@@ -44,4 +44,11 @@ public class AssessmentAdapter implements AssessmentRepository {
     public Optional<Assessment> findById(String id) {
         return repo.findById(id).map(AssessmentMapper::toDomain);
     }
+
+    @Override
+    public List<Assessment> findAllBySchoolId(String schoolId) {
+        return repo.findAllBySchoolIdOrderByPositionAsc(schoolId).stream()
+                .map(AssessmentMapper::toDomain)
+                .toList();
+    }
 }

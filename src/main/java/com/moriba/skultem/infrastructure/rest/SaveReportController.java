@@ -14,55 +14,54 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.moriba.skultem.application.dto.ReportConfigDTO;
-import com.moriba.skultem.application.usecase.CreateReportConfigUseCase;
-import com.moriba.skultem.application.usecase.CreateReportConfigUseCase.CreateReportConfigRecord;
-import com.moriba.skultem.application.usecase.DeleteReportConfigUseCase;
-import com.moriba.skultem.application.usecase.GetReportConfigByIdUseCase;
-import com.moriba.skultem.application.usecase.ListReportConfigBySchoolUseCase;
+import com.moriba.skultem.application.dto.SaveReportDTO;
+import com.moriba.skultem.application.usecase.SaveReportUseCase;
+import com.moriba.skultem.application.usecase.SaveReportUseCase.SaveReportRecord;
+import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.application.usecase.DeleteSaveReportUseCase;
+import com.moriba.skultem.application.usecase.GetSaveReportByIdUseCase;
+import com.moriba.skultem.application.usecase.ListSaveReportBySchoolUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
-import com.moriba.skultem.infrastructure.rest.dto.CreateReportConfigDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/report/config")
+@RequestMapping("/api/v1/report/save")
 @RequiredArgsConstructor
-public class ReportConfigController {
-    private final CreateReportConfigUseCase createReportConfigUseCase;
-    private final ListReportConfigBySchoolUseCase listReportConfigBySchoolUseCase;
-    private final DeleteReportConfigUseCase deleteReportConfigUseCase;
-    private final GetReportConfigByIdUseCase getReportConfigByIdUseCase;
+public class SaveReportController {
+    private final SaveReportUseCase createSaveReportUseCase;
+    private final ListSaveReportBySchoolUseCase listSaveReportBySchoolUseCase;
+    private final DeleteSaveReportUseCase deleteSaveReportUseCase;
+    private final GetSaveReportByIdUseCase getSaveReportByIdUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
-    public ApiResponse<ReportConfigDTO> create(
+    public ApiResponse<SaveReportDTO> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @Valid @RequestBody CreateReportConfigDTO param) {
-        var record = new CreateReportConfigRecord(
-                school,
+            @Valid @RequestBody SaveReportDTO param) {
+        var filters = param.filters().stream().map(
+                e -> new Filter(e.field(), e.operator(), e.type(), e.value(), e.valueTo(), e.values()))
+                .toList();
+                
+        var record = new SaveReportRecord(
+                param.id(),
                 param.name(),
-                param.type(),
-                param.format(),
-                param.classId(),
-                param.classSessionId(),
-                param.teacherSubjectId(),
-                param.termId(),
-                param.startDate(),
-                param.endDate());
-        var res = createReportConfigUseCase.execute(record);
-        return new ApiResponse<>("success", 200, "Report config saved successfully", res);
+                param.entity(),
+                filters
+            );
+        var res = createSaveReportUseCase.execute(school, record);
+        return new ApiResponse<>("success", 200, "Save report saved successfully", res);
     }
 
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
-    public ApiResponse<List<ReportConfigDTO>> listBySchool(
+    public ApiResponse<List<SaveReportDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-        var res = listReportConfigBySchoolUseCase.execute(school, page - 1, size);
+        var res = listSaveReportBySchoolUseCase.execute(school, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -75,11 +74,11 @@ public class ReportConfigController {
 
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
-    public ApiResponse<ReportConfigDTO> getById(
+    public ApiResponse<SaveReportDTO> getById(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
-        var res = getReportConfigByIdUseCase.execute(school, id);
-        return new ApiResponse<>("success", 200, "Report config fetched successfully", res);
+        var res = getSaveReportByIdUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Save report fetched successfully", res);
     }
 
     @DeleteMapping("/{id}")
@@ -87,7 +86,7 @@ public class ReportConfigController {
     public ApiResponse<Object> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
-        deleteReportConfigUseCase.execute(school, id);
-        return new ApiResponse<>("success", 200, "Report config deleted successfully", null);
+        deleteSaveReportUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Save report deleted successfully", null);
     }
 }

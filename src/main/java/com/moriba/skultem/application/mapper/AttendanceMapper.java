@@ -6,21 +6,20 @@ import com.moriba.skultem.domain.model.Attendance;
 
 public class AttendanceMapper {
     public static AttendanceDTO toDTO(Attendance param) {
-        EnrollmentDTO enrollment = null;
-        if (param.getEnrollment() != null) {
-            enrollment = EnrollmentMapper.toDTO(param.getEnrollment());
+        if (param.getEnrollment() == null) {
+            return null;
         }
 
+        EnrollmentDTO enrollment = EnrollmentMapper.toDTO(param.getEnrollment());
+        String name = String.join(" ", enrollment.student().givenNames(), enrollment.student().familyName());
         return new AttendanceDTO(
                 param.getId(),
-                param.getSchoolId(),
-                enrollment,
+                enrollment.student().id(),
+                name,
+                enrollment.student().className(),
                 param.getDate(),
-                param.isPresent(),
-                param.isExcused(),
-                param.isLate(),
+                param.getState(),
                 param.getReason(),
-                param.isHoliday(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
