@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.mapper.UserMapper;
+import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 
@@ -29,7 +32,11 @@ public class ListUserBySchoolUseCase {
         }
 
         return repo.findBySchool(school, pageable)
-                .map(user -> UserMapper.toDTO(user,
-                        schoolUserRepo.findBySchoolAndUser(school, user.getId()).orElseThrow()));
+                .map(user -> {
+                    List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school).stream()
+                            .map(e -> e.getRole())
+                            .toList();
+                    return UserMapper.toDTO(user, roles);
+                });
     }
 }

@@ -23,11 +23,13 @@ import com.moriba.skultem.application.dto.ReportTableDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.ClassReportUseCase;
+import com.moriba.skultem.application.usecase.FeeReportUseCase;
 import com.moriba.skultem.application.usecase.GradeReportUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
 import com.moriba.skultem.application.usecase.ListStudentPaymentBySchoolUseCase;
+import com.moriba.skultem.application.usecase.PaymentReportUseCase;
 import com.moriba.skultem.application.usecase.StudentReportUseCase;
 import com.moriba.skultem.application.usecase.SubjectReportUseCase;
 import com.moriba.skultem.application.usecase.TeacherReportUseCase;
@@ -55,6 +57,8 @@ public class ReportExportService {
         private final ListBehaviourBySchoolUseCase listBehaviourBySchoolUseCase;
         private final StudentReportUseCase studentReportUseCase;
         private final TeacherReportUseCase teacherReportUseCase;
+        private final PaymentReportUseCase paymentReportUseCase;
+        private final FeeReportUseCase feeReportUseCase;
         private final ClassReportUseCase classReportUseCase;
         private final GradeReportUseCase gradeReportUseCase;
         private final SubjectReportUseCase subjectReportUseCase;
@@ -75,20 +79,7 @@ public class ReportExportService {
                 List<String> headers = List.of("Paid At", "Student", "Class", "Fee Category", "Term", "Amount",
                                 "Method",
                                 "Reference");
-                List<List<String>> rows = records.stream()
-                                .filter(r -> classId == null
-                                                || (r.student() != null && classId.equals(r.student().classId())))
-                                .filter(r -> inRange(toLocalDate(r.paidAt()), startDate, endDate))
-                                .map(r -> List.of(
-                                                formatInstant(r.paidAt()),
-                                                r.student().givenNames() + " " + r.student().familyName(),
-                                                safe(r.student().className()),
-                                                safe(r.fee().category().name()),
-                                                safe(r.fee().term().name()),
-                                                safe(r.amount()),
-                                                safe(r.paymentMethod()),
-                                                safe(r.referenceNo())))
-                                .toList();
+                List<List<String>> rows = null;
 
                 return build("payments", "Payments Report", headers, rows, format);
         }
@@ -223,6 +214,8 @@ public class ReportExportService {
                         case "classes" -> buildClassesTable(report, page, size);
                         case "subjects" -> buildSubjectTable(report, page, size);
                         case "attendances" -> buildAttendanceTable(report, page, size);
+                        case "fees" -> buildFeesTable(report, page, size);
+                        case "payments" -> buildPaymentsTable(report, page, size);
                         case "grades" -> buildGradesTable(report, page, size);
                         default -> throw new NotFoundException("Unsupported report type");
                 };
@@ -287,6 +280,32 @@ public class ReportExportService {
 
         private Map<String, Object> buildStudentsTable(ReportBuilderDTO param, int page, int size) {
                 var res = studentReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
+        private Map<String, Object> buildFeesTable(ReportBuilderDTO param, int page, int size) {
+                var res = feeReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
+        private Map<String, Object> buildPaymentsTable(ReportBuilderDTO param, int page, int size) {
+                var res = paymentReportUseCase.execute(param, page, size);
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
                                 "size", res.getSize(),

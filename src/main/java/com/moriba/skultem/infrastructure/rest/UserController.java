@@ -65,7 +65,7 @@ public class UserController {
     public ApiResponse<UserDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
-        var res = getUserUseCase.execute(id);
+        var res = getUserUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }
 
@@ -75,7 +75,7 @@ public class UserController {
         @AuthenticationPrincipal(expression = "userId") String userId,
         @AuthenticationPrincipal(expression = "activeSchoolId") String school
     ) {
-        var res = getUserUseCase.execute(userId);
+        var res = getUserUseCase.execute(school, userId);
         return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }
 }

@@ -66,7 +66,7 @@ public class CreateTeacherUseCase {
             throw new AlreadyExistsException("phone already exist in this school");
         }
 
-        if (schoolUserRepo.existsBySchoolAndUser(schoolId, user.getId())) {
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(schoolId, user.getId(), Role.TEACHER)) {
             throw new AlreadyExistsException("user already exist in this school");
         }
 

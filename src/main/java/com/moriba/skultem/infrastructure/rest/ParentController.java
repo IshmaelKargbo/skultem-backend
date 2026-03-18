@@ -21,8 +21,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.moriba.skultem.application.dto.ParentDTO;
+import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.usecase.CreateParentUseCase;
 import com.moriba.skultem.application.usecase.ListParentBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ListStudentByParentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.CreateParentDTO;
 
 @RestController
@@ -32,6 +34,7 @@ public class ParentController {
         private final CreateParentUseCase createParentUseCase;
         private final GetTeacherUseCase getTeacherUseCase;
         private final ListParentBySchoolUseCase listParentBySchoolUseCase;
+        private final ListStudentByParentUseCase listStudentByParentUseCase;
 
         @PostMapping
         @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
@@ -60,6 +63,24 @@ public class ParentController {
                                 "pages", res.getTotalPages());
 
                 return new ApiResponse<>("success", 200, "Parents fetched successfully", list, meta);
+        }
+
+        @GetMapping("/students")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT')")
+        public ApiResponse<List<StudentDTO>> listStudentBySchool(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                var res = listStudentByParentUseCase.execute(school, userId, page, size);
+                var list = res.getContent();
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+
+                return new ApiResponse<>("success", 200, "Parent students fetched successfully", list, meta);
         }
 
         @GetMapping("/{id}")

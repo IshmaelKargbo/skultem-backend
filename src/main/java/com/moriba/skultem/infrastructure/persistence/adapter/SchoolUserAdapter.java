@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
+import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.SchoolUserJpaRepository;
@@ -24,13 +25,13 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     }
 
     @Override
-    public Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId) {
-        return repo.findBySchoolIdAndUserIdWithUser(schoolId, userId).map(SchoolUserMapper::toDomain);
+    public Optional<SchoolUser> findBySchoolAndUserAndRole(String schoolId, String userId, Role role) {
+        return repo.findBySchoolIdAndUserIdWithUser(schoolId, userId, role).map(SchoolUserMapper::toDomain);
     }
 
     @Override
-    public boolean existsBySchoolAndUser(String schoolId, String userId) {
-        return repo.existsBySchoolIdAndUser_Id(schoolId, userId);
+    public boolean existsBySchoolAndUserAndRole(String schoolId, String userId, Role role) {
+        return repo.existsBySchoolIdAndUser_IdAndRole(schoolId, userId, role);
     }
 
     @Override
@@ -39,12 +40,17 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     }
 
     @Override
-    public Optional<SchoolUser> findOneByUser(String userId) {
+    public Optional<SchoolUser> findOneByUserAndRole(String userId, Role role) {
         return repo.findOneByUserIdWithUser(userId).map(SchoolUserMapper::toDomain);
     }
 
     @Override
     public List<SchoolUser> findAllByUser_IdAndSchoolId(String userId, String schoolId) {
         return repo.findAllByUserIdWithUser(userId, schoolId).stream().map(SchoolUserMapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId) {
+        return repo.findOneBySchoolIdUserIdWithUser(schoolId, userId).map(SchoolUserMapper::toDomain);
     }
 }

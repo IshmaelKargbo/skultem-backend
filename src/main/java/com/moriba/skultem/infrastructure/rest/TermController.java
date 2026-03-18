@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TermDTO;
-import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.CreateTermUseCase;
+import com.moriba.skultem.application.usecase.GetActiveTermUseCase;
 import com.moriba.skultem.application.usecase.ActivateTermUseCase;
 import com.moriba.skultem.application.usecase.ListTermByAcademicYearIdUseCase;
 import com.moriba.skultem.application.usecase.ListTermBySchoolIdUseCase;
@@ -34,19 +34,16 @@ public class TermController {
 
     private final CreateTermUseCase createTermUseCase;
     private final ActivateTermUseCase activateTermUseCase;
+    private final GetActiveTermUseCase getActiveTermUseCase;
     private final ListTermBySchoolIdUseCase listTermBySchoolIdUseCase;
-    private final ListTermByAcademicYearIdUseCase listTermAcademicYearIdUseCase;
+    private final ListTermByAcademicYearIdUseCase listTermByAcademicYearIdUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
     public ApiResponse<TermDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateTermDTO param) {
-        if (param.endDate().isBefore(param.startDate())) {
-            throw new RuleException("End date must be after start date");
-        }
-        var res = createTermUseCase.execute(school, param.name(), param.startDate(),
-                param.endDate());
+        var res = createTermUseCase.execute(school, param.name(), param.startDate(), param.endDate());
         return new ApiResponse<>("success", 200, "Term created successfully", res);
     }
 
@@ -54,17 +51,23 @@ public class TermController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
     public ApiResponse<List<TermDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "1") Integer page) {
         var res = listTermBySchoolIdUseCase.execute(school, page - 1, size);
-        var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
                 "size", res.getSize(),
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
+        return new ApiResponse<>("success", 200, "Terms fetched successfully", res.getContent(), meta);
+    }
 
-        return new ApiResponse<>("success", 200, "Terms fetched successfully", list, meta);
+    @GetMapping("/active")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    public ApiResponse<TermDTO> getActive(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = getActiveTermUseCase.execute(school);
+        return new ApiResponse<>("success", 200, "Get active term successfully", res);
     }
 
     @GetMapping("/academic-year/{academicYearId}")
@@ -72,17 +75,15 @@ public class TermController {
     public ApiResponse<List<TermDTO>> listByAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String academicYearId,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listTermAcademicYearIdUseCase.execute(school, academicYearId, page - 1, size);
-        var list = res.getContent();
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "1") Integer page) {
+        var res = listTermByAcademicYearIdUseCase.execute(school, academicYearId, page - 1, size);
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
                 "size", res.getSize(),
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
-
-        return new ApiResponse<>("success", 200, "Terms fetched successfully", list, meta);
+        return new ApiResponse<>("success", 200, "Terms fetched successfully", res.getContent(), meta);
     }
 
     @PutMapping("/{id}/activate")
@@ -93,4 +94,5 @@ public class TermController {
         var res = activateTermUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Term activated successfully", res);
     }
+
 }

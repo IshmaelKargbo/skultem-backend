@@ -63,7 +63,7 @@ public class CreateSchoolUseCase {
             userRepo.save(user);
         }
 
-        if (schoolUserRepo.existsBySchoolAndUser(school.getId(), user.getId())) {
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(school.getId(), user.getId(), Role.SCHOOL_ADMIN)) {
             throw new AlreadyExistsException("owner already exist with this email");
         }
 

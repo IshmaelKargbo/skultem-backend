@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import org.springframework.stereotype.Service;
@@ -91,7 +92,7 @@ public class AssignFeeToStudentUseCase {
                 meta,
                 fee.getId());
 
-        return StudentFeeMapper.toDTO(studentFee);
+        return StudentFeeMapper.toDTO(studentFee, BigDecimal.ZERO);
     }
 
     public record AssignFeeToStudentRecord(String schoolId, String studentId, String feeId) {

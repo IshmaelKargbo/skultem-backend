@@ -1,10 +1,14 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.UserMapper;
+import com.moriba.skultem.domain.model.Role;
+import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -16,10 +20,13 @@ import lombok.RequiredArgsConstructor;
 public class GetUserUseCase {
 
     private final UserRepository repo;
+    private final SchoolUserRepository schoolUserRepo;
 
-    public UserDTO execute(String id) {
+    public UserDTO execute(String schoolId, String id) {
         var record = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        return UserMapper.toDTO(record);
+        List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(id, schoolId).stream().map(e -> e.getRole())
+                .toList();
+        return UserMapper.toDTO(record, roles);
     }
 }

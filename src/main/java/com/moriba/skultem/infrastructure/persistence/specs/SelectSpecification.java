@@ -19,8 +19,18 @@ public class SelectSpecification {
             Path<Object> column = PathResolver.getPath(root, field);
 
             return switch (operator) {
-                case EQUALS -> cb.equal(column, value);
-                case NOT_EQUALS -> cb.notEqual(column, value);
+                case EQUALS -> {
+                    if (value == null) {
+                        yield cb.isNull(column);
+                    }
+                    yield cb.equal(column, value);
+                }
+                case NOT_EQUALS -> {
+                    if (value == null) {
+                        yield cb.isNotNull(column);
+                    }
+                    yield cb.notEqual(column, value);
+                }
                 case IN_LIST -> column.in(values);
                 default -> null;
             };

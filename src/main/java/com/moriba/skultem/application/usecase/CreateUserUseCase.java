@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,13 +40,16 @@ public class CreateUserUseCase {
             repo.save(user);
         }
 
-        if (schoolUserRepo.existsBySchoolAndUser(school, user.getId())) {
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(school, user.getId(), Role.valueOf(role))) {
             throw new AlreadyExistsException("user already exist in this school");
         }
 
         var roleEnum = Role.valueOf(role);
         var schoolUserId = rg.generate("SCHOOL_USER", "SCU");
         var schoolUser = SchoolUser.create(schoolUserId, school, user, roleEnum);
+        
+        List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school).stream().map(e -> e.getRole())
+                .toList();
         schoolUserRepo.save(schoolUser);
 
         logActivityUseCase.log(
@@ -55,6 +60,6 @@ public class CreateUserUseCase {
                 null,
                 user.getId());
 
-        return UserMapper.toDTO(user, schoolUser);
+        return UserMapper.toDTO(user, roles);
     }
 }

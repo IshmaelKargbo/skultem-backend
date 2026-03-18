@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface PaymentRepository {
 
@@ -29,4 +30,6 @@ public interface PaymentRepository {
     BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end);
 
     List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId);
+
+    Page<Payment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

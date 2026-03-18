@@ -3,18 +3,21 @@ package com.moriba.skultem.domain.repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 
 public interface SchoolUserRepository {
     void save(SchoolUser domain);
 
-    Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId);
+    Optional<SchoolUser> findBySchoolAndUserAndRole(String schoolId, String userId, Role role);
 
     List<SchoolUser> findAllByUser_IdAndSchoolId(String userId, String schoolId);
 
-    Optional<SchoolUser> findOneByUser(String userId);
+    Optional<SchoolUser> findOneByUserAndRole(String userId, Role role);
 
-    boolean existsBySchoolAndUser(String schoolId, String userId);
+    Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId);
+
+    boolean existsBySchoolAndUserAndRole(String schoolId, String userId, Role role);
 
     List<SchoolUser> findBySchool(String schoolId);
 }

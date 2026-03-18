@@ -15,5 +15,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
 
     Page<StudentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
+    Page<StudentEntity> findAllBySchoolIdAndParent_IdOrderByCreatedAtDesc(String schoolId, String parentId, Pageable pageable);
+
     Optional<StudentEntity> findByIdAndSchoolId(String id, String schoolId);
 }

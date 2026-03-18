@@ -55,7 +55,7 @@ public class CreateParentUseCase {
             throw new AlreadyExistsException("phone already exist in this school");
         }
 
-        if (schoolUserRepo.existsBySchoolAndUser(schoolId, user.getId())) {
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(schoolId, user.getId(), Role.PARENT)) {
             throw new AlreadyExistsException("user already exist in this school");
         }
 

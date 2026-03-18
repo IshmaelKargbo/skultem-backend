@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.repository.PaymentRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.PaymentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.PaymentMapper;
 
@@ -65,5 +66,11 @@ public class PaymentAdapter implements PaymentRepository {
     @Override
     public List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId) {
         return repo.sumRevenueByCategory(schoolId);
+    }
+
+    @Override
+    public Page<Payment> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(PaymentMapper::toDomain);
     }
 }

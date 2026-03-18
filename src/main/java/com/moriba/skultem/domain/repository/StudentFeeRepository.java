@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.StudentFee;
+import com.moriba.skultem.domain.vo.Filter;
 
 public interface StudentFeeRepository {
         void save(StudentFee domain);
@@ -34,4 +35,6 @@ public interface StudentFeeRepository {
 
         Page<StudentFee> findBySchoolAndEnrollmentAndStudent(String schoolId, String academicYearId, String classId,
                         Pageable pageable);
+
+        Page<StudentFee> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

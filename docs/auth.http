@@ -12,5 +12,5 @@ POST http://localhost:8080/api/v1/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNTgxOThlZS1hYjdkLTRhZGYtOGFiOC1lMTdjM2ZkN2QxYTkiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3MzUwNDgwOCwiZXhwIjoxNzc0MTA5NjA4fQ.QSAzoPIm-YmPh5T9W3Rq4a7gSA1mGxCR9_CzYlD5Lxk"
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWEwNzhiZC1kNzJiLTQyYjQtOTczMC1kNzIyYmU1YTliOGUiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3Mzc0MDI5MSwiZXhwIjoxNzc0MzQ1MDkxfQ.2X9ZTHJ_sEKuWZV2tcSKttNMHyUXv6bwttEgz8nfan0"
 }

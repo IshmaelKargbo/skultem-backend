@@ -1,0 +1,335 @@
+###
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6Ijc5ZTVmNGU4LTYyOTAtNDI0MS1iOWJlLWExY2Q1MDYyYWE2MyIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3MzcxNTIsImV4cCI6MTc3MzczODA1Mn0.qvBzENiDWULdSMqhXW3OhFlFCUgeW0rSDQ28wgR9faM
+Content-Type: application/json
+
+{
+  "entity": "attendances",
+  "title": "Attendance Metrics",
+  "filters": [],
+  "metrics": [
+    { 
+      "name": "Present", 
+      "aggregation": "percentage", 
+      "tags": { 
+        "field": "state", 
+        "value": "Present",
+        "groupBy": "date",
+        "interval": "month"
+      }
+    },
+    {
+      "name": "Absent",
+      "aggregation": "count",
+      "tags": {
+        "field": "state",
+        "value": "Absent",
+        "groupBy": "date",
+        "interval": "month"
+      }
+    }
+  ],
+  "chartType": "bar"
+}
+
+###
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQ5NjQsImV4cCI6MTc3Mzc1NTg2NH0.BdwrehGmMhZmXgf6ahq7AoeofgxcodVz7O4ama_It0M
+Content-Type: application/json
+
+{
+  "entity": "fees",
+  "title": "Fee Collected by Allocation",
+  "filters": [],
+  "metrics": [
+    {
+      "name": "Collected",
+      "aggregation": "sum",
+      "field": "amountPaid",
+      "tags": {
+        "groupBy": "clazz",
+        "interval": "month"
+      }
+    },
+    {
+      "name": "Outstanding",
+      "aggregation": "sum",
+      "field": "outstanding",
+      "tags": {
+        "groupBy": "clazz",
+        "interval": "month"
+      }
+    }
+  ],
+  "chartType": "line"
+}
+
+### Student Leaderboard Performance
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQ5NjQsImV4cCI6MTc3Mzc1NTg2NH0.BdwrehGmMhZmXgf6ahq7AoeofgxcodVz7O4ama_It0M
+Content-Type: application/json
+
+{
+  "entity": "assessments",
+  "title": "Student Leaderboard",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "weightScore",
+      "aggregation": "sum",
+      "name": "Percentage",
+      "tags": {
+        "groupBy": "student",
+        "orderBy": "Percentage",
+        "order": "desc"
+      }
+    }
+  ],
+  "chartType": "table"
+}
+
+### Class Performance
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQ5NjQsImV4cCI6MTc3Mzc1NTg2NH0.BdwrehGmMhZmXgf6ahq7AoeofgxcodVz7O4ama_It0M
+Content-Type: application/json
+
+{
+  "entity": "assessments",
+  "title": "Class Performance",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "weightScore",
+      "aggregation": "sum",
+      "name": "Percentage",
+      "tags": {
+        "groupBy": "clazz",
+        "orderBy": "Percentage",
+        "order": "desc"
+      }
+    }
+  ],
+  "chartType": "table"
+}
+
+### Term Performance
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQwNTMsImV4cCI6MTc3Mzc1NDk1M30.zIZXjimo1YkzCzb6JlPYDdQ5gibJIbSF0co6mcnBZP4
+Content-Type: application/json
+
+{
+  "entity": "assessments",
+  "title": "Term Performance - Grade 10",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "weightScore",
+      "aggregation": "avg",
+      "name": "Average Score",
+      "tags": {
+        "groupBy": "term",
+        "orderBy": "Average Score",
+        "order": "desc"
+      }
+    },
+    {
+      "field": "weightScore",
+      "aggregation": "sum",
+      "name": "Total Score",
+      "tags": {
+        "groupBy": "term"
+      }
+    },
+    {
+      "field": "weightScore",
+      "aggregation": "count",
+      "name": "Assessments",
+      "tags": {
+        "groupBy": "term"
+      }
+    }
+  ],
+  "chartType": "bar"
+}
+
+### Fee Collection Summary
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQwNTMsImV4cCI6MTc3Mzc1NDk1M30.zIZXjimo1YkzCzb6JlPYDdQ5gibJIbSF0co6mcnBZP4
+Content-Type: application/json
+
+{
+  "entity": "fees",
+  "title": "Fee Collection Summary",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "amount",
+      "aggregation": "sum",
+      "name": "Total Amount",
+      "tags": {
+        "groupBy": "status",
+        "orderBy": "Total Amount",
+        "order": "desc"
+      }
+    },
+    {
+      "field": "amount",
+      "aggregation": "count",
+      "name": "Students",
+      "tags": {
+        "groupBy": "status"
+      }
+    }
+  ],
+  "chartType": "bar"
+}
+
+### Fee Collection Rate
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTI2NTAsImV4cCI6MTc3Mzc1MzU1MH0.ab__1zfm0s7KfgsvU3na8dvl6tqhkpuHpUFC_Ha6wic
+Content-Type: application/json
+
+{
+  "entity": "fees",
+  "title": "Fee Collection Rate",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "amount",
+      "aggregation": "percentage",
+      "name": "Paid",
+      "tags": {
+        "value": "PAID",
+        "field": "status"
+      }
+    },
+    {
+      "field": "amount",
+      "aggregation": "percentage",
+      "name": "Pending",
+      "tags": {
+        "value": "PENDING",
+        "field": "status"
+      }
+    },
+    {
+      "field": "amount",
+      "aggregation": "percentage",
+      "name": "Overdue",
+      "tags": {
+        "value": "OVERDUE",
+        "field": "status"
+      }
+    },
+    {
+      "field": "amount",
+      "aggregation": "percentage",
+      "name": "Partial",
+      "tags": {
+        "value": "PARTIAL",
+        "field": "status"
+      }
+    }
+  ],
+  "chartType": "pie"
+}
+
+### Student Fee Leaderboard
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQ5NjQsImV4cCI6MTc3Mzc1NTg2NH0.BdwrehGmMhZmXgf6ahq7AoeofgxcodVz7O4ama_It0M
+Content-Type: application/json
+
+{
+  "entity": "fees",
+  "title": "Student Fee Leaderboard",
+  "filters": [],
+  "metrics": [
+    {
+      "field": "amount",
+      "aggregation": "sum",
+      "name": "Total Paid",
+      "tags": {
+        "groupBy": "student",
+        "field": "status",
+        "value": "Paid",
+        "orderBy": "Total Paid",
+        "order": "desc"
+      }
+    },
+    {
+      "field": "amount",
+      "aggregation": "sum",
+      "name": "Outstanding",
+      "tags": {
+        "groupBy": "student",
+        "field": "status",
+        "value": "Partial"
+      }
+    }
+  ],
+  "chartType": "table"
+}
+
+### Class Performance
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NjQxNjUsImV4cCI6MTc3Mzc2NTA2NX0.G5Pu8ovhM3RNl2iFWaQWmqipKmzaQ4r-OE6AmQYsleo
+Content-Type: application/json
+
+{
+  "entity": "assessments",
+  "title": "Class Performance",
+  "filters": [],
+  "metrics": [
+    {
+      "name": "Average Score",
+      "aggregation": "avg",
+      "field": "score",
+      "tags": {
+        "groupBy": "clazz"
+      }
+    }
+  ],
+  "chartType": "table"
+}
+
+### Subject Performance
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQ5NjQsImV4cCI6MTc3Mzc1NTg2NH0.BdwrehGmMhZmXgf6ahq7AoeofgxcodVz7O4ama_It0M
+Content-Type: application/json
+
+{
+  "entity": "assessments",
+  "title": "Subject Performance",
+  "filters": [],
+  "metrics": [
+    { "name": "A", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "A" }], "tags": { "groupBy": "subject" } },
+    { "name": "B", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "B" }], "tags": { "groupBy": "subject" } },
+    { "name": "C", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "C" }], "tags": { "groupBy": "subject" } },
+    { "name": "D", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "D" }], "tags": { "groupBy": "subject" } },
+    { "name": "E", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "E" }], "tags": { "groupBy": "subject" } },
+    { "name": "F", "aggregation": "count", "field": "grade", "filters": [{ "field": "grade", "operator": "EQUALS", "value": "F" }], "tags": { "groupBy": "subject" } }
+  ],
+  "chartType": "table"
+}
+
+### Student By Gender
+POST http://localhost:8080/api/v1/widget/run?page=1&size=200
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU1ItMjAyNi0wMDAxIiwic2NoIjoiU0NMLTIwMjYtMDAwMSIsInNpZCI6ImZhYTA3OGJkLWQ3MmItNDJiNC05NzMwLWQ3MjJiZTVhOWI4ZSIsInJvbGVzIjpbIlNDSE9PTF9BRE1JTiJdLCJpYXQiOjE3NzM3NTQwNTMsImV4cCI6MTc3Mzc1NDk1M30.zIZXjimo1YkzCzb6JlPYDdQ5gibJIbSF0co6mcnBZP4
+Content-Type: application/json
+
+{
+  "entity": "students",
+  "title": "Student By Gender",
+  "filters": [],
+  "metrics": [
+    { 
+      "name": "Gender", 
+      "aggregation": "count", 
+      "tags": { 
+        "field": "gender",
+        "groupBy": "gender"
+      }
+    }
+  ],
+  "chartType": "bar"
+}

@@ -16,5 +16,7 @@ public interface StudentRepository {
 
     Page<Student> findBySchoolId(String schoolId, Pageable pageable);
 
+    Page<Student> findByParentAndSchoolId(String parentId, String schoolId, Pageable pageable);
+
     long countAll();
 }

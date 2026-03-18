@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.StudentFeeEntity;
 import com.moriba.skultem.infrastructure.persistence.jpa.StudentFeeJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.StudentFeeMapper;
@@ -82,6 +83,12 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     @Override
     public BigDecimal sumTotalFeeByStudent(String studentId, String schoolId) {
         return repo.sumTotalFeeByStudent(studentId, schoolId);
+    }
+
+    @Override
+    public Page<StudentFee> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(StudentFeeMapper::toDomain);
     }
 
 }

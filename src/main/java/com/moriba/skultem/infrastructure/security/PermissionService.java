@@ -77,17 +77,17 @@ public class PermissionService {
         if (isSystemAdmin()) {
             return true;
         }
-        return schoolUserRepo.findBySchoolAndUser(schoolId, currentUserId()).filter(su -> su.getRole() == role)
-                .isPresent();
+        return schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), role).isPresent();
     }
 
     public boolean hasAnySchoolRole(String schoolId, String... roles) {
         if (isSystemAdmin()) {
             return true;
         }
-        var roleSet = Arrays.stream(roles).map(Role::valueOf).toList();
-        return schoolUserRepo.findBySchoolAndUser(schoolId, currentUserId())
-                .filter(su -> roleSet.contains(su.getRole())).isPresent();
+        return Arrays.stream(roles)
+                .map(Role::valueOf)
+                .anyMatch(
+                        role -> schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), role).isPresent());
     }
 
     public boolean canAccessSchool(String schoolId) {
