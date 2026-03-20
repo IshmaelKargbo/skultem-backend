@@ -13,7 +13,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.ParentEntity;
 public interface ParentJpaRepository extends JpaRepository<ParentEntity, String> {
     boolean existsByPhoneAndSchoolId(String phone, String schoolId);
 
-    Optional<ParentEntity> findByUserId(String userId);
+    Optional<ParentEntity> findByUser_IdAndSchoolId(String userId, String schoolId);
 
     Optional<ParentEntity> findByIdAndSchoolId(String id, String schoolId);
 

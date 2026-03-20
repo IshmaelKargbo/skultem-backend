@@ -31,6 +31,7 @@ import com.moriba.skultem.application.usecase.GetAssessmentCycleOverviewUseCase;
 import com.moriba.skultem.application.usecase.AdvanceAssessmentCycleUseCase;
 import com.moriba.skultem.application.usecase.GradeAssessmentUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentApprovalRequestUseCase;
+import com.moriba.skultem.application.usecase.ListAssessmentByClassUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentTemplateBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
@@ -63,6 +64,7 @@ public class AssessmentController {
     private final ListAssessmentTemplateBySchoolUseCase listAssessmentTemplateBySchoolUseCase;
     private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
     private final ListAssessmentUseCase listAssessmentUseCase;
+    private final ListAssessmentByClassUseCase assessmentByClassUseCase;
     private final GetActiveAssessmentCycleUseCase getActiveAssessmentCycleUseCase;
     private final GetAssessmentCycleOverviewUseCase getAssessmentCycleOverviewUseCase;
     private final AdvanceAssessmentCycleUseCase advanceAssessmentCycleUseCase;
@@ -109,6 +111,14 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessments list fetch successfully", res);
     }
 
+    @GetMapping("/list/{classId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'PARENT')")
+    public ApiResponse<List<AssessmentDTO>> listAssessmentByClass(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable(name = "classId") String classId) {
+        var res = assessmentByClassUseCase.execute(school, classId);
+        return new ApiResponse<>("success", 200, "Assessments list fetch successfully", res);
+    }
 
     @GetMapping("/approval/{classMasterId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
@@ -218,7 +228,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/grading-scale")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'PARENT')")
     public ApiResponse<GradingScaleDTO> getGradingScale(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var scale = getSchoolGradingScaleUseCase.execute(school);

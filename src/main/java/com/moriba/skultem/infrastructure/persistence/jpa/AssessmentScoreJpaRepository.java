@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
@@ -15,7 +16,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.AssessmentScoreEntit
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
 @Repository
-public interface AssessmentScoreJpaRepository extends JpaRepository<AssessmentScoreEntity, String>, JpaSpecificationExecutor<AssessmentScoreEntity> {
+public interface AssessmentScoreJpaRepository
+                extends JpaRepository<AssessmentScoreEntity, String>, JpaSpecificationExecutor<AssessmentScoreEntity> {
         List<AssessmentScoreEntity> findAllByStudentAssessment_IdOrderByCycle_Assessment_PositionAsc(
                         String assessmentId);
 
@@ -51,8 +53,32 @@ public interface AssessmentScoreJpaRepository extends JpaRepository<AssessmentSc
                         String schoolId,
                         ClassSubjectAssessmentLifeCycle.Status status);
 
+        @Query("""
+                        SELECT position FROM (
+                            SELECT e.student.id as studentId,
+                                   RANK() OVER (ORDER BY SUM(a.score * a.weight) DESC) as position
+                            FROM AssessmentScoreEntity a
+                            JOIN a.studentAssessment sa
+                            JOIN a.cycle cy
+                            JOIN cy.term t
+                            JOIN sa.enrollment e
+                            JOIN e.clazz c
+                            WHERE a.schoolId = :schoolId
+                            AND c.id = :classId
+                            AND t.id = :termId
+                            GROUP BY e.student.id
+                        ) r
+                        WHERE r.studentId = :studentId
+                        """)
+        Integer getStudentRank(
+                        String schoolId,
+                        String classId,
+                        String termId,
+                        String studentId);
+
         default Page<AssessmentScoreEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-                Specification<AssessmentScoreEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
+                Specification<AssessmentScoreEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
+                                schoolId);
 
                 if (filters != null && !filters.isEmpty()) {
                         spec = spec.and(FilterSpecificationBuilder.build(filters));

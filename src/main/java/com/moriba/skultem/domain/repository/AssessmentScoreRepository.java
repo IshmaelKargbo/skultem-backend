@@ -28,4 +28,6 @@ public interface AssessmentScoreRepository {
     boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
 
     Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+
+    Integer getStudentRank(String schoolId, String classId, String termId, String studentId);
 }

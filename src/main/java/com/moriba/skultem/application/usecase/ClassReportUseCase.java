@@ -70,7 +70,7 @@ public class ClassReportUseCase {
                     String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
                     String grade = "Grade " + clazz.getDisplayOrder();
 
-                    long count = enrollmentRepo.findAllByClassAndAcademicSchoolId(classId, academicYear.getId(), request.schoolId(), Pageable.unpaged())
+                    long count = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), request.schoolId(), Pageable.unpaged())
                             .getTotalElements();
 
                     return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, count, streamName,

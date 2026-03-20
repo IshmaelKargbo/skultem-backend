@@ -16,6 +16,8 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
 
     List<ClassSubjectAssessmentLifeCycle> findAllBySchoolAndTerm(String schoolId, String termId);
 
+    List<ClassSubjectAssessmentLifeCycle> findAllBySchoolAndTermAndClass(String schoolId, String termId, String classId);
+
     List<ClassSubjectAssessmentLifeCycle> findAllBySchoolTermAndPosition(String schoolId, String termId, int position);
 
     Optional<ClassSubjectAssessmentLifeCycle> findByTeacherSubjectAndAssessmentAndTerm(String subectId,

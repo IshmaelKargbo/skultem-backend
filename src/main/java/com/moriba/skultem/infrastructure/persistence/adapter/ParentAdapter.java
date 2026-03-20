@@ -45,12 +45,12 @@ public class ParentAdapter implements ParentRepository {
     }
 
     @Override
-    public Optional<Parent> findByUserId(String userId) {
-        return repo.findByUserId(userId).map(ParentMapper::toDomain);
+    public Optional<Parent> findByIdAndSchoolId(String id, String school) {
+        return repo.findByIdAndSchoolId(id, school).map(ParentMapper::toDomain);
     }
 
     @Override
-    public Optional<Parent> findByIdAndSchoolId(String id, String school) {
-        return repo.findByIdAndSchoolId(id, school).map(ParentMapper::toDomain);
+    public Optional<Parent> findByUserIdAndSchoolId(String userId, String schoolId) {
+        return repo.findByUser_IdAndSchoolId(userId, schoolId).map(ParentMapper::toDomain);
     }
 }

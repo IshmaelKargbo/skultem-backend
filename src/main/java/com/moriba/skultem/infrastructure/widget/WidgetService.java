@@ -35,10 +35,6 @@ public class WidgetService {
     private final GradeReportUseCase gradeReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
 
-    // -------------------------------------------------------------------------
-    // Entry Point
-    // -------------------------------------------------------------------------
-
     public Object runAnalytics(String schoolId, Widget request, int page, int size) {
         if (request == null || request.metrics() == null || request.metrics().isEmpty())
             throw new IllegalArgumentException("Invalid widget request");
@@ -60,10 +56,6 @@ public class WidgetService {
                 ? toTable(groupField, labels, request.metrics(), values)
                 : toChart(request, labels, values);
     }
-
-    // -------------------------------------------------------------------------
-    // Load
-    // -------------------------------------------------------------------------
 
     private List<?> loadRecords(String schoolId, Widget request, int page, int size) {
         var dto = new ReportBuilderDTO(schoolId, request.entity(), request.filters());

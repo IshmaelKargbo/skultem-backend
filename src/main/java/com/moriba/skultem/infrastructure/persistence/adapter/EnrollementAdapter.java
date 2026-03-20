@@ -83,7 +83,7 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
-    public Page<Enrollment> findAllByClassAndAcademicSchoolId(String classId, String academicYearId, String schoolId,
+    public Page<Enrollment> findAllByClassAndAcademicAndSchoolId(String classId, String academicYearId, String schoolId,
             Pageable pageable) {
         return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolId(classId, academicYearId, schoolId, pageable)
                 .map(EnrollmentMapper::toDomain);

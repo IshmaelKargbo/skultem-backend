@@ -90,7 +90,8 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     }
 
     @Override
-    public boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId) {
+    public boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId,
+            String schoolId) {
         boolean hasScored = repo
                 .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndSchoolIdAndScoreGreaterThan(
                         classId,
@@ -114,5 +115,10 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     public Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable)
                 .map(AssessmentScoreMapper::toDomain);
+    }
+
+    @Override
+    public Integer getStudentRank(String schoolId, String classId, String termId, String studentId) {
+        return repo.getStudentRank(schoolId, classId, termId, studentId);
     }
 }

@@ -27,7 +27,7 @@ public class WidgetController {
         private final WidgetService widgetService;
 
         @PostMapping("/run")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
         public ApiResponse<Object> runReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam int page,

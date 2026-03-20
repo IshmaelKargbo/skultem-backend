@@ -49,13 +49,67 @@ public class StudentMapper {
                 param.getDateOfBirth(),
                 age,
                 classId,
+                0,
                 className,
+                "",
                 param.getParent().getUser().getName(),
                 param.getParent().getFatherName(),
                 param.getParent().getMotherName(),
+                "",
                 param.getStatus(),
                 param.getCreatedAt(),
-                param.getUpdatedAt()
-        );
+                param.getUpdatedAt());
+    }
+
+    public static StudentDTO toDTO(Student param, Enrollment enrollment, String teacher, int classSize, String sessionId) {
+
+        String className = "N/A";
+        String classId = "";
+        String enrollmentId = null;
+
+        if (enrollment != null) {
+
+            enrollmentId = enrollment.getId();
+
+            if (enrollment.getClazz() != null && enrollment.getSection() != null) {
+
+                classId = enrollment.getClazz().getId();
+
+                String baseName = enrollment.getClazz().getName()
+                        + " (" + enrollment.getSection().getName();
+
+                if (enrollment.getStream() != null) {
+                    baseName += " - " + enrollment.getStream().getName();
+                }
+
+                className = baseName + ")";
+            }
+        }
+
+        Integer age = null;
+        if (param.getDateOfBirth() != null) {
+            age = Period.between(param.getDateOfBirth(), LocalDate.now()).getYears();
+        }
+
+        return new StudentDTO(
+                param.getId(),
+                enrollmentId,
+                param.getAdmissionNumber(),
+                param.getGivenNames(),
+                param.getFamilyName(),
+                param.getGender(),
+                param.getDateOfBirth(),
+                age,
+                classId,
+                classSize,
+                className,
+                teacher,
+                param.getParent().getUser().getName(),
+                param.getParent().getFatherName(),
+                param.getParent().getMotherName(),
+                sessionId,
+                param.getStatus(),
+                param.getCreatedAt(),
+                param.getUpdatedAt());
     }
 }

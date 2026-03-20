@@ -18,7 +18,7 @@ public class AttendanceMapper {
                 name,
                 enrollment.student().className(),
                 param.getDate(),
-                param.getState(),
+                param.getStatus(),
                 param.getReason(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());

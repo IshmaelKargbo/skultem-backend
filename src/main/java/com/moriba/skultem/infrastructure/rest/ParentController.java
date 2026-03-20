@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.usecase.GetTeacherUseCase;
+import com.moriba.skultem.application.usecase.ListNotificationByParentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import com.moriba.skultem.application.dto.NotificationDTO;
 import com.moriba.skultem.application.dto.ParentDTO;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.usecase.CreateParentUseCase;
@@ -35,6 +37,7 @@ public class ParentController {
         private final GetTeacherUseCase getTeacherUseCase;
         private final ListParentBySchoolUseCase listParentBySchoolUseCase;
         private final ListStudentByParentUseCase listStudentByParentUseCase;
+        private final ListNotificationByParentUseCase listNotificationByParentUseCase;
 
         @PostMapping
         @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
@@ -81,6 +84,24 @@ public class ParentController {
                                 "pages", res.getTotalPages());
 
                 return new ApiResponse<>("success", 200, "Parent students fetched successfully", list, meta);
+        }
+
+        @GetMapping("/notifications")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PARENT')")
+        public ApiResponse<List<NotificationDTO>> listNotificationBySchool(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                var res = listNotificationByParentUseCase.execute(school, userId, page, size);
+                var list = res.getContent();
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+
+                return new ApiResponse<>("success", 200, "Parent notifications fetched successfully", list, meta);
         }
 
         @GetMapping("/{id}")

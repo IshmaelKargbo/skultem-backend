@@ -52,4 +52,8 @@ public class Teacher extends AggregateRoot<String> {
         this.status = Status.DELETED;
         touch(Instant.now());
     }
+
+    public String getName() {
+        return String.join(" ", title.toSentenceCase(), user.getName());
+    }
 }

@@ -1,10 +1,12 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
-import com.moriba.skultem.domain.model.Student.Status;
-import com.moriba.skultem.domain.vo.Gender;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.moriba.skultem.domain.model.Notification.Type;
+import com.moriba.skultem.domain.vo.Priority;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,12 +23,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "students")
+@Table(name = "notifications")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StudentEntity {
+public class NotificationEntity {
     @Id
     private String id;
 
@@ -34,30 +36,29 @@ public class StudentEntity {
     private String schoolId;
 
     @Column(nullable = false)
-    private String admissionNumber;
+    private String title;
 
-    private String givenNames;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String message;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
+    private String meta;
 
     @Column(nullable = false)
-    private String familyName;
+    private boolean read;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", nullable = false)
-    private ParentEntity parent;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false)
-    private ClassSessionEntity session;
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity owner;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Gender gender;
-
-    private LocalDate dateOfBirth;
+    private Type type;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private Priority priority;
 
     private Instant createdAt;
     private Instant updatedAt;

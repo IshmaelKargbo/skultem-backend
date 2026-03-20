@@ -52,7 +52,7 @@ public class Attendance extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
-    public String getState() {
+    public String getStatus() {
         if (isPresent())
             return "Present";
         if (isExcused())

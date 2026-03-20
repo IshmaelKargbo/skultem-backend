@@ -15,6 +15,7 @@ public class Student extends AggregateRoot<String> {
     private String givenNames;
     private String familyName;
     private Gender gender;
+    private ClassSession session;
     private LocalDate dateOfBirth;
     private Parent parent;
     private Status status;
@@ -24,13 +25,15 @@ public class Student extends AggregateRoot<String> {
     }
 
     public Student(String id, String schoolId, String admissionNumber, String givenNames, String familyName,
-            Gender gender, Parent parent, LocalDate dateOfBirth, Status status, Instant createdAt, Instant updatedAt) {
+            ClassSession session, Gender gender, Parent parent, LocalDate dateOfBirth, Status status, Instant createdAt,
+            Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.admissionNumber = admissionNumber;
         this.givenNames = givenNames;
         this.familyName = familyName;
         this.dateOfBirth = dateOfBirth;
+        this.session = session;
         this.parent = parent;
         this.gender = gender;
         this.status = status;
@@ -38,11 +41,10 @@ public class Student extends AggregateRoot<String> {
     }
 
     public static Student create(String id, String schoolId, String admissionNumber, String givenNames,
-            String familyName, Gender gender, Parent parent,
-            LocalDate dateOfBirth) {
+            String familyName, Gender gender, Parent parent, LocalDate dateOfBirth, ClassSession session) {
         Instant now = Instant.now();
-        return new Student(id, schoolId, admissionNumber, givenNames, familyName, gender, parent, dateOfBirth, Status.ACTIVE,
-                now, now);
+        return new Student(id, schoolId, admissionNumber, givenNames, familyName, session, gender, parent, dateOfBirth,
+                Status.ACTIVE, now, now);
     }
 
     public void softDelete() {

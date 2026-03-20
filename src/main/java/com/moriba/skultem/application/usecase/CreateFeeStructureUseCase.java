@@ -78,7 +78,7 @@ public class CreateFeeStructureUseCase {
                 List<Enrollment> enrollments;
 
                 if (clazz != null) {
-                        enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(
+                        enrollments = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                                         clazz.getId(),
                                         academicYear.getId(),
                                         param.schoolId(), Pageable.unpaged())

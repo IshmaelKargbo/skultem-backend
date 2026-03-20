@@ -1,4 +1,4 @@
-package com.moriba.skultem.infrastructure.audit;
+package com.moriba.skultem.infrastructure.listener;
 
 import java.util.UUID;
 

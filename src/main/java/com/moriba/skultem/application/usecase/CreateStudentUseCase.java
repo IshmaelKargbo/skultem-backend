@@ -102,7 +102,8 @@ public class CreateStudentUseCase {
                 param.familyName().trim(),
                 param.gender(),
                 parent,
-                param.dateOfBirth());
+                param.dateOfBirth(),
+                session);
         repo.save(student);
 
         Enrollment enrollment = enrollStudent(student, session);

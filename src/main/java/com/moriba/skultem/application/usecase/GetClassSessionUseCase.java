@@ -55,7 +55,7 @@ public class GetClassSessionUseCase {
         String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
         String grade = "Grade " + clazz.getDisplayOrder();
 
-        long count = enrollmentRepo.findAllByClassAndAcademicSchoolId(classId, academicYear.getId(), school, Pageable.unpaged())
+        long count = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school, Pageable.unpaged())
                 .getTotalElements();
 
         return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, count, streamName,

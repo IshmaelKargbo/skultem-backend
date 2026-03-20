@@ -29,7 +29,7 @@ public class ListEnrollmentByClassUseCase {
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
-        return repo.findAllByClassAndAcademicSchoolId(classId, academicYear.getId(), schoolId, pageable).map(e -> {
+        return repo.findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), schoolId, pageable).map(e -> {
             return StudentMapper.toDTO(e.getStudent(), e);
         });
     }

@@ -14,7 +14,7 @@ public interface ParentRepository {
 
     Optional<Parent> findByIdAndSchoolId(String id, String school);
 
-    Optional<Parent> findByUserId(String userId);
+    Optional<Parent> findByUserIdAndSchoolId(String userId, String schoolId);
 
     boolean existsByPhoneAndSchool(String phone, String schoolId);
 

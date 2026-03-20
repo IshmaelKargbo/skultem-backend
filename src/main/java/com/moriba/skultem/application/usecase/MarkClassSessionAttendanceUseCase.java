@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,11 +19,15 @@ import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Attendance;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Enrollment;
+import com.moriba.skultem.domain.model.Notification;
+import com.moriba.skultem.domain.model.Parent;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
+import com.moriba.skultem.domain.repository.NotificationRepository;
+import com.moriba.skultem.domain.vo.Priority;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +39,9 @@ public class MarkClassSessionAttendanceUseCase {
     private final AttendanceRepository attendanceRepo;
     private final ClassSessionRepository classSessionRepo;
     private final AcademicYearRepository academicYearRepo;
+    private final NotificationRepository notificationRepo;
     private final HolidayRepository holidayRepo;
     private final EnrollmentRepository enrollmentRepo;
-    private final ReferenceGeneratorUsecase rg;
 
     @AuditLogAnnotation(action = "CLASS_ATTENDANCE_MARKED")
     public List<AttendanceDTO> execute(
@@ -45,6 +50,7 @@ public class MarkClassSessionAttendanceUseCase {
             LocalDate date,
             boolean holiday,
             List<MarkRecord> records) {
+
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("No active academic year found"));
 
@@ -80,25 +86,73 @@ public class MarkClassSessionAttendanceUseCase {
 
             validateAttendanceState(record.present(), record.excused(), record.reason(), record.late());
 
-            var existing = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date, schoolId);
+            var existingOpt = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date, schoolId);
 
-            if (existing.isPresent()) {
-                var attendance = existing.get();
+            Attendance attendance;
+            if (existingOpt.isPresent()) {
+                attendance = existingOpt.get();
+
+                String prevStatus = attendance.getStatus();
+
                 attendance.update(record.present(), record.excused(), record.late(), record.reason(), holiday);
                 attendanceRepo.save(attendance);
-                return AttendanceMapper.toDTO(attendance);
+
+                notifyParentForAttendanceChange(attendance, enrollment.getStudent().getParent(), prevStatus);
+            } else {
+                var id = UUID.randomUUID().toString();
+                attendance = Attendance.create(id, schoolId, enrollment, date, record.present(), record.excused(),
+                        record.late(), record.reason(), holiday);
+                attendanceRepo.save(attendance);
+
+                notifyParentForAttendanceChange(attendance, enrollment.getStudent().getParent(), null);
             }
 
-            var id = rg.generate("ATTENDANCE", "ATD");
-            var attendance = Attendance.create(id, schoolId, enrollment, date, record.present(), record.excused(),
-                    record.late(), record.reason(), holiday);
-            attendanceRepo.save(attendance);
             return AttendanceMapper.toDTO(attendance);
         }).toList();
     }
 
+    private void notifyParentForAttendanceChange(Attendance attendance, Parent parent, String prevStatus) {
+        if (parent == null)
+            return;
+
+        Map<String, String> meta = Map.of(
+                "student_id", attendance.getEnrollment().getStudent().getId(),
+                "student_name", attendance.getEnrollment().getStudent().getName(),
+                "attendance_date", attendance.getDate().toString(),
+                "status", attendance.getStatus(),
+                "prev_status", prevStatus != null ? prevStatus : "",
+                "corrected", prevStatus != null ? "true" : "false");
+
+        String title = "Attendance Update for " + attendance.getEnrollment().getStudent().getName() + " on "
+                + attendance.getDate();
+        String message;
+
+        if (attendance.isLate()) {
+            message = "Your child was marked Late for " + attendance.getDate();
+        } else if (!attendance.isPresent() && !attendance.isExcused()) {
+            message = "Your child was marked Absent for " + attendance.getDate();
+        } else if (attendance.isPresent() && prevStatus == "Absent") {
+            message = "Correction: Your child is now marked Present for " + attendance.getDate();
+        } else {
+            return;
+        }
+
+        Notification notification = Notification.create(
+                UUID.randomUUID().toString(),
+                attendance.getSchoolId(),
+                parent.getUser(),
+                Notification.Type.ATTENDANCE,
+                title,
+                message,
+                meta,
+                Priority.HIGH
+            );
+
+        notificationRepo.save(notification);
+    }
+
     private List<Enrollment> loadSessionEnrollments(ClassSession classSession, String schoolId) {
-        return enrollmentRepo.findAllByClassAndAcademicSchoolId(
+        return enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                 classSession.getClazz().getId(),
                 classSession.getAcademicYear().getId(),
                 schoolId, Pageable.unpaged()).stream().filter(enrollment -> {

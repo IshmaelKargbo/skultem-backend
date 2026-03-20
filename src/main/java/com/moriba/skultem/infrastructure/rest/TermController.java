@@ -63,7 +63,7 @@ public class TermController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'PARENT')")
     public ApiResponse<TermDTO> getActive(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getActiveTermUseCase.execute(school);

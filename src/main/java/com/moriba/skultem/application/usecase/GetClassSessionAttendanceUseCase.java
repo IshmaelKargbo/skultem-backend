@@ -103,7 +103,7 @@ public class GetClassSessionAttendanceUseCase {
     }
 
     private List<Enrollment> loadSessionEnrollments(ClassSession classSession, String schoolId) {
-        return enrollmentRepo.findAllByClassAndAcademicSchoolId(
+        return enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                 classSession.getClazz().getId(),
                 classSession.getAcademicYear().getId(),
                 schoolId, Pageable.unpaged()).stream().filter(enrollment -> {

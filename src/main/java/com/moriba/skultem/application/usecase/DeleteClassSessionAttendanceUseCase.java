@@ -24,7 +24,7 @@ public class DeleteClassSessionAttendanceUseCase {
         var classSession = classSessionRepo.findByIdAndSchoolId(classSessionId, schoolId)
                 .orElseThrow(() -> new com.moriba.skultem.application.error.NotFoundException("Class session not found"));
 
-        var enrollments = enrollmentRepo.findAllByClassAndAcademicSchoolId(
+        var enrollments = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                 classSession.getClazz().getId(),
                 classSession.getAcademicYear().getId(),
                 schoolId, Pageable.unpaged()).getContent();

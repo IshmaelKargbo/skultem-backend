@@ -51,8 +51,10 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
     }
 
     @Override
-    public List<ClassSubjectAssessmentLifeCycle> findAllBySchoolTermAndPosition(String schoolId, String termId, int position) {
-        return repo.findAllBySchoolIdAndTerm_IdAndAssessment_PositionOrderBySubject_Id(schoolId, termId, position).stream()
+    public List<ClassSubjectAssessmentLifeCycle> findAllBySchoolTermAndPosition(String schoolId, String termId,
+            int position) {
+        return repo.findAllBySchoolIdAndTerm_IdAndAssessment_PositionOrderBySubject_Id(schoolId, termId, position)
+                .stream()
                 .map(ClassSubjectAssessmentLifeCycleMapper::toDomain)
                 .toList();
     }
@@ -62,6 +64,14 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
             String assessmentId, String termId) {
         return repo.findBySubject_IdAndAssessment_IdAndTerm_Id(subectId, assessmentId, termId)
                 .map(ClassSubjectAssessmentLifeCycleMapper::toDomain);
+    }
+
+    @Override
+    public List<ClassSubjectAssessmentLifeCycle> findAllBySchoolAndTermAndClass(String schoolId, String termId,
+            String classId) {
+        return repo.findAllBySchoolIdAndTerm_IdAndSubject_Session_Clazz_Id(schoolId, termId, classId)
+                .stream().map(ClassSubjectAssessmentLifeCycleMapper::toDomain)
+                .toList();
     }
 
 }
