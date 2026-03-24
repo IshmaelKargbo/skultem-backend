@@ -18,7 +18,30 @@ public class AssessmentScoreMapper {
                 param.getScore(),
                 param.getWeight(),
                 param.getWeightedScore(),
+                Double.NaN,
+                param.getCycle().getAssessment().getPosition(),
                 param.getStatus().name(),
-                grade);
+                grade,
+                "");
+    }
+
+    public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade, String trend, Double avarage) {
+        return new AssessmentScoreDTO(
+                param.getId(),
+                param.getAssessment().getName(),
+                param.getAssessment().getId(),
+                param.getCycle().getTerm().getName(),
+                param.getStudentAssessment().getEnrollment().getStudent().getName(),
+                param.getStudentAssessment().getTeacherSubject().getTeacher().getUser().getName(),
+                param.getStudentAssessment().getTeacherSubject().getSubject().getName(),
+                param.getStudentAssessment().getEnrollment().getClazz().getName(),
+                param.getScore(),
+                param.getWeight(),
+                param.getWeightedScore(),
+                avarage,
+                param.getCycle().getAssessment().getPosition(),
+                param.getStatus().name(),
+                grade,
+                trend);
     }
 }

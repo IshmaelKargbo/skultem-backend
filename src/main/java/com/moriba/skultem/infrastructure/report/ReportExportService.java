@@ -25,11 +25,13 @@ import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.ClassReportUseCase;
 import com.moriba.skultem.application.usecase.FeeReportUseCase;
 import com.moriba.skultem.application.usecase.GradeReportUseCase;
+import com.moriba.skultem.application.usecase.LeaderBoardReportUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
 import com.moriba.skultem.application.usecase.ListStudentPaymentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.PaymentReportUseCase;
+import com.moriba.skultem.application.usecase.SimplifiedClassLeaderBoardUseCase;
 import com.moriba.skultem.application.usecase.StudentReportUseCase;
 import com.moriba.skultem.application.usecase.SubjectReportUseCase;
 import com.moriba.skultem.application.usecase.TeacherReportUseCase;
@@ -61,6 +63,8 @@ public class ReportExportService {
         private final FeeReportUseCase feeReportUseCase;
         private final ClassReportUseCase classReportUseCase;
         private final GradeReportUseCase gradeReportUseCase;
+        private final LeaderBoardReportUseCase leaderBoardReportUseCase;
+        private final SimplifiedClassLeaderBoardUseCase simplifiedClassLeaderBoardUseCase;
         private final SubjectReportUseCase subjectReportUseCase;
         private final ListFeeStructureBySchoolUseCase listFeeStructureBySchoolUseCase;
         private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
@@ -216,6 +220,8 @@ public class ReportExportService {
                         case "attendances" -> buildAttendanceTable(report, page, size);
                         case "fees" -> buildFeesTable(report, page, size);
                         case "payments" -> buildPaymentsTable(report, page, size);
+                        case "leaderboard" -> buildLeaderBoardTable(report, page, size);
+                        case "breakdown" -> buildBreakdownTable(report, page, size);
                         case "grades" -> buildGradesTable(report, page, size);
                         default -> throw new NotFoundException("Unsupported report type");
                 };
@@ -319,6 +325,32 @@ public class ReportExportService {
 
         private Map<String, Object> buildGradesTable(ReportBuilderDTO param, int page, int size) {
                 var res = gradeReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
+        private Map<String, Object> buildBreakdownTable(ReportBuilderDTO param, int page, int size) {
+                var res = leaderBoardReportUseCase.execute(param, page, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                var data = res.getContent();
+                return Map.of(
+                                "data", data,
+                                "meta", meta);
+        }
+
+        private Map<String, Object> buildLeaderBoardTable(ReportBuilderDTO param, int page, int size) {
+                var res = simplifiedClassLeaderBoardUseCase.execute(param, page, size);
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
                                 "size", res.getSize(),

@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,21 +23,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateUserUseCase {
 
+    private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
+    private static final int PASSWORD_LENGTH = 12;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final UserRepository repo;
     private final SchoolUserRepository schoolUserRepo;
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
     private final LogActivityUseCase logActivityUseCase;
 
-    @AuditLogAnnotation(action="USER_CREATED")
-    public UserDTO execute(String school, String givenNames, String familyName, String email, String password, String role) {
+    @AuditLogAnnotation(action = "USER_CREATED")
+    public UserDTO execute(String school, String givenNames, String familyName, String email, String role) {
         User user;
         if (repo.existsByEmail(email)) {
             user = repo.findByEmail(email).orElseThrow();
         } else {
+            var password = generatePassword();
             var id = rg.generate("USER", "USR");
             var passwordHash = passwordEncoder.encode(password);
-            user = User.create(id, givenNames, familyName, email, passwordHash, "");
+            user = User.create(id, givenNames, familyName, email, passwordHash, password);
             repo.save(user);
         }
 
@@ -47,8 +53,9 @@ public class CreateUserUseCase {
         var roleEnum = Role.valueOf(role);
         var schoolUserId = rg.generate("SCHOOL_USER", "SCU");
         var schoolUser = SchoolUser.create(schoolUserId, school, user, roleEnum);
-        
-        List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school).stream().map(e -> e.getRole())
+
+        List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school).stream()
+                .map(e -> e.getRole())
                 .toList();
         schoolUserRepo.save(schoolUser);
 
@@ -61,5 +68,14 @@ public class CreateUserUseCase {
                 user.getId());
 
         return UserMapper.toDTO(user, roles);
+    }
+
+    private String generatePassword() {
+        StringBuilder value = new StringBuilder(PASSWORD_LENGTH);
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            int index = RANDOM.nextInt(PASSWORD_CHARS.length());
+            value.append(PASSWORD_CHARS.charAt(index));
+        }
+        return value.toString();
     }
 }

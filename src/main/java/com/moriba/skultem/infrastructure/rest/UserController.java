@@ -37,8 +37,7 @@ public class UserController {
     @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
     public ApiResponse<UserDTO> create(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateUserDTO param) {
-        var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(),
-                param.password(), param.role());
+        var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(), param.role());
         return new ApiResponse<>("success", 200, "User created successfully", res);
     }
 

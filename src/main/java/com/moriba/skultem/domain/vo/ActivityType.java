@@ -9,6 +9,7 @@ public enum ActivityType {
     SUBJECT,
     GRADE,
     FEES,
+    EXPENSE,
     PAYMENT,
     SCHOOL,
     SETTINGS

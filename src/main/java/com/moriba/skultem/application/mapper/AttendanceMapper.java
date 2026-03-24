@@ -12,6 +12,7 @@ public class AttendanceMapper {
 
         EnrollmentDTO enrollment = EnrollmentMapper.toDTO(param.getEnrollment());
         String name = String.join(" ", enrollment.student().givenNames(), enrollment.student().familyName());
+
         return new AttendanceDTO(
                 param.getId(),
                 enrollment.student().id(),

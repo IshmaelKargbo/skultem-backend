@@ -80,7 +80,7 @@ public class ClassController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -97,7 +97,7 @@ public class ClassController {
     }
 
     @GetMapping("/subject/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClassSubjectResponse> listClassSubject(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -107,7 +107,7 @@ public class ClassController {
     }
 
     @GetMapping("/master/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassMasterDTO>> getClassMasterByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -116,7 +116,7 @@ public class ClassController {
     }
 
     @GetMapping("/section/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSectionDTO>> getClassSectionsByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -125,7 +125,7 @@ public class ClassController {
     }
 
     @GetMapping("/streams/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassStreamDTO>> listStreams(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -152,7 +152,7 @@ public class ClassController {
     }
 
     @GetMapping("/{id}/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClassOverviewDTO> overview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

@@ -15,6 +15,7 @@ import com.moriba.skultem.application.dto.ReportBuilderDTO;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.FeeReportUseCase;
 import com.moriba.skultem.application.usecase.GradeReportUseCase;
+import com.moriba.skultem.application.usecase.PaymentReportUseCase;
 import com.moriba.skultem.application.usecase.StudentReportUseCase;
 import com.moriba.skultem.application.usecase.TeacherReportUseCase;
 import com.moriba.skultem.domain.vo.Chart;
@@ -33,6 +34,7 @@ public class WidgetService {
     private final StudentReportUseCase studentReportUseCase;
     private final FeeReportUseCase feeReportUseCase;
     private final GradeReportUseCase gradeReportUseCase;
+    private final PaymentReportUseCase paymentReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
 
     public Object runAnalytics(String schoolId, Widget request, int page, int size) {
@@ -64,6 +66,7 @@ public class WidgetService {
             case "students" -> studentReportUseCase.execute(dto, page, size).getContent();
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();
             case "assessments" -> gradeReportUseCase.execute(dto, page, size).getContent();
+            case "payments" -> paymentReportUseCase.execute(dto, page, size).getContent();
             case "teachers" -> teacherReportUseCase.execute(dto, page, size).getContent();
             default -> {
                 log.warn("Unknown entity: {}", request.entity());
@@ -71,10 +74,6 @@ public class WidgetService {
             }
         };
     }
-
-    // -------------------------------------------------------------------------
-    // Group
-    // -------------------------------------------------------------------------
 
     private Map<String, List<Object>> group(List<?> records, String groupField, String interval) {
         if (groupField == null)
@@ -216,10 +215,6 @@ public class WidgetService {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Output
-    // -------------------------------------------------------------------------
-
     private List<Map<String, Object>> toTable(
             String groupField,
             List<String> labels,
@@ -253,10 +248,6 @@ public class WidgetService {
     private Chart emptyChart(Widget request) {
         return new Chart(request.chartType(), request.title(), List.of(), List.of());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private String formatKey(Object value, String interval) {
         if (value == null)
