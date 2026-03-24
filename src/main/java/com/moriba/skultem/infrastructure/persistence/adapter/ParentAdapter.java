@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Parent;
 import com.moriba.skultem.domain.repository.ParentRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.ParentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.ParentMapper;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +54,11 @@ public class ParentAdapter implements ParentRepository {
     @Override
     public Optional<Parent> findByUserIdAndSchoolId(String userId, String schoolId) {
         return repo.findByUser_IdAndSchoolId(userId, schoolId).map(ParentMapper::toDomain);
+    }
+
+    @Override
+    public Page<Parent> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(ParentMapper::toDomain);
     }
 }

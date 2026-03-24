@@ -11,9 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeDetail;
 import com.moriba.skultem.application.dto.ParentDTO;
+import com.moriba.skultem.application.dto.ReportBuilderDTO;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.mapper.ParentMapper;
+import com.moriba.skultem.domain.model.Parent;
 import com.moriba.skultem.domain.repository.ParentRepository;
+import com.moriba.skultem.domain.vo.Filter;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,32 +24,35 @@ import lombok.RequiredArgsConstructor;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class ListParentBySchoolUseCase {
+public class ParentReportUseCase {
 
     private final ParentRepository repo;
     private final @Lazy GetFeeDetailUsecase getFeeDetailUsecase;
     private final ListStudentByParentUseCase listStudentByParentUseCase;
 
-    public Page<ParentDTO> execute(String schoolId, int page, int size) {
+    public Page<ParentDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = Pageable.unpaged();
+        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
 
-        if (size > 0) {
-            pageable = PageRequest.of(page - 1, size);
-        }
+        List<Filter> filters = request.filters();
 
-        return repo.findBySchool(schoolId, pageable).map(parent -> {
+        Page<Parent> res = repo.runReport(
+                request.schoolId(),
+                filters,
+                pageable);
+
+        return res.map(parent -> {
             BigDecimal totalExpected = BigDecimal.ZERO;
             BigDecimal totalCollected = BigDecimal.ZERO;
             BigDecimal totalOutstanding = BigDecimal.ZERO;
             String status = "";
 
-            List<StudentDTO> students = listStudentByParentUseCase.execute(schoolId, parent.getUser().getId(), 0, 0)
+            List<StudentDTO> students = listStudentByParentUseCase.execute(request.schoolId(), parent.getUser().getId(), 0, 0)
                     .getContent();
 
             for (StudentDTO student : students) {
 
-                FeeDetail detail = getFeeDetailUsecase.execute(schoolId, student.id());
+                FeeDetail detail = getFeeDetailUsecase.execute(request.schoolId(), student.id());
 
                 if (detail != null) {
                     if (detail.total() != null)

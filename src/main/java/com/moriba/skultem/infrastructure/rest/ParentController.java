@@ -52,7 +52,7 @@ public class ParentController {
         }
 
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<List<ParentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -69,7 +69,7 @@ public class ParentController {
         }
 
         @GetMapping("/students")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT', 'ACCOUNTANT')")
         public ApiResponse<List<StudentDTO>> listStudentBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId,

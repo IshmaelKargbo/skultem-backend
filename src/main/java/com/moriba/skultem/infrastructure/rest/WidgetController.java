@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.Widget;
+import com.moriba.skultem.application.usecase.WidgetUsecase;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.domain.vo.Metric;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.WidgetDTO;
-import com.moriba.skultem.infrastructure.widget.WidgetService;
-import com.moriba.skultem.infrastructure.widget.dto.Widget;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WidgetController {
 
-        private final WidgetService widgetService;
+        private final WidgetUsecase widgetUsecase;
 
         @PostMapping("/run")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
@@ -62,7 +62,7 @@ public class WidgetController {
                                 : List.of();
 
                 var widget = new Widget(param.entity(), filters, metrics, param.chartType(), param.title());
-                var res = widgetService.runAnalytics(school, widget, page, size);
+                var res = widgetUsecase.runAnalytics(school, widget, page, size);
 
                 return new ApiResponse<>("success", 200, "Widget fetch successfully", res);
         }

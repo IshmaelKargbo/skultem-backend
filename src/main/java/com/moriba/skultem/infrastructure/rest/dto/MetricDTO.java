@@ -19,5 +19,5 @@ public record MetricDTO(
 
         List<MetricFilterDTO> filters,
 
-        String value) {
+        Double value) {
 }

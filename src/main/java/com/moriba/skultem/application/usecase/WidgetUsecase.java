@@ -1,6 +1,7 @@
-package com.moriba.skultem.infrastructure.widget;
+package com.moriba.skultem.application.usecase;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.IsoFields;
@@ -11,39 +12,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.moriba.skultem.application.dto.ChartData;
+import com.moriba.skultem.application.dto.Dataset;
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
-import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
-import com.moriba.skultem.application.usecase.FeeReportUseCase;
-import com.moriba.skultem.application.usecase.GradeReportUseCase;
-import com.moriba.skultem.application.usecase.PaymentReportUseCase;
-import com.moriba.skultem.application.usecase.StudentReportUseCase;
-import com.moriba.skultem.application.usecase.TeacherReportUseCase;
-import com.moriba.skultem.domain.vo.Chart;
+import com.moriba.skultem.application.dto.TableData;
+import com.moriba.skultem.application.dto.Widget;
+import com.moriba.skultem.application.dto.WidgetResponse;
 import com.moriba.skultem.domain.vo.Metric;
-import com.moriba.skultem.infrastructure.widget.dto.Widget;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class WidgetService {
+public class WidgetUsecase {
 
-    private static final Logger log = LoggerFactory.getLogger(WidgetService.class);
+    private static final Logger log = LoggerFactory.getLogger(WidgetUsecase.class);
 
     private final AttendanceReportUseCase attendanceReportUseCase;
     private final StudentReportUseCase studentReportUseCase;
     private final FeeReportUseCase feeReportUseCase;
     private final GradeReportUseCase gradeReportUseCase;
     private final PaymentReportUseCase paymentReportUseCase;
+    private final ParentReportUseCase parentReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
 
-    public Object runAnalytics(String schoolId, Widget request, int page, int size) {
-        if (request == null || request.metrics() == null || request.metrics().isEmpty())
+    public WidgetResponse<?> runAnalytics(String schoolId, Widget request, int page, int size) {
+        if (request == null || request.metrics() == null || request.metrics().isEmpty()) {
             throw new IllegalArgumentException("Invalid widget request");
+        }
 
         List<?> records = loadRecords(schoolId, request, page, size);
-        if (records.isEmpty())
-            return request.chartType().equalsIgnoreCase("table") ? List.of() : emptyChart(request);
+
+        if (records.isEmpty()) {
+            // return empty chart or table
+            Object emptyData = request.chartType().equalsIgnoreCase("table")
+                    ? emptyTable(request)
+                    : emptyChart(request);
+            return new WidgetResponse<>(200, "Widget fetch successfully", "success", emptyData);
+        }
 
         String groupField = firstTag(request, "groupBy");
         String interval = firstTag(request, "interval", "day");
@@ -54,9 +60,75 @@ public class WidgetService {
 
         sort(request.metrics(), labels, values);
 
-        return request.chartType().equalsIgnoreCase("table")
-                ? toTable(groupField, labels, request.metrics(), values)
+        Object data = request.chartType().equalsIgnoreCase("table")
+                ? toTable(request, labels, values)
                 : toChart(request, labels, values);
+
+        return new WidgetResponse<>(200, "Widget fetch successfully", "success", data);
+    }
+
+    private Object emptyChart(Widget request) {
+        // Chart with empty datasets and a default "all" label
+        List<Dataset> datasets = request.metrics().stream()
+                .map(m -> new Dataset(m.name(), List.of(BigDecimal.ZERO)))
+                .toList();
+
+        return new ChartData(
+                request.chartType(),
+                request.title(),
+                List.of("all"),
+                datasets);
+    }
+
+    private Object emptyTable(Widget request) {
+        // Table with headers but no rows
+        List<String> headers = new ArrayList<>();
+        headers.add("Group"); // default first column
+        request.metrics().forEach(m -> headers.add(m.name()));
+
+        List<List<Object>> rows = List.of(); // empty rows
+
+        return new TableData(
+                "table",
+                request.title(),
+                headers,
+                rows);
+    }
+
+    private ChartData toChart(Widget request, List<String> labels, List<List<Double>> values) {
+        List<Dataset> datasets = new ArrayList<>();
+
+        for (int i = 0; i < request.metrics().size(); i++) {
+            var metric = request.metrics().get(i);
+            List<BigDecimal> data = values.get(i).stream()
+                    .map(BigDecimal::valueOf)
+                    .toList();
+            datasets.add(new Dataset(metric.name(), data));
+        }
+
+        return new ChartData(
+                request.chartType(),
+                request.title(),
+                labels,
+                datasets);
+    }
+
+    private TableData toTable(Widget request, List<String> labels, List<List<Double>> values) {
+        List<String> headers = new ArrayList<>();
+        headers.add("Group");
+        request.metrics().forEach(m -> headers.add(m.name()));
+
+        List<List<Object>> rows = new ArrayList<>();
+        for (int i = 0; i < labels.size(); i++) {
+            List<Object> row = new ArrayList<>();
+            row.add(labels.get(i));
+            for (List<Double> col : values) {
+                row.add(BigDecimal.valueOf(col.get(i)));
+            }
+            rows.add(row);
+        }
+
+        return new TableData("table", request.title(), headers, rows);
     }
 
     private List<?> loadRecords(String schoolId, Widget request, int page, int size) {
@@ -66,6 +138,7 @@ public class WidgetService {
             case "students" -> studentReportUseCase.execute(dto, page, size).getContent();
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();
             case "assessments" -> gradeReportUseCase.execute(dto, page, size).getContent();
+            case "parents" -> parentReportUseCase.execute(dto, page, size).getContent();
             case "payments" -> paymentReportUseCase.execute(dto, page, size).getContent();
             case "teachers" -> teacherReportUseCase.execute(dto, page, size).getContent();
             default -> {
@@ -213,40 +286,6 @@ public class WidgetService {
             }
             break;
         }
-    }
-
-    private List<Map<String, Object>> toTable(
-            String groupField,
-            List<String> labels,
-            List<Metric> metrics,
-            List<List<Double>> values) {
-
-        String key = groupField != null ? groupField : "group";
-        List<Map<String, Object>> rows = new ArrayList<>();
-
-        for (int i = 0; i < labels.size(); i++) {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put(key, labels.get(i));
-            for (int mi = 0; mi < metrics.size(); mi++)
-                row.put(metrics.get(mi).name(), values.get(mi).get(i));
-            rows.add(row);
-        }
-        return rows;
-    }
-
-    private Chart toChart(Widget request, List<String> labels, List<List<Double>> values) {
-        List<Map<String, Object>> datasets = new ArrayList<>();
-        for (int mi = 0; mi < request.metrics().size(); mi++) {
-            Map<String, Object> ds = new LinkedHashMap<>();
-            ds.put("label", request.metrics().get(mi).name());
-            ds.put("data", values.get(mi));
-            datasets.add(ds);
-        }
-        return new Chart(request.chartType(), request.title(), labels, datasets);
-    }
-
-    private Chart emptyChart(Widget request) {
-        return new Chart(request.chartType(), request.title(), List.of(), List.of());
     }
 
     private String formatKey(Object value, String interval) {

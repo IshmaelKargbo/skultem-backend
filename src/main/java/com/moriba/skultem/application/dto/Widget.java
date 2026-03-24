@@ -1,4 +1,4 @@
-package com.moriba.skultem.infrastructure.widget.dto;
+package com.moriba.skultem.application.dto;
 
 import java.util.List;
 
