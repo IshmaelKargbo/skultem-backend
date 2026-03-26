@@ -30,7 +30,7 @@ public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntit
 
         Page<ClassMasterEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
-        Page<ClassMasterEntity> findAllByTeacher_Id(String teacherId, Pageable pageable);
+        Page<ClassMasterEntity> findAllByTeacher_IdAndSession_AcademicYear_Id(String teacherId, String academicYearId, Pageable pageable);
 
         Page<ClassMasterEntity> findAllBySession_Id(String sessionId, Pageable pageable);
 

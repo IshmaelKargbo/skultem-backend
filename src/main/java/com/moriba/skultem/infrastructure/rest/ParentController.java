@@ -40,7 +40,7 @@ public class ParentController {
         private final ListNotificationByParentUseCase listNotificationByParentUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
         public ApiResponse<ParentDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateParentDTO param) {
@@ -52,7 +52,7 @@ public class ParentController {
         }
 
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<List<ParentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -69,7 +69,7 @@ public class ParentController {
         }
 
         @GetMapping("/students")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
         public ApiResponse<List<StudentDTO>> listStudentBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId,
@@ -105,7 +105,7 @@ public class ParentController {
         }
 
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<TeacherDTO> get(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id) {

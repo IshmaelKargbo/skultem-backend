@@ -29,7 +29,7 @@ public class TeacherAssignmentController {
     private final AssignSubjectToTeacherUseCase assignSubjectToTeacherUseCase;
 
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -39,7 +39,7 @@ public class TeacherAssignmentController {
     }
 
     @PostMapping("/subject/{classSessionId}")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,

@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class ListStudentBySchoolUseCase {
     private final StudentRepository repo;
     private final EnrollmentRepository enrollmentRepo;
+    private final GetFeeDetailUsecase getFeeDetailUsecase;
     private final AcademicYearRepository academicYearRepo;
 
     public Page<StudentDTO> execute(String schoolId, int page, int size) {
@@ -33,7 +34,8 @@ public class ListStudentBySchoolUseCase {
             Enrollment enrollment = enrollmentRepo
                     .findByStudentAndAcademicYearAndSchoolId(student.getId(), academicYear.getId(), schoolId)
                     .orElseThrow(() -> new NotFoundException("Enrollment not found"));
-            return StudentMapper.toDTO(student, enrollment);
+            var feeDetail = getFeeDetailUsecase.execute(schoolId, student.getId());
+            return StudentMapper.toDTO(student, enrollment, feeDetail);
         });
     }
 }

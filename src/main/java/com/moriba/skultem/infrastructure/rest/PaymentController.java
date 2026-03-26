@@ -38,7 +38,7 @@ public class PaymentController {
     private final ListStudentPaymentBySchoolUseCase listStudentPaymentBySchoolUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<PaymentDTO> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RecordPaymentDTO param) {
         var method = PaymentMethod.valueOf(param.method());
@@ -49,7 +49,7 @@ public class PaymentController {
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<BigDecimal> countThisYearFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId) {
@@ -58,7 +58,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -75,7 +75,7 @@ public class PaymentController {
     }
 
     @GetMapping("/student/{studentId}/{feeId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<BigDecimal> sumByStudentAndFee(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String feeId, @PathVariable String studentId) {

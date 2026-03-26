@@ -8,7 +8,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.moriba.skultem.domain.model.Role;
+import com.moriba.skultem.domain.vo.Role;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

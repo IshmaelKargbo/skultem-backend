@@ -34,7 +34,7 @@ public class SubjectGroupController {
         private final ListSubjectGroupByStreamUseCase listSubjectGroupByStreamUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
         public ApiResponse<SubjectGroupDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateSubjectGroupDTO param) {
@@ -44,7 +44,7 @@ public class SubjectGroupController {
         }
 
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<SubjectGroupDTO>> list(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -62,7 +62,7 @@ public class SubjectGroupController {
         }
 
         @GetMapping("/class/{classId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<SubjectGroupDTO>> listByClass(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String classId,
@@ -81,7 +81,7 @@ public class SubjectGroupController {
         }
 
         @GetMapping("/stream/{streamId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<SubjectGroupDTO>> listByStream(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String streamId,

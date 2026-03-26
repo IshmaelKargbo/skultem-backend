@@ -7,10 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.moriba.skultem.application.dto.LoginResponse;
 import com.moriba.skultem.application.error.AccessDeniedException;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.UserSession;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserSessionRepository;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.security.JwtUtil;
 
 import lombok.RequiredArgsConstructor;

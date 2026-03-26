@@ -11,6 +11,7 @@ import com.moriba.skultem.application.dto.ClassSessionDTO;
 import com.moriba.skultem.application.usecase.CreateClassSessionUseCase;
 import com.moriba.skultem.application.usecase.GetClassSessionUseCase;
 import com.moriba.skultem.application.usecase.ListClassSessionBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ListClassSessionByTeacherUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassSessionDTO;
 
@@ -33,11 +34,12 @@ public class ClassSessionController {
 
     private final CreateClassSessionUseCase createClassSessionUseCase;
     private final ListClassSessionBySchoolUseCase listClassSessionBySchoolUseCase;
+    private final ListClassSessionByTeacherUseCase listClassSessionByTeacherUseCase;
     private final ListUnassignClassBySchoolUseCase listUnassignClassBySchoolUseCase;
     private final GetClassSessionUseCase getClassSessionUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<ClassSessionDTO> create(
         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
         @Valid @RequestBody CreateClassSessionDTO param) {
@@ -46,7 +48,7 @@ public class ClassSessionController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -62,8 +64,17 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class sessions fetched successfully", list, meta);
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    public ApiResponse<List<ClassSessionDTO>> listMe(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId) {
+        var res = listClassSessionByTeacherUseCase.execute(school, userId, 0, 0);
+        return new ApiResponse<>("success", 200, "Class sessions fetched successfully", res);
+    }
+
     @GetMapping({"/unassign", "/unassigned"})
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listUnassign(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

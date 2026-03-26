@@ -38,7 +38,7 @@ public class AcademicYearController {
     private final ActiveAcademicYearUseCase activeAcademicYearUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<AcademicYearDTO> createAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateAcademicYearDTO param) {
@@ -50,7 +50,7 @@ public class AcademicYearController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<AcademicYearDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -67,7 +67,7 @@ public class AcademicYearController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<AcademicYearDTO> setActiveAcademicYearBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

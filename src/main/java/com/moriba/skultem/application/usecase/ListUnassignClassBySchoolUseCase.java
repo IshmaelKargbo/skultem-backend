@@ -67,7 +67,7 @@ public class ListUnassignClassBySchoolUseCase {
                             .getTotalElements();
 
                     return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, count, streamName,
-                            streamId, sectionName, sectionId, classLevel, grade);
+                            streamId, sectionName, sectionId, classLevel, grade, null);
                 });
     }
 }

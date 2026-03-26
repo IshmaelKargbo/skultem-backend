@@ -34,7 +34,7 @@ public class UserController {
     private final GetUserUseCase getUserUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<UserDTO> create(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateUserDTO param) {
         var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(), param.role());
@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<UserDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

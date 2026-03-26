@@ -33,6 +33,7 @@ public class WidgetUsecase {
     private final FeeReportUseCase feeReportUseCase;
     private final GradeReportUseCase gradeReportUseCase;
     private final PaymentReportUseCase paymentReportUseCase;
+    private final ClassReportUseCase classReportUseCase;
     private final ParentReportUseCase parentReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
 
@@ -138,6 +139,7 @@ public class WidgetUsecase {
             case "students" -> studentReportUseCase.execute(dto, page, size).getContent();
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();
             case "assessments" -> gradeReportUseCase.execute(dto, page, size).getContent();
+            case "classes" -> classReportUseCase.execute(dto, page, size).getContent();
             case "parents" -> parentReportUseCase.execute(dto, page, size).getContent();
             case "payments" -> paymentReportUseCase.execute(dto, page, size).getContent();
             case "teachers" -> teacherReportUseCase.execute(dto, page, size).getContent();

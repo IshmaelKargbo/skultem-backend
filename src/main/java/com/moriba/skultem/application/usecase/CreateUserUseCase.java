@@ -10,12 +10,12 @@ import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.mapper.UserMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Role;
 
 import lombok.RequiredArgsConstructor;
 

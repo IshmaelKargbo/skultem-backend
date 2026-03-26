@@ -19,6 +19,8 @@ public interface TeacherSubjectRepository {
 
         Optional<TeacherSubject> findById(String id);
 
+        Optional<TeacherSubject> findByUser(String id, String schoolId);
+
         Optional<TeacherSubject> findByIdAndSchoolId(String id, String schoolId);
 
         Optional<TeacherSubject> findOneByTeacherIdAndSchoolId(String teacherId, String schoolId);

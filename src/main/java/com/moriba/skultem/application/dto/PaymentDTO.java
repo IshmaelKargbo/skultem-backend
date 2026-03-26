@@ -5,5 +5,5 @@ import java.time.Instant;
 
 import com.moriba.skultem.domain.model.Payment.PaymentMethod;
 
-public record PaymentDTO(String id, String student, String fee, BigDecimal amount, Instant paidAt, PaymentMethod paymentMethod, String referenceNo, String description, Instant createdAt, Instant updatedAt) {
+public record PaymentDTO(String id, String student, String fee, String term, BigDecimal amount, Instant paidAt, PaymentMethod paymentMethod, String referenceNo, String description, Instant createdAt, Instant updatedAt) {
 }

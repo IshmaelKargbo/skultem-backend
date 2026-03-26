@@ -35,7 +35,7 @@ public class DashboardController {
     private final GetRecentActivitiesUseCase getRecentActivitiesUseCase;
 
     @GetMapping("/admin/report")
-    @PreAuthorize("@permissionService.hasSchoolRole(#schoolId, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<DashboardDTO> report(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardReportUseCase.getDashboardSummary(schoolId);
@@ -43,7 +43,7 @@ public class DashboardController {
     }
 
     @GetMapping("/admin/weekly-attendance")
-    @PreAuthorize("@permissionService.hasSchoolRole(#schoolId, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<WeeklyAttendanceDTO>> weeklyAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardWeeklyAttendanceReportUseCase.weeklyAttendance(schoolId);
@@ -51,7 +51,7 @@ public class DashboardController {
     }
 
     @GetMapping("/admin/revenue")
-    @PreAuthorize("@permissionService.hasSchoolRole(#schoolId, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<RevenueBreakdownDTO>> revenue(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardRevenueBreakdownUseCase.getRevenueBreakdown(schoolId);
@@ -59,7 +59,7 @@ public class DashboardController {
     }
 
     @GetMapping("/admin/student-enrollment")
-    @PreAuthorize("@permissionService.hasSchoolRole(#schoolId, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<MonthlyEnrollmentDTO>> studentEnrollment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardEnrollmentTrendUseCase.monthlyEnrollmentTrend(schoolId);
@@ -67,7 +67,7 @@ public class DashboardController {
     }
 
     @GetMapping("/admin/activities")
-    @PreAuthorize("@permissionService.hasSchoolRole(#schoolId, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<ActivityDTO>> activities(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
             @RequestParam(name = "size", defaultValue = "10") int size) {

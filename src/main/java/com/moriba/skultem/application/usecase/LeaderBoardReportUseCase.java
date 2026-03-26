@@ -76,21 +76,14 @@ public class LeaderBoardReportUseCase {
                         )
                 );
 
-                double cumulativeScore = 0;
-                double cumulativeWeight = 0;
                 double previousAverage = 0;
 
                 for (AssessmentScore score : subjectScores) {
 
                     if (!score.isCompleted()) continue;
 
-                    cumulativeScore += score.getWeightedScore();
-                    cumulativeWeight += score.getWeight();
 
-                    double currentAverage =
-                            cumulativeWeight > 0
-                                    ? cumulativeScore / cumulativeWeight
-                                    : 0;
+                    double currentAverage = score.getWeightedScore();
 
                     String trend = "NEUTRAL";
 
@@ -107,7 +100,8 @@ public class LeaderBoardReportUseCase {
                     var scoreGrade =
                             resolveScoreGradeUseCase.execute(
                                     request.schoolId(),
-                                    score.getScore()
+                                    score.getScore(),
+                                    score.getStatus()
                             );
 
                     AssessmentScoreDTO dto =

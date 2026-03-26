@@ -28,7 +28,7 @@ public class UserSessionController {
     private final LogoutUseCase logoutUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<UserSessionDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -46,7 +46,7 @@ public class UserSessionController {
     }
 
     @PostMapping("/{sessionId}/logout")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> logoutSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String sessionId) {

@@ -10,7 +10,6 @@ import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.User;
@@ -20,6 +19,7 @@ import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.domain.vo.Title;
 
 import jakarta.transaction.Transactional;

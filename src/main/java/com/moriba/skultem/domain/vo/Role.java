@@ -1,8 +1,9 @@
-package com.moriba.skultem.domain.model;
+package com.moriba.skultem.domain.vo;
 
 public enum Role {
     SYSTEM_ADMIN,
-    SCHOOL_ADMIN,
+    PROPRIETOR,
+    ADMIN,
     ACCOUNTANT,
     TEACHER,
     PARENT,

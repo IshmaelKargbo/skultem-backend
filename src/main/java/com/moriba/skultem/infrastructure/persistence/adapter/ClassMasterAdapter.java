@@ -63,7 +63,13 @@ public class ClassMasterAdapter implements ClassMasterRepository {
     @Override
     public Optional<ClassMaster> findBySessionIdAndSchoolId(String sessionId, String schoolId) {
         return repo.findAllBySession_IdAndSchoolId(sessionId, schoolId)
-        .map(ClassMasterMapper::toDomain);
+                .map(ClassMasterMapper::toDomain);
+    }
+
+    @Override
+    public Page<ClassMaster> findByTeacherAndAcademicYear(String teacherId, String academicYearId, Pageable pageable) {
+        return repo.findAllByTeacher_IdAndSession_AcademicYear_Id(teacherId, academicYearId, pageable)
+                .map(ClassMasterMapper::toDomain);
     }
 
 }

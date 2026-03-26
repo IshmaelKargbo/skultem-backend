@@ -2,8 +2,8 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser.Status;
+import com.moriba.skultem.domain.vo.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

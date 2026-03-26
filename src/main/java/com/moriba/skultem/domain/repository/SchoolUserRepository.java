@@ -3,8 +3,8 @@ package com.moriba.skultem.domain.repository;
 import java.util.List;
 import java.util.Optional;
 
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
+import com.moriba.skultem.domain.vo.Role;
 
 public interface SchoolUserRepository {
     void save(SchoolUser domain);

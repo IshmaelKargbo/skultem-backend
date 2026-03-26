@@ -3,8 +3,8 @@ package com.moriba.skultem.application.mapper;
 import java.util.List;
 
 import com.moriba.skultem.application.dto.UserDTO;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.User;
+import com.moriba.skultem.domain.vo.Role;
 
 public class UserMapper {
     public static UserDTO toDTO(User param) {

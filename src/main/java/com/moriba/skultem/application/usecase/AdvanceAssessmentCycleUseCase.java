@@ -29,12 +29,14 @@ public class AdvanceAssessmentCycleUseCase {
 
         @AuditLogAnnotation(action = "ASSESSMENT_ADVANCED")
         public AssessmentCycleAdvanceDTO execute(String schoolId, String termId) {
+
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
                 var term = termRepository
-                                .findActiveBySchoolAndAcademicYear(schoolId, academicYear.getId())
-                                .orElseThrow(() -> new NotFoundException("Active term not found"));
+                                .findByIdAndAcademicYearIdAndSchoolId(termId, academicYear.getId(), schoolId)
+                                .orElseThrow(() -> new NotFoundException(
+                                                "Term not found for this school and academic year"));
 
                 var cycles = cycleRepository.findAllBySchoolAndTerm(schoolId, termId);
 
@@ -48,8 +50,8 @@ public class AdvanceAssessmentCycleUseCase {
                                 .orElse(0);
 
                 var currentPosition = cycles.stream()
-                                .filter(item -> (item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.LOCKED
-                                                && item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.COMPLETED))
+                                .filter(item -> item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.LOCKED
+                                                && item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.COMPLETED)
                                 .map(item -> item.getAssessment().getPosition())
                                 .min(Comparator.naturalOrder());
 
@@ -70,36 +72,33 @@ public class AdvanceAssessmentCycleUseCase {
                                 .findAllBySchoolTermAndPosition(schoolId, termId, position);
 
                 long pending = currentCycles.stream()
-                                .filter(item -> (item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.APPROVED
-                                                && item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.COMPLETED))
+                                .filter(item -> item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.APPROVED
+                                                && item.getStatus() != ClassSubjectAssessmentLifeCycle.Status.COMPLETED)
                                 .count();
 
                 if (pending > 0) {
                         throw new RuleException(
-                                        "Cannot move to next assessment. " + pending
-                                                        + " class subject assessment(s) still pending approval");
+                                        "Cannot advance assessment. " + pending
+                                                        + " class subject assessment(s) still pending approval.");
                 }
 
                 currentCycles.forEach(ClassSubjectAssessmentLifeCycle::complete);
 
-                var nextPosition = cycles.stream()
-                                .map(item -> item.getAssessment().getPosition())
-                                .filter(item -> item > position)
-                                .min(Comparator.naturalOrder());
-
                 List<ClassSubjectAssessmentLifeCycle> toSave = new ArrayList<>(currentCycles);
 
-                if (nextPosition.isPresent()) {
+                var nextPosition = cycles.stream()
+                                .map(item -> item.getAssessment().getPosition())
+                                .filter(p -> p > position)
+                                .min(Comparator.naturalOrder());
 
+                if (nextPosition.isPresent()) {
                         int next = nextPosition.get();
 
                         var nextCycles = cycleRepository
                                         .findAllBySchoolTermAndPosition(schoolId, termId, next);
 
                         nextCycles.forEach(ClassSubjectAssessmentLifeCycle::markDraft);
-
                         toSave.addAll(nextCycles);
-
                         cycleRepository.saveAll(toSave);
 
                         return new AssessmentCycleAdvanceDTO(
@@ -109,7 +108,7 @@ public class AdvanceAssessmentCycleUseCase {
                                         totalPositions,
                                         true,
                                         false,
-                                        "Assessment " + position + " closed. Assessment " + next + " is now active");
+                                        "Assessment " + position + " closed. Assessment " + next + " is now active.");
                 }
 
                 cycleRepository.saveAll(toSave);
@@ -122,10 +121,24 @@ public class AdvanceAssessmentCycleUseCase {
                                                 schoolId);
 
                 if (nextTerm.isPresent()) {
-
                         var nt = nextTerm.get();
                         nt.activate();
                         termRepository.save(nt);
+
+                        var nextTermCycles = cycleRepository.findAllBySchoolAndTerm(schoolId, nt.getId());
+
+                        if (!nextTermCycles.isEmpty()) {
+                                int firstPosition = nextTermCycles.stream()
+                                                .map(item -> item.getAssessment().getPosition())
+                                                .min(Comparator.naturalOrder())
+                                                .orElse(1);
+
+                                var firstNextTermCycles = cycleRepository
+                                                .findAllBySchoolTermAndPosition(schoolId, nt.getId(), firstPosition);
+
+                                firstNextTermCycles.forEach(ClassSubjectAssessmentLifeCycle::markDraft);
+                                cycleRepository.saveAll(firstNextTermCycles);
+                        }
 
                         return new AssessmentCycleAdvanceDTO(
                                         termId,
@@ -134,8 +147,8 @@ public class AdvanceAssessmentCycleUseCase {
                                         totalPositions,
                                         true,
                                         true,
-                                        "Final assessment closed. Term completed. Term "
-                                                        + nextTermNumber + " is now active");
+                                        "Final assessment closed. Term " + term.getTermNumber()
+                                                        + " completed. Term " + nextTermNumber + " is now active.");
                 }
 
                 return new AssessmentCycleAdvanceDTO(
@@ -145,6 +158,6 @@ public class AdvanceAssessmentCycleUseCase {
                                 totalPositions,
                                 true,
                                 true,
-                                "Final assessment closed. Term assessment cycle completed");
+                                "Final assessment closed. All terms for this academic year are completed.");
         }
 }

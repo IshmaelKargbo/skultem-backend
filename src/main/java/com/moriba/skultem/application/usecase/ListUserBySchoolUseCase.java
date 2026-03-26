@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.mapper.UserMapper;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.vo.Role;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

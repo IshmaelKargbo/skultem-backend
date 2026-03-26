@@ -58,7 +58,7 @@ public class ClassController {
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<ClassDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateClassDTO param) {
@@ -68,7 +68,7 @@ public class ClassController {
     }
 
     @PutMapping("/next")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<ClassDTO> nextClass(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody NextClassDTO param) {
         if (param.id().equals(param.nextClass())) {
@@ -80,7 +80,7 @@ public class ClassController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -97,7 +97,7 @@ public class ClassController {
     }
 
     @GetMapping("/subject/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClassSubjectResponse> listClassSubject(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -107,7 +107,7 @@ public class ClassController {
     }
 
     @GetMapping("/master/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassMasterDTO>> getClassMasterByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -116,7 +116,7 @@ public class ClassController {
     }
 
     @GetMapping("/section/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSectionDTO>> getClassSectionsByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -125,7 +125,7 @@ public class ClassController {
     }
 
     @GetMapping("/streams/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassStreamDTO>> listStreams(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -134,7 +134,7 @@ public class ClassController {
     }
 
     @PostMapping("/master/remove/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<Object> removeAsClassMaster(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -152,7 +152,7 @@ public class ClassController {
     }
 
     @GetMapping("/{id}/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClassOverviewDTO> overview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -161,7 +161,7 @@ public class ClassController {
     }
 
     @PutMapping("/{id}/template")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<ClassDTO> updateTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

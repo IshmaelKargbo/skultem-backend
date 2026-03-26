@@ -16,45 +16,51 @@ import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBu
 
 @Repository
 public interface TeacherSubjectJpaRepository
-        extends JpaRepository<TeacherSubjectEntity, String>, JpaSpecificationExecutor<TeacherSubjectEntity> {
-    boolean existsByTeacher_IdAndSession_IdAndSubject_IdAndSchoolId(String teacherId, String sessionId,
-            String subjectId, String schoolId);
+                extends JpaRepository<TeacherSubjectEntity, String>, JpaSpecificationExecutor<TeacherSubjectEntity> {
+        boolean existsByTeacher_IdAndSession_IdAndSubject_IdAndSchoolId(String teacherId, String sessionId,
+                        String subjectId, String schoolId);
 
-    boolean existsBySession_IdAndSubject_IdAndSchoolId(String sessionId, String subjectId, String schoolId);
+        boolean existsBySession_IdAndSubject_IdAndSchoolId(String sessionId, String subjectId, String schoolId);
 
-    Page<TeacherSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
+        Page<TeacherSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
-    Optional<TeacherSubjectEntity> findByIdAndSchoolId(String id, String schoolId);
+        Optional<TeacherSubjectEntity> findByIdAndSchoolId(String id, String schoolId);
 
-    void deleteBySession_Clazz_IdAndSubject_IdAndSchoolId(String classId, String subjectId, String schoolId);
+        Optional<TeacherSubjectEntity> findTopByTeacher_User_IdAndSchoolIdOrderByCreatedAtDesc(
+                        String userId,
+                        String schoolId);
 
-    void deleteBySession_Stream_IdAndSubject_IdAndSchoolId(String streamId, String subjectId, String schoolId);
+        void deleteBySession_Clazz_IdAndSubject_IdAndSchoolId(String classId, String subjectId, String schoolId);
 
-    Page<TeacherSubjectEntity> findAllByTeacherId(String teacherId, Pageable pageable);
+        void deleteBySession_Stream_IdAndSubject_IdAndSchoolId(String streamId, String subjectId, String schoolId);
 
-    Page<TeacherSubjectEntity> findAllBySubjectId(String subjectId, Pageable pageable);
+        Page<TeacherSubjectEntity> findAllByTeacherId(String teacherId, Pageable pageable);
 
-    Page<TeacherSubjectEntity> findAllBySessionIdAndSchoolId(String sessionId, String schoolId, Pageable pageable);
+        Page<TeacherSubjectEntity> findAllBySubjectId(String subjectId, Pageable pageable);
 
-    List<TeacherSubjectEntity> findByTeacher_IdAndSchoolId(String teacherId, String schoolId);
+        Page<TeacherSubjectEntity> findAllBySessionIdAndSchoolId(String sessionId, String schoolId, Pageable pageable);
 
-    Optional<TeacherSubjectEntity> findBySubject_IdAndSession_IdAndSchoolId(String subjectId, String sessionId,
-            String schoolId);
+        List<TeacherSubjectEntity> findByTeacher_IdAndSchoolId(String teacherId, String schoolId);
 
-    Optional<TeacherSubjectEntity> findOneByTeacher_IdAndSchoolId(String teacherId, String schoolId);
+        Optional<TeacherSubjectEntity> findBySubject_IdAndSession_IdAndSchoolId(String subjectId, String sessionId,
+                        String schoolId);
 
-    Page<TeacherSubjectEntity> findAllByTeacher_IdAndSessionId(String teacherId, String sessionId, Pageable pageable);
+        Optional<TeacherSubjectEntity> findOneByTeacher_IdAndSchoolId(String teacherId, String schoolId);
 
-    Page<TeacherSubjectEntity> findAllBySession_AcademicYear_IdAndSchoolId(String academicYear, String schoolId,
-            Pageable pageable);
+        Page<TeacherSubjectEntity> findAllByTeacher_IdAndSessionId(String teacherId, String sessionId,
+                        Pageable pageable);
 
-    default Page<TeacherSubjectEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        Specification<TeacherSubjectEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
+        Page<TeacherSubjectEntity> findAllBySession_AcademicYear_IdAndSchoolId(String academicYear, String schoolId,
+                        Pageable pageable);
 
-        if (filters != null && !filters.isEmpty()) {
-            spec = spec.and(FilterSpecificationBuilder.build(filters));
+        default Page<TeacherSubjectEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+                Specification<TeacherSubjectEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
+                                schoolId);
+
+                if (filters != null && !filters.isEmpty()) {
+                        spec = spec.and(FilterSpecificationBuilder.build(filters));
+                }
+
+                return findAll(spec, pageable);
         }
-
-        return findAll(spec, pageable);
-    }
 }

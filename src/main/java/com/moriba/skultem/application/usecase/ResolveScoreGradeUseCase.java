@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle.Status;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 
 import jakarta.transaction.Transactional;
@@ -15,7 +16,8 @@ public class ResolveScoreGradeUseCase {
 
     private final SchoolRepository schoolRepository;
 
-    public String execute(String schoolId, int score) {
+    public String execute(String schoolId, int score, Status status) {
+        if (!status.equals(Status.COMPLETED)) return "N/A";
         var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
         return school.resolveGrade(score);

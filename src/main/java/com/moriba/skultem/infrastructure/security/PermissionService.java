@@ -6,10 +6,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.vo.Role;
 
 import lombok.RequiredArgsConstructor;
 
@@ -113,7 +113,7 @@ public class PermissionService {
 
         Role role = currentRole();
 
-        return role == Role.SCHOOL_ADMIN ||
+        return role == Role.ADMIN ||
                 role == Role.ACCOUNTANT ||
                 role == Role.TEACHER;
     }
@@ -134,7 +134,7 @@ public class PermissionService {
 
         Role role = currentRole();
 
-        if (role == Role.SCHOOL_ADMIN ||
+        if (role == Role.ADMIN ||
                 role == Role.ACCOUNTANT) {
             return true;
         }

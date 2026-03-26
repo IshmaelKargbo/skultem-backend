@@ -5,9 +5,9 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.persistence.jpa.SchoolUserJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.SchoolUserMapper;
 

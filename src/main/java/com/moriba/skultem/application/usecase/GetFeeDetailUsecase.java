@@ -46,16 +46,6 @@ public class GetFeeDetailUsecase {
             totalAmount = totalAmount.add(feeAmount);
             totalPaid = totalPaid.add(amountPaid);
             totalOutstanding = totalOutstanding.add(outstanding);
-
-            // Determine individual fee status
-            String feeStatus;
-            if (amountPaid.compareTo(feeAmount) >= 0) {
-                feeStatus = "Paid";
-            } else if (amountPaid.compareTo(BigDecimal.ZERO) > 0) {
-                feeStatus = "Partial";
-            } else {
-                feeStatus = "Pending";
-            }
         }
 
         // Determine overall status

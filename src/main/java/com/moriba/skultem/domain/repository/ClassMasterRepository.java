@@ -16,6 +16,8 @@ public interface ClassMasterRepository {
 
     Optional<ClassMaster> findBySessionIdAndSchoolId(String sessionId, String schoolId);
 
+    Page<ClassMaster> findByTeacherAndAcademicYear(String teacherId, String academicYearId, Pageable pageable);
+
     boolean existsByTeacherIdAndClassSessionIdAndSchoolId(String teacherId, String classSessionId, String schoolId);
 
     boolean existsByClassSessionIdAndSchoolId(String classSessionId, String schoolId);

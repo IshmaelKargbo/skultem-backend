@@ -22,14 +22,14 @@ public class PromotionController {
     private final PromoteSchoolUseCase promoteSchoolUseCase;
 
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> promoteClass(@PathVariable String classId, @RequestParam String school) {
         promoteClassUseCase.execute(school, classId);
         return new ApiResponse<Object>("success", 200, "Class promoted successfully", null);
     }
 
     @PostMapping("/school")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> promoteSchool(@RequestParam String school) {
         promoteSchoolUseCase.execute(school);
         return new ApiResponse<Object>("success", 200, "School promoted successfully", null);

@@ -41,7 +41,7 @@ public class BehaviourController {
         private final ListBehaviourCategoryBySchoolUseCase listBehaviourCategoryBySchoolUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'TEACHER', 'PROPRIETOR')")
         public ApiResponse<BehaviourDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateBehaviourDTO param) {
@@ -51,7 +51,7 @@ public class BehaviourController {
         }
 
         @PostMapping("/category")
-        @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
         public ApiResponse<BehaviourCategoryDTO> createCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateBehaviourCategoryDTO param) {
@@ -61,7 +61,7 @@ public class BehaviourController {
         }
 
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<BehaviourCategoryDTO>> listCagtoryBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -78,7 +78,7 @@ public class BehaviourController {
         }
 
         @GetMapping()
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<BehaviourDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,
@@ -96,7 +96,7 @@ public class BehaviourController {
         }
 
         @GetMapping("/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<KindCount>> listReportBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,

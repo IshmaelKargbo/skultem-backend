@@ -45,7 +45,7 @@ public class StudentController {
     private final ActiveCycleUseCase activeCycleUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'SCHOOL_ADMIN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<StudentDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateStudentDTO param) {
@@ -57,7 +57,7 @@ public class StudentController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<StudentDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -74,7 +74,7 @@ public class StudentController {
     }
 
     @GetMapping("/rank/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> rankStudent(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String studentId,
@@ -84,7 +84,7 @@ public class StudentController {
     }
 
     @GetMapping("/cycle/{sessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<ActiveCycleDTO> activeCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(name = "sessionId") String sessionId) {
@@ -93,7 +93,7 @@ public class StudentController {
     }
 
     @GetMapping("/fee/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
     public ApiResponse<List<StudentFeeDTO>> listStudentFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId,
@@ -119,7 +119,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}/finance-overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'TEACHER', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
     public ApiResponse<StudentFinanceOverviewDTO> financeOverview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

@@ -25,14 +25,14 @@ public class FinanceReportController {
     private final FinanceReportUseCase reportUseCase;
 
     @GetMapping("/total")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<Object> totalCollected(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var total = reportUseCase.totalCollected(school);
         return new ApiResponse<>("success", 200, "Total fees collected fetched successfully", total);
     }
 
     @GetMapping("/outstanding")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstanding(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId) {
@@ -42,7 +42,7 @@ public class FinanceReportController {
     }
 
     @GetMapping("/outstanding/list")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstandingList(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId) {
@@ -52,7 +52,7 @@ public class FinanceReportController {
     }
 
     @GetMapping("/payments")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'SCHOOL_ADMIN', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<PaymentDTO>> paymentHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,

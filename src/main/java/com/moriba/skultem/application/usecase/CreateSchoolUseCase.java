@@ -7,7 +7,6 @@ import com.moriba.skultem.application.dto.OwnerDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.domain.model.School;
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SchoolRepository;
@@ -16,6 +15,7 @@ import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.Owner;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -63,12 +63,12 @@ public class CreateSchoolUseCase {
             userRepo.save(user);
         }
 
-        if (schoolUserRepo.existsBySchoolAndUserAndRole(school.getId(), user.getId(), Role.SCHOOL_ADMIN)) {
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(school.getId(), user.getId(), Role.PROPRIETOR)) {
             throw new AlreadyExistsException("owner already exist with this email");
         }
 
         var schoolUserId = rg.generate("SCHOOL_USER", "SCU");
-        var schoolUser = SchoolUser.create(schoolUserId, school.getId(), user, Role.SCHOOL_ADMIN);
+        var schoolUser = SchoolUser.create(schoolUserId, school.getId(), user, Role.PROPRIETOR);
         schoolUserRepo.save(schoolUser);
 
         return new SchoolDTO(school.getId(), school.getName(), school.getDomain(), school.getAddress(),

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.StudentAssessmentDTO;
 import com.moriba.skultem.application.mapper.StudentAssessmentMapper;
 import com.moriba.skultem.domain.model.AssessmentScore;
+import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle.Status;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 
@@ -30,8 +31,9 @@ public class ListStudentAssessmentTermUseCase {
                                 .map(sa -> {
                                         List<AssessmentScore> scores = assessmentScoreRepo
                                                         .findAllByStudentAssessment(sa.getId());
+                                                        
                                         return StudentAssessmentMapper.toDTO(sa, scores,
-                                                        score -> resolveScoreGradeUseCase.execute(schoolId, score));
+                                                        score -> resolveScoreGradeUseCase.execute(schoolId, score, Status.DRAFT));
                                 })
                                 .toList();
         }

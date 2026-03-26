@@ -116,4 +116,9 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
         return repo.runReport(schoolId, filters, pageable)
                 .map(TeacherSubjectMapper::toDomain);
     }
+
+    @Override
+    public Optional<TeacherSubject> findByUser(String id, String schoolId) {
+        return repo.findTopByTeacher_User_IdAndSchoolIdOrderByCreatedAtDesc(id, schoolId).map(TeacherSubjectMapper::toDomain);
+    }
 }

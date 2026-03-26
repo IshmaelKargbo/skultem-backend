@@ -10,8 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.moriba.skultem.domain.model.Role;
 import com.moriba.skultem.domain.repository.UserSessionRepository;
+import com.moriba.skultem.domain.vo.Role;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
