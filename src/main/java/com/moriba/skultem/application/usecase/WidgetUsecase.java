@@ -139,6 +139,7 @@ public class WidgetUsecase {
             case "students" -> studentReportUseCase.execute(dto, page, size).getContent();
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();
             case "assessments" -> gradeReportUseCase.execute(dto, page, size).getContent();
+            case "leaderboards" -> gradeReportUseCase.execute(dto, page, size).getContent();
             case "classes" -> classReportUseCase.execute(dto, page, size).getContent();
             case "parents" -> parentReportUseCase.execute(dto, page, size).getContent();
             case "payments" -> paymentReportUseCase.execute(dto, page, size).getContent();

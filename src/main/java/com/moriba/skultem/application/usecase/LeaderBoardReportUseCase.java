@@ -3,15 +3,11 @@ package com.moriba.skultem.application.usecase;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
-import com.moriba.skultem.application.dto.AssessmentScoreDTO;
+import com.moriba.skultem.application.dto.LeaderBoardDTO;
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
-import com.moriba.skultem.application.mapper.AssessmentScoreMapper;
 import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.vo.Filter;
@@ -24,110 +20,80 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LeaderBoardReportUseCase {
 
-    private final AssessmentScoreRepository repo;
-    private final ResolveScoreGradeUseCase resolveScoreGradeUseCase;
+        private final AssessmentScoreRepository repo;
+        private final ResolveScoreGradeUseCase resolveScoreGradeUseCase;
 
-    public Page<AssessmentScoreDTO> execute(ReportBuilderDTO request, int page, int size) {
+        public Page<LeaderBoardDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0)
-                ? PageRequest.of(page - 1, size)
-                : Pageable.unpaged();
+                List<Filter> filters = request.filters();
 
-        List<Filter> filters = request.filters();
+                List<AssessmentScore> scores = repo.runReport(request.schoolId(), filters, Pageable.unpaged())
+                                .getContent();
 
-        Page<AssessmentScore> res =
-                repo.runReport(request.schoolId(), filters, pageable);
+                Map<String, List<AssessmentScore>> scoresByStudent = scores.stream()
+                                .filter(AssessmentScore::isCompleted)
+                                .collect(Collectors.groupingBy(
+                                                s -> s.getStudentAssessment().getEnrollment().getStudent().getId()));
 
-        List<AssessmentScore> scores = res.getContent();
+                List<LeaderBoardDTO> leaderboard = new ArrayList<>();
+                for (var entry : scoresByStudent.entrySet()) {
+                        List<AssessmentScore> studentScores = entry.getValue();
+                        if (studentScores.isEmpty())
+                                continue;
 
-        // Group scores by student
-        Map<String, List<AssessmentScore>> scoresByStudent =
-                scores.stream().collect(Collectors.groupingBy(
-                        s -> s.getStudentAssessment()
-                                .getEnrollment()
-                                .getStudent()
-                                .getId()
-                ));
+                        studentScores.sort(Comparator.comparingInt(s -> s.getCycle().getAssessment().getPosition()));
 
-        List<AssessmentScoreDTO> leaderboard = new ArrayList<>();
+                        double totalWeightedScore = studentScores.stream()
+                                        .mapToDouble(AssessmentScore::getScore)
+                                        .sum();
+                        int totalWeight = studentScores.stream()
+                                        .mapToInt(s -> s.getCycle().getAssessment().getWeight())
+                                        .sum();
+                        int finalScore = totalWeight > 0 ? (int) Math.round((totalWeightedScore / totalWeight) * 100)
+                                        : 0;
 
-        for (var studentEntry : scoresByStudent.entrySet()) {
+                        String trend = "STABLE";
+                        if (studentScores.size() >= 2) {
+                                double last = studentScores.get(studentScores.size() - 1).getWeightedScore();
+                                double prev = studentScores.get(studentScores.size() - 2).getWeightedScore();
+                                trend = last > prev ? "IMPROVED" : (last < prev ? "DROPPED" : "STABLE");
+                        }
 
-            List<AssessmentScore> studentScores = studentEntry.getValue();
+                        AssessmentScore latest = studentScores.get(studentScores.size() - 1);
+                        String studentId = latest.getStudentAssessment().getEnrollment().getStudent().getId();
+                        String studentName = latest.getStudentAssessment().getEnrollment().getStudent().getName();
+                        String grade = resolveScoreGradeUseCase.execute(request.schoolId(), finalScore,
+                                        latest.getStatus());
 
-            // Group subjects for the student
-            Map<String, List<AssessmentScore>> subjectMap =
-                    studentScores.stream().collect(Collectors.groupingBy(
-                            s -> s.getStudentAssessment()
-                                    .getTeacherSubject()
-                                    .getSubject()
-                                    .getId()
-                    ));
-
-            for (var subjectEntry : subjectMap.entrySet()) {
-
-                List<AssessmentScore> subjectScores = subjectEntry.getValue();
-
-                // Sort assessments (Exam → Test 2 → Test 1)
-                subjectScores.sort((a, b) ->
-                        Integer.compare(
-                                b.getCycle().getAssessment().getPosition(),
-                                a.getCycle().getAssessment().getPosition()
-                        )
-                );
-
-                double previousAverage = 0;
-
-                for (AssessmentScore score : subjectScores) {
-
-                    if (!score.isCompleted()) continue;
-
-
-                    double currentAverage = score.getWeightedScore();
-
-                    String trend = "NEUTRAL";
-
-                    if (previousAverage == 0) {
-                        trend = "IMPROVED";
-                    } else if (currentAverage > previousAverage) {
-                        trend = "IMPROVED";
-                    } else if (currentAverage < previousAverage) {
-                        trend = "DROPPED";
-                    }
-
-                    previousAverage = currentAverage;
-
-                    var scoreGrade =
-                            resolveScoreGradeUseCase.execute(
-                                    request.schoolId(),
-                                    score.getScore(),
-                                    score.getStatus()
-                            );
-
-                    AssessmentScoreDTO dto =
-                            AssessmentScoreMapper.toDTO(
-                                    score,
-                                    scoreGrade,
-                                    trend,
-                                    currentAverage
-                            );
-
-                    leaderboard.add(dto);
+                        leaderboard.add(new LeaderBoardDTO(studentId, 0, studentName, finalScore, totalWeight, grade,
+                                        trend));
                 }
-            }
+
+                leaderboard.sort(Comparator.comparingInt(LeaderBoardDTO::score).reversed());
+
+                int rank = 1;
+                int previousScore = -1;
+                int sameRankCount = 0;
+                for (int i = 0; i < leaderboard.size(); i++) {
+                        LeaderBoardDTO lb = leaderboard.get(i);
+                        if (lb.score() == previousScore) {
+                                sameRankCount++;
+                        } else {
+                                rank += sameRankCount;
+                                sameRankCount = 1;
+                        }
+                        previousScore = lb.score();
+                        leaderboard.set(i, new LeaderBoardDTO(lb.id(), rank, lb.name(), lb.score(), lb.weight(),
+                                        lb.grade(), lb.trend()));
+                }
+
+                if (size <= 0) {
+                        return new PageImpl<>(leaderboard, Pageable.unpaged(), leaderboard.size());
+                }
+                int start = Math.min((page - 1) * size, leaderboard.size());
+                int end = Math.min(start + size, leaderboard.size());
+                List<LeaderBoardDTO> pageContent = leaderboard.subList(start, end);
+
+                return new PageImpl<>(pageContent, PageRequest.of(page - 1, size), leaderboard.size());
         }
-
-        // Manual pagination
-        if (size <= 0) {
-            return new PageImpl<>(leaderboard, pageable, leaderboard.size());
-        }
-
-        int start = Math.min((page - 1) * size, leaderboard.size());
-        int end = Math.min(start + size, leaderboard.size());
-
-        List<AssessmentScoreDTO> pageContent =
-                leaderboard.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, leaderboard.size());
-    }
 }

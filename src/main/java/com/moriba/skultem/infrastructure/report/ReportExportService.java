@@ -337,7 +337,7 @@ public class ReportExportService {
         }
 
         private Map<String, Object> buildBreakdownTable(ReportBuilderDTO param, int page, int size) {
-                var res = leaderBoardReportUseCase.execute(param, page, size);
+                var res = simplifiedClassLeaderBoardUseCase.execute(param, page, size);
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
                                 "size", res.getSize(),
@@ -350,8 +350,8 @@ public class ReportExportService {
         }
 
         private Map<String, Object> buildLeaderBoardTable(ReportBuilderDTO param, int page, int size) {
-                var res = simplifiedClassLeaderBoardUseCase.execute(param, page, size);
-                Map<String, Object> meta = Map.of(
+                var res = leaderBoardReportUseCase.execute(param, page, size);
+                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
                                 "size", res.getSize(),
                                 "count", res.getTotalElements(),

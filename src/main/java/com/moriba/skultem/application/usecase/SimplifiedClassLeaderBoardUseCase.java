@@ -3,13 +3,11 @@ package com.moriba.skultem.application.usecase;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.AssessmentScoreDTO;
+import com.moriba.skultem.application.dto.BreakdownDTO;
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
 import com.moriba.skultem.application.mapper.AssessmentScoreMapper;
 import com.moriba.skultem.domain.model.AssessmentScore;
@@ -24,77 +22,90 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SimplifiedClassLeaderBoardUseCase {
 
-    private final AssessmentScoreRepository repo;
+        private final AssessmentScoreRepository repo;
+        private final ResolveScoreGradeUseCase resolveScoreGradeUseCase;
 
-    public Page<AssessmentScoreDTO> execute(ReportBuilderDTO request, int page, int size) {
+        public Page<BreakdownDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
-        List<Filter> filters = request.filters();
+                Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+                List<Filter> filters = request.filters();
 
-        List<AssessmentScore> scores = repo.runReport(request.schoolId(), filters, Pageable.unpaged())
-                                           .getContent();
+                List<AssessmentScore> scores = repo
+                                .runReport(request.schoolId(), filters, Pageable.unpaged())
+                                .getContent();
 
-        // 1️⃣ Group scores by student
-        Map<String, List<AssessmentScore>> scoresByStudent = scores.stream()
-                .collect(Collectors.groupingBy(s -> s.getStudentAssessment().getEnrollment().getStudent().getId()));
+                List<BreakdownDTO> breakdown = new ArrayList<>();
 
-        List<AssessmentScoreDTO> leaderboard = new ArrayList<>();
-        Map<String, Double> studentAverageMap = new HashMap<>();
+                // Group scores by subject
+                Map<String, List<AssessmentScore>> scoresBySubject = scores.stream()
+                                .collect(Collectors.groupingBy(
+                                                s -> s.getCycle().getSubject().getId()));
 
-        for (var studentEntry : scoresByStudent.entrySet()) {
-            String studentId = studentEntry.getKey();
-            List<AssessmentScore> studentScores = studentEntry.getValue();
+                for (var subjectEntry : scoresBySubject.entrySet()) {
 
-            // 2️⃣ Sort assessments by level (ascending: Test1 → Test2 → Exam)
-            studentScores.sort(Comparator.comparingInt(a -> a.getCycle().getAssessment().getPosition()));
+                        List<AssessmentScore> subjectScores = subjectEntry.getValue();
 
-            double cumulativeScore = 0;
-            double cumulativeWeight = 0;
-            double previousAverage = 0;
-            String lastTrend = "NEUTRAL";
+                        // Sort by assessment position
+                        subjectScores.sort(Comparator.comparingInt(
+                                        a -> a.getCycle().getAssessment().getPosition()));
 
-            for (AssessmentScore a : studentScores) {
-                if (!a.isCompleted()) continue;
+                        int cumulativeScore = 0;
+                        String trend = "STABLE";
+                        Integer previousScore = null;
 
-                cumulativeScore += a.getWeightedScore();
-                cumulativeWeight += a.getWeight();
-                double currentAverage = cumulativeWeight > 0 ? cumulativeScore / cumulativeWeight : 0;
+                        List<AssessmentScoreDTO> scoresDTO = new ArrayList<>();
 
-                // 3️⃣ Calculate trend based on progression
-                if (previousAverage == 0) lastTrend = "IMPROVED";
-                else if (currentAverage > previousAverage) lastTrend = "IMPROVED";
-                else if (currentAverage < previousAverage) lastTrend = "DROPPED";
-                else lastTrend = "NEUTRAL";
+                        for (AssessmentScore score : subjectScores) {
 
-                previousAverage = currentAverage;
-            }
+                                if (!score.isCompleted())
+                                        continue;
 
-            double average = cumulativeWeight > 0 ? cumulativeScore / cumulativeWeight : 0;
-            studentAverageMap.put(studentId, average);
+                                int currentScore = score.getWeightedScore() != null ? score.getWeightedScore() : 0;
 
-            AssessmentScore lastScore = studentScores.isEmpty() ? null : studentScores.get(studentScores.size() - 1);
+                                if (previousScore != null) {
+                                        if (currentScore > previousScore)
+                                                trend = "IMPROVED";
+                                        else if (currentScore < previousScore)
+                                                trend = "DROPPED";
+                                }else {
+                                        
+                                }
 
-            // 4️⃣ Create parent-friendly summary DTO (no subject details)
-            AssessmentScoreDTO dto = AssessmentScoreMapper.toDTO(
-                    lastScore,
-                    "", // grade placeholder
-                    lastTrend,
-                    average
-            );
-            leaderboard.add(dto);
+                                previousScore = currentScore;
+                                cumulativeScore += currentScore;
+
+                                String grade = resolveScoreGradeUseCase.execute(request.schoolId(), score.getScore(),
+                                                score.getStatus());
+                                scoresDTO.add(AssessmentScoreMapper.toDTO(score, grade, trend));
+                        }
+
+                        if (subjectScores.isEmpty())
+                                continue;
+
+                        AssessmentScore lastScore = subjectScores.get(subjectScores.size() - 1);
+
+                        String grade = resolveScoreGradeUseCase.execute(request.schoolId(), cumulativeScore,
+                                        lastScore.getStatus());
+
+                        breakdown.add(new BreakdownDTO(
+                                        lastScore.getStudentAssessment().getTeacherSubject().getId(),
+                                        lastScore.getStudentAssessment().getTeacherSubject().getSubject().getName(),
+                                        cumulativeScore,
+                                        grade,
+                                        trend,
+                                        scoresDTO));
+                }
+
+                // Sort by cumulative score descending
+                breakdown.sort(Comparator.comparingInt(BreakdownDTO::score).reversed());
+
+                // Pagination
+                int start = (page - 1) * size;
+                int end = Math.min(start + size, breakdown.size());
+                List<BreakdownDTO> pageContent = (size > 0 && start < breakdown.size())
+                                ? breakdown.subList(start, end)
+                                : breakdown;
+
+                return new PageImpl<>(pageContent, pageable, breakdown.size());
         }
-
-        // 5️⃣ Sort students descending by average for class rank
-        leaderboard.sort((a, b) -> Double.compare(studentAverageMap.get(b.student()),
-                                                  studentAverageMap.get(a.student())));
-
-        // 6️⃣ Pagination
-        int start = (page - 1) * size;
-        int end = Math.min(start + size, leaderboard.size());
-        List<AssessmentScoreDTO> pageContent = (size > 0 && start < leaderboard.size())
-                ? leaderboard.subList(start, end)
-                : leaderboard;
-
-        return new PageImpl<>(pageContent, pageable, leaderboard.size());
-    }
 }
