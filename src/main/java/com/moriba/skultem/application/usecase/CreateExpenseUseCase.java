@@ -11,6 +11,9 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.ExpenseMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Expense;
+import com.moriba.skultem.domain.model.Transaction.Direction;
+import com.moriba.skultem.domain.model.Transaction.ReferenceType;
+import com.moriba.skultem.domain.model.Transaction.TransactionType;
 import com.moriba.skultem.domain.repository.ExpenseCategoryRepository;
 import com.moriba.skultem.domain.repository.ExpenseRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
@@ -24,12 +27,14 @@ import lombok.RequiredArgsConstructor;
 public class CreateExpenseUseCase {
     private final ExpenseRepository repo;
     private final ExpenseCategoryRepository expenseCategoryRepo;
+    private final CreateTransactionUsercase createTransactionUsercase;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "EXPENSE_CREATED")
-    public ExpenseDTO execute(String schoolId, String name, String description, String categoryId, BigDecimal amount, LocalDate expenseDate) {
-
-        var category = expenseCategoryRepo.findByIdAndSchool(categoryId, schoolId).orElseThrow(() -> new NotFoundException("Category not found"));
+    public ExpenseDTO execute(String schoolId, String name, String description, String categoryId, BigDecimal amount,
+            LocalDate expenseDate) {
+        var category = expenseCategoryRepo.findByIdAndSchool(categoryId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
         var id = UUID.randomUUID().toString();
 
         var domain = Expense.create(id, schoolId, name, amount, category, description, expenseDate);
@@ -43,6 +48,8 @@ public class CreateExpenseUseCase {
                 null,
                 domain.getId());
 
+        createTransactionUsercase.createEntry(schoolId, TransactionType.EXPENSE, Direction.DEBIT, amount, id,
+                ReferenceType.EXPENSE);
         return ExpenseMapper.toDTO(domain);
     }
 }

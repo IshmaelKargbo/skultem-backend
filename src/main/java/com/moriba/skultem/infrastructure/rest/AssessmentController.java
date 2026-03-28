@@ -163,7 +163,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/approval/{approvalRequestId}/approve")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> approveAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String approvalRequestId,
@@ -173,7 +173,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/approval/{approvalRequestId}/return")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> returnAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String approvalRequestId,

@@ -81,6 +81,7 @@ public class ListAssessmentApprovalRequestUseCase {
                                         teacher.getName(),
                                         subject.getName(),
                                         r.getCycle().getAssessment().getName(),
+                                        r.getCycle().getTerm().getName(),
                                         r.getCycle().getSubject().getSession().getClazz().getName(),
                                         totalStudents,
                                         passCount,
@@ -100,7 +101,8 @@ public class ListAssessmentApprovalRequestUseCase {
         public List<AssessmentApprovalRequestDTO> executeByUser(String schoolId, String userId) {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
-                var teacher = teacherRepo.findByUserId(userId).orElseThrow(() -> new NotFoundException("Teacher not found"));
+                var teacher = teacherRepo.findByUserId(userId)
+                                .orElseThrow(() -> new NotFoundException("Teacher not found"));
                 List<AssessmentApprovalRequest> requests = requestRepo
                                 .findAllByClassMasterSchoolId(teacher.getId(), academicYear.getId());
 
@@ -145,6 +147,7 @@ public class ListAssessmentApprovalRequestUseCase {
                                         user.getName(),
                                         subject.getName(),
                                         r.getCycle().getAssessment().getName(),
+                                        r.getCycle().getTerm().getName(),
                                         r.getCycle().getSubject().getSession().getClazz().getName(),
                                         totalStudents,
                                         passCount,

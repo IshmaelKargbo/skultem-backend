@@ -5,15 +5,19 @@ import java.time.Instant;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.domain.model.StudentLedgerEntry;
+import com.moriba.skultem.domain.model.Transaction;
+import com.moriba.skultem.domain.model.Transaction.ReferenceType;
 import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 public class CreateStudentLedgerUsercase {
 
     private final StudentLedgerEntryRepository repo;
+    private final CreateTransactionUsercase createTransactionUsercase;
 
     @Transactional
     public StudentLedgerEntry createEntry(
@@ -52,10 +56,22 @@ public class CreateStudentLedgerUsercase {
                 referenceId,
                 description,
                 paidAt,
-                newBalance
-        );
-        
+                newBalance);
+
         repo.save(entry);
+
+        createTransaction(schoolId, direction, transactionType, amount, referenceId);
+
         return entry;
+    }
+
+    private void createTransaction(String schoolId, StudentLedgerEntry.Direction direction,
+            StudentLedgerEntry.TransactionType transactionType, BigDecimal amount, String referenceId) {
+
+        var parseDirection = Transaction.Direction.valueOf(direction.name());
+        var parseType = Transaction.TransactionType.valueOf(direction.name());
+
+        createTransactionUsercase.createEntry(schoolId, parseType, parseDirection, amount, referenceId,
+                ReferenceType.STUDENT);
     }
 }

@@ -49,7 +49,7 @@ public class SimplifiedClassLeaderBoardUseCase {
                         subjectScores.sort(Comparator.comparingInt(
                                         a -> a.getCycle().getAssessment().getPosition()));
 
-                        int cumulativeScore = 0;
+                        int cumulativeWeight = 0;
                         String trend = "STABLE";
                         Integer previousScore = null;
 
@@ -60,19 +60,18 @@ public class SimplifiedClassLeaderBoardUseCase {
                                 if (!score.isCompleted())
                                         continue;
 
-                                int currentScore = score.getWeightedScore() != null ? score.getWeightedScore() : 0;
+                                int currentScore = score.getScore() != null ? score.getScore() : 0;
+                                int currentWeight = score.getWeightedScore() != null ? score.getWeightedScore() : 0;
 
                                 if (previousScore != null) {
                                         if (currentScore > previousScore)
                                                 trend = "IMPROVED";
                                         else if (currentScore < previousScore)
                                                 trend = "DROPPED";
-                                }else {
-                                        
                                 }
 
                                 previousScore = currentScore;
-                                cumulativeScore += currentScore;
+                                cumulativeWeight += currentWeight;
 
                                 String grade = resolveScoreGradeUseCase.execute(request.schoolId(), score.getScore(),
                                                 score.getStatus());
@@ -84,13 +83,13 @@ public class SimplifiedClassLeaderBoardUseCase {
 
                         AssessmentScore lastScore = subjectScores.get(subjectScores.size() - 1);
 
-                        String grade = resolveScoreGradeUseCase.execute(request.schoolId(), cumulativeScore,
+                        String grade = resolveScoreGradeUseCase.execute(request.schoolId(), cumulativeWeight,
                                         lastScore.getStatus());
 
                         breakdown.add(new BreakdownDTO(
                                         lastScore.getStudentAssessment().getTeacherSubject().getId(),
                                         lastScore.getStudentAssessment().getTeacherSubject().getSubject().getName(),
-                                        cumulativeScore,
+                                        cumulativeWeight,
                                         grade,
                                         trend,
                                         scoresDTO));

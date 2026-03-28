@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.StudentDTO;
@@ -25,7 +26,7 @@ public class ListStudentBySchoolUseCase {
     private final AcademicYearRepository academicYearRepo;
 
     public Page<StudentDTO> execute(String schoolId, int page, int size) {
-        Pageable pageable = size > 0 ? PageRequest.of(page, size) : Pageable.unpaged();
+        Pageable pageable = size > 0 ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")) : Pageable.unpaged();
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));

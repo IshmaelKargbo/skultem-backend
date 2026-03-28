@@ -10,11 +10,11 @@ import com.moriba.skultem.domain.model.Notification.Type;
 import com.moriba.skultem.domain.vo.Priority;
 
 @Component
-public class GradesReleasedNotificationListener {
+public class NotificationListener {
 
     private final CreateNotificationUseCase createNotificationUseCase;
 
-    public GradesReleasedNotificationListener(
+    public NotificationListener(
             CreateNotificationUseCase createNotificationUseCase) {
         this.createNotificationUseCase = createNotificationUseCase;
     }
@@ -30,7 +30,6 @@ public class GradesReleasedNotificationListener {
                 event.getSubjectName(),
                 event.getScore());
         
-        System.out.println(message);
         createNotificationUseCase.execute(
                 event.getSchoolId(),
                 event.getUser(),
