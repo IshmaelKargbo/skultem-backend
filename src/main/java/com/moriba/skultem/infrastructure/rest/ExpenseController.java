@@ -50,7 +50,7 @@ public class ExpenseController {
         public ApiResponse<ExpenseDTO> createExpense(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateExpenseDTO param) {
-                var res = createExpenseUseCase.execute(school, param.name(), param.description(), param.category(), param.amount(), param.expenseDate());
+                var res = createExpenseUseCase.execute(school, param.name(), param.description(), param.category(), param.amount());
                 return new ApiResponse<>("success", 200, "Expense created successfully", res);
         }
 

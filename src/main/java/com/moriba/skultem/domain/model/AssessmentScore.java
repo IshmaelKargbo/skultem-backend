@@ -111,6 +111,10 @@ public class AssessmentScore extends AggregateRoot<String> {
         return getStatus() == ClassSubjectAssessmentLifeCycle.Status.COMPLETED;
     }
 
+    public boolean isApproved() {
+        return getStatus() == ClassSubjectAssessmentLifeCycle.Status.APPROVED;
+    }
+
     public void open() {
         cycle.markDraft();
         touch(Instant.now());

@@ -14,6 +14,7 @@ import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.model.Payment.PaymentMethod;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
+import com.moriba.skultem.domain.model.Transaction.ReferenceType;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
@@ -34,6 +35,7 @@ public class RecordPaymentUseCase {
         private final AcademicYearRepository academicYearRepo;
         private final StudentRepository studentRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
+        private final CreateTransactionUsercase createTransactionUsercase;
         private final ReferenceGeneratorUsecase rg;
         private final LogActivityUseCase logActivityUseCase;
 
@@ -65,6 +67,10 @@ public class RecordPaymentUseCase {
                 createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
                                 student.getId(), fee.getTerm().getId(), TransactionType.PAYMENT,
                                 Direction.CREDIT, param.amount, id, description, Instant.now());
+                createTransactionUsercase.createEntry(param.schoolId,
+                                com.moriba.skultem.domain.model.Transaction.TransactionType.PAYMENT,
+                                com.moriba.skultem.domain.model.Transaction.Direction.CREDIT, param.amount, id,
+                                ReferenceType.STUDENT);
 
                 var currency = MoneyUtil.format(param.amount);
                 logActivityUseCase.log(

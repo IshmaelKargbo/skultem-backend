@@ -2,7 +2,6 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,9 +40,6 @@ public class ExpenseEntity {
 
     @Column(nullable = false)
     private String description;
-
-    @Column(nullable = false)
-    private LocalDate expenseDate;
 
     private Instant createdAt;
     private Instant updatedAt;

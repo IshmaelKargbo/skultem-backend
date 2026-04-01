@@ -1,7 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -31,13 +30,12 @@ public class CreateExpenseUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "EXPENSE_CREATED")
-    public ExpenseDTO execute(String schoolId, String name, String description, String categoryId, BigDecimal amount,
-            LocalDate expenseDate) {
+    public ExpenseDTO execute(String schoolId, String name, String description, String categoryId, BigDecimal amount) {
         var category = expenseCategoryRepo.findByIdAndSchool(categoryId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
         var id = UUID.randomUUID().toString();
 
-        var domain = Expense.create(id, schoolId, name, amount, category, description, expenseDate);
+        var domain = Expense.create(id, schoolId, name, amount, category, description);
         repo.save(domain);
 
         logActivityUseCase.log(

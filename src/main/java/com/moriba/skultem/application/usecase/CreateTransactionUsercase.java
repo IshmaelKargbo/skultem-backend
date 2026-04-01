@@ -40,7 +40,7 @@ public class CreateTransactionUsercase {
         BigDecimal lastBalance = lastEntry != null ? lastEntry.getBalance() : BigDecimal.ZERO;
 
         BigDecimal newBalance = lastBalance;
-        if (direction == Transaction.Direction.DEBIT) {
+        if (direction == Transaction.Direction.CREDIT) {
             newBalance = newBalance.add(amount != null ? amount : BigDecimal.ZERO);
         } else {
             newBalance = newBalance.subtract(amount != null ? amount : BigDecimal.ZERO);

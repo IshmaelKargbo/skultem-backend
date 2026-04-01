@@ -32,6 +32,8 @@ public class WidgetUsecase {
     private final StudentReportUseCase studentReportUseCase;
     private final FeeReportUseCase feeReportUseCase;
     private final GradeReportUseCase gradeReportUseCase;
+    private final TransactionReportUseCase transactionReportUseCase;
+    private final ExpenseReportUseCase expenseReportUseCase;
     private final PaymentReportUseCase paymentReportUseCase;
     private final ClassReportUseCase classReportUseCase;
     private final ParentReportUseCase parentReportUseCase;
@@ -45,7 +47,6 @@ public class WidgetUsecase {
         List<?> records = loadRecords(schoolId, request, page, size);
 
         if (records.isEmpty()) {
-            // return empty chart or table
             Object emptyData = request.chartType().equalsIgnoreCase("table")
                     ? emptyTable(request)
                     : emptyChart(request);
@@ -69,7 +70,6 @@ public class WidgetUsecase {
     }
 
     private Object emptyChart(Widget request) {
-        // Chart with empty datasets and a default "all" label
         List<Dataset> datasets = request.metrics().stream()
                 .map(m -> new Dataset(m.name(), List.of(BigDecimal.ZERO)))
                 .toList();
@@ -82,12 +82,11 @@ public class WidgetUsecase {
     }
 
     private Object emptyTable(Widget request) {
-        // Table with headers but no rows
         List<String> headers = new ArrayList<>();
-        headers.add("Group"); // default first column
+        headers.add("Group");
         request.metrics().forEach(m -> headers.add(m.name()));
 
-        List<List<Object>> rows = List.of(); // empty rows
+        List<List<Object>> rows = List.of();
 
         return new TableData(
                 "table",
@@ -140,6 +139,8 @@ public class WidgetUsecase {
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();
             case "assessments" -> gradeReportUseCase.execute(dto, page, size).getContent();
             case "leaderboards" -> gradeReportUseCase.execute(dto, page, size).getContent();
+            case "transactions" -> transactionReportUseCase.execute(dto, page, size).getContent();
+            case "expenses" -> expenseReportUseCase.execute(dto, page, size).getContent();
             case "classes" -> classReportUseCase.execute(dto, page, size).getContent();
             case "parents" -> parentReportUseCase.execute(dto, page, size).getContent();
             case "payments" -> paymentReportUseCase.execute(dto, page, size).getContent();

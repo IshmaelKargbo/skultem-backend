@@ -27,17 +27,6 @@ public class ReportExportController {
 
     private final ReportExportService reportExportService;
 
-    @GetMapping("/ledger")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
-    public ResponseEntity<byte[]> exportLedger(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(defaultValue = "csv") String format,
-            @RequestParam(required = false) String classId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
-        return toResponse(reportExportService.exportLedger(school, format, classId, startDate, endDate));
-    }
-
     @GetMapping("/payments")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ResponseEntity<byte[]> exportPayments(
@@ -69,17 +58,6 @@ public class ReportExportController {
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
         return toResponse(reportExportService.exportBehaviour(school, classId, format, startDate, endDate));
-    }
-
-    @GetMapping("/students")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
-    public ResponseEntity<byte[]> exportStudents(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(defaultValue = "csv") String format,
-            @RequestParam(required = false) String classId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
-        return toResponse(reportExportService.exportStudents(school, format, classId, startDate, endDate));
     }
 
     @GetMapping("/fees")
@@ -118,8 +96,8 @@ public class ReportExportController {
             @RequestParam int size,
             @RequestBody RunReportDTO param) {
         var res = reportExportService.runReport(school, param, page, size);
-        var data = res.get("data");
-        var meta = res.get("meta");
+        var data = res.getData();
+        var meta = res.getMeta();
         return new ApiResponse<>("success", 200, "Report generated successfully", data, meta);
     }
 }

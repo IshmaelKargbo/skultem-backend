@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Expense;
 import com.moriba.skultem.domain.repository.ExpenseRepository;
+import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.jpa.ExpenseJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.ExpenseMapper;
 
@@ -32,6 +34,12 @@ public class ExpenseAdapter implements ExpenseRepository {
     @Override
     public Page<Expense> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(ExpenseMapper::toDomain);
+    }
+
+    @Override
+    public Page<Expense> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runReport(schoolId, filters, pageable)
+                .map(ExpenseMapper::toDomain);
     }
 
 }
