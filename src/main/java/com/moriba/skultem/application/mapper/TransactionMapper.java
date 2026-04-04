@@ -9,7 +9,7 @@ public class TransactionMapper {
         if (param == null)
             return null;
 
-        return new TransactionDTO(param.getId(), param.getAcademicYearId(), param.getTermId(), param.getType(),
+        return new TransactionDTO(param.getId(), param.getAcademicYear().getName(), param.getTerm().getName(), param.getType(),
                 param.getDirection(), param.getAmount(), param.getBalance(), param.getReferenceId(),
                 param.getReferenceType(), param.getCreatedAt());
     }

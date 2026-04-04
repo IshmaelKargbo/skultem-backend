@@ -13,8 +13,8 @@ import lombok.Getter;
 public class Transaction extends AggregateRoot<String> {
 
     private final String schoolId;
-    private final String academicYearId;
-    private final String termId;
+    private final AcademicYear academicYear;
+    private final Term term;
 
     private final TransactionType type;
     private final Direction direction;
@@ -35,8 +35,8 @@ public class Transaction extends AggregateRoot<String> {
     }
 
     public enum Direction {
-        DEBIT,   // money out
-        CREDIT   // money in
+        DEBIT, // money out
+        CREDIT // money in
     }
 
     public enum ReferenceType {
@@ -49,16 +49,15 @@ public class Transaction extends AggregateRoot<String> {
     public Transaction(
             String id,
             String schoolId,
-            String academicYearId,
-            String termId,
+            AcademicYear academicYear,
+            Term term,
             TransactionType type,
             Direction direction,
             BigDecimal amount,
             BigDecimal balance,
             String referenceId,
             ReferenceType referenceType,
-            Instant createdAt
-    ) {
+            Instant createdAt) {
         super(id, createdAt);
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
@@ -66,8 +65,8 @@ public class Transaction extends AggregateRoot<String> {
         }
 
         this.schoolId = schoolId;
-        this.academicYearId = academicYearId;
-        this.termId = termId;
+        this.academicYear = academicYear;
+        this.term = term;
 
         this.type = type;
         this.direction = direction;
@@ -82,29 +81,27 @@ public class Transaction extends AggregateRoot<String> {
     public static Transaction create(
             String id,
             String schoolId,
-            String academicYearId,
-            String termId,
+            AcademicYear academicYear,
+            Term term,
             TransactionType type,
             Direction direction,
             BigDecimal amount,
             BigDecimal balance,
             String referenceId,
-            ReferenceType referenceType
-    ) {
+            ReferenceType referenceType) {
 
         return new Transaction(
                 id,
                 schoolId,
-                academicYearId,
-                termId,
+                academicYear,
+                term,
                 type,
                 direction,
                 amount,
                 balance,
                 referenceId,
                 referenceType,
-                Instant.now()
-        );
+                Instant.now());
     }
 
     public BigDecimal getDebit() {

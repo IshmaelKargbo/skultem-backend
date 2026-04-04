@@ -47,7 +47,7 @@ public class CreateTransactionUsercase {
         }
 
         Transaction entry = Transaction.create(
-                java.util.UUID.randomUUID().toString(), schoolId, academicYear.getId(), term.getId(), transactionType,
+                java.util.UUID.randomUUID().toString(), schoolId, academicYear, term, transactionType,
                 direction, amount, newBalance, referenceId, referenceType);
 
         repo.save(entry);

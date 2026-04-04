@@ -11,7 +11,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,15 +34,17 @@ public class TransactionEntity {
     @Column(nullable = false)
     private String schoolId;
 
-    @Column(nullable = false)
-    private String termId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "term_id", nullable = false)
+    private TermEntity term;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType transactionType;
 
-    @Column(nullable = false)
-    private String academicYearId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_year_id", nullable = false)
+    private AcademicYearEntity academicYear;
 
     @Column(nullable = false)
     private String referenceId;

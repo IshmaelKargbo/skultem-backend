@@ -56,8 +56,7 @@ public class SimplifiedClassLeaderBoardUseCase {
                         List<AssessmentScoreDTO> scoresDTO = new ArrayList<>();
 
                         for (AssessmentScore score : subjectScores) {
-
-                                if (!score.isCompleted())
+                                if (!score.isApproved())
                                         continue;
 
                                 int currentScore = score.getScore() != null ? score.getScore() : 0;
@@ -75,6 +74,7 @@ public class SimplifiedClassLeaderBoardUseCase {
 
                                 String grade = resolveScoreGradeUseCase.execute(request.schoolId(), score.getScore(),
                                                 score.getStatus());
+                                
                                 scoresDTO.add(AssessmentScoreMapper.toDTO(score, grade, trend));
                         }
 

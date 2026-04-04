@@ -5,16 +5,23 @@ import com.moriba.skultem.infrastructure.persistence.entity.TransactionEntity;
 
 public class TransactionMapper {
     public static Transaction toDomain(TransactionEntity param) {
-        return new Transaction(param.getId(), param.getSchoolId(), param.getAcademicYearId(), param.getTermId(), param.getTransactionType(), param.getDirection(), param.getAmount(), param.getBalance(), param.getReferenceId(), param.getReferenceType(), param.getCreatedAt());
+        var term = TermMapper.toDomain(param.getTerm());
+        var academicYear = AcademicYearMapper.toDomain(param.getAcademicYear());
+        return new Transaction(param.getId(), param.getSchoolId(), academicYear, term, param.getTransactionType(),
+                param.getDirection(), param.getAmount(), param.getBalance(), param.getReferenceId(),
+                param.getReferenceType(), param.getCreatedAt());
     }
 
     public static TransactionEntity toEntity(Transaction param) {
+        var academicYear = AcademicYearMapper.toEntity(param.getAcademicYear());
+        var term  = TermMapper.toEntity(param.getTerm());
+
         return TransactionEntity.builder()
                 .id(param.getId())
-                .academicYearId(param.getAcademicYearId())
+                .academicYear(academicYear)
                 .amount(param.getAmount())
                 .direction(param.getDirection())
-                .termId(param.getTermId())
+                .term(term)
                 .transactionType(param.getType())
                 .balance(param.getBalance())
                 .referenceType(param.getReferenceType())
