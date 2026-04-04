@@ -1,23 +1,11 @@
-FROM eclipse-temurin:17-jdk-alpine
-
-# Set working directory
+FROM maven:3.9.5-eclipse-temurin-21-alpine
 WORKDIR /app
 
-# Copy pom.xml and download dependencies (for caching)
 COPY pom.xml .
 RUN mkdir -p src && echo "" > src/Main.java
 RUN mvn dependency:go-offline -B
 
-# Copy source code
-COPY . .
+COPY src ./src
+RUN mvn package -B
 
-# Build the app
-RUN mvn clean package -DskipTests
-
-# Expose default port (Render uses $PORT)
-ENV PORT=10000
-
-EXPOSE $PORT
-
-# Run the app
-ENTRYPOINT ["sh", "-c", "java -Xmx128m -Xms128m -jar target/*.jar --server.port=$PORT"]
+CMD ["java", "-jar", "target/skultem-0.0.1-SNAPSHOT.jar"]
