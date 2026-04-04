@@ -1,4 +1,4 @@
-POST http://localhost:8080/api/v1/school
+POST https://skultem-backend.onrender.com/api/v1/school
 Content-Type: application/json
 
 {

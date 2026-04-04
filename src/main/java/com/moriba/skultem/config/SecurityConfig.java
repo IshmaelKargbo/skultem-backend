@@ -24,50 +24,52 @@ import com.moriba.skultem.infrastructure.security.JwtAuthenticationEntryPoint;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public SecurityFilterChain filterChain(
-            HttpSecurity http,
-            JwtAuthFilter authFilter,
-            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception {
+        @Bean
+        public SecurityFilterChain filterChain(
+                        HttpSecurity http,
+                        JwtAuthFilter authFilter,
+                        JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception {
 
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/school/**").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .httpBasic(basic -> basic.disable())
-                .formLogin(form -> form.disable());
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(csrf -> csrf.disable())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .requestMatchers("/api/v1/auth/**").permitAll()
+                                                .requestMatchers("/api/v1/school/**").permitAll()
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                                .httpBasic(basic -> basic.disable())
+                                .formLogin(form -> form.disable());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Content-Type",
-                "Authorization",
-                "Accept",
-                "Origin"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(
+                                List.of("http://localhost:3000", "https://skultem-backend.onrender.com"));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                configuration.setAllowedHeaders(Arrays.asList(
+                                "Content-Type",
+                                "Authorization",
+                                "Accept",
+                                "Origin"));
+                configuration.setAllowCredentials(true);
+                configuration.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 }
