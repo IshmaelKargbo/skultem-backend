@@ -54,7 +54,7 @@ public class AssessmentScoreMapper {
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade) {
         int score = 0, weight = 0, weightedScore = 0;
 
-        if (param.isApproved() || param.isSubmited() || grade != "N/A") {
+        if (param.isApproved() || param.isSubmited() || param.isCompleted()) {
             score = param.getScore();
             weight = param.getWeight();
             weightedScore = param.getWeightedScore();
