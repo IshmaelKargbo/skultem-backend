@@ -22,4 +22,10 @@ public class ResolveScoreGradeUseCase {
                 .orElseThrow(() -> new NotFoundException("School not found"));
         return school.resolveGrade(score);
     }
+
+    public String execute(String schoolId, int score) {
+        var school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new NotFoundException("School not found"));
+        return school.resolveGrade(score);
+    }
 }

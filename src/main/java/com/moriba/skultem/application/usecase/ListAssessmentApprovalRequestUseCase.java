@@ -46,8 +46,7 @@ public class ListAssessmentApprovalRequestUseCase {
 
                         List<AssessmentScoreDTO> scoreDTOs = scores.stream()
                                         .map(s -> {
-                                                String grade = resolveScoreGradeUseCase.execute(schoolId, s.getScore(),
-                                                                s.getStatus());
+                                                String grade = resolveScoreGradeUseCase.execute(schoolId, s.getScore());
                                                 return AssessmentScoreMapper.toDTO(s, grade);
                                         }).collect(Collectors.toList());
 
@@ -112,8 +111,7 @@ public class ListAssessmentApprovalRequestUseCase {
 
                         List<AssessmentScoreDTO> scoreDTOs = scores.stream()
                                         .map(s -> {
-                                                String grade = resolveScoreGradeUseCase.execute(schoolId, s.getScore(),
-                                                                s.getStatus());
+                                                String grade = resolveScoreGradeUseCase.execute(schoolId, s.getScore());
                                                 return AssessmentScoreMapper.toDTO(s, grade);
                                         }).collect(Collectors.toList());
 
