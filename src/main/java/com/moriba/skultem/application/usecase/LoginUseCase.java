@@ -54,10 +54,10 @@ public class LoginUseCase {
                                 .orElseThrow(() -> new NotFoundException("School not found"));
 
                 var user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new AccessDeniedException("Invalid email or password"));
+                                .orElseThrow(() -> new AccessDeniedException("Invalid email"));
 
                 if (!passwordEncoder.matches(password, user.getPassword())) {
-                        throw new AccessDeniedException("Invalid email or password");
+                        throw new AccessDeniedException("Invalid password");
                 }
 
                 List<SchoolUser> schoolUsers = schoolUserRepository.findAllByUser_IdAndSchoolId(user.getId(),

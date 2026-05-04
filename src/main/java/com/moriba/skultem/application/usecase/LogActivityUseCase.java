@@ -17,21 +17,11 @@ public class LogActivityUseCase {
     private final ActivityRepository activityRepo;
 
     @Transactional
-    public void log(
-            String schoolId,
-            ActivityType type,
-            String title,
-            String subject,
-            String meta,
-            String referenceId) {
-        var activity = Activity.create(
-                UUID.randomUUID().toString(),
-                schoolId,
-                type,
-                title,
-                subject,
-                meta,
-                referenceId);
+    public void log(String schoolId, ActivityType type, String title,
+            String subject, String meta, String referenceId) {
+        var id = UUID.randomUUID().toString();
+        var activity = Activity.create(id, schoolId, type,
+                title, subject, meta, referenceId);
         activityRepo.save(activity);
     }
 }

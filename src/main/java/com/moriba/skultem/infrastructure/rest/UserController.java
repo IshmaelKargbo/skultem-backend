@@ -11,8 +11,10 @@ import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.usecase.CreateUserUseCase;
 import com.moriba.skultem.application.usecase.GetUserUseCase;
 import com.moriba.skultem.application.usecase.ListUserBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ResetPasswordUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateUserDTO;
+import com.moriba.skultem.infrastructure.rest.dto.ResetPasswordDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,14 +33,27 @@ public class UserController {
 
     private final CreateUserUseCase createUserUseCase;
     private final ListUserBySchoolUseCase listUserBySchoolUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
     private final GetUserUseCase getUserUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
     public ApiResponse<UserDTO> create(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateUserDTO param) {
-        var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(), param.role());
+        var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(),
+                param.role());
         return new ApiResponse<>("success", 200, "User created successfully", res);
+    }
+
+    @PostMapping("/reset-password")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    public ApiResponse<UserDTO> resetPassword(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @Valid @RequestBody ResetPasswordDTO param) {
+        var payload = new ResetPasswordUseCase.ResetPassword(userId, param.password(), school);
+        var res = resetPasswordUseCase.execute(payload);
+        return new ApiResponse<>("success", 200, "User reset password successfully", res);
     }
 
     @GetMapping
@@ -71,9 +86,8 @@ public class UserController {
     @GetMapping("/me")
     @PreAuthorize("@permissionService.canAccessSchool(#school)")
     public ApiResponse<UserDTO> me(
-        @AuthenticationPrincipal(expression = "userId") String userId,
-        @AuthenticationPrincipal(expression = "activeSchoolId") String school
-    ) {
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getUserUseCase.execute(school, userId);
         return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }

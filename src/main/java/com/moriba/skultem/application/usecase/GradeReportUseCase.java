@@ -38,6 +38,9 @@ public class GradeReportUseCase {
 
         return res.map(e -> {
             var score = resolveScoreGradeUseCase.execute(request.schoolId(), e.getScore(), e.getStatus());
+            if (score == null)
+                return null;
+
             return AssessmentScoreMapper.toDTO(e, score);
         });
     }

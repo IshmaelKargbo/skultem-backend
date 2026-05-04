@@ -2,6 +2,7 @@ package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
 
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
 import lombok.EqualsAndHashCode;
@@ -20,6 +21,7 @@ public class User extends AggregateRoot<String> {
 
     public enum Status {
         ACTIVE,
+        RESET_PASSWORD,
         INACTIVE,
         DELETED
     }
@@ -36,12 +38,24 @@ public class User extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static User create(String id, String givenNames, String familyName, String email, String password, String hint) {
+    public static User create(String id, String givenNames, String familyName, String email, String password,
+            String hint) {
         Instant now = Instant.now();
-        return new User(id, givenNames, familyName, email, password, hint, Status.ACTIVE, now, now);
+        return new User(id, givenNames, familyName, email, password, hint, Status.RESET_PASSWORD, now, now);
     }
 
     public String getName() {
         return String.join(" ", givenNames, familyName);
+    }
+
+    public void resetPassword(String password) {
+        if (status != Status.RESET_PASSWORD) {
+            throw new RuleException("your account must be RESET_PASSWORD state in other to use the feature");
+        }
+
+        this.password = password;
+        this.hint = "";
+        this.status = Status.ACTIVE;
+        touch(Instant.now());
     }
 }

@@ -17,6 +17,7 @@ public class SchoolUser extends AggregateRoot<String> {
 
     public enum Status {
         ACTIVE,
+        RESET_PASSWORD,
         INACTIVE
     }
 

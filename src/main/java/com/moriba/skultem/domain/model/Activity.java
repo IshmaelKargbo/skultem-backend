@@ -19,16 +19,8 @@ public class Activity extends AggregateRoot<String> {
     private final String meta;
     private final String referenceId;
 
-    public Activity(
-            String id,
-            String schoolId,
-            ActivityType type,
-            String title,
-            String subject,
-            String meta,
-            String referenceId,
-            Instant createdAt,
-            Instant updatedAt) {
+    public Activity(String id, String schoolId, ActivityType type, String title, String subject, String meta,
+            String referenceId, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.type = type;
@@ -39,14 +31,8 @@ public class Activity extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static Activity create(
-            String id,
-            String schoolId,
-            ActivityType type,
-            String title,
-            String subject,
-            String meta,
-            String referenceId) {
+    public static Activity create(String id, String schoolId, ActivityType type,
+            String title, String subject, String meta, String referenceId) {
         Instant now = Instant.now();
         return new Activity(id, schoolId, type, title, subject, meta, referenceId, now, now);
     }
