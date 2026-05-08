@@ -25,7 +25,6 @@ public class GetSchoolUseCase {
     public SchoolDTO findByDomain(String domain) {
         var record = repo.findByDomain(domain)
                 .orElseThrow(() -> new NotFoundException("School not found"));
-        System.out.println(record);
         return SchoolMapper.toDTO(record);
     }
 }
