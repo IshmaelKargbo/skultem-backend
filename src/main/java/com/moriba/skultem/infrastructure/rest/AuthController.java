@@ -1,11 +1,16 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.LoginResponse;
+import com.moriba.skultem.application.dto.SchoolDTO;
+import com.moriba.skultem.application.usecase.GetSchoolUseCase;
 import com.moriba.skultem.application.usecase.LoginUseCase;
 import com.moriba.skultem.application.usecase.LogoutUseCase;
 import com.moriba.skultem.application.usecase.RefreshTokenUseCase;
@@ -28,6 +33,7 @@ public class AuthController {
     private final LoginUseCase loginUseCase;
     private final JwtUtil jwt;
     private final LogoutUseCase logoutUseCase;
+    private final GetSchoolUseCase getSchoolUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
 
     private final Parser uaParser = new Parser();
@@ -89,6 +95,12 @@ public class AuthController {
         LoginResponse res = refreshTokenUseCase.execute(param.refreshToken());
 
         return new ApiResponse<>("success", 200, "Token refreshed", res);
+    }
+
+    @GetMapping("/tenant")
+    public ApiResponse<SchoolDTO> tenant(@Valid @RequestParam(required = true) String domain) {
+        SchoolDTO res = getSchoolUseCase.findByDomain(domain);
+        return new ApiResponse<>("success", 200, "Get tenant successfully", res);
     }
 
     @PostMapping("/logout")
