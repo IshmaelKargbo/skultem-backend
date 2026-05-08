@@ -58,9 +58,8 @@ public class SecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOriginPatterns(List.of(
-                                "http://localhost:[*]",
-                                "https://*.skultem.space"
-                ));
+                                "http://localhost:3000",
+                                "https://*.skultem.space"));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList(
                                 "Content-Type",
