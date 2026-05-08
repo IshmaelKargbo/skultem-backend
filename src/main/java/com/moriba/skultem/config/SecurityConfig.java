@@ -57,8 +57,10 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(
-                                List.of("http://localhost:3000", "https://www.skultem.space"));
+                configuration.setAllowedOriginPatterns(List.of(
+                                "http://localhost:[*]",
+                                "https://*.skultem.space"
+                ));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList(
                                 "Content-Type",
