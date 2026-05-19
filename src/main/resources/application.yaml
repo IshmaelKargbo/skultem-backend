@@ -1,4 +1,3 @@
----
 mail:
   mode: dev
 mailtrap:
@@ -26,6 +25,8 @@ security:
     secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
 server:
   port: ${PORT:8080}
+  tomcat:
+    max-http-form-post-size: 50MB
 spring:
   application:
     name: skultem
@@ -47,6 +48,10 @@ spring:
     show-sql: false
   main:
     allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   threads:
     virtual:
       enabled: true
