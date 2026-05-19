@@ -72,16 +72,16 @@ public class AssessmentController {
     private final UpdateSchoolGradingScaleUseCase updateSchoolGradingScaleUseCase;
 
     @PostMapping("/template")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<AssessmentTemplateDTO> createTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateAssessmentTemplateDTO param) {
-        var res = createAssessmentTemplateUseCase.execute(school, param.name(), param.description());
+        var res = createAssessmentTemplateUseCase.execute(school, param.name(), param.passMark(), param.description());
         return new ApiResponse<>("success", 200, "Assessment template created successfully", res);
     }
 
     @PostMapping("/template/{templateId}/assignment")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<AssessmentTemplateDTO> assignToTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String templateId,
@@ -94,7 +94,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/template/{subjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentCycleDTO>> getTemplateAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String subjectId,
@@ -104,7 +104,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/list")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentDTO>> listAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listAssessmentUseCase.executeAssessment(school);
@@ -112,7 +112,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/list/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER', 'PARENT')")
     public ApiResponse<List<AssessmentDTO>> listAssessmentByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(name = "classId") String classId) {
@@ -121,7 +121,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/approval/{classMasterId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classMasterId) {
@@ -130,7 +130,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/approval/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listMeAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -139,7 +139,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/grade/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<Object> gradeAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -152,7 +152,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/submit/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<Object> submitAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -163,7 +163,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/approval/{approvalRequestId}/approve")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Object> approveAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String approvalRequestId,
@@ -173,7 +173,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/approval/{approvalRequestId}/return")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Object> returnAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String approvalRequestId,
@@ -183,7 +183,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/template")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentTemplateDTO>> listTemplates(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -200,7 +200,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/student")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<StudentAssessmentDTO>> listStudentAssessments(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String teacherSubjectId,
@@ -211,7 +211,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/cycle/active")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<ActiveAssessmentCycleDTO> getActiveCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId) {
@@ -220,7 +220,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/cycle/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentCycleOverviewDTO> getCycleOverview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var overview = getAssessmentCycleOverviewUseCase.execute(school);
@@ -228,7 +228,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/cycle/{termId}/advance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<AssessmentCycleAdvanceDTO> advanceCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String termId) {
@@ -237,7 +237,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/grading-scale")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<GradingScaleDTO> getGradingScale(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var scale = getSchoolGradingScaleUseCase.execute(school);
@@ -245,7 +245,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/grading-scale")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<GradingScaleDTO> updateGradingScale(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody UpdateGradingScaleDTO param) {

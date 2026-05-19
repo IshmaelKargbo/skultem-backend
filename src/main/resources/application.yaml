@@ -1,43 +1,56 @@
-server:
-  port: ${PORT:8080}
-  
-spring:
-  main:
-    allow-bean-definition-overriding: true
-  application:
-    name: skultem
-  
-  threads:
-    virtual:
-      enabled: true
-
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/skultem}
-    username: ${DB_USER:moriba}
-    password: ${DB_PASS:moriba@2024}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        
-security:
-  jwt:
-    # Ensure this is at least 256-bit for HS256
-    secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
-    access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}        # 15 mins
-    refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}  # 7 days
-
+---
+mail:
+  mode: dev
+mailtrap:
+  inbox-id: 2125279
+  sender:
+    email: no-reply@skultem.com
+    name: Skultem
+  template:
+    parent_assign: ${PARENT_ASSIGN_TEMPLATE:1064324c-e842-4abf-9ad6-6f491e4f7f66}
+    parent_welcome: ${PARENT_WELCOME_TEMPLATE:50aa30b3-e0da-4037-afd2-e4e7b9424b63}
+    teacher_welcome: ${TEACHER_WELCOME_TEMPLATE:8308f89c-8216-4810-ae52-5773d1ba38c7}
+    user_assign: ${USER_ASSIGN_TEMPLATE:8cdaf0fc-48a1-4ae7-8aa1-2d78252cfa87}
+    user_welcome: ${USER_WELCOME_TEMPLATE:0afe1b36-2da6-42b6-833e-e5f90d7fd6de}
+    welcome: ${WELCOME_TEMPLATE:1cc5734e-936a-417b-b4a5-fcaeb92224e5}
+  token: ${EMAIL_API_KEY:7875f35e476e8d34b7f79d32e72480b9}
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+security:
+  jwt:
+    access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}
+    refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}
+    secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
+server:
+  port: ${PORT:8080}
+spring:
+  application:
+    name: skultem
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+    password: ${DB_PASS:moriba@2024}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/skultem}
+    username: ${DB_USER:moriba}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+  main:
+    allow-bean-definition-overriding: true
+  threads:
+    virtual:
+      enabled: true
+supabase:
+  bucket: ${SUPABASE_BUCKET:students}
+  key: ${SUPABASE_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiemppaXZ1dGxjYW5hamJjZHhhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkzMjczOCwiZXhwIjoyMDg2NTA4NzM4fQ.I3f7qa_nk7HKu6_84iQmZ6_BGe23x8tdidm3gZs3WUo}
+  url: ${SUPABASE_URL:https://cbzjiivutlcanajbcdxa.supabase.co}

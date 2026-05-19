@@ -31,7 +31,6 @@ public class AssignFeeToStudentUseCase {
     private final EnrollmentRepository enrollmentRepo;
     private final StudentFeeRepository studentFeeRepo;
     private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
-    private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
     public StudentFeeDTO execute(AssignFeeToStudentRecord param) {
@@ -51,7 +50,6 @@ public class AssignFeeToStudentUseCase {
         }
 
         var studentFee = StudentFee.create(
-                rg.generate("STUDENT_FEE", "STF"),
                 param.schoolId(),
                 enrollment,
                 enrollment.getStudent(),

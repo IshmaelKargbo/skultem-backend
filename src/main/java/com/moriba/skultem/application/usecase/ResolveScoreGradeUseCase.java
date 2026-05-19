@@ -18,6 +18,7 @@ public class ResolveScoreGradeUseCase {
 
     public String execute(String schoolId, int score, Status status) {
         if (!status.equals(Status.APPROVED) && !status.equals(Status.COMPLETED)) return null;
+        
         var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
         return school.resolveGrade(score);

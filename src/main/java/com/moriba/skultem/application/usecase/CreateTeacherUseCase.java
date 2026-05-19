@@ -10,10 +10,12 @@ import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
@@ -21,6 +23,7 @@ import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.domain.vo.Title;
+import com.moriba.skultem.infrastructure.mail.MailService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +40,11 @@ public class CreateTeacherUseCase {
     private final SchoolUserRepository schoolUserRepo;
     private final TeacherRepository repo;
     private final ClassSessionRepository classSessionRepo;
+    private final SchoolRepository schoolRepo;
     private final AssignTeacherToClassUseCase assignTeacherToClassUseCase;
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "TEACHER_CREATED")
@@ -47,14 +52,14 @@ public class CreateTeacherUseCase {
             String staffId, String email,
             String phone, String street, String city, String classMaster) {
         var password = generatePassword();
+        var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("no school found"));
 
         User user;
         if (userRepo.existsByEmail(email)) {
             user = userRepo.findByEmail(email).orElseThrow();
         } else {
-            var id = rg.generate("USER", "USR");
             var passwordHash = passwordEncoder.encode(password);
-            user = User.create(id, givenNames, familyName, email, passwordHash, password);
+            user = User.create(givenNames, familyName, email, passwordHash, password);
             userRepo.save(user);
         }
 
@@ -70,8 +75,7 @@ public class CreateTeacherUseCase {
             throw new AlreadyExistsException("user already exist in this school");
         }
 
-        var schoolUserId = rg.generate("SCHOOL_USER", "SCU");
-        var schoolUser = SchoolUser.create(schoolUserId, schoolId, user, Role.TEACHER);
+        var schoolUser = SchoolUser.create(schoolId, user, Role.TEACHER);
         schoolUserRepo.save(schoolUser);
 
         var teacherId = rg.generate("TEACHER", "THR");
@@ -91,6 +95,7 @@ public class CreateTeacherUseCase {
                     clazz.getSection().getId(), streamId);
         }
 
+        sendWelcomeEmail(school, teacher);
         logActivityUseCase.log(
                 schoolId,
                 ActivityType.TEACHER,
@@ -110,4 +115,16 @@ public class CreateTeacherUseCase {
         }
         return value.toString();
     }
+
+    private void sendWelcomeEmail(School school, Teacher teacher) {
+        var subdomain = school.getDomain() + ".skultem.space";
+        var link = "https://" + subdomain + "";
+        var email = teacher.getUser().getEmail();
+        var schoolName = school.getName();
+        var name = teacher.getUser().getGivenNames();
+        var password = teacher.getUser().getHint();
+
+        mailService.sendWelcomeTeacherEmail(email, name, password, link, schoolName, subdomain);
+    }
+
 }

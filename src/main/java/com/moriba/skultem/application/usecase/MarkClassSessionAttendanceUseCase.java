@@ -2,8 +2,10 @@ package com.moriba.skultem.application.usecase;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -15,6 +17,8 @@ import com.moriba.skultem.application.dto.AttendanceDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.AttendanceMapper;
+import com.moriba.skultem.application.mapper.NotificationMapper;
+import com.moriba.skultem.application.services.NotificationService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Attendance;
 import com.moriba.skultem.domain.model.ClassSession;
@@ -27,6 +31,7 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
 import com.moriba.skultem.domain.repository.NotificationRepository;
+import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.vo.Priority;
 
 import jakarta.transaction.Transactional;
@@ -40,6 +45,8 @@ public class MarkClassSessionAttendanceUseCase {
     private final ClassSessionRepository classSessionRepo;
     private final AcademicYearRepository academicYearRepo;
     private final NotificationRepository notificationRepo;
+    private final NotificationService notificationService;
+    private final StudentParentRepository studentParentRepo;
     private final HolidayRepository holidayRepo;
     private final EnrollmentRepository enrollmentRepo;
 
@@ -86,6 +93,7 @@ public class MarkClassSessionAttendanceUseCase {
 
             validateAttendanceState(record.present(), record.excused(), record.reason(), record.late());
 
+            var parents = findNotificationParents(record.studentId(), schoolId);
             var existingOpt = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date, schoolId);
 
             Attendance attendance;
@@ -97,29 +105,49 @@ public class MarkClassSessionAttendanceUseCase {
                 attendance.update(record.present(), record.excused(), record.late(), record.reason(), holiday);
                 attendanceRepo.save(attendance);
 
-                notifyParentForAttendanceChange(attendance, enrollment.getStudent().getParent(), prevStatus);
+                parents.forEach(parent -> notifyParentForAttendanceChange(attendance, parent, prevStatus));
             } else {
                 var id = UUID.randomUUID().toString();
                 attendance = Attendance.create(id, schoolId, enrollment, date, record.present(), record.excused(),
                         record.late(), record.reason(), holiday);
                 attendanceRepo.save(attendance);
 
-                notifyParentForAttendanceChange(attendance, enrollment.getStudent().getParent(), null);
+                parents.forEach(parent -> notifyParentForAttendanceChange(attendance, parent, null));
             }
 
             return AttendanceMapper.toDTO(attendance);
         }).toList();
     }
 
+    private List<Parent> findNotificationParents(String studentId, String schoolId) {
+        Set<String> seenUserIds = new HashSet<>();
+        List<Parent> parents = studentParentRepo.findAllByStudentAndSchool(studentId, schoolId).stream()
+                .map(studentParent -> studentParent.getParent())
+                .filter(parent -> parent != null && parent.getUser() != null)
+                .filter(parent -> seenUserIds.add(parent.getUser().getId()))
+                .toList();
+
+        if (parents.isEmpty()) {
+            throw new NotFoundException("no parent relation found");
+        }
+
+        return parents;
+    }
+
     private void notifyParentForAttendanceChange(Attendance attendance, Parent parent, String prevStatus) {
         if (parent == null)
             return;
+
+        String status = attendance.getStatus();
+        if (status.equals(prevStatus) || !isParentAttendanceNotificationStatus(status)) {
+            return;
+        }
 
         Map<String, String> meta = Map.of(
                 "student_id", attendance.getEnrollment().getStudent().getId(),
                 "student_name", attendance.getEnrollment().getStudent().getName(),
                 "attendance_date", attendance.getDate().toString(),
-                "status", attendance.getStatus(),
+                "status", status,
                 "prev_status", prevStatus != null ? prevStatus : "",
                 "corrected", prevStatus != null ? "true" : "false");
 
@@ -127,14 +155,12 @@ public class MarkClassSessionAttendanceUseCase {
                 + attendance.getDate();
         String message;
 
-        if (attendance.isLate()) {
+        if ("Late".equals(status)) {
             message = "Your child was marked Late for " + attendance.getDate();
-        } else if (!attendance.isPresent() && !attendance.isExcused()) {
+        } else if ("Absent".equals(status)) {
             message = "Your child was marked Absent for " + attendance.getDate();
-        } else if (attendance.isPresent() && prevStatus == "Absent") {
-            message = "Correction: Your child is now marked Present for " + attendance.getDate();
         } else {
-            return;
+            message = "Your child was marked Excused for " + attendance.getDate();
         }
 
         Notification notification = Notification.create(
@@ -149,6 +175,12 @@ public class MarkClassSessionAttendanceUseCase {
             );
 
         notificationRepo.save(notification);
+        long count = notificationRepo.countAllOpenByOwnerAndSchoolId(parent.getUser().getId(), attendance.getSchoolId());
+        notificationService.sendToUser(parent.getUser().getId(), count, NotificationMapper.toDTO(notification));
+    }
+
+    private boolean isParentAttendanceNotificationStatus(String status) {
+        return "Late".equals(status) || "Absent".equals(status) || "Excused".equals(status);
     }
 
     private List<Enrollment> loadSessionEnrollments(ClassSession classSession, String schoolId) {

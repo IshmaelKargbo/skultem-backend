@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.moriba.skultem.domain.shared.AggregateRoot;
 import com.moriba.skultem.domain.vo.Role;
@@ -31,8 +32,9 @@ public class SchoolUser extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static SchoolUser create(String id, String schoolId, User user, Role role) {
+    public static SchoolUser create(String schoolId, User user, Role role) {
         Instant now = Instant.now();
+        String id = UUID.randomUUID().toString();
         return new SchoolUser(id, schoolId, user, role, Status.ACTIVE, now, now);
     }
 

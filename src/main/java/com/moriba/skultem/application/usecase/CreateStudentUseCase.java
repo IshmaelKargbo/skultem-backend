@@ -1,21 +1,26 @@
 package com.moriba.skultem.application.usecase;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.moriba.skultem.application.dto.ClassSubjectResponse;
 import com.moriba.skultem.application.dto.OptionGroupResponse;
+import com.moriba.skultem.application.dto.ParentRequest;
 import com.moriba.skultem.application.dto.StudentDTO;
+import com.moriba.skultem.application.dto.StudentParentRequest;
+import com.moriba.skultem.application.dto.StudentRecord;
 import com.moriba.skultem.application.dto.SubjectDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
@@ -29,6 +34,9 @@ import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.House;
+import com.moriba.skultem.domain.model.Parent;
+import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.StreamSubject;
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.model.StudentFee;
@@ -40,14 +48,18 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentSubjectRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.HouseRepository;
 import com.moriba.skultem.domain.repository.ParentRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
+import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Level;
+import com.moriba.skultem.infrastructure.bucket.SupabaseStorageService;
+import com.moriba.skultem.infrastructure.mail.MailService;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -58,31 +70,46 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateStudentUseCase {
     private final StudentRepository repo;
+    private final SchoolRepository schoolRepo;
     private final ClassSessionRepository classSessionRepo;
     private final ClassSubjectRepository classSubjectRepo;
     private final StreamSubjectRepository streamSubjectRepo;
     private final SubjectRepository subjectRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
     private final FeeStructureRepository feeStructureRepo;
+    private final SupabaseStorageService storageService;
     private final ParentRepository parentRepo;
+    private final HouseRepository houseRepo;
+    private final StudentParentRepository studentParentRepo;
+    private final MailService mailService;
+    private final CreateParentUseCase createParentUseCase;
     private final StudentFeeRepository studentFeeRepo;
     private final EnrollmentCreationService enrollmentCreationService;
     private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
+    private final CreateStudentParentUseCase createStudentParentUseCase;
     private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "STUDENT_CREATED")
-    public StudentDTO execute(CreateStudent param, List<String> selectedOptionIds) {
-        selectedOptionIds = selectedOptionIds == null
+    public StudentDTO execute(StudentRecord param) {
+        List<String> selectedOptionIds = param.selectedOptionIds() == null
                 ? List.of()
-                : selectedOptionIds.stream()
+                : param.selectedOptionIds().stream()
                         .filter(id -> id != null && !id.isBlank())
                         .distinct()
                         .toList();
 
-        var parent = parentRepo.findByIdAndSchoolId(param.parentId(), param.schoolId())
-                .orElseThrow(() -> new NotFoundException("Parent not found"));
+        School school = schoolRepo.findById(param.schoolId())
+                .orElseThrow(() -> new NotFoundException("School not found"));
+        House house = null;
+
+        if (param.house() != null) {
+            house = houseRepo.findByIdAndSchool(param.house(), param.schoolId())
+                    .orElseThrow(() -> new NotFoundException("House not found"));
+        }
+
+        Parent parent = applyParent(param.parentId(), param.parent());
 
         var session = classSessionRepo
                 .findByIdAndSchoolId(param.classId(), param.schoolId())
@@ -93,24 +120,38 @@ public class CreateStudentUseCase {
             throw new RuleException("Admission number already exists");
         }
 
-        String studentId = rg.generate("STUDENT", "STD");
-        Student student = Student.create(
-                studentId,
-                param.schoolId(),
-                admissionNumber,
-                param.givenNames().trim(),
-                param.familyName().trim(),
-                param.gender(),
-                parent,
-                param.dateOfBirth(),
-                session);
+        String photoUrl = null;
+        if (param.photo() != null && !param.photo().isEmpty()) {
+            try {
+                photoUrl = uploadPhoto(param.photo(), admissionNumber, param.schoolId());
+            } catch (Exception e) {
+                System.err.println("Failed to upload photo: " + e.getMessage());
+                throw new RuntimeException("Failed to upload photo", e);
+            }
+        }
+
+        Student student = Student.create(param.schoolId(), photoUrl, param.admissionNumber(), param.admissionDate(),
+                param.givenNames(), param.familyName(), param.family(), session, param.lastClass(), param.gender(),
+                parent, param.dateOfBirth(), param.enrollmentType(), param.previousSchool(), house, param.nationality(),
+                param.religion(), param.city(), param.street());
         repo.save(student);
+        if (!studentParentRepo.existByStudentIdAndParentIdAndSchoolId(student.getId(), parent.getId(),
+                school.getId())) {
+            var payload = new StudentParentRequest(school.getId(), parent.getId(), student.getId(),
+                    param.relationship());
+            createStudentParentUseCase.execute(payload);
+        }
 
         Enrollment enrollment = enrollStudent(student, session);
         enrolledSubjects(enrollment, selectedOptionIds);
         provisionStudentAssessmentsUseCase.execute(enrollment);
         applyFees(enrollment);
 
+        if (param.parentId() == null)
+            sendWelcomeEmail(school, student);
+        else
+            sendLinkEmail(school, student);
+        
         logActivityUseCase.log(
                 param.schoolId(),
                 ActivityType.STUDENT,
@@ -133,6 +174,22 @@ public class CreateStudentUseCase {
         return enrollment;
     }
 
+    // apply parent details if parentId is provided, otherwise create new parent if
+    // parent details are provided
+    private Parent applyParent(String parentId, ParentRequest parent) {
+        if (parentId != null && !parentId.isBlank()) {
+            return parentRepo.findByIdAndSchoolId(parentId,
+                    parent != null ? parent.schoolId() : null)
+                    .orElseThrow(() -> new NotFoundException("Parent not found"));
+        }
+
+        if (parent == null) {
+            return null;
+        }
+
+        return createParentUseCase.create(parent);
+    }
+
     private void applyFees(Enrollment enrollment) {
         Student student = enrollment.getStudent();
         AcademicYear academicYear = enrollment.getAcademicYear();
@@ -149,8 +206,7 @@ public class CreateStudentUseCase {
                     student.getId(), fee.getId()))
                 continue;
 
-            StudentFee studentFee = StudentFee.create(
-                    rg.generate("STUDENT_FEE", "STF"), schoolId, enrollment, student, fee, null);
+            StudentFee studentFee = StudentFee.create(schoolId, enrollment, student, fee, null);
             studentFeeRepo.save(studentFee);
 
             String description = Generate.generateLedgerDescription(
@@ -319,14 +375,50 @@ public class CreateStudentUseCase {
         return new ClassSubjectResponse(coreSubjects, options);
     }
 
-    public record CreateStudent(
-            String classId,
-            String schoolId,
-            String givenNames,
-            String familyName,
-            String admissionNumber,
-            Gender gender,
-            String parentId,
-            LocalDate dateOfBirth) {
+    private void sendWelcomeEmail(School school, Student student) {
+        var subdomain = school.getDomain() + ".skultem.space";
+        var link = "https://" + subdomain + "/login";
+        var parent = student.getParent();
+        var email = parent.getUser().getEmail();
+        var clazz = student.getSession().getName();
+        var schoolName = school.getName();
+        var name = student.getName() + " (" + student.getAdmissionNumber() + ")";
+        var password = parent.getUser().getHint();
+
+        mailService.sendParentEmail(email, name, clazz, password, link, schoolName, subdomain);
+    }
+
+    private void sendLinkEmail(School school, Student student) {
+        var subdomain = school.getDomain() + ".skultem.space";
+        var link = "https://" + subdomain + "/login";
+        var parent = student.getParent();
+        var email = parent.getUser().getEmail();
+        var clazz = student.getSession().getName();
+        var schoolName = school.getName();
+        var name = student.getName() + " (" + student.getAdmissionNumber() + ")";
+        var parentName = parent.getUser().getName();
+
+        mailService.sendLinkParentEmail(email, name, clazz, parentName, link, schoolName, subdomain);
+    }
+
+    public String uploadPhoto(MultipartFile file, String studentId, String schoolId) throws Exception {
+
+        if (file == null || file.isEmpty()) {
+            throw new RuleException("Student photo is required");
+        }
+
+        String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "");
+        int extensionStart = originalFilename.lastIndexOf(".");
+        if (extensionStart < 0 || extensionStart == originalFilename.length() - 1) {
+            throw new RuleException("Student photo must have a valid file extension");
+        }
+
+        String extension = originalFilename.substring(extensionStart).toLowerCase(Locale.ROOT);
+
+        String fileName = studentId + extension;
+
+        String path = schoolId + "/" + fileName;
+
+        return storageService.uploadStudentFile(file, path);
     }
 }

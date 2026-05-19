@@ -28,7 +28,7 @@ public class ReportExportController {
     private final ReportExportService reportExportService;
 
     @GetMapping("/payments")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ResponseEntity<byte[]> exportPayments(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -39,7 +39,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/attendance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ResponseEntity<byte[]> exportAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String classSessionId,
@@ -50,7 +50,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/behaviour")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ResponseEntity<byte[]> exportBehaviour(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -61,7 +61,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/fees")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -72,7 +72,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/grades")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ResponseEntity<byte[]> exportGrades(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String teacherSubjectId,
@@ -89,7 +89,7 @@ public class ReportExportController {
     }
 
     @PostMapping("/run")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> runReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam int page,

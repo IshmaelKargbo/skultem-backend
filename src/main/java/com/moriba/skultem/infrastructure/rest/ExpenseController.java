@@ -37,7 +37,7 @@ public class ExpenseController {
         private final CreateExpenseUseCase createExpenseUseCase;
 
         @PostMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT', 'OWNER')")
         public ApiResponse<Object> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateExpenseCategoryDTO param) {
@@ -46,7 +46,7 @@ public class ExpenseController {
         }
 
         @PostMapping()
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT', 'OWNER')")
         public ApiResponse<ExpenseDTO> createExpense(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateExpenseDTO param) {
@@ -55,7 +55,7 @@ public class ExpenseController {
         }
 
         @GetMapping()
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseDTO>> listExpense(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -75,7 +75,7 @@ public class ExpenseController {
         }
 
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseCategoryDTO>> listCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,

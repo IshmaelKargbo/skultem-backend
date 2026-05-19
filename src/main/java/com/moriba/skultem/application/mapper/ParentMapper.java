@@ -7,11 +7,15 @@ import com.moriba.skultem.domain.model.Parent;
 
 public class ParentMapper {
     public static ParentDTO toDTO(Parent param) {
+        if (param == null) {
+            return null;
+        }
+
         UserDTO user = UserMapper.toDTO(param.getUser());
 
         return new ParentDTO(param.getId(), param.getSchoolId(), param.getPhone(), user.name(), user.givenNames(),
-                user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getFatherName(),
-                param.getMotherName(), param.getStatus().toString(), null, 0, param.getCreatedAt(),
+                user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getStatus().toString(), null,
+                0, param.getCreatedAt(),
                 param.getUpdatedAt());
     }
 
@@ -19,8 +23,7 @@ public class ParentMapper {
         UserDTO user = UserMapper.toDTO(param.getUser());
 
         return new ParentDTO(param.getId(), param.getSchoolId(), param.getPhone(), user.name(), user.givenNames(),
-                user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getFatherName(),
-                param.getMotherName(), param.getStatus().toString(), feeDetail, students, param.getCreatedAt(),
-                param.getUpdatedAt());
+                user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getStatus().toString(),
+                feeDetail, students, param.getCreatedAt(), param.getUpdatedAt());
     }
 }

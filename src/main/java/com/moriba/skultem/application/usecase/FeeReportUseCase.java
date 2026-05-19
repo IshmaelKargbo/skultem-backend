@@ -26,61 +26,60 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FeeReportUseCase {
 
-    private final StudentFeeRepository repo;
-    private final PaymentRepository paymentRepo;
+        private final StudentFeeRepository repo;
+        private final PaymentRepository paymentRepo;
 
-    public Page<StudentFeeDTO> execute(ReportBuilderDTO request, int page, int size) {
+        public Page<StudentFeeDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0)
-                ? PageRequest.of(page - 1, size)
-                : Pageable.unpaged();
+                Pageable pageable = (size > 0)
+                                ? PageRequest.of(page - 1, size)
+                                : Pageable.unpaged();
 
-        List<Filter> filters = request.filters();
+                List<Filter> filters = request.filters();
 
-        List<Filter> dbFilters = filters.stream()
-                .filter(f -> !"status".equalsIgnoreCase(f.field()))
-                .collect(Collectors.toList());
+                List<Filter> dbFilters = filters.stream()
+                                .filter(f -> !"status".equalsIgnoreCase(f.field()))
+                                .collect(Collectors.toList());
 
-        Filter statusFilter = filters.stream()
-                .filter(f -> "status".equalsIgnoreCase(f.field()))
-                .findFirst()
-                .orElse(null);
+                Filter statusFilter = filters.stream()
+                                .filter(f -> "status".equalsIgnoreCase(f.field()))
+                                .findFirst()
+                                .orElse(null);
 
-        Page<StudentFee> res = repo.runReport(
-                request.schoolId(),
-                dbFilters,
-                pageable);
+                Page<StudentFee> res = repo.runReport(
+                                request.schoolId(),
+                                dbFilters,
+                                pageable);
 
-        List<StudentFeeDTO> mapped = res.stream()
-                .map(e -> {
+                List<StudentFeeDTO> mapped = res.stream()
+                                .map(e -> {
 
-                    BigDecimal amountPaid = paymentRepo.sumPaymentsByStudentAndFee(
-                            e.getEnrollment().getStudent().getId(),
-                            e.getFee().getId());
+                                        BigDecimal amountPaid = paymentRepo.sumPaymentsByStudentAndFee(
+                                                        e.getEnrollment().getStudent().getId(),
+                                                        e.getFee().getId());
 
-                    if (amountPaid == null) {
-                        amountPaid = BigDecimal.ZERO;
-                    }
+                                        if (amountPaid == null) {
+                                                amountPaid = BigDecimal.ZERO;
+                                        }
 
-                    StudentFeeDTO dto = StudentFeeMapper.toDTO(e, amountPaid);
-                    
-                    return dto;
-                })
-                .collect(Collectors.toList());
+                                        StudentFeeDTO dto = StudentFeeMapper.toDTO(e, amountPaid);
 
-        if (statusFilter != null && statusFilter.value() != null) {
+                                        return dto;
+                                })
+                                .collect(Collectors.toList());
 
-            String status = statusFilter.value().toString();
+                if (statusFilter != null && statusFilter.value() != null) {
 
-            mapped = mapped.stream()
-                    .filter(dto -> dto.status().equalsIgnoreCase(status))
-                    .collect(Collectors.toList());
+                        String status = statusFilter.value().toString();
+
+                        mapped = mapped.stream()
+                                        .filter(dto -> dto.status().equalsIgnoreCase(status))
+                                        .collect(Collectors.toList());
+                }
+
+                return new PageImpl<>(
+                                mapped,
+                                pageable,
+                                mapped.size());
         }
-
-  
-        return new PageImpl<>(
-                mapped,
-                pageable,
-                mapped.size());
-    }
 }

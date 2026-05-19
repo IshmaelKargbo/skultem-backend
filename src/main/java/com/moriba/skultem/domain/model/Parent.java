@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
@@ -10,8 +11,6 @@ import lombok.Getter;
 public class Parent extends AggregateRoot<String> {
     private String schoolId;
     private String phone;
-    private String fatherName;
-    private String motherName;
     private String street;
     private String city;
     private User user;
@@ -23,7 +22,7 @@ public class Parent extends AggregateRoot<String> {
         DELETED
     }
 
-    public Parent(String id, String schoolId, String phone, String street, String city, String fatherName, String motherName, User user, Status status,
+    public Parent(String id, String schoolId, String phone, String street, String city, User user, Status status,
             Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
@@ -32,14 +31,13 @@ public class Parent extends AggregateRoot<String> {
         this.city = city;
         this.street = street;
         this.status = status;
-        this.fatherName = fatherName;
-        this.motherName = motherName;
         touch(updatedAt);
     }
 
-    public static Parent create(String id, String schoolId, String phone, String street, String city, String fatherName, String motherName, User user) {
+    public static Parent create(String schoolId, String phone, String street, String city, User user) {
+        String id = UUID.randomUUID().toString();
         Instant now = Instant.now();
-        return new Parent(id, schoolId, phone, street, city, fatherName, motherName, user, Status.ACTIVE, now, now);
+        return new Parent(id, schoolId, phone, street, city, user, Status.ACTIVE, now, now);
     }
 
     public void softDelete() {

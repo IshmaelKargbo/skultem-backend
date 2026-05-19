@@ -15,6 +15,8 @@ public interface NotificationJpaRepository extends JpaRepository<NotificationEnt
 
     Page<NotificationEntity> findAllByOwner_IdAndSchoolId(String userId, String schoolId, Pageable pageable);
 
+    long countByOwner_IdAndSchoolIdAndReadFalse(String userId, String schoolId);
+
     Optional<NotificationEntity> findByIdAndSchoolId(String id, String schoolId);
 
     Page<NotificationEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);

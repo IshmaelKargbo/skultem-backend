@@ -32,12 +32,6 @@ public class ParentEntity {
     private String schoolId;
 
     @Column(nullable = false)
-    private String fatherName;
-
-    @Column(nullable = false)
-    private String motherName;
-
-    @Column(nullable = false)
     private String phone;
 
     @Column(nullable = false)

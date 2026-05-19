@@ -36,6 +36,7 @@ public class ListStudentBySchoolUseCase {
                     .findByStudentAndAcademicYearAndSchoolId(student.getId(), academicYear.getId(), schoolId)
                     .orElseThrow(() -> new NotFoundException("Enrollment not found"));
             var feeDetail = getFeeDetailUsecase.execute(schoolId, student.getId());
+            
             return StudentMapper.toDTO(student, enrollment, feeDetail);
         });
     }

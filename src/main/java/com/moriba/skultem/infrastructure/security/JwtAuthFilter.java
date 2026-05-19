@@ -61,7 +61,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 .map(Role::valueOf)
                 .toList();
 
-        Role activeRole = roles.isEmpty() ? Role.STUDENT : roles.get(0);
+        Role activeRole = roles.isEmpty() ? null : roles.get(0);
 
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))

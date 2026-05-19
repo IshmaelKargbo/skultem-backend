@@ -23,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.moriba.skultem.application.dto.NotificationDTO;
 import com.moriba.skultem.application.dto.ParentDTO;
+import com.moriba.skultem.application.dto.ParentRequest;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.usecase.CreateParentUseCase;
 import com.moriba.skultem.application.usecase.ListParentBySchoolUseCase;
@@ -40,19 +41,19 @@ public class ParentController {
         private final ListNotificationByParentUseCase listNotificationByParentUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<ParentDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateParentDTO param) {
-                var res = createParentUseCase.execute(school, param.givenNames(), param.familyName(),
-                                param.email(), param.phone(), param.street(), param.city(), param.fatherName(),
-                                param.motherName());
+                var payload = new ParentRequest(school, param.givenNames(), param.familyName(), param.email(),
+                                param.phone(), param.street(), param.city());
+                var res = createParentUseCase.execute(payload);
                 return new ApiResponse<>("success", 200,
                                 "Parent created successfully. Password is generated automatically.", res);
         }
 
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<List<ParentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -69,7 +70,7 @@ public class ParentController {
         }
 
         @GetMapping("/students")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
         public ApiResponse<List<StudentDTO>> listStudentBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId,
@@ -105,7 +106,7 @@ public class ParentController {
         }
 
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<TeacherDTO> get(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id) {

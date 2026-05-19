@@ -45,7 +45,7 @@ public class TeacherController {
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<TeacherDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateTeacherDTO param) {
@@ -60,7 +60,7 @@ public class TeacherController {
         }
 
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -77,7 +77,7 @@ public class TeacherController {
         }
 
         @GetMapping("/subject")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -95,7 +95,7 @@ public class TeacherController {
         }
 
         @GetMapping("/subject/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String userId) {
@@ -104,7 +104,7 @@ public class TeacherController {
         }
 
         @GetMapping("/subject/me")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByMe(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -113,7 +113,7 @@ public class TeacherController {
         }
 
         @GetMapping("/subject/session/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySection(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String sessionId,
@@ -130,7 +130,7 @@ public class TeacherController {
         }
 
         @GetMapping("/subject/detail/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<TeacherSubjectDTO> oneSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String teacherId) {
@@ -139,7 +139,7 @@ public class TeacherController {
         }
 
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<TeacherDTO> get(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id) {

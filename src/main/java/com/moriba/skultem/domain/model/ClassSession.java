@@ -27,9 +27,28 @@ public class ClassSession extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public String getName() {
+        StringBuilder builder = new StringBuilder();
+
+        if (clazz.getName() != null && !clazz.getName().isBlank()) {
+            builder.append(clazz.getName());
+        }
+
+        if (section != null && !section.getName().isBlank()) {
+            builder.append(" ").append(section.getName());
+        }
+
+        if (stream != null && !stream.getName().isBlank()) {
+            builder.append(" ").append(stream.getName());
+        }
+
+        return builder.toString().trim();
+    }
+
     public static ClassSession create(String id, String schoolId, Clazz clazz, Stream stream, Section section,
             AcademicYear academicYear) {
         Instant now = Instant.now();
         return new ClassSession(id, schoolId, clazz, stream, section, academicYear, now, now);
     }
+
 }

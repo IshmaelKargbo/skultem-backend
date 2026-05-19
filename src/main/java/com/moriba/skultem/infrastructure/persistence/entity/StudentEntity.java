@@ -3,6 +3,10 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.Student.Status;
 import com.moriba.skultem.domain.vo.Gender;
 
@@ -36,11 +40,37 @@ public class StudentEntity {
     @Column(nullable = false)
     private String admissionNumber;
 
+    private LocalDate admissionDate;
+
     private String givenNames;
 
     @Column(nullable = false)
     private String familyName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EnrollmentType enrollmentType;
+    
+    private String previousSchool;
+    
+    private String nationality;
+    
+    private String religion;
+    
+    private String photo;
+    
+    private String city;
+    
+    private String street;
+    
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String family;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "house_id")
+    private HouseEntity house;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = false)
     private ParentEntity parent;
@@ -48,6 +78,9 @@ public class StudentEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private ClassSessionEntity session;
+
+    @Column(name = "last_class")
+    private String lastClass;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

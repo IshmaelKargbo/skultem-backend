@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AssessmentTemplateEntity {
+
     @Id
     private String id;
 
@@ -26,6 +27,9 @@ public class AssessmentTemplateEntity {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
+    private int passMark;
 
     private String description;
 

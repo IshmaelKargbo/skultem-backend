@@ -11,6 +11,10 @@ public class UserMapper {
     }
 
     public static UserEntity toEntity(User param) {
+        if (param == null) {
+            return null;
+        }
+        
         return UserEntity.builder()
                 .id(param.getId())
                 .email(param.getEmail())

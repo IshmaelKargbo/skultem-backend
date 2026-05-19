@@ -50,4 +50,9 @@ public class NotificationAdapter implements NotificationRepository {
         return repo.existsBySchoolIdAndOwner_IdAndTypeAndMeta(schoolId, userId, schoolId, meta);
     }
 
+    @Override
+    public long countAllOpenByOwnerAndSchoolId(String userId, String schoolId) {
+        return repo.countByOwner_IdAndSchoolIdAndReadFalse(userId, schoolId);
+    }
+
 }

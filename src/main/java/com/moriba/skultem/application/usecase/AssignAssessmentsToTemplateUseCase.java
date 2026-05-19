@@ -12,6 +12,7 @@ import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.AssessmentMapper;
+import com.moriba.skultem.application.mapper.AssessmentTemplateMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Assessment;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
@@ -52,8 +53,7 @@ public class AssignAssessmentsToTemplateUseCase {
         assessmentRepo.saveAll(records);
 
         var list = records.stream().map(AssessmentMapper::toDTO).toList();
-        return new AssessmentTemplateDTO(template.getId(), template.getName(), template.getDescription(), list,
-                template.getCreatedAt(), template.getUpdatedAt());
+        return AssessmentTemplateMapper.toDTO(template, list);
     }
 
     private List<AssessmentInput> sanitize(List<AssessmentInput> assignments) {

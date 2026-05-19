@@ -13,6 +13,7 @@ public class AssessmentTemplateMapper {
                 param.getId(),
                 param.getSchoolId(),
                 param.getName(),
+                param.getPassMark(),
                 param.getDescription(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
@@ -27,6 +28,7 @@ public class AssessmentTemplateMapper {
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .name(param.getName())
+                .passMark(param.getPassMark())
                 .description(param.getDescription())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())

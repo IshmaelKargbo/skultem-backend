@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
 import com.moriba.skultem.application.mapper.AssessmentMapper;
+import com.moriba.skultem.application.mapper.AssessmentTemplateMapper;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 
@@ -33,8 +34,7 @@ public class ListAssessmentTemplateBySchoolUseCase {
             var assessments = assessmentRepo.findAllByTemplateIdAndSchoolId(template.getId(), schoolId).stream()
                     .map(AssessmentMapper::toDTO)
                     .toList();
-            return new AssessmentTemplateDTO(template.getId(), template.getName(), template.getDescription(),
-                    assessments, template.getCreatedAt(), template.getUpdatedAt());
+            return AssessmentTemplateMapper.toDTO(template, assessments);
         });
     }
 }

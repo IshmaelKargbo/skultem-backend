@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.NotificationDTO;
 import com.moriba.skultem.application.mapper.NotificationMapper;
+import com.moriba.skultem.application.services.NotificationService;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.model.Notification;
 import com.moriba.skultem.domain.model.Notification.Type;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CreateNotificationUseCase {
     private final NotificationRepository notificationRepo;
+    private final NotificationService notificationService;
 
     public NotificationDTO execute(String schoolId, User owner, Type type,
             String title, String message, Map<String, String> meta, Priority priority) {
@@ -37,6 +39,9 @@ public class CreateNotificationUseCase {
         );
 
         notificationRepo.save(notification);
-        return NotificationMapper.toDTO(notification);
+        long count = notificationRepo.countAllOpenByOwnerAndSchoolId(owner.getId(), schoolId);
+        NotificationDTO dto = NotificationMapper.toDTO(notification);
+        notificationService.sendToUser(owner.getId(), count, dto);
+        return dto;
     }
 }

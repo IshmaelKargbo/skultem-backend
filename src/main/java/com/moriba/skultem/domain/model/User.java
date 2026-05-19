@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.shared.AggregateRoot;
@@ -38,8 +39,9 @@ public class User extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static User create(String id, String givenNames, String familyName, String email, String password,
+    public static User create(String givenNames, String familyName, String email, String password,
             String hint) {
+        String id = UUID.randomUUID().toString();
         Instant now = Instant.now();
         return new User(id, givenNames, familyName, email, password, hint, Status.RESET_PASSWORD, now, now);
     }

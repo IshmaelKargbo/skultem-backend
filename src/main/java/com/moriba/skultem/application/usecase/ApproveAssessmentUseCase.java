@@ -1,7 +1,9 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -11,9 +13,11 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.events.GradesReleasedEvent;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.AssessmentScore;
+import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.AssessmentApprovalRequestRepository;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository;
+import com.moriba.skultem.domain.repository.StudentParentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,7 @@ public class ApproveAssessmentUseCase {
 
     private final AssessmentApprovalRequestRepository approvalRepo;
     private final AssessmentScoreRepository assessmentRepo;
+    private final StudentParentRepository studentParentRepo;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -62,7 +67,6 @@ public class ApproveAssessmentUseCase {
             var subject = score.getStudentAssessment().getTeacherSubject().getSubject();
             var teacher = score.getStudentAssessment().getTeacherSubject().getTeacher();
             var clazz = score.getStudentAssessment().getEnrollment().getClazz();
-            var user = student.getParent().getUser();
 
             Map<String, String> meta = Map.of(
                     "student_id", student.getId(),
@@ -73,9 +77,26 @@ public class ApproveAssessmentUseCase {
                     "subject", subject.getName(),
                     "teacher", teacher.getName());
 
-            eventPublisher.publishEvent(new GradesReleasedEvent(schoolId, user, student.getName(), subject.getName(),
-                    score.getAssessment().getName(), cycle.getTerm().getName(), clazz.getName(),
-                    score.getScore().intValue(), meta));
+            findNotificationUsers(student.getId(), schoolId).forEach(user -> eventPublisher.publishEvent(
+                    new GradesReleasedEvent(schoolId, user, student.getName(), subject.getName(),
+                            score.getAssessment().getName(), cycle.getTerm().getName(), clazz.getName(),
+                            score.getScore().intValue(), meta)));
         }
+    }
+
+    private List<User> findNotificationUsers(String studentId, String schoolId) {
+        Set<String> seenUserIds = new HashSet<>();
+        List<User> users = studentParentRepo.findAllByStudentAndSchool(studentId, schoolId).stream()
+                .map(studentParent -> studentParent.getParent())
+                .filter(parent -> parent != null && parent.getUser() != null)
+                .map(parent -> parent.getUser())
+                .filter(user -> seenUserIds.add(user.getId()))
+                .toList();
+
+        if (users.isEmpty()) {
+            throw new NotFoundException("no parent relation found");
+        }
+
+        return users;
     }
 }

@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
@@ -25,9 +26,10 @@ public class StudentFee extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static StudentFee create(String id, String schoolId, Enrollment enrollment, Student student,
+    public static StudentFee create(String schoolId, Enrollment enrollment, Student student,
             FeeStructure fee, FeeDiscount discount) {
         Instant now = Instant.now();
+        String id = UUID.randomUUID().toString();
         return new StudentFee(id, schoolId, enrollment, student, fee, discount, now, now);
     }
 }

@@ -41,9 +41,13 @@ public class ListStudentByParentUseCase {
 
                 return repo.findByParentAndSchoolId(parent.getId(), schoolId, pageable).map(e -> {
                         var session = e.getSession();
+
                         var classMaster = classMasterRepo.findBySessionIdAndSchoolId(e.getSession().getId(), schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Class master not found"));
-                        var teacher = classMaster.getTeacher().getName();
+                                        .orElse(null);
+                        String teacher = null;
+                        if (classMaster != null) {
+                                teacher = classMaster.getTeacher().getName();
+                        }
 
                         var enrollment = enrollmentRepo.findByStudentAndAcademicYearAndSchoolId(e.getId(),
                                         e.getSession().getAcademicYear().getId(), schoolId)
@@ -58,8 +62,6 @@ public class ListStudentByParentUseCase {
                                         null));
 
                         var classSize = enrollmentRepo.runReport(schoolId, filters, Pageable.unpaged()).getSize();
-
-                        teacher = classMaster.getTeacher().getName();
 
                         return StudentMapper.toDTO(e, enrollment, teacher, classSize, session.getId());
                 });

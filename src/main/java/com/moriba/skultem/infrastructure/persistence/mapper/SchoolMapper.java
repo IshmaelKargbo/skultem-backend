@@ -13,8 +13,9 @@ public class SchoolMapper {
     public static School toDomain(SchoolEntity param) {
         Owner owner = JsonMapper.fromJson(param.getOwner(), Owner.class);
         Address address = JsonMapper.fromJson(param.getAddress(), Address.class);
-        List<GradeBand> gradingScale = JsonMapper.fromJson(param.getGradingScale(), new TypeReference<List<GradeBand>>() {
-        });
+        List<GradeBand> gradingScale = JsonMapper.fromJson(param.getGradingScale(),
+                new TypeReference<List<GradeBand>>() {
+                });
 
         return new School(param.getId(), param.getName(), param.getDomain(), address, owner,
                 param.getStatus(), gradingScale, param.getCreatedAt(), param.getUpdatedAt());

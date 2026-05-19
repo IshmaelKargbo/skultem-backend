@@ -8,11 +8,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.UserDTO;
+import com.moriba.skultem.application.services.UserService;
 import com.moriba.skultem.application.usecase.CreateUserUseCase;
 import com.moriba.skultem.application.usecase.GetUserUseCase;
 import com.moriba.skultem.application.usecase.ListUserBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ResetPasswordUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.AssignRoleDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateUserDTO;
 import com.moriba.skultem.infrastructure.rest.dto.ResetPasswordDTO;
 
@@ -34,10 +36,11 @@ public class UserController {
     private final CreateUserUseCase createUserUseCase;
     private final ListUserBySchoolUseCase listUserBySchoolUseCase;
     private final ResetPasswordUseCase resetPasswordUseCase;
+    private final UserService svc;
     private final GetUserUseCase getUserUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<UserDTO> create(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateUserDTO param) {
         var res = createUserUseCase.execute(school, param.givenNames(), param.familyName(), param.email(),
@@ -45,8 +48,16 @@ public class UserController {
         return new ApiResponse<>("success", 200, "User created successfully", res);
     }
 
+    @PostMapping("/assign")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<UserDTO> assignRole(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody AssignRoleDTO param) {
+        var res = svc.assignRole(school, param.userId(), param.role());
+        return new ApiResponse<>("success", 200, "User asign successfully", res);
+    }
+
     @PostMapping("/reset-password")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<UserDTO> resetPassword(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -57,7 +68,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<UserDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -72,6 +83,15 @@ public class UserController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Users fetched successfully", list, meta);
+    }
+
+    @GetMapping("/notifications")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'TEACHER', 'PARENT', 'PROPRIETOR')")
+    public ApiResponse<Object> notifications(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId) {
+        var res = svc.openNotifications(userId, school);
+        return new ApiResponse<>("success", 200, "Users notification successfully", res);
     }
 
     @GetMapping("/{id}")

@@ -17,6 +17,8 @@ public interface NotificationRepository {
 
     Page<Notification> findAllByOwnerAndSchoolId(String userId, String schoolId, Pageable pageable);
 
+    long countAllOpenByOwnerAndSchoolId(String userId, String schoolId);
+
     boolean existsByOwnerAndTypeAndMeta(String schoolId, String userId, Type type, String meta);
 
     long countAll();

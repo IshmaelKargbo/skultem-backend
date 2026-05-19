@@ -27,7 +27,7 @@ public class SubjectAssignmentController {
     private final AssignSubjectsToStreamUseCase assignStreamSubjectsUseCase;
 
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -40,7 +40,7 @@ public class SubjectAssignmentController {
     }
 
     @PostMapping("/stream/{streamId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String streamId,

@@ -99,7 +99,6 @@ public class CreateFeeStructureUseCase {
                         }
 
                         var studentFee = StudentFee.create(
-                                        rg.generate("STUDENT_FEE", "STF"),
                                         param.schoolId(),
                                         enrollment,
                                         enrollment.getStudent(),

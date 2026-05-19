@@ -18,11 +18,11 @@ public class TeacherMapper {
     }
 
     public static TeacherEntity toEntity(Teacher param) {
-        UserEntity user = null;
-
-        if (param.getUser() != null) {
-            user = UserMapper.toEntity(param.getUser());
+        if (param == null) {
+            return null;
         }
+
+        UserEntity user = UserMapper.toEntity(param.getUser());
 
         return TeacherEntity.builder()
                 .id(param.getId())
