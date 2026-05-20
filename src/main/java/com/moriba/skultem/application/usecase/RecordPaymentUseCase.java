@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -30,61 +32,113 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class RecordPaymentUseCase {
-        private final PaymentRepository paymentRepo;
-        private final FeeStructureRepository feeRepo;
-        private final AcademicYearRepository academicYearRepo;
-        private final StudentRepository studentRepo;
-        private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
-        private final CreateTransactionUsercase createTransactionUsercase;
-        private final ReferenceGeneratorUsecase rg;
-        private final LogActivityUseCase logActivityUseCase;
 
-        @AuditLogAnnotation(action = "PAYMENT_RECORED")
-        public PaymentDTO execute(PaymentRecord param) {
-                var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("no academic year found"));
-                var student = studentRepo.findByIdAndSchoolId(param.studentId(), param.schoolId())
-                                .orElseThrow(() -> new RuleException("student not found"));
-                var fee = feeRepo.findByIdAndSchoolId(param.feeId(), param.schoolId())
-                                .orElseThrow(() -> new RuleException("fee not found"));
+    private final PaymentRepository paymentRepo;
+    private final FeeStructureRepository feeRepo;
+    private final AcademicYearRepository academicYearRepo;
+    private final StudentRepository studentRepo;
+    private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
+    private final CreateTransactionUsercase createTransactionUsercase;
+    private final LogActivityUseCase logActivityUseCase;
 
-                var paidSoFar = paymentRepo.sumPaymentsByStudentAndFee(param.studentId(), param.feeId());
-                BigDecimal outstanding = fee.getAmount().subtract(paidSoFar);
+    @AuditLogAnnotation(action = "PAYMENT_RECORDED")
+    public List<PaymentDTO> execute(PaymentRecord param) {
 
-                if (param.amount.compareTo(outstanding) > 0) {
-                        throw new RuleException("payment cannot exceed outstanding balance");
-                }
+        var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
+                .orElseThrow(() -> new NotFoundException("no academic year found"));
 
-                var id = rg.generate("PAYMENT", "PAY");
-                var payment = Payment.create(id, param.schoolId(), student, fee, param.amount(), param.method(),
-                                param.referenceNo(), param.note(), Instant.now());
-                paymentRepo.save(payment);
+        var student = studentRepo.findByIdAndSchoolId(param.studentId(), param.schoolId())
+                .orElseThrow(() -> new RuleException("student not found"));
 
-                String description = Generate.generateLedgerDescription(TransactionType.PAYMENT,
-                                fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),
-                                student.getFamilyName(), student.getAdmissionNumber(), param.amount());
+        List<PaymentDTO> results = new ArrayList<>();
 
-                createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
-                                student.getId(), fee.getTerm().getId(), TransactionType.PAYMENT,
-                                Direction.CREDIT, param.amount, id, description, Instant.now());
-                createTransactionUsercase.createEntry(param.schoolId,
-                                com.moriba.skultem.domain.model.Transaction.TransactionType.PAYMENT,
-                                com.moriba.skultem.domain.model.Transaction.Direction.CREDIT, param.amount, id,
-                                ReferenceType.STUDENT);
+        for (var item : param.items()) {
 
-                var currency = MoneyUtil.format(param.amount);
-                logActivityUseCase.log(
-                                param.schoolId(),
-                                ActivityType.FEES,
-                                fee.getTerm().getName() + " fees collected",
-                                currency + " from " + student.getGivenNames() + " " + student.getFamilyName(),
-                                null,
-                                id);
+            var fee = feeRepo.findByIdAndSchoolId(item.feeId(), param.schoolId())
+                    .orElseThrow(() -> new RuleException("fee not found"));
 
-                return PaymentMapper.toDTO(payment);
+            var paidSoFar = paymentRepo.sumPaymentsByStudentAndFee(
+                    param.studentId(),
+                    item.feeId());
+
+            BigDecimal outstanding = fee.getAmount().subtract(paidSoFar);
+
+            if (item.amount().compareTo(outstanding) > 0) {
+                throw new RuleException(
+                        "payment for " + fee.getCategory().getName()
+                                + " cannot exceed outstanding balance");
+            }
+
+            var payment = Payment.create(
+                    param.schoolId(),
+                    student,
+                    fee,
+                    item.amount(),
+                    param.method(),
+                    param.referenceNo(),
+                    param.note(),
+                    Instant.now());
+
+            paymentRepo.save(payment);
+
+            String description = Generate.generateLedgerDescription(
+                    TransactionType.PAYMENT,
+                    fee.getTerm().getName(),
+                    fee.getCategory().getName(),
+                    student.getGivenNames(),
+                    student.getFamilyName(),
+                    student.getAdmissionNumber(),
+                    item.amount());
+
+            createStudentLedgerUsercase.createEntry(
+                    param.schoolId(),
+                    academicYear.getId(),
+                    student.getId(),
+                    fee.getTerm().getId(),
+                    TransactionType.PAYMENT,
+                    Direction.CREDIT,
+                    item.amount(),
+                    payment.getId(),
+                    description,
+                    Instant.now());
+
+            createTransactionUsercase.createEntry(
+                    param.schoolId(),
+                    com.moriba.skultem.domain.model.Transaction.TransactionType.PAYMENT,
+                    com.moriba.skultem.domain.model.Transaction.Direction.CREDIT,
+                    item.amount(),
+                    payment.getId(),
+                    ReferenceType.STUDENT);
+
+            var currency = MoneyUtil.format(item.amount());
+
+            logActivityUseCase.log(
+                    param.schoolId(),
+                    ActivityType.FEES,
+                    fee.getTerm().getName() + " fees collected",
+                    currency + " from "
+                            + student.getGivenNames() + " "
+                            + student.getFamilyName(),
+                    null,
+                    payment.getId());
+
+            results.add(PaymentMapper.toDTO(payment));
         }
 
-        public record PaymentRecord(String schoolId, String studentId, String feeId, BigDecimal amount,
-                        PaymentMethod method, String referenceNo, String note) {
-        }
+        return results;
+    }
+
+    public record PaymentRecord(
+            String schoolId,
+            String studentId,
+            List<FeeRecord> items,
+            PaymentMethod method,
+            String referenceNo,
+            String note) {
+    }
+
+    public record FeeRecord(
+            String feeId,
+            BigDecimal amount) {
+    }
 }

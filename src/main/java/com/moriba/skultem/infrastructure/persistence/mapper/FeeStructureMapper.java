@@ -34,46 +34,49 @@ public class FeeStructureMapper {
             academicYear = AcademicYearMapper.toDomain(param.getAcademicYear());
         }
 
-        return new FeeStructure(param.getId(), param.getSchoolId(), clazz, term, category, academicYear,
-                param.isAllowInstallment(), param.getDueDate(), param.getAmount(), param.getDescription(),
-                param.getCreatedAt(), param.getUpdatedAt());
+        return new FeeStructure(param.getId(), param.getSchoolId(), param.getType(), clazz, term, category, academicYear,
+                param.isAllowInstallment(), param.isHasSupply(), param.getTotalSupply(), param.getDueDate(),
+                param.getAmount(), param.getDescription(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
-    public static FeeStructureEntity toEntity(FeeStructure args) {
+    public static FeeStructureEntity toEntity(FeeStructure param) {
         AcademicYearEntity academicYear = null;
         FeeCategoryEntity category = null;
         ClassEntity clazz = null;
         TermEntity term = null;
 
-        if (args.getClazz() != null) {
-            clazz = ClassMapper.toEntity(args.getClazz());
+        if (param.getClazz() != null) {
+            clazz = ClassMapper.toEntity(param.getClazz());
         }
 
-        if (args.getTerm() != null) {
-            term = TermMapper.toEntity(args.getTerm());
+        if (param.getTerm() != null) {
+            term = TermMapper.toEntity(param.getTerm());
         }
 
-        if (args.getCategory() != null) {
-            category = FeeCategoryMapper.toEntity(args.getCategory());
+        if (param.getCategory() != null) {
+            category = FeeCategoryMapper.toEntity(param.getCategory());
         }
 
-        if (args.getAcademicYear() != null) {
-            academicYear = AcademicYearMapper.toEntity(args.getAcademicYear());
+        if (param.getAcademicYear() != null) {
+            academicYear = AcademicYearMapper.toEntity(param.getAcademicYear());
         }
 
         return FeeStructureEntity.builder()
-                .id(args.getId())
-                .schoolId(args.getSchoolId())
+                .id(param.getId())
+                .schoolId(param.getSchoolId())
                 .academicYear(academicYear)
                 .term(term)
-                .allowInstallment(args.isAllowInstallment())
-                .amount(args.getAmount())
+                .type(param.getType())
+                .totalSupply(param.getTotalSupply())
+                .hasSupply(param.isHasSupply())
+                .allowInstallment(param.isAllowInstallment())
+                .amount(param.getAmount())
                 .category(category)
                 .clazz(clazz)
-                .description(args.getDescription())
-                .dueDate(args.getDueDate())
-                .createdAt(args.getCreatedAt())
-                .updatedAt(args.getUpdatedAt())
+                .description(param.getDescription())
+                .dueDate(param.getDueDate())
+                .createdAt(param.getCreatedAt())
+                .updatedAt(param.getUpdatedAt())
                 .build();
     }
 }

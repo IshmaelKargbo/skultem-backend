@@ -18,8 +18,6 @@ import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBu
 @Repository
 public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity, String>,
                 JpaSpecificationExecutor<EnrollmentEntity> {
-
-        // ------------------- EXISTENCE CHECKS -------------------
         boolean existsByStudent_IdAndClazz_IdAndSection_IdAndAcademicYear_IdAndStream_IdAndSchoolId(
                         String studentId,
                         String classId,
@@ -38,7 +36,6 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
                         String academicYearId,
                         String schoolId);
 
-        // ------------------- SIMPLE FINDERS -------------------
         Optional<EnrollmentEntity> findByIdAndSchoolId(String id, String schoolId);
 
         Optional<EnrollmentEntity> findByClazz_IdAndStudent_IdAndSchoolId(String classId, String studentId,
@@ -60,7 +57,9 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
         List<EnrollmentEntity> findAllBySchoolIdAndAcademicYear_IdAndCreatedAtBetween(String schoolId,
                         String academicYearId, Instant start, Instant end);
 
-        // ------------------- PAGINATION -------------------
+        List<EnrollmentEntity> findAllByStudentIdInAndAcademicYearIdAndSchoolId(List<String> studentIds,
+                        String academicYearId, String schoolId);
+
         Page<EnrollmentEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
         Page<EnrollmentEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolId(String classId, String academicYearId,
@@ -68,12 +67,10 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
 
         Page<EnrollmentEntity> findAllByClazz_IdAndSchoolId(String classId, String schoolId, Pageable pageable);
 
-        // ------------------- COUNTS -------------------
         long countByAcademicYear_IdAndSchoolId(String academicYearId, String schoolId);
 
         long countBySchoolIdAndAcademicYear_IdAndCreatedAtBefore(String schoolId, String academicYearId, Instant date);
 
-        // ------------------- SPECIFICATION-BASED REPORT -------------------
         default Page<EnrollmentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<EnrollmentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 

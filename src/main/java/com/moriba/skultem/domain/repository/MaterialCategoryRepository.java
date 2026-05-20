@@ -12,7 +12,7 @@ public interface MaterialCategoryRepository {
 
     boolean existByNameAndSchoolId(String name, String schoolId);
 
-    // Optional<FeeCategory> findByIdAndSchool(String id, String schoolId);
+    Optional<MaterialCategory> findByIdAndSchool(String id, String schoolId);
 
-    // Page<FeeCategory> findBySchool(String schoolId, Pageable pageable);
+    Page<MaterialCategory> findBySchool(String schoolId, Pageable pageable);
 }

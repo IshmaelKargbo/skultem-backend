@@ -15,9 +15,16 @@ import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.StudentFee;
+import com.moriba.skultem.domain.model.FeeStructure.Type;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
-import com.moriba.skultem.domain.repository.*;
+import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.domain.repository.ClassRepository;
+import com.moriba.skultem.domain.repository.EnrollmentRepository;
+import com.moriba.skultem.domain.repository.FeeCategoryRepository;
+import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.StudentFeeRepository;
+import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
 
@@ -37,11 +44,11 @@ public class CreateFeeStructureUseCase {
         private final EnrollmentRepository enrollmentRepo;
         private final StudentFeeRepository studentFeeRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
-        private final ReferenceGeneratorUsecase rg;
         private final LogActivityUseCase logActivityUseCase;
 
         @AuditLogAnnotation(action = "FEE_STRUCTURE_CREATED")
         public FeeStructureDTO execute(StructureRecord param) {
+
                 var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
@@ -59,12 +66,12 @@ public class CreateFeeStructureUseCase {
                                                 .orElseThrow(() -> new NotFoundException("Class not found"))
                                 : null;
 
-                var id = rg.generate("FEE_STRUCTURE", "FES");
-
                 var fee = FeeStructure.create(
-                                id,
                                 param.schoolId(),
+                                param.type(),
                                 clazz,
+                                param.hasSuppy(),
+                                param.totalSupply(),
                                 term,
                                 category,
                                 academicYear,
@@ -77,13 +84,23 @@ public class CreateFeeStructureUseCase {
 
                 List<Enrollment> enrollments;
 
-                if (clazz != null) {
+                if (param.studentIds() != null && !param.studentIds().isEmpty()) {
+                        enrollments = enrollmentRepo.findAllByStudentIdsAndAcademicYearAndSchoolId(
+                                        param.studentIds(),
+                                        academicYear.getId(),
+                                        param.schoolId());
+
+                } else if (clazz != null) {
+
                         enrollments = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                                         clazz.getId(),
                                         academicYear.getId(),
-                                        param.schoolId(), Pageable.unpaged())
+                                        param.schoolId(),
+                                        Pageable.unpaged())
                                         .getContent();
+
                 } else {
+
                         enrollments = enrollmentRepo.findAllByAcademicSchoolId(
                                         academicYear.getId(),
                                         param.schoolId());
@@ -93,8 +110,9 @@ public class CreateFeeStructureUseCase {
                 BigDecimal totalAssignedAmount = BigDecimal.ZERO;
 
                 for (Enrollment enrollment : enrollments) {
+
                         if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(param.schoolId(),
-                                        enrollment.getId(), enrollment.getStudent().getId(), id)) {
+                                        enrollment.getId(), enrollment.getStudent().getId(), fee.getId())) {
                                 continue;
                         }
 
@@ -132,15 +150,21 @@ public class CreateFeeStructureUseCase {
                         totalAssignedAmount = totalAssignedAmount.add(param.amount());
                 }
 
-                String className = clazz != null ? clazz.getName() : "All classes";
+                String target = clazz != null
+                                ? clazz.getName()
+                                : param.studentIds() != null && !param.studentIds().isEmpty()
+                                                ? "Selected students"
+                                                : "All classes";
+
                 String meta = "assignedCount=" + assignedCount
                                 + ";targetCount=" + enrollments.size()
                                 + ";totalAmount=" + totalAssignedAmount;
+
                 logActivityUseCase.log(
                                 param.schoolId(),
                                 ActivityType.FEES,
                                 "Fee structure created",
-                                category.getName() + " - " + term.getName() + " - " + className,
+                                category.getName() + " - " + term.getName() + " - " + target,
                                 meta,
                                 fee.getId());
 
@@ -149,12 +173,16 @@ public class CreateFeeStructureUseCase {
 
         public record StructureRecord(
                         String schoolId,
+                        Type type,
                         String classId,
+                        List<String> studentIds,
                         String feeCategory,
                         String termId,
                         BigDecimal amount,
                         LocalDate dueDate,
                         boolean allowInstallment,
-                        String description) {
+                        String description,
+                        boolean hasSuppy,
+                        int totalSupply) {
         }
 }

@@ -3,6 +3,7 @@ package com.moriba.skultem.infrastructure.rest;
 import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.usecase.ListStudentPaymentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.RecordPaymentUseCase;
+import com.moriba.skultem.application.usecase.RecordPaymentUseCase.FeeRecord;
 import com.moriba.skultem.application.usecase.RecordPaymentUseCase.PaymentRecord;
 import com.moriba.skultem.application.usecase.SumStudentPaymentByFeeThisYearUseCase;
 import com.moriba.skultem.application.usecase.SumStudentPaymentByFeeUseCase;
@@ -39,10 +40,11 @@ public class PaymentController {
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
-    public ApiResponse<PaymentDTO> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
+    public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RecordPaymentDTO param) {
         var method = PaymentMethod.valueOf(param.method());
-        var payload = new PaymentRecord(school, param.studentId(), param.feeId(), param.amount(), method,
+        List<FeeRecord> list = param.allocations().stream().map(e -> new FeeRecord(e.feeId(), e.amount())).toList();
+        var payload = new PaymentRecord(school, param.studentId(), list, method,
                 param.referenceNo(), param.note());
         var res = recordPaymentUseCase.execute(payload);
         return new ApiResponse<>("success", 200, "Payment recorded successfully", res);

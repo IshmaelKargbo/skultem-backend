@@ -44,11 +44,13 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.moriba.skultem.application.dto.FeeDiscountReportDTO;
 import com.moriba.skultem.application.dto.StudentLedgerReportDTO;
+import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.usecase.CountStudentFeesUseCase;
 import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
 import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
 import com.moriba.skultem.application.usecase.StudentLedgerReportUseCase;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
+import com.moriba.skultem.domain.model.FeeStructure.Type;
 
 @RestController
 @RequestMapping("/api/v1/fee")
@@ -82,9 +84,15 @@ public class FeeController {
         public ApiResponse<FeeStructureDTO> createStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeStructureDTO param) {
-                var payload = new StructureRecord(school, param.classId(), param.feeCategory(), param.termId(),
-                                param.amount(),
-                                param.dueDate(), param.allowInstallment(), param.description());
+
+                if (param.hasSupply() && param.totalSupply() == 0) {
+                        throw new BadRequestException("total supply is required");
+                }
+
+                var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classId(),
+                                param.studentIds(), param.feeCategory(), param.termId(),
+                                param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
+                                param.hasSupply(), param.totalSupply());
                 var res = createFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
         }

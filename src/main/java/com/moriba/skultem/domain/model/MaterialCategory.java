@@ -1,6 +1,8 @@
 package com.moriba.skultem.domain.model;
 
 import java.time.Instant;
+import java.util.UUID;
+
 import com.moriba.skultem.domain.shared.AggregateRoot;
 import lombok.Getter;
 
@@ -19,8 +21,9 @@ public class MaterialCategory extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static MaterialCategory create(String id, String schoolId, String name, String description) {
+    public static MaterialCategory create(String schoolId, String name, String description) {
         Instant now = Instant.now();
+        String id = UUID.randomUUID().toString();
         return new MaterialCategory(id, schoolId, name, description, now, now);
     }
 }

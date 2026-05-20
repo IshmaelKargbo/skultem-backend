@@ -2,6 +2,7 @@ package com.moriba.skultem.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import com.moriba.skultem.domain.shared.AggregateRoot;
 
@@ -38,9 +39,10 @@ public class Payment extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static Payment create(String id, String schoolId, Student student, FeeStructure fee, BigDecimal amount,
+    public static Payment create(String schoolId, Student student, FeeStructure fee, BigDecimal amount,
             PaymentMethod method, String referenceNo, String note, Instant paidAt) {
         Instant now = Instant.now();
+        String id = UUID.randomUUID().toString();
         return new Payment(id, schoolId, student, fee, amount, method, referenceNo, note, paidAt, now, now);
     }
 }
