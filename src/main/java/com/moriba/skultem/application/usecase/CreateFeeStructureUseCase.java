@@ -14,6 +14,7 @@ import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.Material;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -23,6 +24,7 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeCategoryRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.MaterialRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
@@ -40,6 +42,7 @@ public class CreateFeeStructureUseCase {
         private final ClassRepository classRepo;
         private final AcademicYearRepository academicYearRepo;
         private final TermRepository termRepo;
+        private final MaterialRepository materialRepo;
         private final FeeStructureRepository repo;
         private final EnrollmentRepository enrollmentRepo;
         private final StudentFeeRepository studentFeeRepo;
@@ -66,6 +69,12 @@ public class CreateFeeStructureUseCase {
                                                 .orElseThrow(() -> new NotFoundException("Class not found"))
                                 : null;
 
+                Material material = null;
+
+                if (param.hasSuppy && param.materialId != null) {
+                        material = materialRepo.findByIdAndSchool(param.materialId, param.schoolId).orElseThrow(() -> new NotFoundException("material not found"));
+                }
+
                 var fee = FeeStructure.create(
                                 param.schoolId(),
                                 param.type(),
@@ -74,6 +83,7 @@ public class CreateFeeStructureUseCase {
                                 param.totalSupply(),
                                 term,
                                 category,
+                                material,
                                 academicYear,
                                 param.dueDate(),
                                 param.amount(),
@@ -178,6 +188,7 @@ public class CreateFeeStructureUseCase {
                         List<String> studentIds,
                         String feeCategory,
                         String termId,
+                        String materialId,
                         BigDecimal amount,
                         LocalDate dueDate,
                         boolean allowInstallment,

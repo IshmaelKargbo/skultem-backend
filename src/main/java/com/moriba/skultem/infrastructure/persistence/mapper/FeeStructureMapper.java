@@ -13,6 +13,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.TermEntity;
 
 public class FeeStructureMapper {
     public static FeeStructure toDomain(FeeStructureEntity param) {
+        if (param == null) return null;
         Clazz clazz = null;
         Term term = null;
         FeeCategory category = null;
@@ -34,16 +35,22 @@ public class FeeStructureMapper {
             academicYear = AcademicYearMapper.toDomain(param.getAcademicYear());
         }
 
+        var material = MaterialMapper.toDomain(param.getMaterial());
+
         return new FeeStructure(param.getId(), param.getSchoolId(), param.getType(), clazz, term, category, academicYear,
-                param.isAllowInstallment(), param.isHasSupply(), param.getTotalSupply(), param.getDueDate(),
+                param.isAllowInstallment(), material, param.isHasSupply(), param.getTotalSupply(), param.getDueDate(),
                 param.getAmount(), param.getDescription(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static FeeStructureEntity toEntity(FeeStructure param) {
+        if (param == null) return null;
+
         AcademicYearEntity academicYear = null;
         FeeCategoryEntity category = null;
         ClassEntity clazz = null;
         TermEntity term = null;
+        
+        var material = MaterialMapper.toEntity(param.getMaterial());
 
         if (param.getClazz() != null) {
             clazz = ClassMapper.toEntity(param.getClazz());
@@ -67,6 +74,7 @@ public class FeeStructureMapper {
                 .academicYear(academicYear)
                 .term(term)
                 .type(param.getType())
+                .material(material)
                 .totalSupply(param.getTotalSupply())
                 .hasSupply(param.isHasSupply())
                 .allowInstallment(param.isAllowInstallment())

@@ -9,13 +9,16 @@ import com.moriba.skultem.domain.model.FeeStructure;
 
 public class FeeStructureMapper {
     public static FeeStructureDTO toDTO(FeeStructure param) {
+        if (param == null) return null;
+
+        var material = MaterialMapper.toDTO(param.getMaterial());
         ClassDTO clazz = ClassMapper.toDTO(param.getClazz());
         TermDTO term = TermMapper.toDTO(param.getTerm());
         AcademicYearDTO academicYear = AcademicYearMapper.toDTO(param.getAcademicYear());
         FeeCategoryDTO category = FeeCategoryMapper.toDTO(param.getCategory());
 
         return new FeeStructureDTO(param.getId(), param.getType(), clazz, term, category, param.isAllowInstallment(),
-                param.isHasSupply(), param.getTotalSupply(), param.getDueDate(),
+                param.isHasSupply(), param.getTotalSupply(), material, param.getDueDate(),
                 academicYear, param.getAmount(), param.getDescription(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

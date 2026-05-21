@@ -7,6 +7,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.HolidayEntity;
 
 public class HolidayMapper {
     public static Holiday toDomain(HolidayEntity param) {
+        if (param == null) return null;
         AcademicYear academicYear = null;
 
         if (param.getAcademicYear() != null) {
@@ -18,6 +19,7 @@ public class HolidayMapper {
     }
 
     public static HolidayEntity param(Holiday param) {
+        if (param == null) return null;
         AcademicYearEntity academicYear = null;
 
         if (param.getAcademicYear() != null) {

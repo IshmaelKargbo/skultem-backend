@@ -38,6 +38,10 @@ public class FeeStructureEntity {
     private ClassEntity clazz;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "material_id")
+    private MaterialEntity material;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
     private TermEntity term;
 

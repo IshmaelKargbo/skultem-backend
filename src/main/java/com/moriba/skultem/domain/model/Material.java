@@ -51,4 +51,15 @@ public class Material extends AggregateRoot<String> {
 
         touch(Instant.now());
     }
+
+    public void supply(int qty) {
+        if (qty <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+
+        this.stockQuantity -= qty;
+        this.lastRestockedAt = Instant.now();
+
+        touch(Instant.now());
+    }
 }

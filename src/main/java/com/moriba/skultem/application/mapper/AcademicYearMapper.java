@@ -5,6 +5,9 @@ import com.moriba.skultem.domain.model.AcademicYear;
 
 public class AcademicYearMapper {
     public static AcademicYearDTO toDTO(AcademicYear param) {
+        if (param == null)
+            return null;
+        
         return new AcademicYearDTO(param.getId(), param.getSchoolId(), param.getName(), param.getStartDate(),
                 param.getEndDate(), param.isActive(), param.getStatus().toString(), param.getCreatedAt(),
                 param.getUpdatedAt());

@@ -14,6 +14,7 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialDTO;
 import com.moriba.skultem.infrastructure.rest.dto.RestockMaterialDTO;
+import com.moriba.skultem.infrastructure.rest.dto.SupplyMaterialDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,15 @@ public class MaterialController {
             @Valid @RequestBody RestockMaterialDTO param) {
         var res = service.restockMaterial(school, param.id(), param.inStock(), param.note());
         return new ApiResponse<>("success", 200, "Material restock successfully", res);
+    }
+
+    @PostMapping("/supply")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ApiResponse<SupplyDTO> supplyMaterial(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody SupplyMaterialDTO param) {
+        var res = service.supplyMaterial(school, param.id(), param.qty(), param.note());
+        return new ApiResponse<>("success", 200, "Material supply successfully", res);
     }
 
     @GetMapping("/category")

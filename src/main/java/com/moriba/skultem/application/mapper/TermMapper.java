@@ -6,6 +6,9 @@ import com.moriba.skultem.domain.model.Term;
 
 public class TermMapper {
     public static TermDTO toDTO(Term param) {
+        if (param == null)
+            return null;
+        
         AcademicYearDTO academicYear = AcademicYearMapper.toDTO(param.getAcademicYear());
         
         return new TermDTO(param.getId(), param.getSchoolId(), param.getName(), param.getStartDate(),

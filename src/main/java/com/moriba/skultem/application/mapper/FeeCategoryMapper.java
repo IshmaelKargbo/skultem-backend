@@ -5,6 +5,9 @@ import com.moriba.skultem.domain.model.FeeCategory;
 
 public class FeeCategoryMapper {
     public static FeeCategoryDTO toDTO(FeeCategory param) {
+        if (param == null)
+            return null;
+        
         return new FeeCategoryDTO(param.getId(), param.getName(), param.getDescription(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

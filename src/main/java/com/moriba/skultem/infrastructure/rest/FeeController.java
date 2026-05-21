@@ -90,7 +90,7 @@ public class FeeController {
                 }
 
                 var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classId(),
-                                param.studentIds(), param.feeCategory(), param.termId(),
+                                param.studentIds(), param.feeCategory(), param.termId(), param.materialId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
                                 param.hasSupply(), param.totalSupply());
                 var res = createFeeStructureUseCase.execute(payload);

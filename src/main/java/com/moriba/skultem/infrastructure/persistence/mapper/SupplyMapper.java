@@ -23,10 +23,13 @@ public class SupplyMapper {
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .student(student)
+                .qty(param.getQty())
+                .collectedQty(param.getCollectedQty())
                 .material(material)
                 .collectedOn(param.getCollectedOn())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
+                .status(param.getStatus())
                 .build();
     }
 }

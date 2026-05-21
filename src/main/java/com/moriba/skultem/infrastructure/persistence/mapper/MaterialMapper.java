@@ -5,12 +5,15 @@ import com.moriba.skultem.infrastructure.persistence.entity.MaterialEntity;
 
 public class MaterialMapper {
     public static Material toDomain(MaterialEntity param) {
+        if (param == null) return null;
         return new Material(param.getId(), param.getSchoolId(), param.getName(), param.getUnit(),
                 MaterialCategoryMapper.toDomain(param.getCategory()), param.getStockQuantity(), param.getReorderLevel(),
                 param.getLastRestockedAt(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static MaterialEntity toEntity(Material param) {
+        if (param == null) return null;
+        
         return MaterialEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())

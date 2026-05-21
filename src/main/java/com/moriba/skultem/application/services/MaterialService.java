@@ -17,6 +17,7 @@ import com.moriba.skultem.application.usecase.CreateMaterialCategoryUseCase;
 import com.moriba.skultem.application.usecase.CreateMaterialUseCase;
 import com.moriba.skultem.application.usecase.CreateSupplyUseCase;
 import com.moriba.skultem.application.usecase.ReStockMaterialUseCase;
+import com.moriba.skultem.application.usecase.SupplyMaterialUseCase;
 import com.moriba.skultem.domain.model.Material.Unit;
 import com.moriba.skultem.domain.repository.MaterialCategoryRepository;
 import com.moriba.skultem.domain.repository.MaterialRepository;
@@ -36,6 +37,7 @@ public class MaterialService {
     private final MaterialRepository materialRepo;
     private final SupplyRepository supplyRepo;
     private final CreateSupplyUseCase createSupplyUseCase;
+    private final SupplyMaterialUseCase supplyMaterialUseCase;
     private final ReStockMaterialUseCase reStockMaterialUseCase;
 
     public MaterialCategoryDTO createMaterialCategory(String schoolId, String name, String description) {
@@ -48,6 +50,10 @@ public class MaterialService {
 
     public MaterialDTO restockMaterial(String schoolId, String id, int qty, String note) {
         return reStockMaterialUseCase.execute(schoolId, id, qty, note);
+    }
+
+    public SupplyDTO supplyMaterial(String schoolId, String id, int qty, String note) {
+        return supplyMaterialUseCase.execute(schoolId, id, qty, note);
     }
 
     public SupplyDTO createSupply(String schoolId, String studentId, String materialId, int qty) {

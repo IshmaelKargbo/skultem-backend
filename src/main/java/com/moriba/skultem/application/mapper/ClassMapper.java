@@ -5,9 +5,8 @@ import com.moriba.skultem.domain.model.Clazz;
 
 public class ClassMapper {
     public static ClassDTO toDTO(Clazz param) {
-        if (param == null) {
+        if (param == null)
             return null;
-        }
 
         ClassDTO nextClass = null;
 

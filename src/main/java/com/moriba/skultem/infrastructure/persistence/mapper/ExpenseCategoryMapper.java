@@ -5,18 +5,22 @@ import com.moriba.skultem.infrastructure.persistence.entity.ExpenseCategoryEntit
 
 public class ExpenseCategoryMapper {
     public static ExpenseCategory toDomain(ExpenseCategoryEntity param) {
+        if (param == null)
+            return null;
         return new ExpenseCategory(param.getId(), param.getSchoolId(), param.getName(), param.getDscription(),
                 param.getCreatedAt(), param.getUpdatedAt());
     }
 
-    public static ExpenseCategoryEntity toEntity(ExpenseCategory args) {
+    public static ExpenseCategoryEntity toEntity(ExpenseCategory param) {
+        if (param == null)
+            return null;
         return ExpenseCategoryEntity.builder()
-                .id(args.getId())
-                .schoolId(args.getSchoolId())
-                .name(args.getName())
-                .dscription(args.getDescription())
-                .createdAt(args.getCreatedAt())
-                .updatedAt(args.getUpdatedAt())
+                .id(param.getId())
+                .schoolId(param.getSchoolId())
+                .name(param.getName())
+                .dscription(param.getDescription())
+                .createdAt(param.getCreatedAt())
+                .updatedAt(param.getUpdatedAt())
                 .build();
     }
 }

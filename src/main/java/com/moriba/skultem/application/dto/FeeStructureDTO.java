@@ -7,6 +7,6 @@ import java.time.LocalDate;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
 
 public record FeeStructureDTO(String id, Type type, ClassDTO clazz, TermDTO term, FeeCategoryDTO category,
-        boolean allowInstallment, boolean hasSupply, int totalSupply, LocalDate dueDate, AcademicYearDTO academicYear, BigDecimal amount,
+        boolean allowInstallment, boolean hasSupply, int totalSupply, MaterialDTO material, LocalDate dueDate, AcademicYearDTO academicYear, BigDecimal amount,
         String description, Instant createdAt, Instant updatedAt) {
 }
