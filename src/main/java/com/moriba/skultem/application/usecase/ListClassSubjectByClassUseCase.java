@@ -6,8 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassSubjectDTO;
+import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.ClassSubjectMapper;
+import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
+import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,9 @@ import lombok.RequiredArgsConstructor;
 public class ListClassSubjectByClassUseCase {
 
     private final ClassSubjectRepository repo;
+    private final AcademicYearRepository academicYearRepo;
+    private final ClassSessionRepository classSessionRepo;
+    private final TeacherSubjectRepository teacherSubjectRepo;
 
     public Page<ClassSubjectDTO> execute(String school, String classId, int page, int size) {
         Pageable pageable = Pageable.unpaged();
@@ -26,6 +33,15 @@ public class ListClassSubjectByClassUseCase {
             pageable = PageRequest.of(page, size);
         }
 
-        return repo.findAllByClassIdAndSchoolId(classId, school, pageable).map(ClassSubjectMapper::toDTO);
+        return repo.findAllByClassIdAndSchoolId(classId, school, pageable).map(e -> {
+            var academic = academicYearRepo.findActiveBySchool(school)
+                    .orElseThrow(() -> new NotFoundException("active academic not found"));
+            var session = classSessionRepo.findByClassIdAndAcademicYearIdAndSchoolId(classId, academic.getId(), school)
+                    .orElseThrow(() -> new NotFoundException("school not found"));
+            var teacher = teacherSubjectRepo
+                    .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
+                    .orElseGet(null);
+            return ClassSubjectMapper.toDTO(e, teacher);
+        });
     }
 }

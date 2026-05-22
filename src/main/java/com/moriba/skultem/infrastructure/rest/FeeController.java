@@ -92,7 +92,7 @@ public class FeeController {
                 var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classId(),
                                 param.studentIds(), param.feeCategory(), param.termId(), param.materialId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
-                                param.hasSupply(), param.totalSupply());
+                                param.hasSupply(), param.materialId(), param.totalSupply());
                 var res = createFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
         }

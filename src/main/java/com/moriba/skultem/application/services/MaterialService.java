@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.services;
 
+import java.math.BigInteger;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,7 +46,7 @@ public class MaterialService {
         return createMaterialCategoryUseCase.execute(schoolId, name, description);
     }
 
-    public MaterialDTO createMaterial(String schoolId, String name, Unit unit, int qty, String categoryId) {
+    public MaterialDTO createMaterial(String schoolId, String name, Unit unit, BigInteger qty, String categoryId) {
         return createMaterialUseCase.execute(schoolId, name, unit, qty, categoryId);
     }
 

@@ -27,8 +27,6 @@ public class GetStudentFinanceOverviewUseCase {
             assignedFeeTotal = BigDecimal.ZERO;
         }
 
-        System.out.println(assignedFeeTotal.doubleValue());
-
         List<OutstandingBalanceDTO> fees = financeReportUseCase.outstandingForStudent(schoolId, studentId);
         List<PaymentDTO> recentPayments = financeReportUseCase.paymentHistory(
                 schoolId,

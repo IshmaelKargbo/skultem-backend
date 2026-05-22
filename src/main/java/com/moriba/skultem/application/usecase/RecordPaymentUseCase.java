@@ -158,7 +158,6 @@ public class RecordPaymentUseCase {
                                         null,
                                         payment.getId());
 
-                        // PROCESS SUPPLY IF FULLY PAID
                         processSupply(fee, student);
 
                         results.add(PaymentMapper.toDTO(payment));
@@ -185,8 +184,6 @@ public class RecordPaymentUseCase {
 
                 // FULLY PAID
                 if (outstanding.compareTo(BigDecimal.ZERO) == 0) {
-
-                        // PREVENT DUPLICATE SUPPLY
                         boolean alreadyIssued = supplyRepo.existsByStudentIdAndMaterialIdAndSchoolId(
                                         student.getId(),
                                         fee.getMaterial().getId(),

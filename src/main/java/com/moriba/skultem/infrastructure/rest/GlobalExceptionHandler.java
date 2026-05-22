@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -17,9 +16,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.AlreadyExistsException;
+import com.moriba.skultem.application.error.FileUploadException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
-import com.moriba.skultem.infrastructure.rest.dto.ValidationError;
+import com.moriba.skultem.infrastructure.rest.dto.ApiErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,69 +27,91 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Object> handleNotFound(NotFoundException ex) {
-        return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "NOT_FOUND", ex);
     }
 
     @ExceptionHandler(AlreadyExistsException.class)
-    public ResponseEntity<Object> handleAlreadyExists(AlreadyExistsException ex) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleAlreadyExists(AlreadyExistsException ex) {
+        return build(HttpStatus.BAD_REQUEST, "ALREADY_EXISTS", ex);
     }
 
     @ExceptionHandler(RuleException.class)
-    public ResponseEntity<Object> handleRule(RuleException ex) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleRule(RuleException ex) {
+        return build(HttpStatus.BAD_REQUEST, "RULE_VIOLATION", ex);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
-        return build(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return build(HttpStatus.UNAUTHORIZED, "ACCESS_DENIED", ex);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, "ILLEGAL_ARGUMENT", ex);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGeneralException(Exception ex) {
-        log.error("Unhandled exception: {}", ex.getMessage(), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred. Please try again later.");
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileUpload(FileUploadException ex) {
+        log.warn("File upload failed: {}", ex.getMessage(), ex);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "FILE_UPLOAD_FAILED",
+                        ex.getMessage(),
+                        LocalDateTime.now(),
+                        null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationError> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
 
-        Map<String, String> errors = ex.getBindingResult()
+        Map<String, Object> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
                         FieldError::getField,
                         FieldError::getDefaultMessage,
-                        (msg1, msg2) -> msg1 // in case of duplicates, keep first
-                ));
+                        (a, b) -> a));
 
-        // Include global errors (class-level validations)
         for (ObjectError globalError : ex.getBindingResult().getGlobalErrors()) {
             errors.put(globalError.getObjectName(), globalError.getDefaultMessage());
         }
 
-        ValidationError response = new ValidationError(
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation failed",
-                LocalDateTime.now(),
-                errors
-        );
+        log.warn("Validation failed: {}", errors);
 
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.badRequest().body(
+                new ApiErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "VALIDATION_FAILED",
+                        "Validation error",
+                        LocalDateTime.now(),
+                        errors));
     }
 
-    private ResponseEntity<Object> build(HttpStatus status, String message) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", status.value());
-        body.put("message", message);
-        return new ResponseEntity<>(body, status);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleGeneral(Exception ex) {
+        log.error("Unhandled exception", ex);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "INTERNAL_ERROR",
+                        "Something went wrong. Please try again later.",
+                        LocalDateTime.now(),
+                        null));
+    }
+
+    private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String errorCode, Exception ex) {
+        log.error("{}: {}", errorCode, ex.getMessage(), ex);
+
+        return ResponseEntity.status(status).body(
+                new ApiErrorResponse(
+                        status.value(),
+                        errorCode,
+                        ex.getMessage(),
+                        LocalDateTime.now(),
+                        null));
     }
 }

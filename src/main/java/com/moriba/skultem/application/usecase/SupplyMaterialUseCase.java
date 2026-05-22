@@ -55,7 +55,7 @@ public class SupplyMaterialUseCase {
 
         materialTransactionRepo.save(mt);
         var material = domain.getMaterial();
-        material.supply(qtyToCollect);
+        material.deduct(qty);
         materialRepo.save(material);
 
         // activity log

@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.math.BigInteger;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.MaterialDTO;
@@ -25,7 +27,7 @@ public class CreateMaterialUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "MATERIAL_CREATED")
-    public MaterialDTO execute(String schoolId, String name, Unit unit, int qty, String categoryId) {
+    public MaterialDTO execute(String schoolId, String name, Unit unit, BigInteger qty, String categoryId) {
         if (repo.existByNameAndSchoolId(name, schoolId)) {
             throw new AlreadyExistsException("Material already exists");
         }

@@ -82,8 +82,9 @@ public class Student extends AggregateRoot<String> {
                 city, street, Status.ACTIVE, now, now);
     }
 
-    public void update() {
-
+    public void setProfile(String profile) {
+        photo = profile;
+        touch(Instant.now());
     }
 
     public void softDelete() {

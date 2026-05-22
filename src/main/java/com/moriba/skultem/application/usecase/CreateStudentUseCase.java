@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -120,17 +121,7 @@ public class CreateStudentUseCase {
             throw new RuleException("Admission number already exists");
         }
 
-        String photoUrl = null;
-        if (param.photo() != null && !param.photo().isEmpty()) {
-            try {
-                photoUrl = uploadPhoto(param.photo(), admissionNumber, param.schoolId());
-            } catch (Exception e) {
-                System.err.println("Failed to upload photo: " + e.getMessage());
-                throw new RuntimeException("Failed to upload photo", e);
-            }
-        }
-
-        Student student = Student.create(param.schoolId(), photoUrl, param.admissionNumber(), param.admissionDate(),
+        Student student = Student.create(param.schoolId(), "", param.admissionNumber(), param.admissionDate(),
                 param.givenNames(), param.familyName(), param.family(), session, param.lastClass(), param.gender(),
                 parent, param.dateOfBirth(), param.enrollmentType(), param.previousSchool(), house, param.nationality(),
                 param.religion(), param.city(), param.street());
@@ -147,11 +138,23 @@ public class CreateStudentUseCase {
         provisionStudentAssessmentsUseCase.execute(enrollment);
         applyFees(enrollment);
 
-        if (param.parentId() == null)
+        String photoUrl = null;
+        if (param.photo() != null && !param.photo().isEmpty()) {
+            try {
+                photoUrl = uploadPhoto(param.photo(), admissionNumber, param.schoolId());
+            } catch (Exception e) {
+                System.err.println("Failed to upload photo: " + e.getMessage());
+                throw new RuntimeException("Failed to upload photo", e);
+            }
+        }
+        student.setProfile(photoUrl);
+        repo.save(student);
+
+        if (param.parentId().isBlank())
             sendWelcomeEmail(school, student);
         else
             sendLinkEmail(school, student);
-        
+
         logActivityUseCase.log(
                 param.schoolId(),
                 ActivityType.STUDENT,
@@ -322,13 +325,12 @@ public class CreateStudentUseCase {
         var subjects = classSubjectRepo.findAllByClassIdAndSchoolId(classId, schoolId, Pageable.unpaged()).getContent();
 
         List<SubjectDTO> coreSubjects = subjects.stream()
-                .filter(cs -> Boolean.TRUE.equals(cs.getMandatory()))
+                .filter(cs -> cs.getGroup() == null)
                 .sorted(Comparator.comparing(cs -> cs.getSubject().getName()))
                 .map(cs -> SubjectMapper.toDTO(cs.getSubject()))
                 .toList();
 
         Map<String, List<ClassSubject>> grouped = subjects.stream()
-                .filter(cs -> Boolean.FALSE.equals(cs.getMandatory()))
                 .filter(cs -> cs.getGroup() != null)
                 .collect(Collectors.groupingBy(cs -> cs.getGroup().getId()));
 
@@ -403,22 +405,26 @@ public class CreateStudentUseCase {
 
     public String uploadPhoto(MultipartFile file, String studentId, String schoolId) throws Exception {
 
-        if (file == null || file.isEmpty()) {
-            throw new RuleException("Student photo is required");
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new RuleException("Student photo is required");
+            }
+
+            String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "");
+            int extensionStart = originalFilename.lastIndexOf(".");
+            if (extensionStart < 0 || extensionStart == originalFilename.length() - 1) {
+                throw new RuleException("Student photo must have a valid file extension");
+            }
+
+            String extension = originalFilename.substring(extensionStart).toLowerCase(Locale.ROOT);
+
+            String fileName = studentId + extension;
+
+            String path = schoolId + "/" + fileName;
+
+            return storageService.uploadStudentFile(file, path);
+        } catch (Exception e) {
+            throw new FileUploadException("Failed to upload student photo for studentId=" + studentId);
         }
-
-        String originalFilename = Objects.requireNonNullElse(file.getOriginalFilename(), "");
-        int extensionStart = originalFilename.lastIndexOf(".");
-        if (extensionStart < 0 || extensionStart == originalFilename.length() - 1) {
-            throw new RuleException("Student photo must have a valid file extension");
-        }
-
-        String extension = originalFilename.substring(extensionStart).toLowerCase(Locale.ROOT);
-
-        String fileName = studentId + extension;
-
-        String path = schoolId + "/" + fileName;
-
-        return storageService.uploadStudentFile(file, path);
     }
 }

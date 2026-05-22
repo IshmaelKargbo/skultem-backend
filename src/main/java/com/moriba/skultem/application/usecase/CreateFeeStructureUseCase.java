@@ -194,6 +194,7 @@ public class CreateFeeStructureUseCase {
                         boolean allowInstallment,
                         String description,
                         boolean hasSuppy,
+                        String material,
                         int totalSupply) {
         }
 }
