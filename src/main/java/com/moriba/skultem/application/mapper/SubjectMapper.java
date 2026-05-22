@@ -5,7 +5,7 @@ import com.moriba.skultem.domain.model.Subject;
 
 public class SubjectMapper {
     public static SubjectDTO toDTO(Subject param) {
-        System.out.println(param.getId());
+        if (param == null) return null;
         return new SubjectDTO(param.getId(), param.getName(), param.getCode(), param.getDescription(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }

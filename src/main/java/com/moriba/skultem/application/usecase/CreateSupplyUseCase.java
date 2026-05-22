@@ -43,7 +43,7 @@ public class CreateSupplyUseCase {
         logActivityUseCase.log(
                 schoolId,
                 ActivityType.FEES,
-                "Supply category created",
+                "Supply created",
                 student.getName() + " to collect " + qty + " " + material.getName(),
                 null,
                 domain.getId());
