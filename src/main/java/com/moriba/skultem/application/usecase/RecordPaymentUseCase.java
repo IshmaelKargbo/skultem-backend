@@ -45,6 +45,7 @@ public class RecordPaymentUseCase {
         private final CreateSupplyUseCase createSupplyUseCase;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final CreateTransactionUsercase createTransactionUsercase;
+        private final ReferenceGeneratorUsecase referenceGeneratorUsecase;
         private final LogActivityUseCase logActivityUseCase;
 
         @AuditLogAnnotation(action = "PAYMENT_RECORDED")
@@ -57,6 +58,9 @@ public class RecordPaymentUseCase {
                                 param.studentId(),
                                 param.schoolId())
                                 .orElseThrow(() -> new RuleException("Student not found"));
+
+                String receiptNo = referenceGeneratorUsecase.generateTimeSeriesForSchool("PAYMENT_RECEIPT", "RCT",
+                                param.schoolId());
 
                 List<PaymentDTO> results = new ArrayList<>();
 
@@ -107,7 +111,7 @@ public class RecordPaymentUseCase {
                                         fee,
                                         item.amount(),
                                         param.method(),
-                                        param.referenceNo(),
+                                        receiptNo,
                                         param.note(),
                                         Instant.now());
 

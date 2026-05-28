@@ -34,6 +34,7 @@ public class Payment extends AggregateRoot<String> {
         this.fee = fee;
         this.method = method;
         this.referenceNo = referenceNo;
+        this.note = note;
         this.amount = amount;
         this.paidAt = paidAt;
         touch(updatedAt);
