@@ -1,8 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.AssessmentApprovalRequest;
@@ -24,10 +25,10 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
     }
 
     @Override
-    public List<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId) {
-        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId).stream()
-                .map(AssessmentApprovalRequestMapper::toDomain)
-                .toList();
+    public Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId,
+            Pageable pageable) {
+        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, pageable)
+                .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
     @Override
@@ -42,7 +43,8 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Optional<AssessmentApprovalRequest> findByCycleAndTeacherSubject(String cycleId, String schoolId) {
-        return repo.findByCycle_IdAndTeacherSubject_Id(cycleId, schoolId).map(AssessmentApprovalRequestMapper::toDomain);
+        return repo.findByCycle_IdAndTeacherSubject_Id(cycleId, schoolId)
+                .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
 }

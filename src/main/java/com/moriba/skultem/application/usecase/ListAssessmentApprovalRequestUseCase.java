@@ -3,6 +3,9 @@ package com.moriba.skultem.application.usecase;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.AssessmentApprovalRequestDTO;
@@ -34,14 +37,14 @@ public class ListAssessmentApprovalRequestUseCase {
                 return Math.round(value * 100.0) / 100.0;
         }
 
-        public List<AssessmentApprovalRequestDTO> execute(String schoolId, String masterId) {
+        public Page<AssessmentApprovalRequestDTO> execute(String schoolId, String masterId, int page, int size) {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
-                List<AssessmentApprovalRequest> requests = requestRepo
-                                .findAllByClassMasterSchoolId(masterId, academicYear.getId());
+                Pageable pageable = createPageable(page, size);
+                Page<AssessmentApprovalRequest> requests = requestRepo
+                                .findAllByClassMasterSchoolId(masterId, academicYear.getId(), pageable);
 
-                return requests.stream().map(r -> {
-
+                return requests.map(r -> {
                         List<AssessmentScore> scores = assessmentScoreRepo.findAllByCycle(r.getCycle().getId());
 
                         List<AssessmentScoreDTO> scoreDTOs = scores.stream()
@@ -94,18 +97,19 @@ public class ListAssessmentApprovalRequestUseCase {
                                         status,
                                         scoreDTOs);
 
-                }).collect(Collectors.toList());
+                });
         }
 
-        public List<AssessmentApprovalRequestDTO> executeByUser(String schoolId, String userId) {
+        public Page<AssessmentApprovalRequestDTO> executeByUser(String schoolId, String userId, int page, int size) {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
                 var teacher = teacherRepo.findByUserId(userId)
                                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
-                List<AssessmentApprovalRequest> requests = requestRepo
-                                .findAllByClassMasterSchoolId(teacher.getId(), academicYear.getId());
+                Pageable pageable = createPageable(page, size);
+                Page<AssessmentApprovalRequest> requests = requestRepo
+                                .findAllByClassMasterSchoolId(teacher.getId(), academicYear.getId(), pageable);
 
-                return requests.stream().map(r -> {
+                return requests.map(r -> {
 
                         List<AssessmentScore> scores = assessmentScoreRepo.findAllByCycle(r.getCycle().getId());
 
@@ -159,6 +163,17 @@ public class ListAssessmentApprovalRequestUseCase {
                                         status,
                                         scoreDTOs);
 
-                }).collect(Collectors.toList());
+                });
+        }
+
+        private Pageable createPageable(int page, int size) {
+
+                if (size <= 0) {
+                        return Pageable.unpaged();
+                }
+
+                int pageNumber = Math.max(page - 1, 0);
+
+                return PageRequest.of(pageNumber, size);
         }
 }

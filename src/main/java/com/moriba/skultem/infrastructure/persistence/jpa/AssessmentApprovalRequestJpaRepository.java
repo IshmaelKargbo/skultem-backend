@@ -1,8 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,22 +14,31 @@ import com.moriba.skultem.infrastructure.persistence.entity.AssessmentApprovalRe
 @Repository
 public interface AssessmentApprovalRequestJpaRepository
         extends JpaRepository<AssessmentApprovalRequestEntity, String> {
-
-    @Query("""
-        SELECT aar
-        FROM AssessmentApprovalRequestEntity aar
-        JOIN aar.teacherSubject ts
-        JOIN ts.session s
-        JOIN s.academicYear ac
-        JOIN ClassMasterEntity cm ON cm.session = s
-        WHERE cm.teacher.id = :teacherId
-          AND ac.id = :academicYearId
-          AND cm.endedAt IS NULL
-    """)
-    List<AssessmentApprovalRequestEntity> findAllForClassMasterByTeacherId(
+    @Query(value = """
+                SELECT aar
+                FROM AssessmentApprovalRequestEntity aar
+                JOIN aar.teacherSubject ts
+                JOIN ts.session s
+                JOIN s.academicYear ac
+                JOIN ClassMasterEntity cm ON cm.session = s
+                WHERE cm.teacher.id = :teacherId
+                  AND ac.id = :academicYearId
+                  AND cm.endedAt IS NULL
+            """, countQuery = """
+                SELECT COUNT(aar)
+                FROM AssessmentApprovalRequestEntity aar
+                JOIN aar.teacherSubject ts
+                JOIN ts.session s
+                JOIN s.academicYear ac
+                JOIN ClassMasterEntity cm ON cm.session = s
+                WHERE cm.teacher.id = :teacherId
+                  AND ac.id = :academicYearId
+                  AND cm.endedAt IS NULL
+            """)
+    Page<AssessmentApprovalRequestEntity> findAllForClassMasterByTeacherId(
             @Param("teacherId") String teacherId,
-            @Param("academicYearId") String academicYearId
-    );
+            @Param("academicYearId") String academicYearId,
+            Pageable pageable);
 
     Optional<AssessmentApprovalRequestEntity> findByIdAndSchoolId(String id, String schoolId);
 
