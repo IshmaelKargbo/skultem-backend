@@ -26,7 +26,7 @@ public class SubjectReportUseCase {
 
     public Page<TeacherSubjectDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+        Pageable pageable = createPageable(page, size);
 
         List<Filter> filters = request.filters();
 
@@ -37,5 +37,16 @@ public class SubjectReportUseCase {
         );
 
         return res.map(e -> TeacherSubjectMapper.toDTO(e));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (size <= 0) {
+            return Pageable.unpaged();
+        }
+
+        int pageNumber = Math.max(page - 1, 0);
+
+        return PageRequest.of(pageNumber, size);
     }
 }

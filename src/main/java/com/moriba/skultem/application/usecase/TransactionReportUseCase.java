@@ -24,13 +24,21 @@ public class TransactionReportUseCase {
         private final TransactionRepository repo;
 
         public Page<TransactionDTO> execute(ReportBuilderDTO request, int page, int size) {
-
-                Pageable pageable = (size > 0)
-                                ? PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"))
-                                : Pageable.unpaged();
+                Pageable pageable = createPageable(page, size);
 
                 List<Filter> filters = request.filters();
 
                 return repo.runReport(request.schoolId(), filters, pageable).map(TransactionMapper::toDTO);
+        }
+
+        private Pageable createPageable(int page, int size) {
+
+                if (size <= 0) {
+                        return Pageable.unpaged();
+                }
+
+                int pageNumber = Math.max(page - 1, 0);
+
+                return PageRequest.of(pageNumber, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         }
 }

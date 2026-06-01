@@ -2,7 +2,6 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,25 +30,22 @@ public class FeeReportUseCase {
 
         public Page<StudentFeeDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-                Pageable pageable = (size > 0)
-                                ? PageRequest.of(page - 1, size)
-                                : Pageable.unpaged();
-
                 List<Filter> filters = request.filters();
 
                 List<Filter> dbFilters = filters.stream()
                                 .filter(f -> !"status".equalsIgnoreCase(f.field()))
-                                .collect(Collectors.toList());
+                                .toList();
 
                 Filter statusFilter = filters.stream()
                                 .filter(f -> "status".equalsIgnoreCase(f.field()))
                                 .findFirst()
                                 .orElse(null);
 
+                // Fetch all matching records first
                 Page<StudentFee> res = repo.runReport(
                                 request.schoolId(),
                                 dbFilters,
-                                pageable);
+                                Pageable.unpaged());
 
                 List<StudentFeeDTO> mapped = res.stream()
                                 .map(e -> {
@@ -62,24 +58,36 @@ public class FeeReportUseCase {
                                                 amountPaid = BigDecimal.ZERO;
                                         }
 
-                                        StudentFeeDTO dto = StudentFeeMapper.toDTO(e, amountPaid);
-
-                                        return dto;
+                                        return StudentFeeMapper.toDTO(e, amountPaid);
                                 })
-                                .collect(Collectors.toList());
+                                .toList();
 
+                // Apply status filter before pagination
                 if (statusFilter != null && statusFilter.value() != null) {
 
                         String status = statusFilter.value().toString();
 
                         mapped = mapped.stream()
                                         .filter(dto -> dto.status().equalsIgnoreCase(status))
-                                        .collect(Collectors.toList());
+                                        .toList();
                 }
 
-                return new PageImpl<>(
-                                mapped,
-                                pageable,
-                                mapped.size());
+                // Manual pagination
+                if (size > 0) {
+
+                        int start = Math.max(0, (page - 1) * size);
+                        int end = Math.min(start + size, mapped.size());
+
+                        List<StudentFeeDTO> pagedContent = start < mapped.size()
+                                        ? mapped.subList(start, end)
+                                        : List.of();
+
+                        return new PageImpl<>(
+                                        pagedContent,
+                                        PageRequest.of(page - 1, size),
+                                        mapped.size());
+                }
+
+                return new PageImpl<>(mapped);
         }
 }

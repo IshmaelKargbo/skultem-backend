@@ -27,65 +27,114 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AttendanceReportUseCase {
 
-        private static final Set<String> COMPUTED_FIELDS = Set.of("state", "status");
+    private static final Set<String> COMPUTED_FIELDS = Set.of(
+            "state",
+            "status");
 
-        private final AttendanceRepository repo;
-        private final AcademicYearRepository academicYearRepo;
-        private final ClassSessionRepository classSessionRepo;
+    private final AttendanceRepository repo;
+    private final AcademicYearRepository academicYearRepo;
+    private final ClassSessionRepository classSessionRepo;
 
-        public Page<AttendanceHistoryDTO> execute(String schoolId, String classId, int page, int size) {
-                var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new RuleException("Active academic year not found"));
-                var clazz = classSessionRepo
-                                .findByIdAndSchoolId(classId, schoolId)
-                                .orElseThrow(() -> new RuleException("class session not found"));
+    /**
+     * Daily attendance summary for a class.
+     */
+    public Page<AttendanceHistoryDTO> execute(
+            String schoolId,
+            String classId,
+            int page,
+            int size) {
 
-                Pageable pageable = Pageable.unpaged();
-                if (size > 0) {
-                        pageable = PageRequest.of(page, size);
-                }
+        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                .orElseThrow(() -> new RuleException("Active academic year not found"));
 
-                return repo.fetchDailyClassAttendanceSummary(
-                                clazz.getClazz().getId(), academicYear.getId(), schoolId, pageable);
+        var clazz = classSessionRepo
+                .findByIdAndSchoolId(classId, schoolId)
+                .orElseThrow(() -> new RuleException("Class session not found"));
+
+        Pageable pageable = createPageable(page, size);
+
+        return repo.fetchDailyClassAttendanceSummary(
+                clazz.getClazz().getId(),
+                academicYear.getId(),
+                schoolId,
+                pageable);
+    }
+
+    /**
+     * Attendance report builder.
+     */
+    public Page<AttendanceDTO> execute(
+            ReportBuilderDTO request,
+            int page,
+            int size) {
+
+        Pageable pageable = createPageable(page, size);
+
+        List<Filter> safeFilters = request.filters() == null
+                ? List.of()
+                : request.filters().stream()
+                        .filter(f -> f != null
+                                && f.field() != null
+                                && f.operator() != null
+                                && !COMPUTED_FIELDS.contains(f.field().toLowerCase()))
+                        .toList();
+
+        Page<Attendance> result = repo.runReport(
+                request.schoolId(),
+                safeFilters,
+                pageable);
+
+        return result.map(AttendanceMapper::toDTO);
+    }
+
+    /**
+     * Overall attendance rate for active academic year.
+     */
+    public AttendanceRateDTO computeRate(String schoolId) {
+
+        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                .orElseThrow(() -> new RuleException("Active academic year not found"));
+
+        List<AttendanceHistoryDTO> summaries = repo
+                .fetchDailyClassAttendanceSummary(
+                        null,
+                        academicYear.getId(),
+                        schoolId,
+                        Pageable.unpaged())
+                .getContent();
+
+        long totalPresent = summaries.stream()
+                .mapToLong(s -> s.presentCount() == null ? 0L : s.presentCount())
+                .sum();
+
+        long totalCount = summaries.stream()
+                .mapToLong(s -> s.totalCount() == null ? 0L : s.totalCount())
+                .sum();
+
+        double rate = totalCount == 0
+                ? 0.0
+                : (totalPresent * 100.0) / totalCount;
+
+        return new AttendanceRateDTO(
+                totalPresent,
+                totalCount,
+                Math.round(rate * 10.0) / 10.0);
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (size <= 0) {
+            return Pageable.unpaged();
         }
 
-        public Page<AttendanceDTO> execute(ReportBuilderDTO request, int page, int size) {
-                Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+        int pageNumber = Math.max(page - 1, 0);
 
-                List<Filter> safeFilters = request.filters() == null
-                                ? List.of()
-                                : request.filters().stream()
-                                                .filter(f -> f != null
-                                                        && f.field() != null
-                                                        && f.operator() != null
-                                                        && !COMPUTED_FIELDS.contains(f.field().toLowerCase()))
-                                                .toList();
+        return PageRequest.of(pageNumber, size);
+    }
 
-                Page<Attendance> res = repo.runReport(request.schoolId(), safeFilters, pageable);
-                return res.map(AttendanceMapper::toDTO);
-        }
-
-        public AttendanceRateDTO computeRate(String schoolId) {
-                var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new RuleException("Active academic year not found"));
-
-                List<AttendanceHistoryDTO> summaries = repo
-                                .fetchDailyClassAttendanceSummary(null, academicYear.getId(), schoolId,
-                                                Pageable.unpaged())
-                                .getContent();
-
-                long totalPresent = summaries.stream()
-                                .mapToLong(s -> s.presentCount() != null ? s.presentCount() : 0L)
-                                .sum();
-
-                long totalCount = summaries.stream()
-                                .mapToLong(s -> s.totalCount() != null ? s.totalCount() : 0L)
-                                .sum();
-
-                double rate = totalCount > 0 ? (totalPresent * 100.0 / totalCount) : 0.0;
-
-                return new AttendanceRateDTO(totalPresent, totalCount, Math.round(rate * 10.0) / 10.0);
-        }
-
-        public record AttendanceRateDTO(long presentCount, long totalCount, double rate) {}
+    public record AttendanceRateDTO(
+            long presentCount,
+            long totalCount,
+            double rate) {
+    }
 }

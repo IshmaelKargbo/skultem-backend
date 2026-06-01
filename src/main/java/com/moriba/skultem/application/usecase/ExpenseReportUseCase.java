@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ExpenseDTO;
@@ -26,16 +27,26 @@ public class ExpenseReportUseCase {
 
     public Page<ExpenseDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+        Pageable pageable = createPageable(page, size);
 
         List<Filter> filters = request.filters();
 
         Page<Expense> res = repo.runReport(
                 request.schoolId(),
                 filters,
-                pageable
-        );
+                pageable);
 
         return res.map(e -> ExpenseMapper.toDTO(e));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (size <= 0) {
+            return Pageable.unpaged();
+        }
+
+        int pageNumber = Math.max(page - 1, 0);
+
+        return PageRequest.of(pageNumber, size, Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 }

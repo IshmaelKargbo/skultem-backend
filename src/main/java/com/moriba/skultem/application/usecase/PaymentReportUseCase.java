@@ -24,18 +24,33 @@ public class PaymentReportUseCase {
 
     private final PaymentRepository repo;
 
-    public Page<PaymentDTO> execute(ReportBuilderDTO request, int page, int size) {
+    public Page<PaymentDTO> execute(
+            ReportBuilderDTO request,
+            int page,
+            int size) {
 
-        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+        Pageable pageable = createPageable(page, size);
 
-        List<Filter> filters = request.filters();
+        List<Filter> filters = request.filters() == null
+                ? List.of()
+                : request.filters();
 
-        Page<Payment> res = repo.runReport(
+        Page<Payment> result = repo.runReport(
                 request.schoolId(),
                 filters,
-                pageable
-        );
+                pageable);
 
-        return res.map(e -> PaymentMapper.toDTO(e));
+        return result.map(PaymentMapper::toDTO);
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (size <= 0) {
+            return Pageable.unpaged();
+        }
+
+        int pageNumber = Math.max(page - 1, 0);
+
+        return PageRequest.of(pageNumber, size);
     }
 }

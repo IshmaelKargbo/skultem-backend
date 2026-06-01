@@ -36,7 +36,7 @@ public class ClassReportUseCase {
 
         public Page<ClassSessionDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-                Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+                Pageable pageable = createPageable(page, size);
                 var academicYear = academicYearRepo.findActiveBySchool(request.schoolId())
                                 .orElseThrow(() -> new NotFoundException("no active academic year found"));
 
@@ -112,5 +112,16 @@ public class ClassReportUseCase {
                 }
 
                 return new FeeDetail(totalExpected, totalCollected, totalOutstanding, status);
+        }
+
+        private Pageable createPageable(int page, int size) {
+
+                if (size <= 0) {
+                        return Pageable.unpaged();
+                }
+
+                int pageNumber = Math.max(page - 1, 0);
+
+                return PageRequest.of(pageNumber, size);
         }
 }

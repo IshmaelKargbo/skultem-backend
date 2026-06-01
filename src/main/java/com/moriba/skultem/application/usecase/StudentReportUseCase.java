@@ -26,16 +26,26 @@ public class StudentReportUseCase {
 
     public Page<StudentDTO> execute(ReportBuilderDTO request, int page, int size) {
 
-        Pageable pageable = (size > 0) ? PageRequest.of(page - 1, size) : Pageable.unpaged();
+        Pageable pageable = createPageable(page, size);
 
         List<Filter> filters = request.filters();
 
         Page<Enrollment> enrollments = repo.runReport(
                 request.schoolId(),
                 filters,
-                pageable
-        );
+                pageable);
 
         return enrollments.map(e -> StudentMapper.toDTO(e.getStudent(), e));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (size <= 0) {
+            return Pageable.unpaged();
+        }
+
+        int pageNumber = Math.max(page - 1, 0);
+
+        return PageRequest.of(pageNumber, size);
     }
 }
