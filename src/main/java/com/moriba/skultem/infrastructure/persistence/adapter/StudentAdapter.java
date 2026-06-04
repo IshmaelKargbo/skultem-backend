@@ -48,4 +48,9 @@ public class StudentAdapter implements StudentRepository {
     public Page<Student> findByParentAndSchoolId(String parentId, String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdAndParent_IdOrderByCreatedAtDesc(schoolId, parentId, pageable).map(StudentMapper::toDomain);
     }
+
+    @Override
+    public Page<Student> search(String value, String schoolId, Pageable pageable) {
+        return repo.search(schoolId, value, pageable).map(StudentMapper::toDomain);
+    }
 }

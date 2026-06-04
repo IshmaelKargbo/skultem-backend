@@ -2,18 +2,18 @@ POST https://api.skultem.com/api/v1/school
 Content-Type: application/json
 
 {
-  "name": "Moriba Academy",
-  "domain": "moriba",
-  "email": "ishmaelkargbo5@outlook.com",
+  "name": "King's Way International School",
+  "domain": "kwis",
+  "email": "kargbo717@gmail.com",
   "city": "Freetown",
-  "phone": "+2327638010",
+  "phone": "+23230594269",
   "chiefdom": "Central 1",
   "region": "Western Area",
   "district": "Western Urba",
-  "givenNames": "Ishmael",
+  "givenNames": "Osman",
   "familyName": "Kargbo",
   "password": "Isho@2024",
-  "street": "48 Sumaila Town"
+  "street": "55K Sumaila Town"
 }
 
 ###

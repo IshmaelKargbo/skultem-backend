@@ -1,8 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import java.util.List;
-import java.util.Map;
-
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +19,7 @@ import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.dto.StudentFinanceOverviewDTO;
 import com.moriba.skultem.application.dto.StudentRecord;
+import com.moriba.skultem.application.services.StudentService;
 import com.moriba.skultem.application.usecase.ActiveCycleUseCase;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase;
 import com.moriba.skultem.domain.model.Student.EnrollmentType;
@@ -28,11 +27,11 @@ import com.moriba.skultem.domain.vo.Family;
 import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetStudentUseCase;
-import com.moriba.skultem.application.usecase.ListStudentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
 import com.moriba.skultem.application.usecase.RankStudentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStudentDTO;
+import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +43,9 @@ public class StudentController {
         private final CreateStudentUseCase createStudentUseCase;
         private final GetStudentUseCase getStudentUseCase;
         private final GetStudentFinanceOverviewUseCase getStudentFinanceOverviewUseCase;
-        private final ListStudentBySchoolUseCase listStudentBySchoolUseCase;
         private final ListSubjectFeesByStudentUseCase listSubjectFeesByStudentUseCase;
         private final RankStudentUseCase rankStudentUseCase;
+        private final StudentService studentSvc;
         private final ActiveCycleUseCase activeCycleUseCase;
 
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -65,14 +64,11 @@ public class StudentController {
         public ApiResponse<List<StudentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = false) String search,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listStudentBySchoolUseCase.execute(school, page - 1, size);
+                var res = studentSvc.search(search, page, size, school);
                 var list = res.getContent();
-                Map<String, Object> meta = Map.of(
-                                "page", res.getNumber() + 1,
-                                "size", res.getSize(),
-                                "count", res.getTotalElements(),
-                                "pages", res.getTotalPages());
+                var meta = MetaMapper.toMeta(res);
 
                 return new ApiResponse<>("success", 200, "Students fetched successfully", list, meta);
         }
@@ -103,13 +99,10 @@ public class StudentController {
                         @PathVariable String studentId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
+
                 var res = listSubjectFeesByStudentUseCase.execute(school, studentId, page - 1, size);
                 var list = res.getContent();
-                Map<String, Object> meta = Map.of(
-                                "page", res.getNumber() + 1,
-                                "size", res.getSize(),
-                                "count", res.getTotalElements(),
-                                "pages", res.getTotalPages());
+                var meta = MetaMapper.toMeta(res);
 
                 return new ApiResponse<>("success", 200, "Student fees fetched successfully", list, meta);
         }
