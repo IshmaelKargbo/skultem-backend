@@ -1,5 +1,5 @@
 mail:
-  mode: dev
+  mode: ${MAIL_MODE:dev}
 mailtrap:
   inbox-id: 2125279
   sender:
