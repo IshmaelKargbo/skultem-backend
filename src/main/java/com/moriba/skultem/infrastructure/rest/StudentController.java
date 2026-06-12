@@ -66,10 +66,11 @@ public class StudentController {
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = false) String search,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
+
                 if (search == null || search.isBlank()) {
                         search = null;
                 }
-                
+
                 var res = studentSvc.search(search, page, size, school);
                 var list = res.getContent();
                 var meta = MetaMapper.toMeta(res);
