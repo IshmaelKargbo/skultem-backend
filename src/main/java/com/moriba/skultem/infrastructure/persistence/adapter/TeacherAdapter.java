@@ -43,11 +43,6 @@ public class TeacherAdapter implements TeacherRepository {
     }
 
     @Override
-    public Page<Teacher> findBySchool(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(TeacherMapper::toDomain);
-    }
-
-    @Override
     public boolean existsByPhoneAndSchool(String phone, String schoolId) {
         return repo.existsByPhoneAndSchoolId(phone, schoolId);
     }
@@ -71,5 +66,10 @@ public class TeacherAdapter implements TeacherRepository {
     public Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runTeacherReport(schoolId, filters, pageable)
                 .map(TeacherMapper::toDomain);
+    }
+
+    @Override
+    public Page<Teacher> search(String value, String schoolId, Pageable pageable) {
+        return repo.search(schoolId, value, pageable).map(TeacherMapper::toDomain);
     }
 }

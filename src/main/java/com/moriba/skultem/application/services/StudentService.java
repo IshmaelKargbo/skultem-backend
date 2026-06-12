@@ -30,6 +30,7 @@ public class StudentService {
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+                
         return studentRepo.search(value, schoolId, pageable).map(student -> {
             Enrollment enrollment = enrollmentRepo
                     .findByStudentAndAcademicYearAndSchoolId(student.getId(), academicYear.getId(), schoolId)

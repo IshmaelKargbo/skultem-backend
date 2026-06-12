@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.vo.Filter;
@@ -26,14 +28,29 @@ public interface TeacherJpaRepository
 
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 
-    Page<TeacherEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+    @Query("""
+                SELECT t
+                FROM TeacherEntity t
+                LEFT JOIN t.user u
+                WHERE t.schoolId = :schoolId
+                  AND (
+                        :search IS NULL
+                     OR :search = ''
+                     OR LOWER(u.givenName) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(u.familyName) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(t.phone) LIKE LOWER(CONCAT('%', :search, '%'))
+                  )
+                ORDER BY t.createdAt DESC
+            """)
+    Page<TeacherEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
+            Pageable pageable);
 
     long countBySchoolId(String schoolId);
 
     default Page<TeacherEntity> runTeacherReport(String schoolId, List<Filter> filters, Pageable pageable) {
 
-        Specification<TeacherEntity> spec =
-                (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
+        Specification<TeacherEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
         if (filters != null && !filters.isEmpty()) {
             spec = spec.and(FilterSpecificationBuilder.build(filters));

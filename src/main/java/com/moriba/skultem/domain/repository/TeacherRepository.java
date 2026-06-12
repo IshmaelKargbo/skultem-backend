@@ -22,11 +22,11 @@ public interface TeacherRepository {
 
     boolean existsByPhoneAndSchool(String phone, String schoolId);
 
-    Page<Teacher> findBySchool(String schoolId, Pageable pageable);
-
     long countAll();
 
     long countAllBySchool(String schoolid);
+
+    Page<Teacher> search(String value, String schoolId, Pageable pageable);
 
     Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

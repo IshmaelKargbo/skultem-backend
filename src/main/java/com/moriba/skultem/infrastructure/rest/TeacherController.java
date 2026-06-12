@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.dto.TeacherSubjectDTO;
+import com.moriba.skultem.application.services.TeacherService;
 import com.moriba.skultem.application.usecase.CreateTeacherUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherUseCase;
-import com.moriba.skultem.application.usecase.ListTeacherBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectByTeacherUseCase;
 import com.moriba.skultem.domain.vo.Gender;
@@ -38,10 +38,10 @@ import com.moriba.skultem.application.usecase.ListTeacherSubjectBySessionUseCase
 public class TeacherController {
         private final CreateTeacherUseCase createTeacherUseCase;
         private final GetTeacherUseCase getTeacherUseCase;
-        private final ListTeacherBySchoolUseCase listTeacherBySchoolUseCase;
         private final ListTeacherSubjectBySchoolUseCase listTeacherSubjectBySchoolUseCase;
         private final ListTeacherSubjectByTeacherUseCase listTeacherSubjectByTeacherUseCase;
         private final ListTeacherSubjectBySessionUseCase listTeacherSubjectBySessionUseCase;
+        private final TeacherService teacherSvc;
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
 
         @PostMapping
@@ -64,8 +64,14 @@ public class TeacherController {
         public ApiResponse<List<TeacherDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
-                        @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listTeacherBySchoolUseCase.execute(school, page - 1, size);
+                        @RequestParam(required = true, defaultValue = "1") Integer page,
+                        @RequestParam(required = false) String search) {
+
+                if (search == null || search.isBlank()) {
+                        search = null;
+                }
+                
+                var res = teacherSvc.search(search, page - 1, size, school);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
