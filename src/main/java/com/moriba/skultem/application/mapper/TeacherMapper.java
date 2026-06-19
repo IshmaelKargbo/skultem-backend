@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.mapper;
 
+import java.util.List;
+
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.domain.model.Teacher;
@@ -9,7 +11,15 @@ public class TeacherMapper {
         UserDTO user = UserMapper.toDTO(param.getUser());
 
         return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getGender(), param.getTitle(),
-                param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(), param.getCreatedAt(),
-                param.getUpdatedAt());
+                null, param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(),
+                param.getCreatedAt(), param.getUpdatedAt());
+    }
+
+    public static TeacherDTO toDTO(Teacher param, List<String> classes) {
+        UserDTO user = UserMapper.toDTO(param.getUser());
+
+        return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getGender(), param.getTitle(),
+                classes, param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(),
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 }

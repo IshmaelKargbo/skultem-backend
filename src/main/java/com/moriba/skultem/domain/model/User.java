@@ -46,6 +46,18 @@ public class User extends AggregateRoot<String> {
         return new User(id, givenNames, familyName, email, password, hint, Status.RESET_PASSWORD, now, now);
     }
 
+    public void update(String givenNames, String familyName) {
+        if (givenNames != null) {
+            this.givenNames = givenNames;
+        }
+
+        if (familyName != null) {
+            this.familyName = familyName;
+        }
+
+        touch(Instant.now());
+    }
+
     public String getName() {
         return String.join(" ", givenNames, familyName);
     }

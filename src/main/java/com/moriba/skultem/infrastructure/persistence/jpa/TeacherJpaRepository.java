@@ -48,6 +48,10 @@ public interface TeacherJpaRepository
 
     long countBySchoolId(String schoolId);
 
+    boolean existsByStaffIdAndSchoolIdAndIdNot(String staffId, String schoolId, String id);
+
+    boolean existsByPhoneAndSchoolIdAndIdNot(String phone, String schoolId, String id);
+
     default Page<TeacherEntity> runTeacherReport(String schoolId, List<Filter> filters, Pageable pageable) {
 
         Specification<TeacherEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

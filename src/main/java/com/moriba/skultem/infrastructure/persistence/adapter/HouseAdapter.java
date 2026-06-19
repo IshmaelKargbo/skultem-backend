@@ -43,4 +43,9 @@ public class HouseAdapter implements HouseRepository {
     public Page<House> findAllBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(HouseMapper::toDomain);
     }
+
+    @Override
+    public Page<House> search(String value, String schoolId, Pageable pageable) {
+        return repo.search(schoolId, value, pageable).map(HouseMapper::toDomain);
+    }
 }

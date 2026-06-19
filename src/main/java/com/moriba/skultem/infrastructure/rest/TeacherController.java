@@ -10,20 +10,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.services.TeacherService;
+import com.moriba.skultem.application.services.TeacherService.TeacherRecord;
 import com.moriba.skultem.application.usecase.CreateTeacherUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherSubjectUseCase;
-import com.moriba.skultem.application.usecase.GetTeacherUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectByTeacherUseCase;
 import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Title;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateTeacherDTO;
+import com.moriba.skultem.infrastructure.rest.dto.EditTeacherDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,7 +39,6 @@ import com.moriba.skultem.application.usecase.ListTeacherSubjectBySessionUseCase
 @RequiredArgsConstructor
 public class TeacherController {
         private final CreateTeacherUseCase createTeacherUseCase;
-        private final GetTeacherUseCase getTeacherUseCase;
         private final ListTeacherSubjectBySchoolUseCase listTeacherSubjectBySchoolUseCase;
         private final ListTeacherSubjectByTeacherUseCase listTeacherSubjectByTeacherUseCase;
         private final ListTeacherSubjectBySessionUseCase listTeacherSubjectBySessionUseCase;
@@ -59,6 +60,22 @@ public class TeacherController {
                                 "Teacher created successfully. Password is generated automatically.", res);
         }
 
+        @PatchMapping("/edit/{id}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<TeacherDTO> edit(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @Valid @RequestBody EditTeacherDTO param,
+                        @PathVariable(required = true) String id) {
+                var title = Title.valueOf(param.title());
+                var gender = Gender.valueOf(param.gender());
+
+                var payload = new TeacherRecord(school, id, title, param.givenNames(), param.familyName(), gender,
+                                param.staffId(), param.phone(), param.street(), param.city());
+                var res = teacherSvc.edit(payload);
+                return new ApiResponse<>("success", 200,
+                                "Teacher edited successfully.", res);
+        }
+
         @GetMapping
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherDTO>> listBySchool(
@@ -70,7 +87,7 @@ public class TeacherController {
                 if (search == null || search.isBlank()) {
                         search = null;
                 }
-                
+
                 var res = teacherSvc.search(search, page - 1, size, school);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
@@ -80,6 +97,16 @@ public class TeacherController {
                                 "pages", res.getTotalPages());
 
                 return new ApiResponse<>("success", 200, "Teachers fetched successfully", list, meta);
+        }
+
+        @GetMapping("/{id}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        public ApiResponse<TeacherDTO> listById(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable(required = true) String id) {
+
+                var res = teacherSvc.getById(id);
+                return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 
         @GetMapping("/subject")
@@ -142,14 +169,5 @@ public class TeacherController {
                         @PathVariable String teacherId) {
                 var res = getTeacherSubjectUseCase.execute(school, teacherId);
                 return new ApiResponse<>("success", 200, "Teacher subject fetched successfully", res);
-        }
-
-        @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
-        public ApiResponse<TeacherDTO> get(
-                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable String id) {
-                var res = getTeacherUseCase.execute(id, school);
-                return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 }

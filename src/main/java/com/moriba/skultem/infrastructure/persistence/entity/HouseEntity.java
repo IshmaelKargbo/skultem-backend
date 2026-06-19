@@ -1,6 +1,8 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
+import java.util.List;
+
 import com.moriba.skultem.domain.model.House.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,8 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,9 +43,8 @@ public class HouseEntity {
     @Column(nullable = false)
     private Status status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "house_master_id", nullable = false)
-    private TeacherEntity houseMaster;
+    @ManyToMany(fetch = FetchType.LAZY)
+    private List<TeacherEntity> houseMasters;
 
     private Instant createdAt;
     private Instant updatedAt;

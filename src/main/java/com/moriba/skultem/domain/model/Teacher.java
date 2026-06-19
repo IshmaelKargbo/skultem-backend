@@ -26,7 +26,8 @@ public class Teacher extends AggregateRoot<String> {
         DELETED
     }
 
-    public Teacher(String id, String schoolId, Title title, String phone, String street, String city, Gender gender, String staffId, User user,
+    public Teacher(String id, String schoolId, Title title, String phone, String street, String city, Gender gender,
+            String staffId, User user,
             Status status, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
@@ -46,6 +47,32 @@ public class Teacher extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new Teacher(id, schoolId, title, phone, street, city, gender, staffId, user, Status.ACTIVE, now,
                 now);
+    }
+
+    public Teacher update(Title title, String phone, String street,
+            String city, Gender gender, String staffId) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (phone != null) {
+            this.phone = phone;
+        }
+
+        if (street != null) {
+            this.street = street;
+        }
+        if (city != null) {
+            this.city = city;
+        }
+        if (gender != null) {
+            this.gender = gender;
+        }
+        if (staffId != null) {
+            this.staffId = staffId;
+        }
+
+        touch(Instant.now());
+        return this;
     }
 
     public void softDelete() {

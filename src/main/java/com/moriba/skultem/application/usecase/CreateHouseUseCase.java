@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -28,20 +29,21 @@ public class CreateHouseUseCase {
 
     @AuditLogAnnotation(action = "HOUSE_CREATED")
     public HouseDTO execute(String schoolId, String name, String motto, String color,
-            String master) {
+            List<String> masters) {
         if (repo.existByNameAndSchoolId(name, schoolId)) {
             throw new AlreadyExistsException("House already exists");
         }
 
-        Teacher houseMaster = null;
-
-        if (!master.isBlank()) {
-            houseMaster = teacherRepos.findById(schoolId)
-                    .orElseThrow(() -> new NotFoundException("Teacher not found"));
-        }
+        List<Teacher> houseMasters = masters == null
+                ? List.of()
+                : masters.stream()
+                        .map(id -> teacherRepos.findById(id)
+                                .orElseThrow(() -> new NotFoundException(
+                                        "Teacher not found: " + id)))
+                        .toList();
 
         var id = UUID.randomUUID().toString();
-        var holiday = House.create(id, schoolId, name, motto, color, houseMaster);
+        var holiday = House.create(id, schoolId, name, motto, color, houseMasters);
         repo.save(holiday);
 
         logActivityUseCase.log(

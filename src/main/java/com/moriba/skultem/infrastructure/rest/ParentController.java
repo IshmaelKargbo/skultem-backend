@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TeacherDTO;
-import com.moriba.skultem.application.usecase.GetTeacherUseCase;
+import com.moriba.skultem.application.services.TeacherService;
 import com.moriba.skultem.application.usecase.ListNotificationByParentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -35,7 +35,7 @@ import com.moriba.skultem.infrastructure.rest.dto.CreateParentDTO;
 @RequiredArgsConstructor
 public class ParentController {
         private final CreateParentUseCase createParentUseCase;
-        private final GetTeacherUseCase getTeacherUseCase;
+        private final TeacherService teacherSvc;
         private final ListParentBySchoolUseCase listParentBySchoolUseCase;
         private final ListStudentByParentUseCase listStudentByParentUseCase;
         private final ListNotificationByParentUseCase listNotificationByParentUseCase;
@@ -110,7 +110,7 @@ public class ParentController {
         public ApiResponse<TeacherDTO> get(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id) {
-                var res = getTeacherUseCase.execute(id, school);
+                var res = teacherSvc.getById(id);
                 return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 }

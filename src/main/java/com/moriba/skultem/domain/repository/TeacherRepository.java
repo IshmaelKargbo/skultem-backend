@@ -22,6 +22,10 @@ public interface TeacherRepository {
 
     boolean existsByPhoneAndSchool(String phone, String schoolId);
 
+    boolean existsByStaffIdAndSchoolAndIdNot(String schoolId, String staffId, String teacherId);
+
+    boolean existsByPhoneAndSchoolAndIdNot(String schoolId, String phone, String teacherId);
+
     long countAll();
 
     long countAllBySchool(String schoolid);

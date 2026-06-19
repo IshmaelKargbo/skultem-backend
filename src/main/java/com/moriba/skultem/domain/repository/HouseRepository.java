@@ -18,4 +18,6 @@ public interface HouseRepository {
 
     Page<House> findAllBySchoolId(String schoolId, Pageable pageable);
     
+    Page<House> search(String value, String schoolId, Pageable pageable);
+
 }

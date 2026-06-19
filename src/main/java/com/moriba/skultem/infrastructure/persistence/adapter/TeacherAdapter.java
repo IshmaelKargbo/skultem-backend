@@ -72,4 +72,14 @@ public class TeacherAdapter implements TeacherRepository {
     public Page<Teacher> search(String value, String schoolId, Pageable pageable) {
         return repo.search(schoolId, value, pageable).map(TeacherMapper::toDomain);
     }
+
+    @Override
+    public boolean existsByStaffIdAndSchoolAndIdNot(String schoolId, String staffId, String teacherId) {
+        return repo.existsByStaffIdAndSchoolIdAndIdNot(staffId, schoolId, teacherId);
+    }
+
+    @Override
+    public boolean existsByPhoneAndSchoolAndIdNot(String schoolId, String phone, String teacherId) {
+        return repo.existsByPhoneAndSchoolIdAndIdNot(phone, schoolId, teacherId);
+    }
 }
