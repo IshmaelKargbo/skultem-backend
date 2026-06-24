@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateSchoolDTO(
-        @NotBlank(message = "School name is required") @Size(min = 3, max = 150, message = "School name must be between 3 and 150 characters") String name,
+        @NotBlank(message = "School session is required") @Size(min = 3, max = 150, message = "School session must be between 3 and 150 characters") String name,
 
         @NotBlank(message = "Domain is required") String domain,
 
@@ -26,7 +26,7 @@ public record CreateSchoolDTO(
 
         @NotBlank(message = "Owner given names are required") @Size(min = 2, max = 100, message = "Given names must be between 2 and 100 characters") String givenNames,
 
-        @NotBlank(message = "Owner family name is required") @Size(min = 2, max = 100, message = "Family name must be between 2 and 100 characters") String familyName,
+        @NotBlank(message = "Owner family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName,
 
         @NotBlank(message = "Owner password is required") @Size(min = 8, max = 100, message = "Password must be at least 8 characters") @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).*$", message = "Password must contain at least one uppercase letter, one lowercase letter, and one number") String password
 ) {

@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.HouseDTO;
-import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.mapper.HouseMapper;
 import com.moriba.skultem.application.usecase.CreateHouseUseCase;
 import com.moriba.skultem.domain.repository.HouseRepository;

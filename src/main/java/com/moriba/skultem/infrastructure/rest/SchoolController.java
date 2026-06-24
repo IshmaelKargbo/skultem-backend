@@ -3,6 +3,11 @@ package com.moriba.skultem.infrastructure.rest;
 import java.util.List;
 import java.util.Map;
 
+import com.moriba.skultem.application.dto.UserDTO;
+import com.moriba.skultem.application.services.SchoolService;
+import com.moriba.skultem.application.usecase.ResetPasswordUseCase;
+import com.moriba.skultem.infrastructure.rest.dto.ResetPasswordDTO;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +37,7 @@ public class SchoolController {
 
     private final CreateSchoolUseCase createSchoolUseCase;
     private final ListSchoolUseCase listSchoolUseCase;
-    private final GetSchoolUseCase getSchoolUseCase;
+    private final SchoolService schoolSvc;
 
     @PostMapping
     public ApiResponse<SchoolDTO> create(@Valid @RequestBody CreateSchoolDTO param) {
@@ -46,7 +51,7 @@ public class SchoolController {
     @GetMapping
     @PreAuthorize("@permissionService.isSystemAdmin()")
     public ApiResponse<List<SchoolDTO>> list(@RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+                                             @RequestParam(required = true, defaultValue = "1") Integer page) {
         var res = listSchoolUseCase.execute(page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
@@ -59,9 +64,9 @@ public class SchoolController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
-    public ApiResponse<SchoolDTO> get(@PathVariable String id) {
-        var res = getSchoolUseCase.execute(id);
-        return new ApiResponse<SchoolDTO>("success", 200, "School fetched successfully", res);
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    public ApiResponse<SchoolDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = schoolSvc.get(school);
+        return new ApiResponse<>("success", 200, "School fetched successfully", res);
     }
 }

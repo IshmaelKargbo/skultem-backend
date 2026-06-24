@@ -23,7 +23,7 @@ public class ListStreamSubjectBySchoolUseCase {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
             pageable = PageRequest.of(page, size, Sort.by(
-                    Sort.Order.asc("stream.name"),
+                    Sort.Order.asc("stream.session"),
                     Sort.Order.asc("createdAt")));
         }
 

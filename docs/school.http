@@ -1,12 +1,14 @@
-POST https://api.skultem.com/api/v1/school
+@BaseURL=http://localhost:8080/api/v1
+
+POST {{BaseURL}}/school
 Content-Type: application/json
 
 {
   "name": "King's Way International School",
   "domain": "kwis",
-  "email": "kargbo717@gmail.com",
+  "email": "ishmaelkargbo5@outlook.com",
   "city": "Freetown",
-  "phone": "+23230594269",
+  "phone": "+23276380190",
   "chiefdom": "Central 1",
   "region": "Western Area",
   "district": "Western Urba",
@@ -17,7 +19,7 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/v1/school?size=0
+GET {{BaseURL}}/school?size=0
 X-User-Id: USR-2026-0001
 
 ###

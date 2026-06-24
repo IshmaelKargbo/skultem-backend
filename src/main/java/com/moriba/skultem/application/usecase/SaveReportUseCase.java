@@ -34,7 +34,7 @@ public class SaveReportUseCase {
             String id = rg.generate("SAVE_REPORT", "SRP");
 
             if (repo.existsByName(param.name(), schoolId))
-                throw new AlreadyExistsException("Report already exist with this name");
+                throw new AlreadyExistsException("Report already exist with this session");
 
             SaveReport domain = SaveReport.create(
                     id,

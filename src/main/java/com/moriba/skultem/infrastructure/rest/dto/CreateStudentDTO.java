@@ -16,7 +16,7 @@ public record CreateStudentDTO(
         @NotBlank(message = "Given names is required")
         String givenNames,
 
-        @NotBlank(message = "Family name is required")
+        @NotBlank(message = "Family session is required")
         String familyName,
 
         @NotBlank(message = "Nationality is required")

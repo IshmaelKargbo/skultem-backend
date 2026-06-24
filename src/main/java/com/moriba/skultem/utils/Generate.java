@@ -8,7 +8,7 @@ import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 public class Generate {
     public static String generateSubdomain(String name) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("name cannot be empty");
+            throw new IllegalArgumentException("session cannot be empty");
         }
 
         String normalized = Normalizer.normalize(name, Normalizer.Form.NFD)

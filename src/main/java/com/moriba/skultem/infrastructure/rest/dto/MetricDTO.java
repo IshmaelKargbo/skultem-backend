@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Pattern;
 
 public record MetricDTO(
 
-        @NotBlank(message = "Metric name must not be blank") String name,
+        @NotBlank(message = "Metric session must not be blank") String name,
 
         @NotBlank(message = "Aggregation type must not be blank") @Pattern(regexp = "sum|avg|count|percentage|custom", flags = Pattern.Flag.CASE_INSENSITIVE, message = "Aggregation must be one of: sum, avg, count, percentage, custom") String aggregation,
 

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public record EditTeacherDTO(
                 @NotBlank(message = "Given names are required") @Size(min = 2, max = 100, message = "Given names must be between 2 and 100 characters") String givenNames,
 
-                @NotBlank(message = "Family name is required") @Size(min = 2, max = 100, message = "Family name must be between 2 and 100 characters") String familyName,
+                @NotBlank(message = "Family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName,
 
                 @NotBlank(message = "Phone is required") @Pattern(regexp = "^[0-9+ ]{7,20}$", message = "Phone number must contain only digits, spaces or + and be between 7 and 20 characters") String phone,
 

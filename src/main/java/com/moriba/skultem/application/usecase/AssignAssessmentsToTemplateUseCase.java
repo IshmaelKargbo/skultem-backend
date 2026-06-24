@@ -66,7 +66,7 @@ public class AssignAssessmentsToTemplateUseCase {
 
         for (AssessmentInput assignment : assignments) {
             if (assignment == null || assignment.name() == null || assignment.name().isBlank()) {
-                throw new RuleException("Assessment name is required");
+                throw new RuleException("Assessment session is required");
             }
             if (assignment.weight() == null || assignment.weight() <= 0 || assignment.weight() > 100) {
                 throw new RuleException("Each assessment weight must be greater than 0 and not exceed 100");
@@ -75,7 +75,7 @@ public class AssignAssessmentsToTemplateUseCase {
             var cleanName = assignment.name().trim();
             var key = cleanName.toLowerCase(Locale.ROOT);
             if (!uniqueNames.add(key)) {
-                throw new RuleException("Duplicate assessment name: " + cleanName);
+                throw new RuleException("Duplicate assessment session: " + cleanName);
             }
 
             sanitized.add(new AssessmentInput(cleanName, assignment.weight()));

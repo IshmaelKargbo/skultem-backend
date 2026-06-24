@@ -45,7 +45,7 @@ public class CreateClassUseCase {
 
         // 1️⃣ Check for duplicates
         if (classRepo.existsByNameAndSchool(name, school)) {
-            throw new AlreadyExistsException("Class with name '" + name + "' already exists in this school.");
+            throw new AlreadyExistsException("Class with session '" + name + "' already exists in this school.");
         }
         if (classRepo.existsByLevelOrderAndSchool(levelOrder, school)) {
             throw new AlreadyExistsException(

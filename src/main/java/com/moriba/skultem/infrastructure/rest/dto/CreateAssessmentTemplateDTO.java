@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record CreateAssessmentTemplateDTO(
 
-        @NotBlank(message = "Template name is required")
+        @NotBlank(message = "Template session is required")
         String name,
         @Min(value = 0, message = "Pass mark cannot be less than 0")
         @Max(value = 100, message = "Pass mark cannot be greater than 100")

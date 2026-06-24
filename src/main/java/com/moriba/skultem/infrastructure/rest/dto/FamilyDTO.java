@@ -3,9 +3,9 @@ package com.moriba.skultem.infrastructure.rest.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public record FamilyDTO(
-                @NotBlank(message = "Father name is required") String fatherName,
+                @NotBlank(message = "Father session is required") String fatherName,
 
-                @NotBlank(message = "Mother name is required") String motherName,
+                @NotBlank(message = "Mother session is required") String motherName,
 
                 @NotBlank(message = "Father occupation is required") String fatherOccupation,
 

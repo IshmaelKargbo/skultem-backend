@@ -25,7 +25,7 @@ public class CreateAssessmentTemplateUseCase {
     public AssessmentTemplateDTO execute(String schoolId, String name, int passMark, String description) {
         var cleanName = name == null ? "" : name.trim();
         if (cleanName.isBlank()) {
-            throw new RuleException("Template name is required");
+            throw new RuleException("Template session is required");
         }
 
         var id = rg.generate("ASSESSMENT_TEMPLATE", "AST");

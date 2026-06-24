@@ -11,5 +11,5 @@ public record CreateUserDTO(
 
         @NotBlank(message = "Given names are required") @Size(min = 2, max = 100, message = "Given names must be between 2 and 100 characters") String givenNames,
 
-        @NotBlank(message = "Family name is required") @Size(min = 2, max = 100, message = "Family name must be between 2 and 100 characters") String familyName) {
+        @NotBlank(message = "Family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName) {
 }
