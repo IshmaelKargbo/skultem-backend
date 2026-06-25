@@ -22,9 +22,7 @@ public class ListStreamSubjectBySchoolUseCase {
     public Page<StreamSubjectDTO> execute(String schoolId, int page, int size) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
-            pageable = PageRequest.of(page, size, Sort.by(
-                    Sort.Order.asc("stream.session"),
-                    Sort.Order.asc("createdAt")));
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Order.asc("createdAt")));
         }
 
         return repo.findBySchoolId(schoolId, pageable).map(StreamSubjctMapper::toDTO);
