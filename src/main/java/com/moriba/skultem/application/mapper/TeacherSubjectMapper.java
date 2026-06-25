@@ -6,7 +6,10 @@ import com.moriba.skultem.domain.model.TeacherSubject;
 public class TeacherSubjectMapper {
 
     public static TeacherSubjectDTO toDTO(TeacherSubject param) {
+        if (param == null) return null;
+
         var session = param.getSession();
+        var sessionId = "";
         String className = session.getClazz().getName();
         String classId = session.getClazz().getId();
         String sectionName = session.getSection().getName();
@@ -17,12 +20,16 @@ public class TeacherSubjectMapper {
         String teacherName = param.getTeacher().getUser().getName();
         String teacherId = param.getTeacher().getId();
 
-        if (session.getStream() != null) {
+        if (session != null && session.getStream() != null) {
             streamName = session.getStream().getName();
             streamId = session.getStream().getId();
         }
 
-        return new TeacherSubjectDTO(param.getId(), className, session.getId(), classId, sectionName, sectionId, streamName, streamId,
+        if (session != null) {
+           sessionId = session.getId();
+        }
+
+        return new TeacherSubjectDTO(param.getId(), className, sessionId, classId, sectionName, sectionId, streamName, streamId,
                 teacherName, teacherId, subjectName, subjectId, param.getAssignedAt(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }
