@@ -40,7 +40,7 @@ public class ListClassSubjectByClassUseCase {
                     .orElseThrow(() -> new NotFoundException("school not found"));
             var teacher = teacherSubjectRepo
                     .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
-                    .orElseGet(null);
+                    .orElse(null);
             return ClassSubjectMapper.toDTO(e, teacher);
         });
     }
