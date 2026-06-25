@@ -1,6 +1,5 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
-import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.WorkingDay;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "working_days")

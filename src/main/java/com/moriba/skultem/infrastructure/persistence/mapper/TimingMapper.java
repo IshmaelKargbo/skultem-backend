@@ -1,6 +1,5 @@
 package com.moriba.skultem.infrastructure.persistence.mapper;
 
-import com.moriba.skultem.domain.model.Room;
 import com.moriba.skultem.domain.model.Timing;
 import com.moriba.skultem.infrastructure.persistence.entity.TimingEntity;
 

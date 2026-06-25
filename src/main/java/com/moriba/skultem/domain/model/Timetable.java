@@ -12,7 +12,7 @@ public class Timetable extends AggregateRoot<String> {
     private final String schoolId;
     private final Period period;
     private final WorkingDay day;
-    private final TeacherSubject teacherSubject;
+    private TeacherSubject teacherSubject;
     private String color;
     private Room room;
 
@@ -32,7 +32,8 @@ public class Timetable extends AggregateRoot<String> {
         return new Timetable(id, schoolId, period, teacherSubject, day, room, color, now, now);
     }
 
-    public void update(Room room, String color) {
+    public void update(TeacherSubject subject, Room room, String color) {
+        this.teacherSubject = subject;
         this.room = room;
         this.color = color;
         touch();

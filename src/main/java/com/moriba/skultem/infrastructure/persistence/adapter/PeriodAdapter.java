@@ -1,13 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import com.moriba.skultem.domain.model.Period;
-import com.moriba.skultem.domain.model.Timing;
 import com.moriba.skultem.domain.repository.PeriodRepository;
-import com.moriba.skultem.domain.repository.TimingRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.PeriodJpaRepository;
-import com.moriba.skultem.infrastructure.persistence.jpa.TimingJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.PeriodMapper;
-import com.moriba.skultem.infrastructure.persistence.mapper.TimingMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -33,5 +29,11 @@ public class PeriodAdapter implements PeriodRepository {
     @Override
     public List<Period> findAllBySessionId(String session) {
         return repo.findAllBySessionIdOrderByCreatedAtAsc(session).stream().map(PeriodMapper::toDomain).toList();
+    }
+
+    @Override
+    public void delete(Period domain) {
+        var entity = PeriodMapper.toEntity(domain);
+        repo.delete(entity);
     }
 }

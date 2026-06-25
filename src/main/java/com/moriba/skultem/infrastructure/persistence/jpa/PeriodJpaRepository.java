@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
 import com.moriba.skultem.infrastructure.persistence.entity.PeriodEntity;
-import com.moriba.skultem.infrastructure.persistence.entity.TimingEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

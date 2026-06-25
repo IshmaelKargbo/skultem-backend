@@ -1,8 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
 import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.application.mapper.PeriodMapper;
-import com.moriba.skultem.application.mapper.RoomMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Period;
 import com.moriba.skultem.domain.model.Timing;

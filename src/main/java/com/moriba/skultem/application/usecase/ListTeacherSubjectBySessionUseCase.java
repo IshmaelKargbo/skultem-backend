@@ -63,34 +63,15 @@ public class ListTeacherSubjectBySessionUseCase {
 
         List<TeacherSubjectDTO> dtoList = new ArrayList<>();
 
-        String streamName = session.getStream() != null ? session.getStream().getName() : "N/A";
-        String streamId = session.getStream() != null ? session.getStream().getId() : "";
-
         for (var entry : subjectsById.entrySet()) {
             String subjectId = entry.getKey();
-            String subjectName = entry.getValue();
 
             var existing = assignedMap.get(subjectId);
 
             if (existing != null) {
                 dtoList.add(TeacherSubjectMapper.toDTO(existing));
             } else {
-                dtoList.add(new TeacherSubjectDTO(
-                        null,
-                        clazz.getName(),
-                        clazz.getId(),
-                        session.getSection().getName(),
-                        session.getSection().getId(),
-                        streamName,
-                        streamId,
-                        null,
-                        null,
-                        subjectName,
-                        subjectId,
-                        null,
-                        null,
-                        null
-                ));
+                dtoList.add(TeacherSubjectMapper.toDTO(existing));
             }
         }
 

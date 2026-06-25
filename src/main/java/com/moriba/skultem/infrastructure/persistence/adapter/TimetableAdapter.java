@@ -1,13 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import com.moriba.skultem.domain.model.Timetable;
-import com.moriba.skultem.domain.model.Timing;
-import com.moriba.skultem.domain.repository.PeriodRepository;
 import com.moriba.skultem.domain.repository.TimetableRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.TimetableJpaRepository;
-import com.moriba.skultem.infrastructure.persistence.jpa.TimingJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.TimetableMapper;
-import com.moriba.skultem.infrastructure.persistence.mapper.TimingMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -38,5 +34,11 @@ public class TimetableAdapter implements TimetableRepository {
     @Override
     public boolean existsByPeriodAndDayAndSchoolId(String period, String day, String schoolId) {
         return repo.existsByPeriodIdAndDayIdAndSchoolId(period, day, schoolId);
+    }
+
+    @Override
+    public void delete(Timetable domain) {
+        var entity = TimetableMapper.toEntity(domain);
+        repo.delete(entity);
     }
 }

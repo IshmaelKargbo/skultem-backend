@@ -1,12 +1,8 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
-import com.moriba.skultem.domain.model.Timing;
 import com.moriba.skultem.domain.model.WorkingDay;
-import com.moriba.skultem.domain.repository.TimingRepository;
 import com.moriba.skultem.domain.repository.WorkingDayRepository;
-import com.moriba.skultem.infrastructure.persistence.jpa.TimingJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.WorkingDayJpaRepository;
-import com.moriba.skultem.infrastructure.persistence.mapper.TimingMapper;
 import com.moriba.skultem.infrastructure.persistence.mapper.WorkingDayMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

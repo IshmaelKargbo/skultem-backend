@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class SchoolService {
+public class ClassService {
 
     private final SchoolRepository repo;
 

@@ -13,4 +13,6 @@ public interface TimetableRepository {
     List<Timetable> findAllByPeriodId(String period);
 
     boolean existsByPeriodAndDayAndSchoolId(String period, String day, String schoolId);
+
+    void delete(Timetable domain);
 }

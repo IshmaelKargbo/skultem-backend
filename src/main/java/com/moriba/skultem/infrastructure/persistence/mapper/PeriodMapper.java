@@ -1,9 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.mapper;
 
 import com.moriba.skultem.domain.model.Period;
-import com.moriba.skultem.domain.model.Room;
 import com.moriba.skultem.infrastructure.persistence.entity.PeriodEntity;
-import com.moriba.skultem.infrastructure.persistence.entity.RoomEntity;
 
 public class PeriodMapper {
     public static Period toDomain(PeriodEntity param) {

@@ -22,7 +22,7 @@ public class TeacherSubjectMapper {
             streamId = session.getStream().getId();
         }
 
-        return new TeacherSubjectDTO(param.getId(), className, classId, sectionName, sectionId, streamName, streamId,
+        return new TeacherSubjectDTO(param.getId(), className, session.getId(), classId, sectionName, sectionId, streamName, streamId,
                 teacherName, teacherId, subjectName, subjectId, param.getAssignedAt(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }

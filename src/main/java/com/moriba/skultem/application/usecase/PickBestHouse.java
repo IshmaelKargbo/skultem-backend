@@ -21,7 +21,5 @@ public class PickBestHouse {
     public void assignHouse(String school, String classId) {
         var academic = academicYearRepo.findActiveBySchool(school).orElseThrow(() -> new NotFoundException("no active academic year found"));
         var enrollments = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(classId, academic.getId(), school, Pageable.unpaged());
-
-        
     }
 }

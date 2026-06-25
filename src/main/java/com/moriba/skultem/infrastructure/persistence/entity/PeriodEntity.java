@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
 import com.moriba.skultem.domain.model.Period;
-import com.moriba.skultem.domain.model.WorkingDay;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

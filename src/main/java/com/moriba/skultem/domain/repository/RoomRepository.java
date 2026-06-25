@@ -14,4 +14,8 @@ public interface RoomRepository {
     Page<Room> search(String school, String search, Pageable pageable);
 
     boolean existsByNameAndSchoolId(String name, String schoolId);
+
+    void delete(Room domain);
+
+    void softDelete(Room domain);
 }

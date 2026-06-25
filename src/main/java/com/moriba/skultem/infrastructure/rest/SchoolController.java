@@ -3,10 +3,7 @@ package com.moriba.skultem.infrastructure.rest;
 import java.util.List;
 import java.util.Map;
 
-import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.services.SchoolService;
-import com.moriba.skultem.application.usecase.ResetPasswordUseCase;
-import com.moriba.skultem.infrastructure.rest.dto.ResetPasswordDTO;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.OwnerDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.usecase.CreateSchoolUseCase;
-import com.moriba.skultem.application.usecase.GetSchoolUseCase;
 import com.moriba.skultem.application.usecase.ListSchoolUseCase;
 import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
@@ -25,7 +21,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;

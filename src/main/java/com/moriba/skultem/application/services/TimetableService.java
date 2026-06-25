@@ -4,10 +4,14 @@ import com.moriba.skultem.application.dto.*;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.*;
 import com.moriba.skultem.application.usecase.CreatePeriodUseCase;
-import com.moriba.skultem.application.usecase.CreateRoomUseCase;
+import com.moriba.skultem.application.usecase.CreateTimetableUseCase;
+import com.moriba.skultem.application.usecase.DeletePeriodUseCase;
+import com.moriba.skultem.application.usecase.ManageRoomUseCase;
 import com.moriba.skultem.application.usecase.SetTimingUseCase;
 import com.moriba.skultem.application.usecase.SetWorkingDayUseCase;
+import com.moriba.skultem.domain.model.WorkingDay.Day;
 import com.moriba.skultem.domain.repository.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,9 +32,11 @@ public class TimetableService {
     private final PeriodRepository periodRepo;
     private final WorkingDayRepository workingDayRepo;
     private final SetTimingUseCase setTimingUseCase;
-    private final CreateRoomUseCase createRoomUseCase;
+    private final ManageRoomUseCase manageRoomUsecase;
+    private final CreateTimetableUseCase timetableUseCase;
     private final CreatePeriodUseCase createPeriodUseCase;
     private final SetWorkingDayUseCase setWorkingDayUseCase;
+    private final DeletePeriodUseCase deletePeriodUseCase;
 
     public Page<RoomDTO> searchRoom(String schoolId, String value, int page, int size) {
         Pageable pageable = PageableMapper.toPageable(page, size);
@@ -39,7 +45,15 @@ public class TimetableService {
     }
 
     public RoomDTO createRoom(String schoolId, String name, String no, String description) {
-        return createRoomUseCase.execute(schoolId, name, no, description);
+        return manageRoomUsecase.execute(schoolId, name, no, description);
+    }
+
+    public RoomDTO updateRoom(String id, String schoolId, String name, String no, String description) {
+        return manageRoomUsecase.executeUpdate(id, schoolId, name, no, description);
+    }
+    
+    public RoomDTO deleteRoom(String schoolId, String id) {
+        return manageRoomUsecase.executeDelete(id, schoolId);
     }
 
     public PeriodDTO createPeriod(String schoolId, String session) {
@@ -50,14 +64,29 @@ public class TimetableService {
 
     public PeriodDTO createBreak(String schoolId, String session) {
         var domain = createPeriodUseCase.executeBreak(schoolId, session);
-        var subjects = getSubjects(domain.getSchoolId(), domain.getId());
+        List<TimetableDTO> subjects = new ArrayList<>();
+
+        if (!domain.isBreak() && !domain.isLunch()) {
+            subjects = getSubjects(domain.getSchoolId(), domain.getId());
+        }
+
         return PeriodMapper.toDTO(domain, subjects);
     }
 
     public PeriodDTO createLunch(String schoolId, String session) {
         var domain = createPeriodUseCase.executeLunch(schoolId, session);
-        var subjects = getSubjects(domain.getSchoolId(), domain.getId());
+        List<TimetableDTO> subjects = new ArrayList<>();
+        if (!domain.isBreak() && !domain.isLunch()) {
+            subjects = getSubjects(domain.getSchoolId(), domain.getId());
+        }
+
         return PeriodMapper.toDTO(domain, subjects);
+    }
+
+    public TimetableDTO createTimetable(String schoolId, String periodId, String subject, Day day, String roomId,
+            String color) {
+        var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color);
+        return TimetableMapper.toDTO(domain);
     }
 
     public List<PeriodDTO> getTimeTable(String session) {
@@ -72,15 +101,24 @@ public class TimetableService {
         }).toList();
     }
 
+    // getTiming
     public TimingDTO getTiming(String schoolId) {
         var domain = timingRepo.findBySchoolId(schoolId).orElseThrow(() -> new NotFoundException("timing not found"));
         return TimingMapper.toDTO(domain);
     }
 
+    // setTiming
     public TimingDTO setTiming(String schoolId, LocalTime startTime, LocalTime endTime, int periodDuration,
-                               int breakDuration, int lunchDuration) {
-        var domain = setTimingUseCase.execute(schoolId, startTime, endTime, periodDuration, breakDuration, lunchDuration);
+            int breakDuration, int lunchDuration) {
+        var domain = setTimingUseCase.execute(schoolId, startTime, endTime, periodDuration, breakDuration,
+                lunchDuration);
         return TimingMapper.toDTO(domain);
+    }
+
+    // deletePeriod
+    public PeriodDTO deletePeriod(String id) {
+        var domain = deletePeriodUseCase.execute(id);
+        return PeriodMapper.toDTO(domain, null);
     }
 
     public List<WorkingDayDTO> listWorkingDays(String schoolId) {
@@ -113,16 +151,7 @@ public class TimetableService {
                 continue;
             }
 
-            var subject = timetable.getTeacherSubject().getSubject();
-            var teacher = timetable.getTeacherSubject().getTeacher();
-
-            list.add(new TimetableDTO(
-                    timetable.getId(),
-                    subject.getName(),
-                    teacher.getName(),
-                    timetable.getCreatedAt(),
-                    timetable.getUpdatedAt()
-            ));
+            list.add(TimetableMapper.toDTO(timetable));
         }
 
         return list;

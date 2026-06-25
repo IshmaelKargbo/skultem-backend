@@ -1,6 +1,5 @@
 package com.moriba.skultem.domain.repository;
 
-import com.moriba.skultem.domain.model.Timing;
 import com.moriba.skultem.domain.model.WorkingDay;
 
 import java.util.List;

@@ -5,7 +5,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.time.Instant;
-import java.time.LocalTime;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
@@ -15,19 +14,21 @@ public class Room extends AggregateRoot<String> {
     private String name;
     private String no;
     private String description;
+    private boolean softDelete;
 
-    public Room(String id, String schoolId, String name, String no, String description, Instant createdAt, Instant updatedAt) {
+    public Room(String id, String schoolId, String name, String no, String description, boolean softDelete, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.name = name;
         this.no = no;
+        this.softDelete = softDelete;
         this.description = description;
         touch(updatedAt);
     }
 
     public static Room create(String id, String schoolId, String name, String no, String description) {
         Instant now = Instant.now();
-        return new Room(id, schoolId, name, no, description, now, now);
+        return new Room(id, schoolId, name, no, description, false, now, now);
     }
 
     public void update( String name, String no, String description) {
@@ -35,6 +36,10 @@ public class Room extends AggregateRoot<String> {
         this.no = no;
         this.description = description;
         touch();
+    }
+
+    public void delete() {
+        this.softDelete = true;
     }
 
     private void touch() {

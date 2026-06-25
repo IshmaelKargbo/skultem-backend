@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "rooms")
@@ -27,6 +26,8 @@ public class RoomEntity {
 
     @Column(nullable = false)
     private String no;
+
+    private boolean softDelete;
 
     @Column(nullable = false)
     private String description;
