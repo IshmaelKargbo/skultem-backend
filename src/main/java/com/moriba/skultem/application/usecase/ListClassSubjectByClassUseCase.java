@@ -41,6 +41,7 @@ public class ListClassSubjectByClassUseCase {
             var teacher = teacherSubjectRepo
                     .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
                     .orElse(null);
+                    
             return ClassSubjectMapper.toDTO(e, teacher);
         });
     }
