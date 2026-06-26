@@ -22,6 +22,49 @@ public class GetFeeDetailUsecase {
 
     private final FeeReportUseCase feeReportUseCase;
 
+    public FeeDetail execute(String schoolId, String studentId, String termId) {
+
+        // Prepare filters
+        var filters = new ArrayList<Filter>();
+        filters.add(new Filter("student.id", FilterOperator.EQUALS, "select", studentId, null, null));
+        filters.add(new Filter("fee.term.id", FilterOperator.EQUALS, "select", termId, null, null));
+        var request = new ReportBuilderDTO(schoolId, "fees", filters);
+
+        // Fetch fees
+        List<StudentFeeDTO> fees = feeReportUseCase.execute(request, 0, 0).getContent();
+
+        // Initialize totals and fee status list
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalPaid = BigDecimal.ZERO;
+        BigDecimal totalOutstanding = BigDecimal.ZERO;
+
+        for (StudentFeeDTO fee : fees) {
+            BigDecimal feeAmount = fee.amount() != null ? fee.amount() : BigDecimal.ZERO;
+            BigDecimal amountPaid = fee.amountPaid() != null ? fee.amountPaid() : BigDecimal.ZERO;
+            BigDecimal outstanding = fee.outstanding() != null ? fee.outstanding() : BigDecimal.ZERO;
+
+            // Add to totals
+            totalAmount = totalAmount.add(feeAmount);
+            totalPaid = totalPaid.add(amountPaid);
+            totalOutstanding = totalOutstanding.add(outstanding);
+        }
+
+        // Determine overall status
+        String overallStatus;
+        if (totalAmount.compareTo(BigDecimal.ZERO) > 0 && totalPaid.compareTo(totalAmount) >= 0) {
+            overallStatus = "Paid";
+        } else if (totalPaid.compareTo(BigDecimal.ZERO) > 0) {
+            overallStatus = "Partial";
+        } else if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
+            overallStatus = "N/A";
+        } else {
+            overallStatus = "Pending";
+        }
+
+        // Return full fee detail
+        return new FeeDetail(totalAmount, totalPaid, totalOutstanding, overallStatus);
+    }
+
     public FeeDetail execute(String schoolId, String studentId) {
 
         // Prepare filters

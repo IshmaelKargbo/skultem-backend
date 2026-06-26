@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.ClassFeeDetails;
 import com.moriba.skultem.application.dto.FeeCategoryDTO;
 import com.moriba.skultem.application.dto.FeeDiscountDTO;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
@@ -45,6 +46,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.moriba.skultem.application.dto.FeeDiscountReportDTO;
 import com.moriba.skultem.application.dto.StudentLedgerReportDTO;
 import com.moriba.skultem.application.error.BadRequestException;
+import com.moriba.skultem.application.services.FeeService;
 import com.moriba.skultem.application.usecase.CountStudentFeesUseCase;
 import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
 import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
@@ -57,6 +59,7 @@ import com.moriba.skultem.domain.model.FeeStructure.Type;
 @RequiredArgsConstructor
 public class FeeController {
 
+        private final FeeService feeSvc;
         private final ListFeeCategoryBySchoolUseCase feeCategoryBySchoolUseCase;
         private final CreateFeeCategoryUseCase createFeeCategoryUseCase;
         private final ListFeeStructureBySchoolUseCase listFeeStructureBySchoolUseCase;
@@ -179,6 +182,20 @@ public class FeeController {
 
                 return new ApiResponse<>("success", 200, "Fee discounts fetch successfully", list,
                                 meta);
+        }
+
+        @GetMapping("/details")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+        public ApiResponse<ClassFeeDetails> getClassFeeDetails(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page,
+                        @RequestParam(required = true) String term,
+                        @RequestParam(required = true) String session) {
+
+                var res = feeSvc.getClassFeeDetail(school, session, term, page, size);
+
+                return new ApiResponse<>("success", 200, "Class fee details fetch successfully", res);
         }
 
         @GetMapping("/discount/report")
