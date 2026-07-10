@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AcademicYearDTO;
+import com.moriba.skultem.application.dto.TermDTO;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.services.AcademicService;
 import com.moriba.skultem.application.usecase.ActiveAcademicYearUseCase;
 import com.moriba.skultem.application.usecase.CreateAcadamicYearUseCase;
 import com.moriba.skultem.application.usecase.GetAcademicYearUseCase;
@@ -36,6 +38,7 @@ public class AcademicYearController {
     private final ListAcademicYearUseCase listAcademicYearUseCase;
     private final GetAcademicYearUseCase getAcademicYearUseCase;
     private final ActiveAcademicYearUseCase activeAcademicYearUseCase;
+    private final AcademicService academicSvc;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
@@ -82,5 +85,13 @@ public class AcademicYearController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getAcademicYearUseCase.execute(id);
         return new ApiResponse<>("success", 200, "Academic year fetched successfully", res);
+    }
+
+    @GetMapping("/terms")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER')")
+    public ApiResponse<List<TermDTO>> listByAcademicYear(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = academicSvc.getAcademicTerms(school);
+        return new ApiResponse<>("success", 200, "Terms fetched successfully", res);
     }
 }

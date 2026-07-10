@@ -15,7 +15,6 @@ public class JsonMapper {
     private JsonMapper() {
     }
 
-    // Convert Object -> JSON
     public static String toJson(Object value) {
         if (value == null) {
             return null;
@@ -28,7 +27,6 @@ public class JsonMapper {
         }
     }
 
-    // Convert JSON -> Object
     public static <T> T fromJson(String json, Class<T> type) {
         if (json == null || json.isBlank()) {
             return null;
@@ -55,7 +53,6 @@ public class JsonMapper {
         }
     }
 
-    // Convert JSON -> List<T>
     public static <T> List<T> fromJsonList(String json, Class<T> type) {
         if (json == null || json.isBlank()) {
             return List.of();
@@ -68,6 +65,22 @@ public class JsonMapper {
         } catch (Exception e) {
             throw new IllegalStateException(
                     "Failed to deserialize JSON to List<" + type.getSimpleName() + ">", e);
+        }
+    }
+
+    public static List<String> fromJsonStringList(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            return MAPPER.readValue(
+                    json,
+                    MAPPER.getTypeFactory()
+                            .constructCollectionType(List.class, String.class));
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to deserialize JSON to List<String>", e);
         }
     }
 }

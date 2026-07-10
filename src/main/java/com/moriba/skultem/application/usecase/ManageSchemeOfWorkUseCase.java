@@ -35,7 +35,7 @@ public class ManageSchemeOfWorkUseCase {
         var term = termRepo.findById(termId)
                 .orElseThrow(() -> new NotFoundException("No term found"));
 
-        var subject = subjectRepo.findById(termId)
+        var subject = subjectRepo.findById(subjectId)
                 .orElseThrow(() -> new NotFoundException("No subject found"));
 
         var session = sessionRepo.findByIdAndSchoolId(sessionId, schoolId)
@@ -61,7 +61,7 @@ public class ManageSchemeOfWorkUseCase {
     }
 
     public long getWeeks(LocalDate startDate, LocalDate endDate) {
-        long weeks = ChronoUnit.WEEKS.between(startDate, endDate);
-        return weeks;
+        long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        return (long) Math.ceil(days / 7.0);
     }
 }

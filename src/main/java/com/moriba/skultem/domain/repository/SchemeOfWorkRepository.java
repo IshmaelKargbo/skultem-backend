@@ -14,7 +14,7 @@ public interface SchemeOfWorkRepository {
 
     Optional<SchemeOfWork> findBySubjectAndTermAndSession(String subjectId, String termId, String sessionId);
 
-    Page<SchemeOfWork> findAllBySessionId(String sessionId, Pageable pageable);
+    Page<SchemeOfWork> findAllBySchoolId(String school, Pageable pageable);
 
     boolean existsBySubjectAndTermAndSession(String subjectId, String termId, String sessionId);
 }

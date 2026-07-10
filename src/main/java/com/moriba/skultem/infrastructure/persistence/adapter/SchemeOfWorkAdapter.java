@@ -36,8 +36,8 @@ public class SchemeOfWorkAdapter implements SchemeOfWorkRepository {
     }
 
     @Override
-    public Page<SchemeOfWork> findAllBySessionId(String sessionId, Pageable pageable) {
-        return repo.findAllBySessionId(sessionId, pageable).map(SchemeOfWorkMapper::toDomain);
+    public Page<SchemeOfWork> findAllBySchoolId(String school, Pageable pageable) {
+        return repo.findAllBySchoolId(school, pageable).map(SchemeOfWorkMapper::toDomain);
     }
 
     @Override

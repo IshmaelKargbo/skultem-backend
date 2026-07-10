@@ -12,6 +12,7 @@ public class SchemeOfWorkMapper {
         var session = param.getSession();
 
         return new SchemeOfWorkDTO(param.getId(), subject.getName(), subject.getId(), term.getName(), param.getId(),
-                session.getName(), session.getId(), param.getWeeks(), param.getCreatedAt(), param.getUpdatedAt());
+                session.getName(), session.getId(), param.getWeeks(), term.getStartDate(), term.getEndDate(),
+                param.getState(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }
