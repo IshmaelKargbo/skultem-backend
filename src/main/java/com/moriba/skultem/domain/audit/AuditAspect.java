@@ -58,8 +58,8 @@ public class AuditAspect {
 
                 eventPublisher.publishEvent(new AuditEvent(
                         auditAnnotation.action(),
-                        authUser.map(AuthUser::activeSchoolId).orElse(null),
-                        authUser.map(AuthUser::userId).orElse(null),
+                        authUser.map(a -> a.activeSchoolId()).orElse(null),
+                        authUser.map(a -> a.userId()).orElse(null),
                         getClientIp(),
                         getUserAgent(),
                         status,

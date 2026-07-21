@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 
 public class PageableMapper {
 
-    public static Pageable toPageable(int page, int size) {
+    public static Pageable toPage(int page, int size) {
         if (size == 0) {
             return Pageable.unpaged();
         }

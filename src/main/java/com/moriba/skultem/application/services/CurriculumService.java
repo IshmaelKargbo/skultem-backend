@@ -18,6 +18,7 @@ import com.moriba.skultem.application.mapper.WeekMapper;
 import com.moriba.skultem.application.usecase.CreateWeekUseCase;
 import com.moriba.skultem.application.usecase.ManageSchemeOfWorkUseCase;
 import com.moriba.skultem.domain.model.Week;
+import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.SchemeOfWorkRepository;
 import com.moriba.skultem.domain.repository.WeekRepository;
 
@@ -29,11 +30,12 @@ public class CurriculumService {
 
     private final SchemeOfWorkRepository repo;
     private final WeekRepository weekRepo;
+    private final AcademicYearRepository yearRepo;
     private final ManageSchemeOfWorkUseCase manageSchemeOfWorkUseCase;
     private final CreateWeekUseCase weekUseCase;
 
     public Page<SchemeOfWorkDTO> searchScheme(int page, int size, String school) {
-        Pageable pageable = PageableMapper.toPageable(page, size);
+        Pageable pageable = PageableMapper.toPage(page, size);
         return repo.findAllBySchoolId(school, pageable).map(SchemeOfWorkMapper::toDTO);
     }
 
@@ -76,6 +78,17 @@ public class CurriculumService {
             List<String> objectives) {
         var res = weekUseCase.execute(schoolId, scheme, week, topic, subtopic, objectives);
         return WeekMapper.toDTO(res);
+    }
+
+    public List<WeekDTO> getWeeksBySchema(String scheme) {
+        return weekRepo.findAllByScheme(scheme).stream().map(WeekMapper::toDTO).toList();
+    }
+
+    public Page<WeekDTO> getWeeksByAcademicYear(String school, int page, int size) {
+        Pageable pageable = PageableMapper.toPage(page, size);
+        var year = yearRepo.findActiveBySchool(school)
+                .orElseThrow(() -> new NotFoundException("no active academic year found"));
+        return weekRepo.findBySchemeSessionAcademicYear(year.getId(), pageable).map(WeekMapper::toDTO);
     }
 
     public List<WeekDTO> getWeeks(String scheme) {

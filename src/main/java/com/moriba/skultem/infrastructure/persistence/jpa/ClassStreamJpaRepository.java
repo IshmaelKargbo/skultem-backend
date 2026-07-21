@@ -4,11 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.ClassStreamEntity;
 
-@Repository
 public interface ClassStreamJpaRepository extends JpaRepository<ClassStreamEntity, String> {
         boolean existsByClazz_IdAndSchoolIdAndStream_Id(String classId, String schoolId, String streamId);
 

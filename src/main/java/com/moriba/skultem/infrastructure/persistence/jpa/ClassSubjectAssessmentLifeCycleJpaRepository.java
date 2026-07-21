@@ -4,11 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSubjectAssessmentLifeCycleEntity;
 
-@Repository
 public interface ClassSubjectAssessmentLifeCycleJpaRepository
                 extends JpaRepository<ClassSubjectAssessmentLifeCycleEntity, String> {
         boolean existsByTerm_IdAndAssessment_IdAndSubject_Id(String termId, String assessmentId,

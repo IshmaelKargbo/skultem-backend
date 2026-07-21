@@ -10,13 +10,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.StudentFeeEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
-@Repository
 public interface StudentFeeJpaRepository
         extends JpaRepository<StudentFeeEntity, String>, JpaSpecificationExecutor<StudentFeeEntity> {
     boolean existsByEnrollment_IdAndFee_IdAndStudent_IdAndSchoolId(String enrollmentId, String feeId,

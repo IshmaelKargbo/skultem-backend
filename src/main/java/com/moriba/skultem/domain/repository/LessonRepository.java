@@ -8,14 +8,14 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-public interface WeekRepository {
+public interface LessonRepository {
     void save(Week domain);
 
-    List<Week> findAllByScheme(String scheme);
+    List<Week> findAllByWeek(String week);
 
     Optional<Week> findById(String id);
 
-    boolean existsByWeekAndSchemeAndSchoolId(int week, String scheme, String school);
+    boolean existsByWeekIdAndTitleAndSchoolId(String week, String title, String school);
 
-    Page<Week> findBySchemeSessionAcademicYear(String year, Pageable page);
+    Page<Week> findByWeekSchemeSessionAcademicYear(String year, Pageable page);
 }

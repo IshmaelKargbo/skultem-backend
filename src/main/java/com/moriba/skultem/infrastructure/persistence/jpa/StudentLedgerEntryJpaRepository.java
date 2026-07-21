@@ -5,11 +5,9 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.StudentLedgerEntryEntity;
 
-@Repository
 public interface StudentLedgerEntryJpaRepository extends JpaRepository<StudentLedgerEntryEntity, String> {
 
         Optional<StudentLedgerEntryEntity> findTopBySchoolIdOrderByPaidAtDesc(String schoolId);

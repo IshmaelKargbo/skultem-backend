@@ -1,6 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
 import com.moriba.skultem.infrastructure.persistence.entity.WeekEntity;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,5 +14,7 @@ public interface WeekJpaRepository extends JpaRepository<WeekEntity, String> {
 
     Optional<WeekEntity> findById(String id);
 
-    List<WeekEntity> findByScheme_Id(String scheme);
+    List<WeekEntity> findBySchemeId(String scheme);
+
+    Page<WeekEntity> findBySchemeSessionAcademicYearId(String year, Pageable page);
 }

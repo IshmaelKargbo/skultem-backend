@@ -10,13 +10,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSessionEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
-@Repository
 public interface ClassSessionJpaRepository
         extends JpaRepository<ClassSessionEntity, String>, JpaSpecificationExecutor<ClassSessionEntity> {
     boolean existsByClazz_IdAndAcademicYear_IdAndStream_IdAndSchoolId(String classId, String academicYear,

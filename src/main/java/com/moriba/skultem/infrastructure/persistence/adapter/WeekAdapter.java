@@ -5,6 +5,9 @@ import com.moriba.skultem.domain.repository.WeekRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.WeekJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.WeekMapper;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,7 +26,7 @@ public class WeekAdapter implements WeekRepository {
 
     @Override
     public List<Week> findAllByScheme(String scheme) {
-        return repo.findByScheme_Id(scheme).stream().map(WeekMapper::toDomain).toList();
+        return repo.findBySchemeId(scheme).stream().map(WeekMapper::toDomain).toList();
     }
 
     @Override
@@ -34,5 +37,10 @@ public class WeekAdapter implements WeekRepository {
     @Override
     public boolean existsByWeekAndSchemeAndSchoolId(int week, String scheme, String school) {
         return repo.existsByWeekAndScheme_IdAndSchoolId(week, scheme, school);
+    }
+
+    @Override
+    public Page<Week> findBySchemeSessionAcademicYear(String year, Pageable page) {
+        return repo.findBySchemeSessionAcademicYearId(year, page).map(WeekMapper::toDomain);
     }
 }

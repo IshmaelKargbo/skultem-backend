@@ -69,6 +69,18 @@ public class CurriculumController {
         return new ApiResponse<>("success", 200, "Scheme progress fetched successfully", res);
     }
 
+    @GetMapping("/session/scheme/weeks")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<List<WeekDTO>> getSchoolSchemeWeeks(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "1") Integer page) {
+        var res = curriculumSvc.getWeeksByAcademicYear(school, page, size);
+        var data = res.getContent();
+        var meta = MetaMapper.toMeta(res);
+        return new ApiResponse<>("success", 200, "Scheme weeks fetched successfully", data, meta);
+    }
+
     @GetMapping("/scheme/weeks/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<WeekDTO>> getSchemeWeeks(

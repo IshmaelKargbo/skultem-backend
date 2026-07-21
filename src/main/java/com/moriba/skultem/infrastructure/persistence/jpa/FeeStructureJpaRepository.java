@@ -8,11 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.FeeStructureEntity;
 
-@Repository
 public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEntity, String> {
     boolean existsByAcademicYear_IdAndClazz_IdAndTerm_IdAndCategory_IdAndSchoolId(String academicYearId, String classId,
             String termId, String categoryId, String schoolId);

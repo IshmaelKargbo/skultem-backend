@@ -26,7 +26,7 @@ public class StudentService {
     private final AcademicYearRepository academicYearRepo;
 
     public Page<StudentDTO> search(String value, int page, int size, String schoolId) {
-        Pageable pageable = PageableMapper.toPageable(page, size);
+        Pageable pageable = PageableMapper.toPage(page, size);
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));

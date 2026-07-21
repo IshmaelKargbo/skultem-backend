@@ -8,13 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.ParentEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
-@Repository
 public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>, JpaSpecificationExecutor<ParentEntity>  {
     boolean existsByPhoneAndSchoolId(String phone, String schoolId);
 

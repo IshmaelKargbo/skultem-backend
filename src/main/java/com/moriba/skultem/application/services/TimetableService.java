@@ -39,7 +39,7 @@ public class TimetableService {
     private final DeletePeriodUseCase deletePeriodUseCase;
 
     public Page<RoomDTO> searchRoom(String schoolId, String value, int page, int size) {
-        Pageable pageable = PageableMapper.toPageable(page, size);
+        Pageable pageable = PageableMapper.toPage(page, size);
 
         return roomRepo.search(schoolId, value, pageable).map(RoomMapper::toDTO);
     }

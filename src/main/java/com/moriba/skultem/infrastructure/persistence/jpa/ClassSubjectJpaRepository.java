@@ -7,11 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSubjectEntity;
 
-@Repository
 public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEntity, String> {
     boolean existsByClazz_IdAndSubject_Id(String classId, String subjectId);
 
