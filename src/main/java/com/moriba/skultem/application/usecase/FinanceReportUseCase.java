@@ -151,7 +151,7 @@ public class FinanceReportUseCase {
                                         }
                                         return d.getValue();
                                 })
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
         }
 
         private BigDecimal calculateOutstanding(BigDecimal feeAmount, BigDecimal totalDiscount, BigDecimal paid) {

@@ -6,6 +6,7 @@ public record ClassSessionAttendanceRecordDTO(
         String studentId,
         String admissionNumber,
         String studentName,
+        String photo,
         boolean marked,
         boolean holiday,
         boolean present,

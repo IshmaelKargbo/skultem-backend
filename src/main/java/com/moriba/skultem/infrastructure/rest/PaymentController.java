@@ -37,7 +37,7 @@ public class PaymentController {
     private final SumStudentPaymentByFeeUseCase sumStudentPaymentByFeeUseCase;
     private final SumStudentPaymentByFeeThisYearUseCase studentPaymentByFeeThisYearUseCase;
     private final ListStudentPaymentBySchoolUseCase listStudentPaymentBySchoolUseCase;
-
+    
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,

@@ -7,6 +7,7 @@ public record AttendanceDTO(
         String id,
         String studentId,
         String student,
+        String photo,
         String clazz,
         LocalDate date,
         String state,

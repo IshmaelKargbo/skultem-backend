@@ -57,7 +57,7 @@ public class GradeAssessmentUseCase {
         }
 
         var gradeMap = grades.stream()
-                .collect(Collectors.toMap(Grade::id, Grade::score));
+                .collect(Collectors.toMap(a -> a.id(), b -> b.score()));
 
         List<AssessmentScore> scoresToUpdate = new ArrayList<>();
 

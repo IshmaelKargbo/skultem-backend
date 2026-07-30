@@ -65,7 +65,7 @@ public class ListAssessmentApprovalRequestUseCase {
                         double fail = totalStudents > 0 ? (failCount * 100.0) / totalStudents : 0;
 
                         double avgScore = scores.stream()
-                                        .mapToDouble(AssessmentScore::getScore)
+                                        .mapToDouble(a -> a.getScore())
                                         .average()
                                         .orElse(0);
 
@@ -131,7 +131,7 @@ public class ListAssessmentApprovalRequestUseCase {
                         double fail = totalStudents > 0 ? (failCount * 100.0) / totalStudents : 0;
 
                         double avgScore = scores.stream()
-                                        .mapToDouble(AssessmentScore::getScore)
+                                        .mapToDouble(a -> a.getScore())
                                         .average()
                                         .orElse(0);
 

@@ -17,6 +17,7 @@ public class AttendanceMapper {
                 param.getId(),
                 enrollment.student().id(),
                 name,
+                enrollment.student().photo(),
                 enrollment.student().className(),
                 param.getDate(),
                 param.getStatus(),

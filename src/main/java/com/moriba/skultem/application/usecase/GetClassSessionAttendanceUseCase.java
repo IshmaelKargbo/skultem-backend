@@ -24,103 +24,109 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class GetClassSessionAttendanceUseCase {
-    private final AttendanceRepository attendanceRepo;
-    private final ClassSessionRepository classSessionRepo;
-    private final HolidayRepository holidayRepo;
-    private final EnrollmentRepository enrollmentRepo;
+        private final AttendanceRepository attendanceRepo;
+        private final ClassSessionRepository classSessionRepo;
+        private final HolidayRepository holidayRepo;
+        private final EnrollmentRepository enrollmentRepo;
 
-    public ClassSessionAttendanceDTO execute(String schoolId, String classSessionId, LocalDate date) {
-        var classSession = classSessionRepo.findByIdAndSchoolId(classSessionId, schoolId)
-                .orElseThrow(() -> new NotFoundException("Class session not found"));
+        public ClassSessionAttendanceDTO execute(String schoolId, String classSessionId, LocalDate date) {
+                var classSession = classSessionRepo.findByIdAndSchoolId(classSessionId, schoolId)
+                                .orElseThrow(() -> new NotFoundException("Class session not found"));
 
-        var enrollments = loadSessionEnrollments(classSession, schoolId);
+                var enrollments = loadSessionEnrollments(classSession, schoolId);
 
-        var records = enrollments.stream().map(enrollment -> {
-            var student = enrollment.getStudent();
-            var attendance = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date, schoolId);
+                var records = enrollments.stream().map(enrollment -> {
+                        var student = enrollment.getStudent();
+                        var attendance = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date,
+                                        schoolId);
 
-            if (attendance.isEmpty()) {
-                return new ClassSessionAttendanceRecordDTO(
-                        null,
-                        enrollment.getId(),
-                        student.getId(),
-                        student.getAdmissionNumber(),
-                        student.getName(),
-                        false,
-                        false,
-                        false,
-                        false,
-                        false,
-                        null);
-            }
+                        if (attendance.isEmpty()) {
+                                return new ClassSessionAttendanceRecordDTO(
+                                                null,
+                                                enrollment.getId(),
+                                                student.getId(),
+                                                student.getAdmissionNumber(),
+                                                student.getName(),
+                                                student.getPhoto(),
+                                                false,
+                                                false,
+                                                false,
+                                                false,
+                                                false,
+                                                null);
+                        }
 
-            var mark = attendance.get();
-            return new ClassSessionAttendanceRecordDTO(
-                    mark.getId(),
-                    enrollment.getId(),
-                    student.getId(),
-                    student.getAdmissionNumber(),
-                    String.join(" ", student.getGivenNames(), student.getFamilyName()),
-                    true,
-                    mark.isHoliday(),
-                    mark.isPresent(),
-                    mark.isExcused(),
-                    mark.isLate(),
-                    mark.getReason());
-        }).toList();
-
-        int totalStudents = records.size();
-        int markedCount = (int) records.stream().filter(ClassSessionAttendanceRecordDTO::marked).count();
-        int unmarkedCount = totalStudents - markedCount;
-        int presentCount = (int) records.stream().filter(ClassSessionAttendanceRecordDTO::present).count();
-        int excusedCount = (int) records.stream().filter(ClassSessionAttendanceRecordDTO::excused).count();
-        int lateCount = (int) records.stream().filter(ClassSessionAttendanceRecordDTO::late).count();
-        int absentCount = markedCount - presentCount - lateCount - excusedCount;
-
-        List<LocalDate> schoolHolidays = holidayRepo
-                .findAllBySchoolIdAndAcademicYear(schoolId, classSession.getAcademicYear().getId(), Pageable.unpaged())
-                .getContent()
-                .stream()
-                .map(h -> h.getDate())
-                .toList();
-
-        boolean isHoliday = date.getDayOfWeek() == DayOfWeek.SATURDAY
-                || date.getDayOfWeek() == DayOfWeek.SUNDAY
-                || schoolHolidays.contains(date);
-
-        return new ClassSessionAttendanceDTO(
-                classSessionId,
-                date,
-                isHoliday,
-                totalStudents,
-                markedCount,
-                unmarkedCount,
-                presentCount,
-                absentCount,
-                excusedCount,
-                lateCount,
-                records);
-    }
-
-    private List<Enrollment> loadSessionEnrollments(ClassSession classSession, String schoolId) {
-        return enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
-                classSession.getClazz().getId(),
-                classSession.getAcademicYear().getId(),
-                schoolId, Pageable.unpaged()).stream().filter(enrollment -> {
-                    boolean sectionMatch = enrollment.getSection() != null
-                            && classSession.getSection() != null
-                            && enrollment.getSection().getId().equals(classSession.getSection().getId());
-
-                    if (!sectionMatch) {
-                        return false;
-                    }
-
-                    if (classSession.getStream() == null) {
-                        return enrollment.getStream() == null;
-                    }
-
-                    return enrollment.getStream() != null
-                            && enrollment.getStream().getId().equals(classSession.getStream().getId());
+                        var mark = attendance.get();
+                        return new ClassSessionAttendanceRecordDTO(
+                                        mark.getId(),
+                                        enrollment.getId(),
+                                        student.getId(),
+                                        student.getAdmissionNumber(),
+                                        String.join(" ", student.getGivenNames(), student.getFamilyName()),
+                                        student.getPhoto(),
+                                        true,
+                                        mark.isHoliday(),
+                                        mark.isPresent(),
+                                        mark.isExcused(),
+                                        mark.isLate(),
+                                        mark.getReason());
                 }).toList();
-    }
+
+                int totalStudents = records.size();
+                int markedCount = (int) records.stream().filter(a -> a.marked()).count();
+                int unmarkedCount = totalStudents - markedCount;
+                int presentCount = (int) records.stream().filter(a -> a.present()).count();
+                int excusedCount = (int) records.stream().filter(a -> a.excused()).count();
+                int lateCount = (int) records.stream().filter(a -> a.late()).count();
+                int absentCount = markedCount - presentCount - lateCount - excusedCount;
+
+                List<LocalDate> schoolHolidays = holidayRepo
+                                .findAllBySchoolIdAndAcademicYear(schoolId, classSession.getAcademicYear().getId(),
+                                                Pageable.unpaged())
+                                .getContent()
+                                .stream()
+                                .map(h -> h.getDate())
+                                .toList();
+
+                boolean isHoliday = date.getDayOfWeek() == DayOfWeek.SATURDAY
+                                || date.getDayOfWeek() == DayOfWeek.SUNDAY
+                                || schoolHolidays.contains(date);
+
+                return new ClassSessionAttendanceDTO(
+                                classSessionId,
+                                date,
+                                isHoliday,
+                                totalStudents,
+                                markedCount,
+                                unmarkedCount,
+                                presentCount,
+                                absentCount,
+                                excusedCount,
+                                lateCount,
+                                records);
+        }
+
+        private List<Enrollment> loadSessionEnrollments(ClassSession classSession, String schoolId) {
+                return enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
+                                classSession.getClazz().getId(),
+                                classSession.getAcademicYear().getId(),
+                                schoolId, Pageable.unpaged()).stream().filter(enrollment -> {
+                                        boolean sectionMatch = enrollment.getSection() != null
+                                                        && classSession.getSection() != null
+                                                        && enrollment.getSection().getId()
+                                                                        .equals(classSession.getSection().getId());
+
+                                        if (!sectionMatch) {
+                                                return false;
+                                        }
+
+                                        if (classSession.getStream() == null) {
+                                                return enrollment.getStream() == null;
+                                        }
+
+                                        return enrollment.getStream() != null
+                                                        && enrollment.getStream().getId()
+                                                                        .equals(classSession.getStream().getId());
+                                }).toList();
+        }
 }

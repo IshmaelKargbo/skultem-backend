@@ -79,7 +79,7 @@ public class GetAssessmentCycleOverviewUseCase {
                 .toList();
 
         int totalClasses = classes.size();
-        int readyClasses = (int) classes.stream().filter(ClassAssessmentCycleStatusDTO::ready).count();
+        int readyClasses = (int) classes.stream().filter(a -> a.ready()).count();
         int notReadyClasses = totalClasses - readyClasses;
 
         return new AssessmentCycleOverviewDTO(activeTerm, totalClasses, readyClasses, notReadyClasses, classes);

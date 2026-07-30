@@ -25,7 +25,7 @@ public class FeeDiscountReportUseCase {
                 List<FeeDiscount> discounts = repo.findAllBySchool(schoolId, Pageable.unpaged()).getContent();
 
                 long activeCount = discounts.stream()
-                                .filter(FeeDiscount::isActive)
+                                .filter(a -> a.isActive())
                                 .count();
 
                 long expiredCount = discounts.stream()
@@ -33,8 +33,8 @@ public class FeeDiscountReportUseCase {
                                 .count();
 
                 BigDecimal totalSavings = discounts.stream()
-                                .filter(FeeDiscount::isActive)
-                                .map(FeeDiscount::computeSavings)
+                                .filter(a -> a.isActive())
+                                .map(a -> a.computeSavings())
                                 .reduce(BigDecimal.ZERO, (a, b) -> a.add((BigDecimal) b));
 
                 return new FeeDiscountReportDTO(activeCount, MoneyUtil.format(totalSavings), expiredCount);

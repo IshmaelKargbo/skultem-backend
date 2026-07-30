@@ -35,16 +35,16 @@ public class GetStudentFinanceOverviewUseCase {
                 recentPaymentSize).getContent();
 
         BigDecimal totalPaid = fees.stream()
-                .map(OutstandingBalanceDTO::paid)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(arg0 -> arg0.paid())
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
 
         BigDecimal totalDiscount = fees.stream()
-                .map(OutstandingBalanceDTO::discount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(a -> a.discount())
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
 
         BigDecimal totalOutstanding = fees.stream()
-                .map(OutstandingBalanceDTO::outstanding)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(a -> a.outstanding())
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
 
         return new StudentFinanceOverviewDTO(
                 student,

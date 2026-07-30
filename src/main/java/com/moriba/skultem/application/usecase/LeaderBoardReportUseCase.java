@@ -34,7 +34,7 @@ public class LeaderBoardReportUseCase {
 
                 // Group scores by student
                 Map<String, List<AssessmentScore>> scoresByStudent = scores.stream()
-                                .filter(AssessmentScore::isCompleted)
+                                .filter(a -> a.isCompleted())
                                 .collect(Collectors.groupingBy(
                                                 s -> s.getStudentAssessment()
                                                                 .getEnrollment()
@@ -78,11 +78,11 @@ public class LeaderBoardReportUseCase {
                                                 List<AssessmentScore> cycleScores = entryCycle.getValue();
 
                                                 double totalScore = cycleScores.stream()
-                                                                .mapToDouble(AssessmentScore::getScore)
+                                                                .mapToDouble(a -> a.getScore())
                                                                 .sum();
 
                                                 double totalWeightedScore = cycleScores.stream()
-                                                                .mapToDouble(AssessmentScore::getWeightedScore)
+                                                                .mapToDouble(a -> a.getWeightedScore())
                                                                 .sum();
 
                                                 String assessmentName = cycleScores.get(0).getCycle().getAssessment()
@@ -107,11 +107,11 @@ public class LeaderBoardReportUseCase {
                         // Total weighted score for the leaderboard
                         // -----------------------------
                         int totalWeightedScore = assessments.stream()
-                                        .mapToInt(LeaderBoardAssessmentDTO::weightedScore)
+                                        .mapToInt(a -> a.weightedScore())
                                         .sum();
 
                         int finalScore = assessments.stream()
-                                        .mapToInt(LeaderBoardAssessmentDTO::score)
+                                        .mapToInt(a -> a.score())
                                         .sum();
 
                         String trend = "STABLE";
