@@ -64,6 +64,13 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     }
 
     @Override
+    public List<AssessmentScore> findAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
+        return repo.findAllByStudentAssessment_Enrollment_IdAndSchoolId(enrollmentId, schoolId).stream()
+                .map(AssessmentScoreMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<AssessmentScore> findAllByCycle(String cycleId) {
         return repo
                 .findAllByCycle_Id(cycleId)
@@ -107,6 +114,30 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
                 .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndSchoolIdAndCycle_StatusNot(
                         classId,
                         subjectId,
+                        schoolId,
+                        ClassSubjectAssessmentLifeCycle.Status.DRAFT);
+    }
+
+    @Override
+    public boolean existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(String classId,
+            String subjectId, String academicYearId, String schoolId) {
+        boolean hasScored = repo
+                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndScoreGreaterThan(
+                        classId,
+                        subjectId,
+                        academicYearId,
+                        schoolId,
+                        0);
+
+        if (hasScored) {
+            return true;
+        }
+
+        return repo
+                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndCycle_StatusNot(
+                        classId,
+                        subjectId,
+                        academicYearId,
                         schoolId,
                         ClassSubjectAssessmentLifeCycle.Status.DRAFT);
     }

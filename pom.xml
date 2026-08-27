@@ -23,6 +23,7 @@
         <jjwt.version>0.13.0</jjwt.version>
         <dotenv.version>3.2.0</dotenv.version>
         <ua.parser.version>1.6.1</ua.parser.version>
+        <awssdk.version>2.54.3</awssdk.version>
     </properties>
 
     <dependencies>
@@ -51,6 +52,14 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
@@ -60,6 +69,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Cloudflare R2 (S3-compatible) storage for school branding assets -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${awssdk.version}</version>
         </dependency>
 
         <!-- Mailtrap -->

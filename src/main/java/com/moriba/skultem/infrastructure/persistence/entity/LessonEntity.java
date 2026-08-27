@@ -7,6 +7,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.LocalDate;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import com.moriba.skultem.domain.model.Lesson.State;
 
@@ -32,6 +36,36 @@ public class LessonEntity {
 
     @Column(nullable = false)
     private String lesson;
+
+    @Column(nullable = false)
+    private LocalDate date;
+
+    private String duration;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String objectives;
+
+    @Column(columnDefinition = "text")
+    private String previousKnowledge;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String teachingAids;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String referenceMaterials;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String presentation;
+
+    @Column(columnDefinition = "text")
+    private String evaluation;
+
+    @Column(columnDefinition = "text")
+    private String assignment;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

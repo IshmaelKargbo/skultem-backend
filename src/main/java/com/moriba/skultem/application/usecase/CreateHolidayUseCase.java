@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 public class CreateHolidayUseCase {
     private final HolidayRepository repo;
     private final AcademicYearRepository academicYearRepo;
-    private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "HOLIDAY_CREATED")
@@ -34,23 +34,18 @@ public class CreateHolidayUseCase {
         }
 
         AcademicYear academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                    .orElseThrow(() -> new NotFoundException("Academic year not found"));
+                .orElseThrow(() -> new NotFoundException("Academic year not found"));
 
         if (kind.equals(Holiday.Kind.PUBLIC)) {
             fixed = true;
         }
 
-        var id = rg.generate("HOLIDAY", "HOD");
+        var id = UUID.randomUUID().toString();
         var holiday = Holiday.create(id, schoolId, name, date, kind, academicYear, fixed);
         repo.save(holiday);
 
-        logActivityUseCase.log(
-                schoolId,
-                ActivityType.SCHOOL,
-                "Holiday created",
-                holiday.getName() + " (" + holiday.getDate() + ")",
-                null,
-                holiday.getId());
+        logActivityUseCase.log(schoolId, ActivityType.SCHOOL, "Holiday created",
+                holiday.getName() + " (" + holiday.getDate() + ")", null, holiday.getId());
 
         return HolidayMapper.toDTO(holiday);
     }

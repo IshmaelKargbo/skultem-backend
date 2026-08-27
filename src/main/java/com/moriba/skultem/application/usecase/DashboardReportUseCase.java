@@ -10,11 +10,8 @@ import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.DashboardDTO;
-import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.Term;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
@@ -32,20 +29,24 @@ public class DashboardReportUseCase {
         private final EnrollmentRepository enrollmentRepo;
         private final TeacherRepository teacherRepo;
         private final TermRepository termRepo;
-        private final AcademicYearRepository academicYearRepo;
+        private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
-        public DashboardDTO getDashboardSummary(String schoolId) {
-                AcademicYear academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new RuleException("Active academic year not found"));
+        public DashboardDTO getDashboardSummary(String schoolId, String academicYearId) {
+                AcademicYear academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 StudentCalucation studentCount = calucationStudentCount(schoolId, academicYear.getId());
                 long totalTeachers = teacherRepo.countAllBySchool(schoolId);
 
                 String activeYearStr = academicYear.getName();
 
-                Term term = termRepo.findActiveBySchoolAndAcademicYear(schoolId, academicYear.getId())
-                                .orElseThrow(() -> new NotFoundException("Active term not found"));
-                String activeTermStr = term.getName();
+                // A year being browsed rather than actually active has no ACTIVE term - fall back to
+                // its last term instead of failing the whole dashboard.
+                String activeTermStr = termRepo.findActiveBySchoolAndAcademicYear(schoolId, academicYear.getId())
+                                .map(Term::getName)
+                                .or(() -> termRepo.findByAcademicYearIdAndSchool(academicYear.getId(), schoolId).stream()
+                                                .max(java.util.Comparator.comparingInt(Term::getTermNumber))
+                                                .map(Term::getName))
+                                .orElse("—");
 
                 var revenue = calculatRevenue(schoolId);
 

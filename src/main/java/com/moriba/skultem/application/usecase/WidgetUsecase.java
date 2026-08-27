@@ -38,11 +38,21 @@ public class WidgetUsecase {
     private final ClassReportUseCase classReportUseCase;
     private final ParentReportUseCase parentReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
+    private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
 
     public WidgetResponse<?> runAnalytics(String schoolId, Widget request, int page, int size) {
+        return runAnalytics(schoolId, request, page, size, null);
+    }
+
+    public WidgetResponse<?> runAnalytics(String schoolId, Widget request, int page, int size,
+            String academicYearId) {
         if (request == null || request.metrics() == null || request.metrics().isEmpty()) {
             throw new IllegalArgumentException("Invalid widget request");
         }
+
+        var filters = scopeReportToAcademicYearUseCase.execute(schoolId, request.entity(), request.filters(),
+                academicYearId);
+        request = new Widget(request.entity(), filters, request.metrics(), request.chartType(), request.title());
 
         List<?> records = loadRecords(schoolId, request, page, size);
 

@@ -1,0 +1,11 @@
+clear && mvn flyway:migrate \
+  -Dflyway.url="jdbc:postgresql://dpg-d78eboedqaus73ct0c10-a:5432/skultem" \
+  -Dflyway.user="moriba" \
+  -Dflyway.password="7hAhHUxPdmgUFTFCBl6MYkMICDtEGSuv" \
+  -Dflyway.locations="classpath:db/migration"
+
+clear && mvn flyway:migrate \
+  -Dflyway.url="jdbc:postgresql://localhost:5432/cashflow" \
+  -Dflyway.user="moriba" \
+  -Dflyway.password="moriba@2024" \
+  -Dflyway.locations="classpath:db/migration"

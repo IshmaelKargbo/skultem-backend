@@ -6,9 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.TermDTO;
-import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TermMapper;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 
 import jakarta.transaction.Transactional;
@@ -20,10 +18,14 @@ import lombok.RequiredArgsConstructor;
 public class ListTermBySchoolIdUseCase {
 
     private final TermRepository repo;
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
     public Page<TermDTO> execute(String school, int page, int size) {
-        var academicYear = academicYearRepo.findActiveBySchool(school).orElseThrow(() -> new NotFoundException("Active assessment not found"));
+        return execute(school, null, page, size);
+    }
+
+    public Page<TermDTO> execute(String school, String academicYearId, int page, int size) {
+        var academicYear = resolveAcademicYearUseCase.execute(school, academicYearId);
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {

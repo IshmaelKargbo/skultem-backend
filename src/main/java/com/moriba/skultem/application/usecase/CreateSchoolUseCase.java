@@ -80,8 +80,9 @@ public class CreateSchoolUseCase {
         sendWelcomeEmail(school, hint);
 
         return new SchoolDTO(school.getId(), school.getName(), school.getDomain(), school.getAddress(),
-                school.getOwner(), school.getStatus(), school.getGradingScale(), school.getCreatedAt(),
-                school.getUpdatedAt());
+                school.getOwner(), school.getStatus(), school.getGradingScale(), school.getLogo(),
+                school.getPrincipalName(), school.getPrincipalSignature(), school.getPrimaryColor(),
+                school.getSecondaryColor(), school.getCreatedAt(), school.getUpdatedAt());
     }
 
     private void sendWelcomeEmail(School school, String password) {

@@ -52,8 +52,9 @@ public class TransactionController {
     public ApiResponse<List<TermDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(defaultValue = "1") Integer page) {
-        var res = listTermBySchoolIdUseCase.execute(school, page - 1, size);
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(required = false) String academicYearId) {
+        var res = listTermBySchoolIdUseCase.execute(school, academicYearId, page - 1, size);
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
                 "size", res.getSize(),

@@ -29,7 +29,9 @@ import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
 import com.moriba.skultem.application.usecase.PaymentReportUseCase;
+import com.moriba.skultem.application.usecase.ScopeReportToAcademicYearUseCase;
 import com.moriba.skultem.application.usecase.SimplifiedClassLeaderBoardUseCase;
+import com.moriba.skultem.application.usecase.StudentLedgerEntryReportUseCase;
 import com.moriba.skultem.application.usecase.StudentReportUseCase;
 import com.moriba.skultem.application.usecase.SubjectReportUseCase;
 import com.moriba.skultem.application.usecase.TeacherReportUseCase;
@@ -61,6 +63,8 @@ public class ReportExportService {
         private final SubjectReportUseCase subjectReportUseCase;
         private final ListFeeStructureBySchoolUseCase listFeeStructureBySchoolUseCase;
         private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
+        private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
+        private final StudentLedgerEntryReportUseCase studentLedgerEntryReportUseCase;
 
         public ReportFile exportPayments(String schoolId, String format, String classId, LocalDate startDate,
                         LocalDate endDate) {
@@ -74,7 +78,7 @@ public class ReportExportService {
 
         public ReportFile exportAttendance(String schoolId, String classSessionId, String format, LocalDate startDate,
                         LocalDate endDate) {
-                var page = attendanceReportUseCase.execute(schoolId, classSessionId, 0, 0);
+                var page = attendanceReportUseCase.execute(schoolId, classSessionId, null, 0, 0);
                 List<AttendanceHistoryDTO> records = page.getContent();
 
                 List<String> headers = List.of("Date", "Class", "Present", "Total", "Rate");
@@ -99,7 +103,7 @@ public class ReportExportService {
 
         public ReportFile exportBehaviour(String schoolId, String classId, String format, LocalDate startDate,
                         LocalDate endDate) {
-                var page = listBehaviourBySchoolUseCase.execute(schoolId, classId, 0, 0);
+                var page = listBehaviourBySchoolUseCase.execute(schoolId, classId, null, 0, 0);
                 List<BehaviourDTO> records = page.getContent();
 
                 List<String> headers = List.of("Student", "Kind", "Category", "Note", "Created At");
@@ -118,7 +122,7 @@ public class ReportExportService {
 
         public ReportFile exportFees(String schoolId, String format, String classId, LocalDate startDate,
                         LocalDate endDate) {
-                var page = listFeeStructureBySchoolUseCase.execute(schoolId, 0, 0);
+                var page = listFeeStructureBySchoolUseCase.execute(schoolId, 0, 0, null);
                 List<FeeStructureDTO> records = page.getContent();
 
                 List<String> headers = List.of("Class", "Term", "Category", "Amount", "Due Date", "Installment",
@@ -163,6 +167,11 @@ public class ReportExportService {
         }
 
         public ReportResponse<?> runReport(String schoolId, RunReportDTO param, int page, int size) {
+                return runReport(schoolId, param, page, size, null);
+        }
+
+        public ReportResponse<?> runReport(String schoolId, RunReportDTO param, int page, int size,
+                        String academicYearId) {
 
                 String type = normalizeType(param.entity());
                 int limit = size > 0 ? Math.min(size, 200) : 50;
@@ -178,6 +187,8 @@ public class ReportExportService {
                                                 e.values()))
                                 .toList();
 
+                filters = scopeReportToAcademicYearUseCase.execute(schoolId, type, filters, academicYearId);
+
                 var report = new ReportBuilderDTO(schoolId, param.entity(), filters);
 
                 return switch (type) {
@@ -191,6 +202,7 @@ public class ReportExportService {
                         case "expenses" -> buildResponse(expenseReportUseCase.execute(report, page, limit));
                         case "leaderboard" -> buildResponse(leaderBoardReportUseCase.execute(report, page, limit));
                         case "transactions" -> buildResponse(transactionReportUseCase.execute(report, page, limit));
+                        case "ledger" -> buildResponse(studentLedgerEntryReportUseCase.execute(report, page, limit));
                         case "breakdown" ->
                                 buildResponse(simplifiedClassLeaderBoardUseCase.execute(report, page, limit));
                         case "grades" -> buildResponse(gradeReportUseCase.execute(report, page, limit));

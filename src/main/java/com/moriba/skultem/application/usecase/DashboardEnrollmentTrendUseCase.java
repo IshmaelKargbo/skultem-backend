@@ -12,9 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.MonthlyEnrollmentDTO;
-import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.AcademicYear;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,11 +22,10 @@ import lombok.RequiredArgsConstructor;
 public class DashboardEnrollmentTrendUseCase {
 
         private final EnrollmentRepository enrollmentRepo;
-        private final AcademicYearRepository academicYearRepo;
+        private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
-        public List<MonthlyEnrollmentDTO> monthlyEnrollmentTrend(String schoolId) {
-                AcademicYear academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+        public List<MonthlyEnrollmentDTO> monthlyEnrollmentTrend(String schoolId, String academicYearId) {
+                AcademicYear academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 ZoneId zone = ZoneId.systemDefault();
 

@@ -65,13 +65,14 @@ public class StudentController {
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
                 if (search == null || search.isBlank()) {
                         search = null;
                 }
 
-                var res = studentSvc.search(search, page, size, school);
+                var res = studentSvc.search(search, page, size, school, academicYearId);
                 var list = res.getContent();
                 var meta = MetaMapper.toMeta(res);
 
@@ -92,8 +93,9 @@ public class StudentController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
         public ApiResponse<ActiveCycleDTO> activeCycle(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable(name = "sessionId") String sessionId) {
-                var res = activeCycleUseCase.execute(school, sessionId);
+                        @PathVariable(name = "sessionId") String sessionId,
+                        @RequestParam(required = false) String academicYearId) {
+                var res = activeCycleUseCase.execute(school, sessionId, academicYearId);
                 return new ApiResponse<>("success", 200, "Active cycle fetch successfully", res);
         }
 
@@ -115,8 +117,9 @@ public class StudentController {
         @GetMapping("/{id}")
         @PreAuthorize("@permissionService.canAccessSchool(#school)")
         public ApiResponse<StudentDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable String id) {
-                var res = getStudentUseCase.execute(id, school);
+                        @PathVariable String id,
+                        @RequestParam(required = false) String academicYearId) {
+                var res = getStudentUseCase.execute(id, school, academicYearId);
                 return new ApiResponse<>("success", 200, "Student fetched successfully", res);
         }
 
@@ -125,9 +128,10 @@ public class StudentController {
         public ApiResponse<StudentFinanceOverviewDTO> financeOverview(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = false, defaultValue = "10") Integer recentPayments) {
                 var size = Math.max(1, recentPayments);
-                var res = getStudentFinanceOverviewUseCase.execute(school, id, size);
+                var res = getStudentFinanceOverviewUseCase.execute(school, id, academicYearId, size);
                 return new ApiResponse<>("success", 200, "Student finance overview fetched successfully", res);
         }
 

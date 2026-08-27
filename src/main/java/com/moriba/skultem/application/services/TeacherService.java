@@ -11,7 +11,7 @@ import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
 import com.moriba.skultem.application.usecase.EditTeacherUseCase;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.application.usecase.ResolveAcademicYearUseCase;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.Gender;
@@ -25,7 +25,7 @@ public class TeacherService {
 
     private final TeacherRepository repo;
     private final ClassMasterRepository classMasterRepo;
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EditTeacherUseCase teacherUseCase;
 
     public Page<TeacherDTO> search(String search, int page, int size, String schoolId) {
@@ -37,10 +37,10 @@ public class TeacherService {
                 .map(TeacherMapper::toDTO);
     }
 
-    public TeacherDTO getById(String id) {
+    public TeacherDTO getById(String id, String academicYearId) {
         return repo.findById(id)
                 .map((e) -> {
-                    var classes = getClasses(e.getId(), e.getSchoolId());
+                    var classes = getClasses(e.getId(), e.getSchoolId(), academicYearId);
                     return TeacherMapper.toDTO(e, classes);
                 })
                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
@@ -55,10 +55,9 @@ public class TeacherService {
             Gender gender, String staffId, String phone, String street, String city) {
     }
 
-    private List<String> getClasses(String teacherId, String schoolId) {
+    private List<String> getClasses(String teacherId, String schoolId, String academicYearId) {
 
-        var academic = academicYearRepo.findActiveBySchool(schoolId)
-                .orElseThrow(() -> new NotFoundException("No active academic year found"));
+        var academic = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
         var classes = classMasterRepo
                 .findByTeacherAndAcademicYear(teacherId, academic.getId(), Pageable.unpaged());

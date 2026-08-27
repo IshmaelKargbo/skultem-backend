@@ -1,9 +1,13 @@
 package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.Transaction;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
@@ -31,8 +35,14 @@ public class CreateTransactionUsercase {
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+
+        // Prefer the currently active term, but a school can close one term without having
+        // activated the next yet (e.g. right after grading, or between academic years) - a payment
+        // or expense recorded in that gap still needs to land somewhere for reporting, so fall back
+        // to the most recently ended term of the year instead of blocking the transaction entirely.
         var term = termRepo.findActiveBySchoolAndAcademicYear(schoolId, academicYear.getId())
-                .orElseThrow(() -> new NotFoundException("Active term not found"));
+                .or(() -> mostRecentTerm(schoolId, academicYear.getId()))
+                .orElseThrow(() -> new NotFoundException("No term found for the active academic year"));
 
         Transaction lastEntry = repo.findTopBySchoolId(schoolId)
                 .orElse(null);
@@ -52,5 +62,10 @@ public class CreateTransactionUsercase {
 
         repo.save(entry);
         return entry;
+    }
+
+    private Optional<Term> mostRecentTerm(String schoolId, String academicYearId) {
+        return termRepo.findByAcademicYearIdAndSchool(academicYearId, schoolId).stream()
+                .max(Comparator.comparing(Term::getEndDate));
     }
 }

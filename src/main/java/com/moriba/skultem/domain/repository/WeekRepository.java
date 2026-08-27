@@ -13,6 +13,8 @@ public interface WeekRepository {
 
     List<Week> findAllByScheme(String scheme);
 
+    List<Week> findAllBySchemeIds(List<String> schemeIds);
+
     Optional<Week> findById(String id);
 
     boolean existsByWeekAndSchemeAndSchoolId(int week, String scheme, String school);

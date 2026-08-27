@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.moriba.skultem.application.error.NotFoundException;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.BehaviourRepository;
 import com.moriba.skultem.domain.vo.KindCount;
 
@@ -17,11 +15,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReportBehaviourByClassUseCase {
     private final BehaviourRepository repo;
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
-    public List<KindCount> execute(String schoolId, String classId, int page, int size) {
-        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+    public List<KindCount> execute(String schoolId, String classId, String academicYearId, int page, int size) {
+        var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
         return repo.countByKindForClassOrAll(academicYear.getId(), schoolId, classId);
     }

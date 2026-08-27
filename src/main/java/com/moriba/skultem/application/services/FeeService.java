@@ -13,8 +13,8 @@ public class FeeService {
 
     private final ListStudentFeeByClassUseCase classUseCase;
 
-    public ClassFeeDetails getClassFeeDetail(String schoolId, String sessionId, String termId,
+    public ClassFeeDetails getClassFeeDetail(String schoolId, String sessionId, String termId, String academicYearId,
             int page, int size) {
-        return classUseCase.execute(schoolId, sessionId, termId, page, size);
+        return classUseCase.execute(schoolId, sessionId, termId, academicYearId, page, size);
     }
 }

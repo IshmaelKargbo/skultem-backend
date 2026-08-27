@@ -54,8 +54,9 @@ public class EnrollmentController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<EnrollmentDTO> getEnrollmentByClassAndSubject(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String studentId) {
-        var res = enrollmentByStudentAndClassUseCase.execute(studentId, school);
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = enrollmentByStudentAndClassUseCase.execute(studentId, school, academicYearId);
         return new ApiResponse<>("success", 200, "Enrollment fetched successfully", res);
     }
 
@@ -64,8 +65,9 @@ public class EnrollmentController {
     public ApiResponse<List<StudentDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listStudentBySchoolUseCase.execute(school, page - 1, size);
+        var res = listStudentBySchoolUseCase.execute(school, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -81,9 +83,10 @@ public class EnrollmentController {
     public ApiResponse<List<StudentDTO>> listByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = false) String classId,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listEnrollmentByClassUseCase.execute(school, classId, page - 1, size);
+        var res = listEnrollmentByClassUseCase.execute(school, classId, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

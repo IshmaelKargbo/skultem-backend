@@ -19,10 +19,23 @@ public class StudentAssessmentMapper {
                                 .map(score -> AssessmentScoreMapper.toDTO(score))
                                 .toList();
 
+                int totalScore = scores.stream()
+                                .mapToInt(AssessmentScoreDTO::weightScore)
+                                .sum();
+
+                Integer passMark = assessments.isEmpty()
+                                ? null
+                                : assessments.get(0).getAssessment().getTemplate().getPassMark();
+
+                Boolean passed = passMark == null ? null : totalScore >= passMark;
+
                 return new StudentAssessmentDTO(
                                 param.getId(),
                                 name,
                                 scores,
+                                totalScore,
+                                passMark,
+                                passed,
                                 param.getCreatedAt(),
                                 param.getUpdatedAt());
         }

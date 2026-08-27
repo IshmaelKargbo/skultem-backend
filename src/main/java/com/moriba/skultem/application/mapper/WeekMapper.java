@@ -8,7 +8,7 @@ public class WeekMapper {
         if (param == null)
             return null;
 
-        return new WeekDTO(param.getId(), param.getWeek(), param.getTopic(), param.getSubTopic(), param.getObjectives(),
-                param.getState().name(), param.getCreatedAt(), param.getUpdatedAt());
+        return new WeekDTO(param.getId(), param.getScheme().getId(), param.getWeek(), param.getTopic(), param.getSubTopic(),
+                param.getObjectives(), param.getState().name(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

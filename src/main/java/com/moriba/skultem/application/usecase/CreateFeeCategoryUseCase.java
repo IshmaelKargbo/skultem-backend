@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeCategoryDTO;
@@ -18,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateFeeCategoryUseCase {
     private final FeeCategoryRepository repo;
-    private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "FEE_CATEGORY_CREATED")
@@ -27,7 +28,7 @@ public class CreateFeeCategoryUseCase {
             throw new AlreadyExistsException("Fee category already exists");
         }
 
-        var id = rg.generate("FEE_CATEGORY", "FEC");
+        var id = UUID.randomUUID().toString();
         var fee = FeeCategory.create(id, schoolId, name, description);
         repo.save(fee);
 

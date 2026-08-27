@@ -10,7 +10,10 @@ import com.moriba.skultem.domain.model.AssessmentApprovalRequest;
 public interface AssessmentApprovalRequestRepository {
     void save(AssessmentApprovalRequest domain);
 
-    Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String schoolId, Pageable pageable);
+    Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String schoolId,
+            AssessmentApprovalRequest.Status status, Pageable pageable);
+
+    long countByClassMasterSchoolIdAndStatus(String masterId, String schoolId, AssessmentApprovalRequest.Status status);
 
     boolean existsByCycleAndTeacherSubject(String cycleId, String subjectId);
 

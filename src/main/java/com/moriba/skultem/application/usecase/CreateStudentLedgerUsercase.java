@@ -29,7 +29,9 @@ public class CreateStudentLedgerUsercase {
             String description,
             Instant paidAt) {
 
-        StudentLedgerEntry lastEntry = repo.findTopBySchoolIdOrderByPaidAtDesc(schoolId)
+        // Scoped to this student - the running balance a new entry builds on must come from *their*
+        // last entry, not whichever student in the school happened to transact most recently.
+        StudentLedgerEntry lastEntry = repo.findTopByStudentIdAndSchoolIdOrderByPaidAtDesc(studentId, schoolId)
                 .orElse(null);
 
         BigDecimal lastBalance = lastEntry != null ? lastEntry.getBalance() : BigDecimal.ZERO;

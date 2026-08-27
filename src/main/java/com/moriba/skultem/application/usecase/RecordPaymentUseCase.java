@@ -12,6 +12,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.PaymentMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.FeeDiscount.Kind;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.model.Student;
@@ -20,6 +21,7 @@ import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.model.Transaction.ReferenceType;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
+import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
@@ -38,6 +40,7 @@ public class RecordPaymentUseCase {
 
         private final PaymentRepository paymentRepo;
         private final FeeStructureRepository feeRepo;
+        private final FeeDiscountRepository discountRepo;
         private final AcademicYearRepository academicYearRepo;
         private final StudentRepository studentRepo;
         private final SupplyRepository supplyRepo;
@@ -71,15 +74,7 @@ public class RecordPaymentUseCase {
                                         param.schoolId())
                                         .orElseThrow(() -> new RuleException("Fee not found"));
 
-                        BigDecimal paidSoFar = paymentRepo.sumPaymentsByStudentAndFee(
-                                        param.studentId(),
-                                        item.feeId());
-
-                        if (paidSoFar == null) {
-                                paidSoFar = BigDecimal.ZERO;
-                        }
-
-                        BigDecimal outstanding = fee.getAmount().subtract(paidSoFar);
+                        BigDecimal outstanding = calculateOutstanding(fee, param.studentId());
 
                         // FULLY PAID ALREADY
                         if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
@@ -102,6 +97,16 @@ public class RecordPaymentUseCase {
                                                 "Payment for "
                                                                 + fee.getCategory().getName()
                                                                 + " cannot exceed outstanding balance");
+                        }
+
+                        // INSTALLMENTS NOT ALLOWED - this fee has to be paid off in one go, so a partial
+                        // amount (leaving anything still outstanding) is rejected rather than silently
+                        // accepted as the first of several installments.
+                        if (!fee.isAllowInstallment() && item.amount().compareTo(outstanding) < 0) {
+                                throw new RuleException(
+                                                fee.getCategory().getName()
+                                                                + " does not allow installments - pay the full outstanding balance of "
+                                                                + MoneyUtil.format(outstanding));
                         }
 
                         // CREATE PAYMENT
@@ -176,15 +181,7 @@ public class RecordPaymentUseCase {
                         return;
                 }
 
-                BigDecimal paidSoFar = paymentRepo.sumPaymentsByStudentAndFee(
-                                student.getId(),
-                                fee.getId());
-
-                if (paidSoFar == null) {
-                        paidSoFar = BigDecimal.ZERO;
-                }
-
-                BigDecimal outstanding = fee.getAmount().subtract(paidSoFar);
+                BigDecimal outstanding = calculateOutstanding(fee, student.getId());
 
                 // FULLY PAID
                 if (outstanding.compareTo(BigDecimal.ZERO) == 0) {
@@ -203,6 +200,28 @@ public class RecordPaymentUseCase {
                                         fee.getMaterial().getId(),
                                         fee.getTotalSupply());
                 }
+        }
+
+        // What's actually still owed on this fee: the amount, less any discounts applied to it, less
+        // whatever's already been paid - matching FinanceReportUseCase's outstanding-balance formula.
+        // Ignoring discounts here (as this used to) let a payment be accepted past what the student
+        // genuinely still owed, and separately meant a discounted student who paid their full
+        // (reduced) balance was never detected as "fully paid" - so their supply never got issued.
+        private BigDecimal calculateOutstanding(FeeStructure fee, String studentId) {
+                BigDecimal discount = discountRepo.findBySchoolAndStudentIdAndFeeId(fee.getSchoolId(), studentId, fee.getId())
+                                .stream()
+                                .map(d -> d.getKind() == Kind.PERCENTAGE
+                                                ? fee.getAmount().multiply(d.getValue())
+                                                                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
+                                                : d.getValue())
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal paid = java.util.Optional
+                                .ofNullable(paymentRepo.sumPaymentsByStudentAndFee(studentId, fee.getId()))
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal outstanding = fee.getAmount().subtract(discount).subtract(paid);
+                return outstanding.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : outstanding;
         }
 
         public record PaymentRecord(

@@ -17,11 +17,11 @@ import lombok.RequiredArgsConstructor;
 public class ListFeeStructureBySchoolUseCase {
     private final FeeStructureRepository repo;
 
-    public Page<FeeStructureDTO> execute(String schoolId, int page, int size) {
+    public Page<FeeStructureDTO> execute(String schoolId, int page, int size, String termId) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
-        return repo.findAllBySchool(schoolId, pageable).map(FeeStructureMapper::toDTO);
+        return repo.search(schoolId, termId, pageable).map(FeeStructureMapper::toDTO);
     }
 }

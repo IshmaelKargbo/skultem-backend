@@ -9,5 +9,5 @@ public record ClassOverviewDTO(
         int classMasterCount,
         List<ClassSectionDTO> sections,
         List<ClassStreamDTO> streams,
-        List<ClassMasterDTO> classMasters) {
+        List<ClassMasterRecord> classMasters) {
 }

@@ -9,7 +9,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +42,10 @@ public class AcademicYearEntity {
     private String schoolId;
 
     private Boolean active;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "next_year")
+    private AcademicYearEntity nextYear;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

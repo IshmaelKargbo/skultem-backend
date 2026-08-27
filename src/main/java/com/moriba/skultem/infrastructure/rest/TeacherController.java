@@ -7,12 +7,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.TeacherClassMasterDTO;
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.services.TeacherService;
 import com.moriba.skultem.application.services.TeacherService.TeacherRecord;
 import com.moriba.skultem.application.usecase.CreateTeacherUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherSubjectUseCase;
+import com.moriba.skultem.application.usecase.ListMyClassMasterAssignmentsUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListTeacherSubjectByTeacherUseCase;
 import com.moriba.skultem.domain.vo.Gender;
@@ -42,6 +44,7 @@ public class TeacherController {
         private final ListTeacherSubjectBySchoolUseCase listTeacherSubjectBySchoolUseCase;
         private final ListTeacherSubjectByTeacherUseCase listTeacherSubjectByTeacherUseCase;
         private final ListTeacherSubjectBySessionUseCase listTeacherSubjectBySessionUseCase;
+        private final ListMyClassMasterAssignmentsUseCase listMyClassMasterAssignmentsUseCase;
         private final TeacherService teacherSvc;
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
 
@@ -103,9 +106,10 @@ public class TeacherController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<TeacherDTO> listById(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable(required = true) String id) {
+                        @PathVariable(required = true) String id,
+                        @RequestParam(required = false) String academicYearId) {
 
-                var res = teacherSvc.getById(id);
+                var res = teacherSvc.getById(id, academicYearId);
                 return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 
@@ -113,9 +117,10 @@ public class TeacherController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listTeacherSubjectBySchoolUseCase.execute(school, page - 1, size);
+                var res = listTeacherSubjectBySchoolUseCase.execute(school, academicYearId, page - 1, size);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -131,8 +136,8 @@ public class TeacherController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable(required = true) String userId) {
-                var list = listTeacherSubjectByTeacherUseCase.execute(school, userId);
+                        @PathVariable(required = true) String teacherId) {
+                var list = listTeacherSubjectByTeacherUseCase.execute(school, teacherId);
                 return new ApiResponse<>("success", 200, "Teacher subjects fetched successfully", list);
         }
 
@@ -143,6 +148,15 @@ public class TeacherController {
                         @AuthenticationPrincipal(expression = "userId") String userId) {
                 var list = listTeacherSubjectByTeacherUseCase.executeByUser(school, userId);
                 return new ApiResponse<>("success", 200, "Teacher subjects fetched successfully", list);
+        }
+
+        @GetMapping("/class-master/me")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        public ApiResponse<List<TeacherClassMasterDTO>> listMyClassMasterAssignments(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId) {
+                var list = listMyClassMasterAssignmentsUseCase.execute(school, userId);
+                return new ApiResponse<>("success", 200, "Class master assignments fetched successfully", list);
         }
 
         @GetMapping("/subject/session/{sessionId}")

@@ -65,6 +65,7 @@ public class StudentMapper {
                 sessionId,
                 param.getStatus(),
                 null,
+                HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -124,6 +125,7 @@ public class StudentMapper {
                 sessionId,
                 param.getStatus(),
                 null,
+                HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -182,6 +184,7 @@ public class StudentMapper {
                 "",
                 param.getStatus(),
                 feeDetail,
+                HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -241,6 +244,7 @@ public class StudentMapper {
                 sessionId,
                 param.getStatus(),
                 feeDetail,
+                HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -300,6 +304,7 @@ public class StudentMapper {
                 sessionId,
                 param.getStatus(),
                 null,
+                HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }

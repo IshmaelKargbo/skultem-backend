@@ -89,7 +89,7 @@ public class CreatePeriodUseCase {
             startTime = timing.getStartTime();
         } else {
             var latest = periods.stream()
-                    .max(Comparator.comparing(Period::getEndTime))
+                    .max(Comparator.comparing(a -> a.getEndTime()))
                     .orElseThrow();
 
             startTime = latest.getEndTime();

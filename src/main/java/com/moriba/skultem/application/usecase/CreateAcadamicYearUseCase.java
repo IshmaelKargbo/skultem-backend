@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class CreateAcadamicYearUseCase {
             throw new AlreadyExistsException("academic year already exist");
         }
 
-        var id = rg.generate("ACADEMIC_YEAR", "ACY");
+        var id = UUID.randomUUID().toString();
         var academicYear = AcademicYear.create(id, school, name, startDate, endDate);
 
         var countRes = repo.findAllBySchool(school, Pageable.unpaged());

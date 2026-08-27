@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AssessmentApprovalRequestDTO;
+import com.moriba.skultem.application.dto.AssessmentApprovalSummaryDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleAdvanceDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleOverviewDTO;
@@ -36,6 +37,7 @@ import com.moriba.skultem.application.usecase.ListAssessmentTemplateBySchoolUseC
 import com.moriba.skultem.application.usecase.ListAssessmentUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
 import com.moriba.skultem.application.usecase.GetSchoolGradingScaleUseCase;
+import com.moriba.skultem.application.usecase.ReopenAssessmentCycleUseCase;
 import com.moriba.skultem.application.usecase.ReturnAssessmentUseCase;
 import com.moriba.skultem.application.usecase.SubmitAssessmentForApprovalUseCase;
 import com.moriba.skultem.application.usecase.UpdateSchoolGradingScaleUseCase;
@@ -44,6 +46,7 @@ import com.moriba.skultem.infrastructure.rest.dto.AssessmentActionDTO;
 import com.moriba.skultem.infrastructure.rest.dto.AssignAssessmentsDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateAssessmentTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.GradeAssessmentDTO;
+import com.moriba.skultem.infrastructure.rest.dto.ReopenAssessmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SubmitAssessmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateGradingScaleDTO;
 
@@ -70,6 +73,7 @@ public class AssessmentController {
     private final AdvanceAssessmentCycleUseCase advanceAssessmentCycleUseCase;
     private final GetSchoolGradingScaleUseCase getSchoolGradingScaleUseCase;
     private final UpdateSchoolGradingScaleUseCase updateSchoolGradingScaleUseCase;
+    private final ReopenAssessmentCycleUseCase reopenAssessmentCycleUseCase;
 
     @PostMapping("/template")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
@@ -125,9 +129,12 @@ public class AssessmentController {
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classMasterId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, page, size);
+        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, status, academicYearId, page,
+                size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -138,14 +145,26 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessment approval request fetch successfully", list, meta);
     }
 
+    @GetMapping("/approval/{classMasterId}/summary")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    public ApiResponse<AssessmentApprovalSummaryDTO> assessmentApprovalSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classMasterId) {
+        var res = listAssessmentApprovalRequestUseCase.summary(school, classMasterId);
+        return new ApiResponse<>("success", 200, "Assessment approval summary fetch successfully", res);
+    }
+
     @GetMapping("/approval/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listMeAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, page, size);
+        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, status, academicYearId, page,
+                size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -153,6 +172,15 @@ public class AssessmentController {
                 "count", res.getTotalElements(),
                 "pages", res.getTotalPages());
         return new ApiResponse<>("success", 200, "Assessment approval request fetch successfully", list, meta);
+    }
+
+    @GetMapping("/approval/me/summary")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    public ApiResponse<AssessmentApprovalSummaryDTO> meAssessmentApprovalSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId) {
+        var res = listAssessmentApprovalRequestUseCase.summaryByUser(school, userId);
+        return new ApiResponse<>("success", 200, "Assessment approval summary fetch successfully", res);
     }
 
     @PostMapping("/grade/{teacherSubjectId}")
@@ -187,6 +215,17 @@ public class AssessmentController {
             @Valid @RequestBody AssessmentActionDTO param) {
         approveAssessmentUseCase.execute(school, approvalRequestId, param.note());
         return new ApiResponse<>("success", 200, "Assessment approved successfully", null);
+    }
+
+    @PostMapping("/reopen/{teacherSubjectId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<AssessmentCycleDTO> reopenAssessment(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody ReopenAssessmentDTO param) {
+        var res = reopenAssessmentCycleUseCase.execute(school, teacherSubjectId, param.assessmentId(),
+                param.termId(), param.note());
+        return new ApiResponse<>("success", 200, "Assessment reopened for editing successfully", res);
     }
 
     @PostMapping("/approval/{approvalRequestId}/return")
@@ -231,16 +270,18 @@ public class AssessmentController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<ActiveAssessmentCycleDTO> getActiveCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = false) String classId) {
-        var cycle = getActiveAssessmentCycleUseCase.execute(school, classId);
+            @RequestParam(required = false) String classId,
+            @RequestParam(required = false) String academicYearId) {
+        var cycle = getActiveAssessmentCycleUseCase.execute(school, classId, academicYearId);
         return new ApiResponse<>("success", 200, "Active assessment cycle fetched successfully", cycle);
     }
 
     @GetMapping("/cycle/overview")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentCycleOverviewDTO> getCycleOverview(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
-        var overview = getAssessmentCycleOverviewUseCase.execute(school);
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId) {
+        var overview = getAssessmentCycleOverviewUseCase.execute(school, academicYearId);
         return new ApiResponse<>("success", 200, "Assessment cycle overview fetched successfully", overview);
     }
 

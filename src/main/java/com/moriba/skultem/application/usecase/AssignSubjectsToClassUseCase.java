@@ -17,6 +17,7 @@ import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
+import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
@@ -40,6 +41,7 @@ public class AssignSubjectsToClassUseCase {
     private final SubjectRepository subjectRepo;
     private final SubjectGroupRepository groupRepo;
     private final ClassSubjectRepository repo;
+    private final AcademicYearRepository academicYearRepo;
     private final EnrollmentRepository enrollmentRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
     private final StudentAssessmentRepository studentAssessmentRepo;
@@ -54,6 +56,9 @@ public class AssignSubjectsToClassUseCase {
 
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new RuleException("Class not found. Please select a valid class."));
+
+        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                .orElseThrow(() -> new RuleException("Active academic year not found"));
 
         if (clazz.getLevel() == Level.SSS) {
             throw new RuleException("SSS subjects should be assigned to a stream, not directly to a class.");
@@ -74,17 +79,19 @@ public class AssignSubjectsToClassUseCase {
 
         var existing = repo.findAllByClassIdAndSchoolId(classId, schoolId, Pageable.unpaged());
 
-        // Lock existing subjects that have grade activity
+        // Lock/unlock existing subjects based on grade activity in the *active* academic year only -
+        // grading a subject in a past year must not freeze it out of every year that follows. Without
+        // this, a class's subject curriculum could never change again once any year ever used it.
         existing.forEach(item -> {
-            if (item.isLocked()) {
-                return;
-            }
-
             boolean hasGradeActivity = assessmentScoreRepository
-                    .existsGradeActivityByClassIdAndSubjectIdAndSchoolId(classId, item.getSubject().getId(), schoolId);
+                    .existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(classId,
+                            item.getSubject().getId(), academicYear.getId(), schoolId);
 
-            if (hasGradeActivity) {
+            if (hasGradeActivity && !item.isLocked()) {
                 item.lock();
+                repo.save(item);
+            } else if (!hasGradeActivity && item.isLocked()) {
+                item.unlock();
                 repo.save(item);
             }
         });
@@ -183,7 +190,8 @@ public class AssignSubjectsToClassUseCase {
         }
 
         // Sync enrolled students for remaining and new subjects
-        syncAssessmentsForEnrolledStudents(schoolId, classId, assignments, incomingSubjects, removedSubjectIds);
+        syncAssessmentsForEnrolledStudents(schoolId, classId, academicYear.getId(), assignments, incomingSubjects,
+                removedSubjectIds);
 
         String meta = "assignedCount=" + incomingSubjects.size() + ";removedCount=" + removedSubjectIds.size();
         logActivityUseCase.log(
@@ -198,6 +206,7 @@ public class AssignSubjectsToClassUseCase {
     private void syncAssessmentsForEnrolledStudents(
             String schoolId,
             String classId,
+            String academicYearId,
             List<SubjectAssignment> assignments,
             Map<String, Subject> incomingSubjects,
             Set<String> removedSubjectIds) {
@@ -211,8 +220,10 @@ public class AssignSubjectsToClassUseCase {
             return;
         }
 
+        // Scoped to the active academic year only - a class's curriculum edit must never ripple into
+        // enrollments from finished years and rewrite their already-graded subject history.
         var enrollments = enrollmentRepo
-                .findAllByClassAndSchoolId(classId, schoolId, Pageable.unpaged())
+                .findAllByClassAndAcademicAndSchoolId(classId, academicYearId, schoolId, Pageable.unpaged())
                 .getContent();
 
         for (var enrollment : enrollments) {

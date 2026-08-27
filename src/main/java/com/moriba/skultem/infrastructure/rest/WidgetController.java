@@ -32,6 +32,7 @@ public class WidgetController {
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam int page,
                         @RequestParam int size,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestBody WidgetDTO param) {
 
                 List<Filter> filters = param.filters() != null
@@ -62,7 +63,7 @@ public class WidgetController {
                                 : List.of();
 
                 var widget = new Widget(param.entity(), filters, metrics, param.chartType(), param.title());
-                var res = widgetUsecase.runAnalytics(school, widget, page, size);
+                var res = widgetUsecase.runAnalytics(school, widget, page, size, academicYearId);
 
                 return new ApiResponse<>("success", 200, "Widget fetch successfully", res);
         }

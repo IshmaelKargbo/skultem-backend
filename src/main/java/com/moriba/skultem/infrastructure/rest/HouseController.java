@@ -6,15 +6,18 @@ import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.AssignHouseRecord;
 import com.moriba.skultem.application.dto.HouseDTO;
 import com.moriba.skultem.application.services.HouseService;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.AssignHouseDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateHouseDTO;
 
 import jakarta.validation.Valid;
@@ -33,6 +36,25 @@ public class HouseController {
             @Valid @RequestBody CreateHouseDTO param) {
         var res = houseService.createHouse(school, param.name(), param.motto(), param.color(), param.masters());
         return new ApiResponse<>("success", 200, "House created successfully", res);
+    }
+
+    @PostMapping("/assignment")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Object> houseAssignment(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody AssignHouseDTO param) {
+        var records = param.records().stream().map(e -> new AssignHouseRecord(e.id(), e.house())).toList();
+        houseService.assignHouse(records, school);
+        return new ApiResponse<>("success", 200, "House assign successfully", null);
+    }
+
+    @PostMapping("/assignment/random/{classId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Object> randomHouseAssignment(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classId) {
+        houseService.randomAssignHouse(school, classId);
+        return new ApiResponse<>("success", 200, "Houses randomly assigned successfully", null);
     }
 
     @GetMapping

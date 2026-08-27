@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
@@ -28,7 +30,7 @@ public class CreateAssessmentTemplateUseCase {
             throw new RuleException("Template session is required");
         }
 
-        var id = rg.generate("ASSESSMENT_TEMPLATE", "AST");
+        var id = UUID.randomUUID().toString();
         var template = AssessmentTemplate.create(id, schoolId, cleanName, description.trim(), passMark);
 
         templateRepo.save(template);

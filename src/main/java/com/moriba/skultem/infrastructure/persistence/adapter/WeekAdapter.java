@@ -30,6 +30,14 @@ public class WeekAdapter implements WeekRepository {
     }
 
     @Override
+    public List<Week> findAllBySchemeIds(List<String> schemeIds) {
+        if (schemeIds.isEmpty())
+            return List.of();
+
+        return repo.findBySchemeIdIn(schemeIds).stream().map(WeekMapper::toDomain).toList();
+    }
+
+    @Override
     public Optional<Week> findById(String id) {
         return repo.findById(id).map(WeekMapper::toDomain);
     }

@@ -32,10 +32,12 @@ import com.moriba.skultem.application.usecase.ListClassStreamByIdUseCase;
 import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
+import com.moriba.skultem.application.usecase.UpdateClassTerminalUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.NextClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTemplateDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTerminalDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,7 @@ public class ClassController {
     private final GetCurrentClassMasterUseCase getCurrentClassMasterUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
+    private final UpdateClassTerminalUseCase updateClassTerminalUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -110,8 +113,9 @@ public class ClassController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassMasterDTO>> getClassMasterByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String classId) {
-        var res = getCurrentClassMasterUseCase.execute(school, classId);
+            @PathVariable String classId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = getCurrentClassMasterUseCase.executeDTO(school, classId, academicYearId);
         return new ApiResponse<>("success", 200, "Class masters fetched successfully", res);
     }
 
@@ -158,6 +162,16 @@ public class ClassController {
             @PathVariable String id) {
         var res = getClassOverviewUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
+    }
+
+    @PutMapping("/{id}/terminal")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ClassDTO> updateTerminal(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateClassTerminalDTO param) {
+        var res = updateClassTerminalUseCase.execute(school, id, param.terminal());
+        return new ApiResponse<>("success", 200, "Class updated successfully", res);
     }
 
     @PutMapping("/{id}/template")

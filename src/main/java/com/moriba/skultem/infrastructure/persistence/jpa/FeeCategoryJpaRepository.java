@@ -14,4 +14,6 @@ public interface FeeCategoryJpaRepository extends JpaRepository<FeeCategoryEntit
     boolean existsByNameIgnoreCaseAndSchoolId(String name, String schoolId);
 
     Optional<FeeCategoryEntity> findByIdAndSchoolId(String id, String schoolId);
+
+    Optional<FeeCategoryEntity> findByNameIgnoreCaseAndSchoolId(String name, String schoolId);
 }

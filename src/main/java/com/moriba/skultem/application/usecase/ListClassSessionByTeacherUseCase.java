@@ -10,7 +10,6 @@ import com.moriba.skultem.application.dto.ClassSessionDTO;
 import com.moriba.skultem.application.dto.FeeDetail;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.Enrollment;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
@@ -23,15 +22,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListClassSessionByTeacherUseCase {
 
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final TeacherRepository teacherRepo;
     private final GetFeeDetailUsecase getFeeDetailUsecase;
     private final ClassMasterRepository classMasterRepos;
     private final EnrollmentRepository enrollmentRepo;
 
-    public List<ClassSessionDTO> execute(String school, String userId, int page, int size) {
-        var academicYear = academicYearRepo.findActiveBySchool(school)
-                .orElseThrow(() -> new NotFoundException("no active academic year found"));
+    public List<ClassSessionDTO> execute(String school, String userId, String academicYearId, int page, int size) {
+        var academicYear = resolveAcademicYearUseCase.execute(school, academicYearId);
         Pageable pageable = Pageable.unpaged();
 
         var teacher = teacherRepo.findByUserId(userId).orElseThrow(() -> new NotFoundException("Teacher not found"));

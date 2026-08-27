@@ -32,8 +32,15 @@ public class ListClassSessionBySchoolUseCase {
     private final EnrollmentRepository enrollmentRepo;
 
     public Page<ClassSessionDTO> execute(String school, int page, int size) {
-        var academicYear = academicYearRepo.findActiveBySchool(school)
-                .orElseThrow(() -> new NotFoundException("no active academic year found"));
+        return execute(school, null, page, size);
+    }
+
+    public Page<ClassSessionDTO> execute(String school, String academicYearId, int page, int size) {
+        var academicYear = (academicYearId != null && !academicYearId.isBlank())
+                ? academicYearRepo.findByIdAndSchoolId(academicYearId, school)
+                        .orElseThrow(() -> new NotFoundException("Academic year not found"))
+                : academicYearRepo.findActiveBySchool(school)
+                        .orElseThrow(() -> new NotFoundException("no active academic year found"));
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {

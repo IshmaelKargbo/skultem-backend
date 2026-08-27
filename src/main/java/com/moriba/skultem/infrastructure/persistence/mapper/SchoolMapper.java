@@ -18,7 +18,9 @@ public class SchoolMapper {
                 });
 
         return new School(param.getId(), param.getName(), param.getDomain(), address, owner,
-                param.getStatus(), gradingScale, param.getCreatedAt(), param.getUpdatedAt());
+                param.getStatus(), gradingScale, param.getLogo(), param.getPrincipalName(),
+                param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static SchoolEntity toEntity(School args) {
@@ -34,6 +36,11 @@ public class SchoolMapper {
                 .gradingScale(gradingScale)
                 .domain(args.getDomain())
                 .status(args.getStatus())
+                .logo(args.getLogo())
+                .principalName(args.getPrincipalName())
+                .principalSignature(args.getPrincipalSignature())
+                .primaryColor(args.getPrimaryColor())
+                .secondaryColor(args.getSecondaryColor())
                 .createdAt(args.getCreatedAt())
                 .updatedAt(args.getUpdatedAt())
                 .build();

@@ -31,10 +31,31 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     }
 
     @Override
+    public void deleteById(String id) {
+        repo.deleteById(id);
+    }
+
+    @Override
     public boolean existsBySchoolAndAcademicYearAndTermAndClassAndCategory(String schoolId, String academicYearId,
             String termId, String classId, String categorId) {
         return repo.existsByAcademicYear_IdAndClazz_IdAndTerm_IdAndCategory_IdAndSchoolId(academicYearId, classId,
                 termId, categorId, schoolId);
+    }
+
+    @Override
+    public boolean existsByCategoryAndSchool(String categoryId, String schoolId) {
+        return repo.existsByCategory_IdAndSchoolId(categoryId, schoolId);
+    }
+
+    @Override
+    public boolean existsSystemFeeBySchoolAndAcademicYear(String schoolId, String academicYearId) {
+        return repo.existsBySystemTrueAndAcademicYear_IdAndSchoolId(academicYearId, schoolId);
+    }
+
+    @Override
+    public Optional<FeeStructure> findSystemFeeBySchoolAndAcademicYear(String schoolId, String academicYearId) {
+        return repo.findBySystemTrueAndAcademicYear_IdAndSchoolId(academicYearId, schoolId)
+                .map(FeeStructureMapper::toDomain);
     }
 
     @Override
@@ -61,6 +82,11 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     @Override
     public Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(FeeStructureMapper::toDomain);
+    }
+
+    @Override
+    public Page<FeeStructure> search(String schoolId, String termId, Pageable pageable) {
+        return repo.search(schoolId, termId, pageable).map(FeeStructureMapper::toDomain);
     }
 
     @Override

@@ -12,12 +12,10 @@ import com.moriba.skultem.application.dto.AssessmentCycleDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.AssessmentCycleMapper;
 import com.moriba.skultem.application.mapper.TermMapper;
-import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository;
-import com.moriba.skultem.domain.repository.TermRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,16 +30,23 @@ public class GetActiveAssessmentCycleUseCase {
     private static final String COMPLETED_STATUS = "COMPLETED";
     private static final String PENDING_TERM_STATUS = "PENDING_TERM_ACTIVATION";
 
-    private final TermRepository termRepository;
+    private final ResolveActiveTermUseCase resolveActiveTermUseCase;
     private final AssessmentTemplateRepository templateRepository;
     private final AssessmentRepository assessmentRepository;
     private final ClassSubjectAssessmentLifeCycleRepository assessmentLifeCycleRepo;
     private final ClassRepository classRepository;
 
     public ActiveAssessmentCycleDTO execute(String schoolId, String classId) {
+        return execute(schoolId, classId, null);
+    }
 
-        var activeTerm = termRepository
-                .findFirstBySchoolIdAndStatus(schoolId, Term.Status.ACTIVE)
+    /**
+     * @param academicYearId lets an admin view another year's cycle (e.g. a closed one) without
+     *                       changing what's active for the rest of the school.
+     */
+    public ActiveAssessmentCycleDTO execute(String schoolId, String classId, String academicYearId) {
+
+        var activeTerm = resolveActiveTermUseCase.execute(schoolId, academicYearId)
                 .map(TermMapper::toDTO)
                 .orElse(null);
 
@@ -57,6 +62,11 @@ public class GetActiveAssessmentCycleUseCase {
                 return new ActiveAssessmentCycleDTO(activeTerm, null, null, null, List.of(), 0, false);
             }
 
+            if (activeTerm == null) {
+                return new ActiveAssessmentCycleDTO(null, template.getId(), template.getName(),
+                        template.getDescription(), List.of(), 0, false);
+            }
+
             var assessments = assessmentRepository
                     .findAllByTemplateIdAndSchoolId(template.getId(), schoolId)
                     .stream()
@@ -66,15 +76,22 @@ public class GetActiveAssessmentCycleUseCase {
             var lifeCycles = assessmentLifeCycleRepo.findAllBySchoolAndTerm(schoolId, activeTerm.id());
 
             int activePosition = -1;
+            // An assessment with no life cycle rows yet (never started) must not read as
+            // "completed" via allMatch's vacuous truth on an empty stream - only assessments that
+            // actually have cycles, all of them COMPLETED, count as done.
+            boolean allCompleted = !lifeCycles.isEmpty();
 
             for (var assessment : assessments) {
 
-                boolean completed = lifeCycles.stream()
+                var matching = lifeCycles.stream()
                         .filter(lc -> lc.getAssessment().getId().equals(assessment.getId()))
-                        .allMatch(lc -> lc.getStatus().name().equals("COMPLETED"));
+                        .toList();
+                boolean completed = !matching.isEmpty()
+                        && matching.stream().allMatch(lc -> lc.getStatus().name().equals("COMPLETED"));
 
                 if (!completed) {
                     activePosition = assessment.getPosition();
+                    allCompleted = false;
                     break;
                 }
             }
@@ -85,7 +102,9 @@ public class GetActiveAssessmentCycleUseCase {
 
                 String status;
 
-                if (assessment.getPosition() == activePosition) {
+                if (allCompleted) {
+                    status = COMPLETED_STATUS;
+                } else if (assessment.getPosition() == activePosition) {
                     status = ACTIVE_STATUS;
                 } else if (assessment.getPosition() < activePosition) {
                     status = COMPLETED_STATUS;

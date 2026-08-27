@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.moriba.skultem.application.error.SupabaseStorageException;
+import com.moriba.skultem.application.error.StorageException;
 
 import reactor.util.retry.Retry;
 
@@ -61,13 +61,13 @@ public class SupabaseStorageService {
                     .block();
 
         } catch (WebClientResponseException ex) {
-            throw new SupabaseStorageException(
+            throw new StorageException(
                     "Upload failed with status " + ex.getStatusCode(),
                     cleanErrorBody(ex.getResponseBodyAsString()),
                     ex
             );
         } catch (Exception ex) {
-            throw new SupabaseStorageException(
+            throw new StorageException(
                     "Unexpected upload failure",
                     ex.getMessage(),
                     ex
@@ -88,7 +88,7 @@ public class SupabaseStorageService {
                 .maxBackoff(Duration.ofSeconds(5))
                 .filter(this::isRetryable)
                 .onRetryExhaustedThrow((spec, signal) ->
-                        new SupabaseStorageException(
+                        new StorageException(
                                 "Retry exhausted after upload failure",
                                 "Upload failed after multiple attempts",
                                 signal.failure()

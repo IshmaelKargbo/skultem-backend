@@ -35,8 +35,9 @@ public class FinanceReportController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstanding(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = true) String studentId) {
-        var res = reportUseCase.outstandingForStudent(school, studentId);
+            @RequestParam(required = true) String studentId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = reportUseCase.outstandingForStudent(school, studentId, academicYearId);
         return new ApiResponse<>("success", 200, "Outstanding balances fetched successfully",
                 res);
     }
@@ -45,8 +46,9 @@ public class FinanceReportController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstandingList(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = true) String studentId) {
-        var res = reportUseCase.outstandingOnlyForStudent(school, studentId);
+            @RequestParam(required = true) String studentId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = reportUseCase.outstandingOnlyForStudent(school, studentId, academicYearId);
         return new ApiResponse<>("success", 200, "Outstanding balances fetched successfully",
                 res);
     }

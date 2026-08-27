@@ -69,4 +69,15 @@ public class StudentLedgerEntry extends AggregateRoot<String> {
     public BigDecimal getCredit() {
         return (direction == Direction.CREDIT && amount != null) ? amount : BigDecimal.ZERO;
     }
+
+    /**
+     * Corrects this entry's stored running balance - used only to backfill entries written while the
+     * running-balance calculation was scoped to the wrong student (see
+     * {@link com.moriba.skultem.application.usecase.RecomputeStudentLedgerBalancesUseCase}). Not part
+     * of normal ledger writing, where the balance is fixed at creation time.
+     */
+    public void recalculateBalance(BigDecimal balance) {
+        this.balance = balance;
+        touch(Instant.now());
+    }
 }

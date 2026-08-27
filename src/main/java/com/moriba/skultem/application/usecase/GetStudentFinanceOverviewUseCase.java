@@ -20,14 +20,16 @@ public class GetStudentFinanceOverviewUseCase {
     private final CountStudentFeesUseCase countStudentFeesUseCase;
     private final FinanceReportUseCase financeReportUseCase;
 
-    public StudentFinanceOverviewDTO execute(String schoolId, String studentId, int recentPaymentSize) {
-        var student = getStudentUseCase.execute(studentId, schoolId);
+    public StudentFinanceOverviewDTO execute(String schoolId, String studentId, String academicYearId,
+            int recentPaymentSize) {
+        var student = getStudentUseCase.execute(studentId, schoolId, academicYearId);
         BigDecimal assignedFeeTotal = countStudentFeesUseCase.execute(schoolId, studentId);
         if (assignedFeeTotal == null) {
             assignedFeeTotal = BigDecimal.ZERO;
         }
 
-        List<OutstandingBalanceDTO> fees = financeReportUseCase.outstandingForStudent(schoolId, studentId);
+        List<OutstandingBalanceDTO> fees = financeReportUseCase.outstandingForStudent(schoolId, studentId,
+                academicYearId);
         List<PaymentDTO> recentPayments = financeReportUseCase.paymentHistory(
                 schoolId,
                 studentId,

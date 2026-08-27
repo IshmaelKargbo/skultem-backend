@@ -38,4 +38,14 @@ public class Enrollment extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new Enrollment(id, schoolId, student, clazz, section, academicYear, stream, Status.ACTIVE, now, now);
     }
+
+    public void promote() {
+        this.status = Status.PROMOTED;
+        touch(Instant.now());
+    }
+
+    public void repeat() {
+        this.status = Status.REPEATED;
+        touch(Instant.now());
+    }
 }

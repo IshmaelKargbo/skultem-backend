@@ -82,9 +82,10 @@ public class BehaviourController {
         public ApiResponse<List<BehaviourDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listBehaviourBySchoolUseCase.execute(school, classId, page - 1, size);
+                var res = listBehaviourBySchoolUseCase.execute(school, classId, academicYearId, page - 1, size);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -100,9 +101,10 @@ public class BehaviourController {
         public ApiResponse<List<KindCount>> listReportBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = reportBehaviourByClassUseCase.execute(school, classId, page - 1, size);
+                var res = reportBehaviourByClassUseCase.execute(school, classId, academicYearId, page - 1, size);
                 return new ApiResponse<>("success", 200, "Behaviour report fetched successfully", res);
         }
 }

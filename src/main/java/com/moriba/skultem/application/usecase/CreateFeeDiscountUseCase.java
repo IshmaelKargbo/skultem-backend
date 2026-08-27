@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
@@ -35,8 +37,8 @@ public class CreateFeeDiscountUseCase {
         private final StudentRepository studentRepo;
         private final FeeStructureRepository feeStructureRepo;
         private final FeeDiscountRepository repo;
+        private final PaymentRepository paymentRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
-        private final ReferenceGeneratorUsecase rg;
         private final LogActivityUseCase logActivityUseCase;
 
         @AuditLogAnnotation(action = "FEE_DISCOUNT_CREATED")
@@ -72,12 +74,31 @@ public class CreateFeeDiscountUseCase {
                                 param.value(),
                                 fee.getAmount());
 
-                if (discountAmount.compareTo(fee.getAmount()) > 0) {
-                        throw new IllegalArgumentException("Discount cannot exceed fee amount");
+                // Validated against what's actually still outstanding on this fee - not the fee's full
+                // original amount - so a second discount (or one on a fee already partly paid) can't
+                // stack past what's left to owe and push the student's ledger balance negative.
+                BigDecimal existingDiscounts = repo.findBySchoolAndStudentIdAndFeeId(
+                                param.schoolId(), param.studentId(), param.feeId())
+                                .stream()
+                                .map(d -> calculateDiscountAmount(d.getKind(), d.getValue(), fee.getAmount()))
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal paid = java.util.Optional.ofNullable(
+                                paymentRepo.sumPaymentsByStudentAndFee(param.studentId(), param.feeId()))
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal outstanding = fee.getAmount().subtract(existingDiscounts).subtract(paid);
+                if (outstanding.compareTo(BigDecimal.ZERO) < 0) {
+                        outstanding = BigDecimal.ZERO;
                 }
 
-                var id = rg.generate("FEE_DISCOUNT", "FED");
+                if (discountAmount.compareTo(outstanding) > 0) {
+                        throw new IllegalArgumentException(
+                                        "Discount cannot exceed the outstanding balance of " + outstanding
+                                                        + " on this fee");
+                }
 
+                var id = UUID.randomUUID().toString();
                 var feeDiscount = FeeDiscount.create(id, param.schoolId(), param.name(), param.kind(),
                                 param.value(), student, param.expiryDate(), enrollment, fee, param.reason);
 

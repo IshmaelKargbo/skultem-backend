@@ -1,21 +1,21 @@
 package com.moriba.skultem.domain.repository;
 
-import com.moriba.skultem.domain.model.Week;
-
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.moriba.skultem.domain.model.Lesson;
+
 public interface LessonRepository {
-    void save(Week domain);
+    void save(Lesson domain);
 
-    List<Week> findAllByWeek(String week);
+    List<Lesson> findAllByWeek(String week);
 
-    Optional<Week> findById(String id);
+    Optional<Lesson> findById(String id);
 
     boolean existsByWeekIdAndTitleAndSchoolId(String week, String title, String school);
 
-    Page<Week> findByWeekSchemeSessionAcademicYear(String year, Pageable page);
+    Page<Lesson> findAllByTeacherIdAndSchoolId(String teacherId, String school, Pageable pageable);
 }

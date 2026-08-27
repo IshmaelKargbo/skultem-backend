@@ -26,9 +26,15 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId,
-            Pageable pageable) {
-        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, pageable)
+            AssessmentApprovalRequest.Status status, Pageable pageable) {
+        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
+    }
+
+    @Override
+    public long countByClassMasterSchoolIdAndStatus(String masterId, String academicYearId,
+            AssessmentApprovalRequest.Status status) {
+        return repo.countForClassMasterByTeacherIdAndStatus(masterId, academicYearId, status);
     }
 
     @Override

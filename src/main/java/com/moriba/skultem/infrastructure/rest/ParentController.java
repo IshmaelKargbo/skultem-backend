@@ -109,8 +109,9 @@ public class ParentController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
         public ApiResponse<TeacherDTO> get(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-                        @PathVariable String id) {
-                var res = teacherSvc.getById(id);
+                        @PathVariable String id,
+                        @RequestParam(required = false) String academicYearId) {
+                var res = teacherSvc.getById(id, academicYearId);
                 return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 }

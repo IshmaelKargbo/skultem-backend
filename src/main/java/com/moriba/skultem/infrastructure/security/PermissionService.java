@@ -6,6 +6,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
+import com.moriba.skultem.domain.repository.ClassMasterRepository;
+import com.moriba.skultem.domain.repository.PromotionRequestRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
@@ -20,6 +22,8 @@ public class PermissionService {
     private final StudentRepository studentRepo;
     private final SchoolUserRepository schoolUserRepo;
     private final TeacherRepository teacherRepo;
+    private final ClassMasterRepository classMasterRepo;
+    private final PromotionRequestRepository promotionRequestRepo;
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -141,5 +145,51 @@ public class PermissionService {
 
         return role == Role.TEACHER &&
                 currentUserId().equals(teacher.get().getUser().getId());
+    }
+
+    public boolean canPromoteClassSession(String schoolId, String sessionId) {
+        if (isSystemAdmin()) {
+            return true;
+        }
+
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PROPRIETOR")) {
+            return true;
+        }
+
+        if (!hasRole(Role.TEACHER)) {
+            return false;
+        }
+
+        var teacher = teacherRepo.findByUserId(currentUserId());
+        if (teacher.isEmpty()) {
+            return false;
+        }
+
+        var master = classMasterRepo.findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(sessionId);
+
+        return master.isPresent() && master.get().getTeacher().getId().equals(teacher.get().getId());
+    }
+
+    public boolean canManagePromotionRequest(String schoolId, String requestId) {
+        if (isSystemAdmin()) {
+            return true;
+        }
+
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PROPRIETOR")) {
+            return true;
+        }
+
+        if (!hasRole(Role.TEACHER)) {
+            return false;
+        }
+
+        var teacher = teacherRepo.findByUserId(currentUserId());
+        if (teacher.isEmpty()) {
+            return false;
+        }
+
+        var request = promotionRequestRepo.findByIdAndSchoolId(requestId, schoolId);
+
+        return request.isPresent() && request.get().getMaster().getTeacher().getId().equals(teacher.get().getId());
     }
 }

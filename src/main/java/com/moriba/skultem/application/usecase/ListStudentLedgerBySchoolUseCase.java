@@ -7,13 +7,12 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.StudentLedgerDTO;
 import com.moriba.skultem.application.dto.StudentLedgerPagedDTO;
-import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.StudentLedgerEntry;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 
@@ -26,18 +25,21 @@ import lombok.RequiredArgsConstructor;
 public class ListStudentLedgerBySchoolUseCase {
 
     private final StudentLedgerEntryRepository repo;
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EnrollmentRepository enrollmentRepo;
 
-    public StudentLedgerPagedDTO execute(String schoolId, int page, int size) {
+    public StudentLedgerPagedDTO execute(String schoolId, String academicYearId, int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "paidAt"));
+
+        // Scoped to the resolved year, not every ledger entry the school has ever recorded - it was
+        // pulling every entry unfiltered and then throwing if that entry's student didn't have an
+        // enrollment in the *active* year specifically, which broke the whole page for any school
+        // with more than one year of ledger history.
         Page<StudentLedgerEntry> ledgerPage =
-                repo.findAllBySchoolIdOrderByPaidAtDesc(schoolId, pageable);
-
-        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                .orElseThrow(() -> new NotFoundException("no academic year found"));
+                repo.findAllByAcademicYearAndSchool(academicYear.getId(), schoolId, pageable);
 
         var totals = new Object() {
             BigDecimal totalDebit = BigDecimal.ZERO;
@@ -48,12 +50,16 @@ public class ListStudentLedgerBySchoolUseCase {
                 .stream()
                 .map(entry -> {
                     var enrollment = enrollmentRepo
-                            .findByStudentAndAcademicYearAndSchoolId(
-                                    entry.getStudentId(),
-                                    academicYear.getId(),
-                                    schoolId
-                            )
-                            .orElseThrow(() -> new NotFoundException("no enrollment found"));
+                            .findByStudentAndAcademicYearAndSchoolId(entry.getStudentId(), academicYear.getId(),
+                                    schoolId)
+                            .or(() -> enrollmentRepo.findTopByStudentAndSchoolIdOrderByCreatedAtDesc(
+                                    entry.getStudentId(), schoolId))
+                            .orElse(null);
+
+                    String studentName = enrollment != null ? enrollment.getStudent().getName() : "Unknown student";
+                    String className = enrollment != null && enrollment.getClazz() != null
+                            ? enrollment.getClazz().getName()
+                            : "N/A";
 
                     BigDecimal debit = entry.getDebit();
                     BigDecimal credit = entry.getCredit();
@@ -64,8 +70,8 @@ public class ListStudentLedgerBySchoolUseCase {
                     return new StudentLedgerDTO(
                             entry.getDate(),
                             entry.getTransactionType().name(),
-                            enrollment.getStudent().getName(),
-                            enrollment.getClazz().getName(),
+                            studentName,
+                            className,
                             entry.getDescription(),
                             debit.compareTo(BigDecimal.ZERO) > 0 ? debit : null,
                             credit.compareTo(BigDecimal.ZERO) > 0 ? credit : null,

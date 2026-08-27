@@ -8,6 +8,10 @@ import com.moriba.skultem.domain.model.House;
 
 public class HouseMapper {
     public static HouseDTO toDTO(House param) {
+        if (param == null) {
+            return null;
+        }
+
         List<TeacherDTO> houseMasters = param.getHouseMasters().stream()
                 .map(TeacherMapper::toDTO)
                 .toList();

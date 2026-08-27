@@ -84,15 +84,29 @@ public class Student extends AggregateRoot<String> {
 
     public void setProfile(String profile) {
         photo = profile;
-        touch(Instant.now());
+        touchNow();
+    }
+
+    public void assignHouse(House house) {
+        this.house = house;
+        touchNow();
     }
 
     public void softDelete() {
         this.status = Status.DELETED;
-        touch(Instant.now());
+        touchNow();
+    }
+
+    public void graduate() {
+        this.status = Status.GRADUATED;
+        touchNow();
     }
 
     public String getName() {
         return String.join(" ", givenNames, familyName);
+    }
+
+    private void touchNow() {
+        touch(Instant.now());
     }
 }

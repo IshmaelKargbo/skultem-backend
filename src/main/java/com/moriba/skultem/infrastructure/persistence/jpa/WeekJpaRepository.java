@@ -16,5 +16,7 @@ public interface WeekJpaRepository extends JpaRepository<WeekEntity, String> {
 
     List<WeekEntity> findBySchemeId(String scheme);
 
+    List<WeekEntity> findBySchemeIdIn(List<String> schemeIds);
+
     Page<WeekEntity> findBySchemeSessionAcademicYearId(String year, Pageable page);
 }

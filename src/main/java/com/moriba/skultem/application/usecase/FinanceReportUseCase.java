@@ -17,7 +17,6 @@ import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.PaymentMapper;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
@@ -37,20 +36,20 @@ public class FinanceReportUseCase {
         private final FeeDiscountRepository discountRepo;
         private final EnrollmentRepository enrollmentRepo;
         private final StudentRepository studentRepo;
-        private final AcademicYearRepository academicYearRepo;
+        private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
         public BigDecimal totalCollected(String schoolId) {
                 return Optional.ofNullable(paymentRepo.sumPaymentsBySchool(schoolId))
                                 .orElse(BigDecimal.ZERO);
         }
 
-        public List<OutstandingBalanceDTO> outstandingForStudent(String schoolId, String studentId) {
+        public List<OutstandingBalanceDTO> outstandingForStudent(String schoolId, String studentId,
+                        String academicYearId) {
 
                 var student = studentRepo.findByIdAndSchoolId(studentId, schoolId)
                                 .orElseThrow(() -> new RuleException("Student not found"));
 
-                var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new RuleException("Active academic year not found"));
+                var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 var enrollment = enrollmentRepo
                                 .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
@@ -84,18 +83,19 @@ public class FinanceReportUseCase {
                                         totalDiscount,
                                         fee.getDueDate(),
                                         status,
-                                        fee.getTerm().getName());
+                                        fee.getTerm().getName(),
+                                        fee.isAllowInstallment());
 
                 }).toList();
         }
 
-        public List<OutstandingBalanceDTO> outstandingOnlyForStudent(String schoolId, String studentId) {
+        public List<OutstandingBalanceDTO> outstandingOnlyForStudent(String schoolId, String studentId,
+                        String academicYearId) {
 
                 var student = studentRepo.findByIdAndSchoolId(studentId, schoolId)
                                 .orElseThrow(() -> new RuleException("Student not found"));
 
-                var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new RuleException("Active academic year not found"));
+                var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 var enrollment = enrollmentRepo
                                 .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
@@ -130,7 +130,8 @@ public class FinanceReportUseCase {
 
                                         return new OutstandingBalanceDTO(fee.getId(), fee.getCategory().getName(),
                                                         fee.getAmount(), paid, outstanding, totalDiscount,
-                                                        fee.getDueDate(), status, fee.getTerm().getName());
+                                                        fee.getDueDate(), status, fee.getTerm().getName(),
+                                                        fee.isAllowInstallment());
                                 })
                                 .filter(Objects::nonNull)
                                 .toList();

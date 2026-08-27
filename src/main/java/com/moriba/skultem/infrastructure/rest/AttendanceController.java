@@ -116,9 +116,10 @@ public class AttendanceController {
     public ApiResponse<List<AttendanceHistoryDTO>> getClassSessionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = attendanceReportUseCase.execute(school, classSessionId, page - 1, size);
+        var res = attendanceReportUseCase.execute(school, classSessionId, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

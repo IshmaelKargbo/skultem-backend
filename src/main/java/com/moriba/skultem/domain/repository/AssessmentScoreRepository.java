@@ -23,9 +23,19 @@ public interface AssessmentScoreRepository {
 
     List<AssessmentScore> findAllByStudentAssessmentIdAndAssessmentId(String studentAssessmentId, String assessmentId);
 
+    List<AssessmentScore> findAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
+
     boolean existsGradeActivityByClassIdAndSchoolId(String classId, String schoolId);
 
     boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
+
+    /**
+     * Same as {@link #existsGradeActivityByClassIdAndSubjectIdAndSchoolId}, scoped to one academic
+     * year - used to gate whether a class's subject curriculum can still be edited. Grade activity in
+     * a past year must not freeze the subject out of every year that follows it.
+     */
+    boolean existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(String classId, String subjectId,
+            String academicYearId, String schoolId);
 
     Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 

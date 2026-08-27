@@ -54,8 +54,9 @@ public class PaymentController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<BigDecimal> countThisYearFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String studentId) {
-        var res = studentPaymentByFeeThisYearUseCase.execute(school, studentId);
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = studentPaymentByFeeThisYearUseCase.execute(school, studentId, academicYearId);
         return new ApiResponse<>("success", 200, "Student payment sum for this year successfully", res);
     }
 
@@ -63,9 +64,10 @@ public class PaymentController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listStudentPaymentBySchoolUseCase.execute(school, page - 1, size);
+        var res = listStudentPaymentBySchoolUseCase.execute(school, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

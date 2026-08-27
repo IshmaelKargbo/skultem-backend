@@ -11,5 +11,5 @@ public record StudentDTO(String id, String photo, String enrollmentId, String ad
                 String familyName, Gender gender, LocalDate dateOfBirth, Integer age, String classId, int classSize,
                 String className, String classTeacher, String nationality, String religion, String city, String street,
                 Family family, ParentDTO guardian, String relationship, String sessionId, Status status,
-                FeeDetail feeDetail, Instant createdAt, Instant updatedAt) {
+                FeeDetail feeDetail, HouseDTO house, Instant createdAt, Instant updatedAt) {
 }

@@ -9,10 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassFeeDetails;
-import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.MetaMapper;
 import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 
 import jakarta.transaction.Transactional;
@@ -24,17 +22,17 @@ import lombok.RequiredArgsConstructor;
 public class ListStudentFeeByClassUseCase {
 
     private final GetFeeDetailUsecase feeDetailUsecase;
-    private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EnrollmentRepository enrollmentRepo;
 
-    public ClassFeeDetails execute(String schoolId, String sessionId, String termId,
+    public ClassFeeDetails execute(String schoolId, String sessionId, String termId, String academicYearId,
             int page, int size) {
 
         Pageable pageable = size > 0
                 ? PageRequest.of(page - 1, size)
                 : Pageable.unpaged();
 
-        var list = getStudents(schoolId, sessionId, pageable);
+        var list = getStudents(schoolId, sessionId, academicYearId, pageable);
 
         List<ClassFeeDetails.Record> records = new ArrayList<>();
 
@@ -54,15 +52,14 @@ public class ListStudentFeeByClassUseCase {
                             status));
         }
 
-        var summery = getSummery(sessionId, schoolId, termId);
+        var summery = getSummery(sessionId, schoolId, termId, academicYearId);
         var meta = MetaMapper.toMeta(list);
 
         return new ClassFeeDetails(sessionId, termId, summery, records, meta);
     }
 
-    private Page<Student> getStudents(String schoolId, String sessionId, Pageable pageable) {
-        var year = academicYearRepo.findActiveBySchool(schoolId)
-                .orElseThrow(() -> new NotFoundException("No active academic year found"));
+    private Page<Student> getStudents(String schoolId, String sessionId, String academicYearId, Pageable pageable) {
+        var year = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
         return enrollmentRepo.findAllByClassAndAcademicAndSchoolId(
                 sessionId,
@@ -71,9 +68,10 @@ public class ListStudentFeeByClassUseCase {
                 pageable).map(e -> e.getStudent());
     }
 
-    private ClassFeeDetails.Summery getSummery(String sessionId, String schoolId, String termId) {
+    private ClassFeeDetails.Summery getSummery(String sessionId, String schoolId, String termId,
+            String academicYearId) {
 
-        var students = getStudents(schoolId, sessionId, Pageable.unpaged());
+        var students = getStudents(schoolId, sessionId, academicYearId, Pageable.unpaged());
 
         int paid = 0;
         int pending = 0;

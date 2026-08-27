@@ -29,6 +29,8 @@ public class NextClassUseCase {
         }
 
         domain.setNextClass(nextClazz);
+        // A class with a next class configured is no longer the end of the line.
+        domain.setTerminal(false);
         repo.save(domain);
 
         return ClassMapper.toDTO(domain);

@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import com.moriba.skultem.domain.model.SchemeOfWork;
+import com.moriba.skultem.domain.model.Week;
 import com.moriba.skultem.domain.repository.SchemeOfWorkRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.SchemeOfWorkJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.SchemeOfWorkMapper;
@@ -30,8 +31,8 @@ public class SchemeOfWorkAdapter implements SchemeOfWorkRepository {
     }
 
     @Override
-    public Optional<SchemeOfWork> findBySubjectAndTermAndSession(String subjectId, String termId, String sessionId) {
-        return repo.findByTermIdAndSubjectIdAndSessionIdAndSchoolId(termId, subjectId, sessionId, sessionId)
+    public Optional<SchemeOfWork> findBySubjectAndTermAndSession(String subjectId, String termId, String sessionId, String schoolId) {
+        return repo.findByTermIdAndSubjectIdAndSessionIdAndSchoolId(termId, subjectId, sessionId, schoolId)
                 .map(SchemeOfWorkMapper::toDomain);
     }
 
@@ -41,8 +42,23 @@ public class SchemeOfWorkAdapter implements SchemeOfWorkRepository {
     }
 
     @Override
-    public boolean existsBySubjectAndTermAndSession(String subjectId, String termId, String sessionId) {
-        return repo.existsByTermIdAndSubjectIdAndSessionIdAndSchoolId(termId, subjectId, sessionId, sessionId);
+    public boolean existsBySubjectAndTermAndSession(String subjectId, String termId, String sessionId, String schoolId) {
+        return repo.existsByTermIdAndSubjectIdAndSessionIdAndSchoolId(termId, subjectId, sessionId, schoolId);
+    }
+
+    @Override
+    public Page<SchemeOfWork> findAllByTeacherIdAndSchoolId(String teacherId, String school, Pageable pageable) {
+        return repo.findAllByTeacherIdAndSchoolId(teacherId, school, pageable).map(SchemeOfWorkMapper::toDomain);
+    }
+
+    @Override
+    public Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable) {
+        return repo.search(school, subjectId, sessionId, termId, progress, pageable).map(SchemeOfWorkMapper::toDomain);
+    }
+
+    @Override
+    public Page<SchemeOfWork> searchByTeacher(String teacherId, String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable) {
+        return repo.searchByTeacher(teacherId, school, subjectId, sessionId, termId, progress, pageable).map(SchemeOfWorkMapper::toDomain);
     }
 
 }

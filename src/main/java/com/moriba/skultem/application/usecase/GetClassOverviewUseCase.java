@@ -20,7 +20,7 @@ public class GetClassOverviewUseCase {
         var clazz = getClassUseCase.execute(schoolId, classId);
         var sections = listClassSectionByClassUseCase.execute(schoolId, classId);
         var streams = listClassStreamByIdUseCase.execute(schoolId, classId);
-        var masters = getCurrentClassMasterUseCase.execute(schoolId, classId);
+        var masters = getCurrentClassMasterUseCase.executeRecord(schoolId, classId, null);
 
         return new ClassOverviewDTO(
                 clazz,

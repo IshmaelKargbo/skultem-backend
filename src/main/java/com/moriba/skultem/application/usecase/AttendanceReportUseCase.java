@@ -33,6 +33,7 @@ public class AttendanceReportUseCase {
 
     private final AttendanceRepository repo;
     private final AcademicYearRepository academicYearRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final ClassSessionRepository classSessionRepo;
 
     /**
@@ -41,11 +42,11 @@ public class AttendanceReportUseCase {
     public Page<AttendanceHistoryDTO> execute(
             String schoolId,
             String classId,
+            String academicYearId,
             int page,
             int size) {
 
-        var academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                .orElseThrow(() -> new RuleException("Active academic year not found"));
+        var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
         var clazz = classSessionRepo
                 .findByIdAndSchoolId(classId, schoolId)

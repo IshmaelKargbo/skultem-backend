@@ -50,6 +50,20 @@ public class SchoolEntity {
     @Column(nullable = false)
     private Status status;
 
+    private String logo;
+
+    @Column(name = "principal_name")
+    private String principalName;
+
+    @Column(name = "principal_signature")
+    private String principalSignature;
+
+    @Column(name = "primary_color")
+    private String primaryColor;
+
+    @Column(name = "secondary_color")
+    private String secondaryColor;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

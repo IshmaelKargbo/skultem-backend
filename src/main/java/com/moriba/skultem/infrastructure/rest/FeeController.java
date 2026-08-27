@@ -20,21 +20,32 @@ import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase.DiscountRecord;
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase.StructureRecord;
+import com.moriba.skultem.application.usecase.DeleteFeeStructureUseCase;
+import com.moriba.skultem.application.usecase.GetFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.ListFeeCategoryBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentLedgerBySchoolUseCase;
+import com.moriba.skultem.application.usecase.RecomputeStudentLedgerBalancesUseCase;
+import com.moriba.skultem.application.usecase.UpdateFeeStructureUseCase;
+import com.moriba.skultem.application.usecase.UpdateFeeStructureUseCase.UpdateRecord;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignFeeToStudentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeDiscountDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeStructureDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateFeeCategoryDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateFeeStructureDTO;
+import com.moriba.skultem.application.usecase.UpdateFeeCategoryUseCase;
+import com.moriba.skultem.application.usecase.DeleteFeeCategoryUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
@@ -66,12 +77,18 @@ public class FeeController {
         private final ListStudentLedgerBySchoolUseCase listStudentLedgerBySchoolUseCase;
         private final ListFeeDiscountBySchoolUseCase listFeeDiscountBySchoolUseCase;
         private final CreateFeeStructureUseCase createFeeStructureUseCase;
+        private final UpdateFeeStructureUseCase updateFeeStructureUseCase;
+        private final DeleteFeeStructureUseCase deleteFeeStructureUseCase;
+        private final GetFeeStructureUseCase getFeeStructureUseCase;
         private final FeeDiscountReportUseCase feeDiscountReportUseCase;
         private final CountStudentFeesUseCase countStudentFeesUseCase;
         private final CreateFeeDiscountUseCase createFeeDiscountUseCase;
         private final CountStudentByFeeUseCase countStudentByFeeUseCase;
         private final StudentLedgerReportUseCase studentLedgerReportUseCase;
         private final AssignFeeToStudentUseCase assignFeeToStudentUseCase;
+        private final RecomputeStudentLedgerBalancesUseCase recomputeStudentLedgerBalancesUseCase;
+        private final UpdateFeeCategoryUseCase updateFeeCategoryUseCase;
+        private final DeleteFeeCategoryUseCase deleteFeeCategoryUseCase;
 
         @PostMapping("/category")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
@@ -80,6 +97,25 @@ public class FeeController {
                         @Valid @RequestBody CreateFeeCategoryDTO param) {
                 var res = createFeeCategoryUseCase.execute(school, param.name(), param.description());
                 return new ApiResponse<>("success", 200, "Fee category created successfully", res);
+        }
+
+        @PutMapping("/category/{categoryId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<Object> updateCategory(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String categoryId,
+                        @Valid @RequestBody UpdateFeeCategoryDTO param) {
+                var res = updateFeeCategoryUseCase.execute(school, categoryId, param.name(), param.description());
+                return new ApiResponse<>("success", 200, "Fee category updated successfully", res);
+        }
+
+        @DeleteMapping("/category/{categoryId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<Object> deleteCategory(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String categoryId) {
+                deleteFeeCategoryUseCase.execute(school, categoryId);
+                return new ApiResponse<>("success", 200, "Fee category deleted successfully", null);
         }
 
         @PostMapping("/structure")
@@ -100,6 +136,44 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
         }
 
+        @PutMapping("/structure/{feeId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<FeeStructureDTO> updateStructure(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String feeId,
+                        @Valid @RequestBody UpdateFeeStructureDTO param) {
+
+                if (param.hasSupply() && param.totalSupply() == 0) {
+                        throw new BadRequestException("total supply is required");
+                }
+
+                var payload = new UpdateRecord(school, feeId, param.feeCategory(), param.termId(), param.materialId(),
+                                param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
+                                param.hasSupply(), param.totalSupply());
+                var res = updateFeeStructureUseCase.execute(payload);
+                return new ApiResponse<>("success", 200, "Fee structure updated successfully", res);
+        }
+
+        @GetMapping("/structure/{feeId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<FeeStructureDTO> getStructure(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String feeId) {
+
+                var res = getFeeStructureUseCase.execute(school, feeId);
+                return new ApiResponse<>("success", 200, "Fee structure fetched successfully", res);
+        }
+
+        @DeleteMapping("/structure/{feeId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<Object> deleteStructure(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String feeId) {
+
+                deleteFeeStructureUseCase.execute(school, feeId);
+                return new ApiResponse<>("success", 200, "Fee structure deleted successfully", null);
+        }
+
         @PostMapping("/structure/assign")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentFeeDTO> assignStructureToStudent(
@@ -115,9 +189,10 @@ public class FeeController {
         public ApiResponse<List<FeeStructureDTO>> listStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
-                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+                        @RequestParam(required = true, defaultValue = "1") Integer page,
+                        @RequestParam(required = false) String termId) {
 
-                var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size);
+                var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size, termId);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -191,9 +266,10 @@ public class FeeController {
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page,
                         @RequestParam(required = true) String term,
-                        @RequestParam(required = true) String session) {
+                        @RequestParam(required = true) String session,
+                        @RequestParam(required = false) String academicYearId) {
 
-                var res = feeSvc.getClassFeeDetail(school, session, term, page, size);
+                var res = feeSvc.getClassFeeDetail(school, session, term, academicYearId, page, size);
 
                 return new ApiResponse<>("success", 200, "Class fee details fetch successfully", res);
         }
@@ -212,10 +288,11 @@ public class FeeController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerPagedDTO> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-                var res = listStudentLedgerBySchoolUseCase.execute(school, page - 1, size);
+                var res = listStudentLedgerBySchoolUseCase.execute(school, academicYearId, page - 1, size);
                 Map<String, Object> meta = Map.of(
                                 "page", res.page() + 1,
                                 "size", res.size(),
@@ -227,12 +304,25 @@ public class FeeController {
                                 meta);
         }
 
+        @PostMapping("/ledger/recompute")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<RecomputeStudentLedgerBalancesUseCase.Result> recomputeLedgerBalances(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+
+                var res = recomputeStudentLedgerBalancesUseCase.execute(school);
+                return new ApiResponse<>("success", 200,
+                                res.entriesCorrected() + " ledger entrie(s) corrected across "
+                                                + res.studentsCorrected() + " student(s)",
+                                res);
+        }
+
         @GetMapping("/ledger/report")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerReportDTO> calculateLedgerReport(
-                        @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String academicYearId) {
 
-                var res = studentLedgerReportUseCase.calculateReport(school);
+                var res = studentLedgerReportUseCase.calculateReport(school, academicYearId);
                 return new ApiResponse<>("success", 200, "Student ledger report successfully",
                                 res);
         }

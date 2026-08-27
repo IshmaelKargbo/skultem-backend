@@ -15,6 +15,13 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
     boolean existsByAcademicYear_IdAndClazz_IdAndTerm_IdAndCategory_IdAndSchoolId(String academicYearId, String classId,
             String termId, String categoryId, String schoolId);
 
+    boolean existsByCategory_IdAndSchoolId(String categoryId, String schoolId);
+
+    boolean existsBySystemTrueAndAcademicYear_IdAndSchoolId(String academicYearId, String schoolId);
+
+    Optional<FeeStructureEntity> findBySystemTrueAndAcademicYear_IdAndSchoolId(String academicYearId,
+            String schoolId);
+
     @Query("""
                 SELECT f
                 FROM FeeStructureEntity f
@@ -44,5 +51,16 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             String classId, String schoolId, Pageable pageable);
 
     Page<FeeStructureEntity> findAllByTerm_IdAndSchoolIdOrderByCreatedAtDesc(String termId, String schoolId,
+            Pageable pageable);
+
+    @Query("""
+                SELECT f FROM FeeStructureEntity f
+                WHERE f.schoolId = :schoolId
+                AND (:termId IS NULL OR f.term.id = :termId)
+                ORDER BY f.createdAt DESC
+            """)
+    Page<FeeStructureEntity> search(
+            @Param("schoolId") String schoolId,
+            @Param("termId") String termId,
             Pageable pageable);
 }

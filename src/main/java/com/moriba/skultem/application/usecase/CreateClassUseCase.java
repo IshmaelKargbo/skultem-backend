@@ -30,7 +30,6 @@ public class CreateClassUseCase {
     private final AcademicYearRepository academicYearRepo;
     private final SectionRepository sectionRepo;
     private final AssessmentTemplateRepository assessmentTemplateRepo;
-    private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "CLASS_CREATED")
@@ -43,7 +42,7 @@ public class CreateClassUseCase {
             String assessmentTemplateId,
             String level) {
 
-        // 1️⃣ Check for duplicates
+        // Check for duplicates
         if (classRepo.existsByNameAndSchool(name, school)) {
             throw new AlreadyExistsException("Class with session '" + name + "' already exists in this school.");
         }
@@ -52,13 +51,13 @@ public class CreateClassUseCase {
                     "Class with level order '" + levelOrder + "' already exists in this school.");
         }
 
-        // 2️⃣ Fetch active academic year
+        // Fetch active academic year
         AcademicYear academicYear = academicYearRepo.findActiveBySchool(school)
                 .orElseThrow(() -> new IllegalStateException("No active academic year found for school: " + school));
 
-        // 3️⃣ Create Class
+        // Create Class
         Level levelEnum = Level.valueOf(level.toUpperCase());
-        String classId = rg.generate("CLASS", "CLS");
+        String classId = UUID.randomUUID().toString();
         AssessmentTemplate template = null;
         if (assessmentTemplateId != null && !assessmentTemplateId.isBlank()) {
             template = assessmentTemplateRepo.findByIdAndSchoolId(assessmentTemplateId, school)
@@ -68,13 +67,13 @@ public class CreateClassUseCase {
         Clazz clazz = Clazz.create(classId, school, template, name, levelEnum, levelOrder);
         classRepo.save(clazz);
 
-        // 4️⃣ Fetch Sections once
+        // Fetch Sections once
         List<Section> sections = sectionIds.stream()
                 .map(id -> sectionRepo.findByIdAndSchoolId(id, school)
                         .orElseThrow(() -> new NotFoundException("Section not found: " + id)))
                 .toList();
 
-        // 5️⃣ Fetch Streams once (for SSS)
+        // Fetch Streams once (for SSS)
         List<Stream> streams = Collections.emptyList();
         if (levelEnum == Level.SSS && streamIds != null && !streamIds.isEmpty()) {
             streams = streamIds.stream()
@@ -83,25 +82,25 @@ public class CreateClassUseCase {
                     .toList();
         }
 
-        // 6️⃣ Link Sections to Class
+        // Link Sections to Class
         for (Section section : sections) {
             if (!classSectionRepo.existsByClassIdAndSchoolIdAndSectionId(classId, school, section.getId())) {
-                String csId = rg.generate("CLASS_SECTION", "CLS");
+                String csId = UUID.randomUUID().toString();
                 ClassSection classSection = ClassSection.create(csId, school, clazz, section);
                 classSectionRepo.save(classSection);
             }
         }
 
-        // 7️⃣ Link Streams to Class (SSS only)
+        // Link Streams to Class (SSS only)
         for (Stream stream : streams) {
             if (!classStreamRepo.existsByClassIdAndSchoolIdAndStreamId(classId, school, stream.getId())) {
-                String cstId = rg.generate("CLASS_STREAM", "CST");
+                String cstId = UUID.randomUUID().toString();
                 ClassStream classStream = ClassStream.create(cstId, school, stream, clazz);
                 classStreamRepo.save(classStream);
             }
         }
 
-        // 8️⃣ Create Class Sessions
+        // Create Class Sessions
         List<ClassSession> sessionsToSave = new ArrayList<>();
         for (Section section : sections) {
 
@@ -109,16 +108,15 @@ public class CreateClassUseCase {
                 for (Stream stream : streams) {
                     if (!sessionRepo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
                             classId, academicYear.getId(), section.getId(), stream.getId(), school)) {
-                        sessionsToSave.add(ClassSession.create(
-                                rg.generate("CLASS_SESSION", "CSN"),
-                                school, clazz, stream, section, academicYear));
+                        sessionsToSave.add(ClassSession.create(UUID.randomUUID().toString(), school, clazz, stream,
+                                section, academicYear));
                     }
                 }
             } else {
                 if (!sessionRepo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIsNullAndSchoolId(
                         classId, academicYear.getId(), section.getId(), school)) {
                     sessionsToSave.add(ClassSession.create(
-                            rg.generate("CLASS_SESSION", "CSN"),
+                            UUID.randomUUID().toString(),
                             school, clazz, null, section, academicYear));
                 }
             }

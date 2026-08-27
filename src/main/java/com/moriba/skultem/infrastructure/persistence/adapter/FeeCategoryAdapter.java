@@ -29,6 +29,11 @@ public class FeeCategoryAdapter implements FeeCategoryRepository {
     }
 
     @Override
+    public Optional<FeeCategory> findByNameAndSchool(String name, String schoolId) {
+        return repo.findByNameIgnoreCaseAndSchoolId(name, schoolId).map(FeeCategoryMapper::toDomain);
+    }
+
+    @Override
     public Page<FeeCategory> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(FeeCategoryMapper::toDomain);
     }
@@ -38,6 +43,9 @@ public class FeeCategoryAdapter implements FeeCategoryRepository {
         return repo.existsByNameIgnoreCaseAndSchoolId(name, schoolid);
     }
 
-    
+    @Override
+    public void deleteById(String id) {
+        repo.deleteById(id);
+    }
 
 }

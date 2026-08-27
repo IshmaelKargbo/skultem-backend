@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.BehaviourCategoryDTO;
@@ -27,7 +29,7 @@ public class CreateBehaviourCategoryUseCase {
             throw new AlreadyExistsException("Behaviour category already exists");
         }
 
-        var id = rg.generate("BEHAVIOUR_CATEGORY", "BVC");
+        var id = UUID.randomUUID().toString();
         var domain = BehaviourCategory.create(id, schoolId, name, description);
         repo.save(domain);
 

@@ -77,6 +77,12 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
+    public Optional<Enrollment> findTopByStudentAndSchoolIdOrderByCreatedAtDesc(String studentId, String schoolId) {
+        return repo.findTopByStudent_IdAndSchoolIdOrderByCreatedAtDesc(studentId, schoolId)
+                .map(EnrollmentMapper::toDomain);
+    }
+
+    @Override
     public Optional<Enrollment> findByClassAndStudentAndSchoolId(String classId, String studentId, String schoolId) {
         return repo.findByClazz_IdAndStudent_IdAndSchoolId(classId, studentId, schoolId)
                 .map(EnrollmentMapper::toDomain);
@@ -121,6 +127,28 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
+    public List<Enrollment> findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(String classId,
+            String sectionId, String streamId, String academicYearId, String schoolId) {
+        var entities = streamId != null
+                ? repo.findAllByClazz_IdAndSection_IdAndStream_IdAndAcademicYear_IdAndSchoolIdAndStatus(
+                        classId, sectionId, streamId, academicYearId, schoolId, Enrollment.Status.ACTIVE)
+                : repo.findAllByClazz_IdAndSection_IdAndStreamIsNullAndAcademicYear_IdAndSchoolIdAndStatus(
+                        classId, sectionId, academicYearId, schoolId, Enrollment.Status.ACTIVE);
+
+        return entities.stream().map(EnrollmentMapper::toDomain).toList();
+    }
+
+    @Override
+    public boolean existsAnyByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(String classId,
+            String sectionId, String streamId, String academicYearId, String schoolId) {
+        return streamId != null
+                ? repo.existsByClazz_IdAndSection_IdAndStream_IdAndAcademicYear_IdAndSchoolId(classId, sectionId,
+                        streamId, academicYearId, schoolId)
+                : repo.existsByClazz_IdAndSection_IdAndStreamIsNullAndAcademicYear_IdAndSchoolId(classId, sectionId,
+                        academicYearId, schoolId);
+    }
+
+    @Override
     public long countByAcademicSchoolId(String academicYearId, String schoolId) {
         return repo.countByAcademicYear_IdAndSchoolId(academicYearId, schoolId);
     }
@@ -150,5 +178,11 @@ public class EnrollementAdapter implements EnrollmentRepository {
             String academicYearId, String schoolId) {
         return repo.findAllByStudentIdInAndAcademicYearIdAndSchoolId(studentIds, academicYearId, schoolId).stream()
                 .map(EnrollmentMapper::toDomain).toList();
+    }
+
+    @Override
+    public long countByStudentIdAndClassIdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
+            Enrollment.Status status) {
+        return repo.countByStudent_IdAndClazz_IdAndSchoolIdAndStatus(studentId, classId, schoolId, status);
     }
 }

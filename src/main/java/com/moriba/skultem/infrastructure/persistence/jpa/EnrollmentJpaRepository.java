@@ -10,12 +10,27 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import com.moriba.skultem.domain.model.Enrollment.Status;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.EnrollmentEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
 public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity, String>,
                 JpaSpecificationExecutor<EnrollmentEntity> {
+
+        List<EnrollmentEntity> findAllByClazz_IdAndSection_IdAndStream_IdAndAcademicYear_IdAndSchoolIdAndStatus(
+                        String classId, String sectionId, String streamId, String academicYearId, String schoolId,
+                        Status status);
+
+        List<EnrollmentEntity> findAllByClazz_IdAndSection_IdAndStreamIsNullAndAcademicYear_IdAndSchoolIdAndStatus(
+                        String classId, String sectionId, String academicYearId, String schoolId, Status status);
+
+        boolean existsByClazz_IdAndSection_IdAndStream_IdAndAcademicYear_IdAndSchoolId(
+                        String classId, String sectionId, String streamId, String academicYearId, String schoolId);
+
+        boolean existsByClazz_IdAndSection_IdAndStreamIsNullAndAcademicYear_IdAndSchoolId(
+                        String classId, String sectionId, String academicYearId, String schoolId);
+
         boolean existsByStudent_IdAndClazz_IdAndSection_IdAndAcademicYear_IdAndStream_IdAndSchoolId(
                         String studentId,
                         String classId,
@@ -43,6 +58,9 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
                         String academicYearId,
                         String schoolId);
 
+        Optional<EnrollmentEntity> findTopByStudent_IdAndSchoolIdOrderByCreatedAtDesc(String studentId,
+                        String schoolId);
+
         List<EnrollmentEntity> findAllByStream_IdAndAcademicYear_IdAndSchoolId(String streamId, String academicYearId,
                         String schoolId);
 
@@ -68,6 +86,9 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
         long countByAcademicYear_IdAndSchoolId(String academicYearId, String schoolId);
 
         long countBySchoolIdAndAcademicYear_IdAndCreatedAtBefore(String schoolId, String academicYearId, Instant date);
+
+        long countByStudent_IdAndClazz_IdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
+                        Status status);
 
         default Page<EnrollmentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<EnrollmentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

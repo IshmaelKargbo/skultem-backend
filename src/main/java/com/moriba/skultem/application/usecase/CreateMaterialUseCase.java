@@ -37,13 +37,8 @@ public class CreateMaterialUseCase {
         var domain = Material.create(schoolId, name, unit, qty, category);
         repo.save(domain);
 
-        logActivityUseCase.log(
-                schoolId,
-                ActivityType.FEES,
-                "Material category created",
-                domain.getName(),
-                null,
-                domain.getId());
+        logActivityUseCase.log(schoolId, ActivityType.FEES, "Material category created",
+                domain.getName(), null, domain.getId());
 
         return MaterialMapper.toDTO(domain);
     }

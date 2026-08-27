@@ -37,8 +37,9 @@ public class DashboardController {
     @GetMapping("/admin/report")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<DashboardDTO> report(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
-        var res = dashboardReportUseCase.getDashboardSummary(schoolId);
+            @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = dashboardReportUseCase.getDashboardSummary(schoolId, academicYearId);
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 
@@ -61,8 +62,9 @@ public class DashboardController {
     @GetMapping("/admin/student-enrollment")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<MonthlyEnrollmentDTO>> studentEnrollment(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
-        var res = dashboardEnrollmentTrendUseCase.monthlyEnrollmentTrend(schoolId);
+            @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = dashboardEnrollmentTrendUseCase.monthlyEnrollmentTrend(schoolId, academicYearId);
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 

@@ -21,16 +21,19 @@ public class AssessmentScoreMapper {
                 param.getCycle().getAssessment().getPosition(),
                 param.getStatus().name(),
                 "",
-                "");
+                "",
+                param.isPassed());
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade, String trend) {
         int score = 0, weight = 0, weightedScore = 0;
+        Boolean passed = null;
 
         if (param.isApproved()) {
             score = param.getScore();
             weight = param.getWeight();
             weightedScore = param.getWeightedScore();
+            passed = param.isPassed();
         }
 
         return new AssessmentScoreDTO(
@@ -48,16 +51,19 @@ public class AssessmentScoreMapper {
                 param.getCycle().getAssessment().getPosition(),
                 param.getStatus().name(),
                 grade,
-                trend);
+                trend,
+                passed);
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade) {
         int score = 0, weight = 0, weightedScore = 0;
+        Boolean passed = null;
 
         if (param.isApproved() || param.isSubmited() || param.isCompleted()) {
             score = param.getScore();
             weight = param.getWeight();
             weightedScore = param.getWeightedScore();
+            passed = param.isPassed();
         }
 
         return new AssessmentScoreDTO(
@@ -75,6 +81,7 @@ public class AssessmentScoreMapper {
                 param.getCycle().getAssessment().getPosition(),
                 param.getStatus().name(),
                 grade,
-                "");
+                "",
+                passed);
     }
 }

@@ -1,0 +1,3 @@
+ALTER TABLE schools
+    ADD COLUMN primary_color VARCHAR(7) NOT NULL DEFAULT '#1878c5',
+    ADD COLUMN secondary_color VARCHAR(7) NOT NULL DEFAULT '#0f172a';

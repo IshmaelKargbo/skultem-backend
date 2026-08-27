@@ -51,6 +51,13 @@ public class Term extends AggregateRoot<String> {
         return this.status == Status.CLOSED;
     }
 
+    public void update(String name, LocalDate startDate, LocalDate endDate) {
+        this.name = name;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        touch(Instant.now());
+    }
+
     public void lock() {
         this.status = Status.CLOSED;
         touch(Instant.now());

@@ -94,8 +94,9 @@ public class ReportExportController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam int page,
             @RequestParam int size,
+            @RequestParam(required = false) String academicYearId,
             @RequestBody RunReportDTO param) {
-        var res = reportExportService.runReport(school, param, page, size);
+        var res = reportExportService.runReport(school, param, page, size, academicYearId);
         var data = res.getData();
         var meta = res.getMeta();
         return new ApiResponse<>("success", 200, "Report generated successfully", data, meta);

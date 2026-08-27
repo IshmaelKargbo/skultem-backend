@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.ClassSessionDTO;
 import com.moriba.skultem.application.usecase.CreateClassSessionUseCase;
+import com.moriba.skultem.application.usecase.CreateClassSessionsForAcademicYearUseCase;
 import com.moriba.skultem.application.usecase.GetClassSessionUseCase;
 import com.moriba.skultem.application.usecase.ListClassSessionBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListClassSessionByTeacherUseCase;
@@ -37,6 +38,7 @@ public class ClassSessionController {
     private final ListClassSessionByTeacherUseCase listClassSessionByTeacherUseCase;
     private final ListUnassignClassBySchoolUseCase listUnassignClassBySchoolUseCase;
     private final GetClassSessionUseCase getClassSessionUseCase;
+    private final CreateClassSessionsForAcademicYearUseCase createClassSessionsForAcademicYearUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -47,13 +49,23 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class session created successfully", null);
     }
 
+    @PostMapping("/setup-all")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Object> setupAll(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String academicYearId) {
+        int created = createClassSessionsForAcademicYearUseCase.execute(school, academicYearId);
+        return new ApiResponse<>("success", 200, created + " class session(s) created", Map.of("created", created));
+    }
+
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listClassSessionBySchoolUseCase.execute(school, page - 1, size);
+        var res = listClassSessionBySchoolUseCase.execute(school, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -68,8 +80,9 @@ public class ClassSessionController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listMe(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @AuthenticationPrincipal(expression = "userId") String userId) {
-        var res = listClassSessionByTeacherUseCase.execute(school, userId, 0, 0);
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @RequestParam(required = false) String academicYearId) {
+        var res = listClassSessionByTeacherUseCase.execute(school, userId, academicYearId, 0, 0);
         return new ApiResponse<>("success", 200, "Class sessions fetched successfully", res);
     }
 

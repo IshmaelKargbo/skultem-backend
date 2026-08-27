@@ -8,11 +8,9 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.AssessmentCycleOverviewDTO;
 import com.moriba.skultem.application.dto.ClassAssessmentCycleStatusDTO;
 import com.moriba.skultem.application.mapper.TermMapper;
-import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
-import com.moriba.skultem.domain.repository.TermRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +23,18 @@ public class GetAssessmentCycleOverviewUseCase {
     private final ClassRepository classRepository;
     private final AssessmentRepository assessmentRepository;
     private final AssessmentScoreRepository assessmentScoreRepository;
-    private final TermRepository termRepository;
+    private final ResolveActiveTermUseCase resolveActiveTermUseCase;
 
     public AssessmentCycleOverviewDTO execute(String schoolId) {
-        var activeTerm = termRepository.findFirstBySchoolIdAndStatus(schoolId, Term.Status.ACTIVE)
+        return execute(schoolId, null);
+    }
+
+    /**
+     * @param academicYearId lets an admin browse another year's overview (e.g. a closed one)
+     *                       without changing what's active for the rest of the school.
+     */
+    public AssessmentCycleOverviewDTO execute(String schoolId, String academicYearId) {
+        var activeTerm = resolveActiveTermUseCase.execute(schoolId, academicYearId)
                 .map(TermMapper::toDTO)
                 .orElse(null);
 

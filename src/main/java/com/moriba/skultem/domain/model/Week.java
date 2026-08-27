@@ -46,4 +46,20 @@ public class Week extends AggregateRoot<String> {
         this.state = state;
         touch(Instant.now());
     }
+
+    // Rolls up a scheme's week states into a single overall progress state:
+    // no weeks yet, or none started -> NOT_STARTED; every week completed -> COMPLETED;
+    // anything else (a mix, or some started) -> IN_PROGRESS.
+    public static State deriveProgress(List<State> weekStates) {
+        if (weekStates.isEmpty())
+            return State.NOT_STARTED;
+
+        if (weekStates.stream().allMatch(s -> s == State.COMPLETED))
+            return State.COMPLETED;
+
+        if (weekStates.stream().anyMatch(s -> s != State.NOT_STARTED))
+            return State.IN_PROGRESS;
+
+        return State.NOT_STARTED;
+    }
 }

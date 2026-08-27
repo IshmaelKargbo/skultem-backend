@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -38,7 +39,7 @@ public class AcademicYearAdapter implements AcademicYearRepository {
 
     @Override
     public Page<AcademicYear> findAllBySchool(String school, Pageable pageable) {
-        return repo.findAllBySchoolId(school, pageable).map(AcademicYearMapper::toDomain);
+        return repo.findAllBySchoolIdAndStatusNot(school, AcademicYear.Status.DELETED, pageable).map(AcademicYearMapper::toDomain);
     }
 
     @Override
@@ -60,5 +61,22 @@ public class AcademicYearAdapter implements AcademicYearRepository {
     @Override
     public Optional<AcademicYear> findByIdAndSchoolId(String id, String school) {
         return repo.findByIdAndSchoolId(id, school).map(AcademicYearMapper::toDomain);
+    }
+
+    @Override
+    public Optional<AcademicYear> findNextBySchool(String school, LocalDate after) {
+        return repo.findFirstBySchoolIdAndStartDateAfterAndStatusNotOrderByStartDateAsc(
+                school, after, AcademicYear.Status.DELETED).map(AcademicYearMapper::toDomain);
+    }
+
+    @Override
+    public Optional<AcademicYear> findPreviousBySchool(String school, LocalDate before) {
+        return repo.findFirstBySchoolIdAndEndDateBeforeAndStatusNotOrderByEndDateDesc(
+                school, before, AcademicYear.Status.DELETED).map(AcademicYearMapper::toDomain);
+    }
+
+    @Override
+    public boolean existsAsNextYear(String school, String yearId) {
+        return repo.existsByNextYear_IdAndSchoolId(yearId, school);
     }
 }

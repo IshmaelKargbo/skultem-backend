@@ -71,6 +71,9 @@ public class FeeStructureEntity {
 
     private String description;
 
+    @Column(nullable = false)
+    private boolean system;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

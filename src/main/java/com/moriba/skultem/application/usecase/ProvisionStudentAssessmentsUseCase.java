@@ -32,7 +32,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional
+// Callers (e.g. ApprovePromotionRequestUseCase) treat RuleException/NotFoundException from here as
+// a per-student, best-effort failure and catch it to keep going - but since this method joins the
+// caller's transaction (default REQUIRED propagation), Spring would otherwise mark that shared
+// transaction rollback-only the moment either exception leaves this method, dooming the whole batch
+// with an UnexpectedRollbackException at commit even though the caller "handled" it.
+@Transactional(dontRollbackOn = { RuleException.class, NotFoundException.class })
 @RequiredArgsConstructor
 public class ProvisionStudentAssessmentsUseCase {
     private final AssessmentRepository assessmentRepo;

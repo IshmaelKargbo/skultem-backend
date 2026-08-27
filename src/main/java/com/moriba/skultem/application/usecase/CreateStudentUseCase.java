@@ -1,7 +1,5 @@
 package com.moriba.skultem.application.usecase;
 
-import java.time.Instant;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,32 +26,24 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.StudentMapper;
 import com.moriba.skultem.application.mapper.SubjectMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
-import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.ClassSubject;
-import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
-import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.House;
 import com.moriba.skultem.domain.model.Parent;
 import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.StreamSubject;
 import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.domain.model.StudentFee;
-import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
-import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentSubjectRepository;
-import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.HouseRepository;
 import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
-import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
@@ -61,7 +51,6 @@ import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.bucket.SupabaseStorageService;
 import com.moriba.skultem.infrastructure.mail.MailService;
-import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -77,17 +66,15 @@ public class CreateStudentUseCase {
     private final StreamSubjectRepository streamSubjectRepo;
     private final SubjectRepository subjectRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
-    private final FeeStructureRepository feeStructureRepo;
     private final SupabaseStorageService storageService;
     private final ParentRepository parentRepo;
     private final HouseRepository houseRepo;
     private final StudentParentRepository studentParentRepo;
     private final MailService mailService;
     private final CreateParentUseCase createParentUseCase;
-    private final StudentFeeRepository studentFeeRepo;
     private final EnrollmentCreationService enrollmentCreationService;
-    private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
+    private final ApplyApplicableFeesToEnrollmentUseCase applyApplicableFeesToEnrollmentUseCase;
     private final CreateStudentParentUseCase createStudentParentUseCase;
     private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
@@ -136,7 +123,7 @@ public class CreateStudentUseCase {
         Enrollment enrollment = enrollStudent(student, session);
         enrolledSubjects(enrollment, selectedOptionIds);
         provisionStudentAssessmentsUseCase.execute(enrollment);
-        applyFees(enrollment);
+        applyApplicableFeesToEnrollmentUseCase.execute(enrollment);
 
         String photoUrl = null;
         if (param.photo() != null && !param.photo().isEmpty()) {
@@ -191,62 +178,6 @@ public class CreateStudentUseCase {
         }
 
         return createParentUseCase.create(parent);
-    }
-
-    private void applyFees(Enrollment enrollment) {
-        Student student = enrollment.getStudent();
-        AcademicYear academicYear = enrollment.getAcademicYear();
-        Clazz clazz = enrollment.getClazz();
-        String schoolId = enrollment.getSchoolId();
-
-        List<FeeStructure> fees = feeStructureRepo.findApplicableFees(schoolId, academicYear.getId(), clazz.getId());
-
-        int assignedCount = 0;
-        BigDecimal totalAssignedAmount = BigDecimal.ZERO;
-
-        for (FeeStructure fee : fees) {
-            if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(schoolId, enrollment.getId(),
-                    student.getId(), fee.getId()))
-                continue;
-
-            StudentFee studentFee = StudentFee.create(schoolId, enrollment, student, fee, null);
-            studentFeeRepo.save(studentFee);
-
-            String description = Generate.generateLedgerDescription(
-                    TransactionType.FEE_ASSINMENT,
-                    fee.getTerm().getName(),
-                    fee.getCategory().getName(),
-                    student.getGivenNames(),
-                    student.getFamilyName(),
-                    student.getAdmissionNumber(),
-                    fee.getAmount());
-
-            createStudentLedgerUsercase.createEntry(
-                    schoolId,
-                    academicYear.getId(),
-                    student.getId(),
-                    fee.getTerm().getId(),
-                    TransactionType.FEE_ASSINMENT,
-                    Direction.DEBIT,
-                    fee.getAmount(),
-                    fee.getId(),
-                    description,
-                    Instant.now());
-
-            assignedCount += 1;
-            totalAssignedAmount = totalAssignedAmount.add(fee.getAmount());
-        }
-
-        if (assignedCount > 0) {
-            String meta = "assignedCount=" + assignedCount + ";totalAmount=" + totalAssignedAmount;
-            logActivityUseCase.log(
-                    schoolId,
-                    ActivityType.FEES,
-                    "Fees assigned to student",
-                    student.getGivenNames() + " " + student.getFamilyName(),
-                    meta,
-                    student.getId());
-        }
     }
 
     private void enrolledSubjects(Enrollment enrollment, List<String> selectedOptionIds) {

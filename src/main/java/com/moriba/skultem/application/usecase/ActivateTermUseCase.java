@@ -23,6 +23,7 @@ public class ActivateTermUseCase {
 
     private final TermRepository termRepository;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepository;
+    private final SeedPlatformFeeForAcademicYearUseCase seedPlatformFeeForAcademicYearUseCase;
 
     @AuditLogAnnotation(action = "TERM_ACTIVATED")
     public TermDTO execute(String schoolId, String termId) {
@@ -63,6 +64,8 @@ public class ActivateTermUseCase {
             termRepository.save(term);
         });
 
+        seedPlatformFeeForAcademicYearUseCase.execute(schoolId, target.getAcademicYear(), target);
+
         var targetCycles = cycleRepository.findAllBySchoolAndTerm(schoolId, termId);
         if (!targetCycles.isEmpty()) {
             boolean hasOpenCycle = targetCycles.stream()
@@ -71,11 +74,11 @@ public class ActivateTermUseCase {
             if (!hasOpenCycle) {
                 int firstPosition = targetCycles.stream()
                         .map(cycle -> cycle.getAssessment().getPosition())
-                        .min(Integer::compareTo)
+                        .min((a, b) -> a.compareTo(b))
                         .orElse(1);
 
                 var firstCycles = cycleRepository.findAllBySchoolTermAndPosition(schoolId, termId, firstPosition);
-                firstCycles.forEach(ClassSubjectAssessmentLifeCycle::markDraft);
+                firstCycles.forEach(a -> a.markDraft());
                 cycleRepository.saveAll(firstCycles);
             }
         }

@@ -19,10 +19,14 @@ import lombok.RequiredArgsConstructor;
 public class StudentLedgerReportUseCase {
 
         private final StudentLedgerEntryRepository repo;
+        private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
-        public StudentLedgerReportDTO calculateReport(String schoolId) {
+        public StudentLedgerReportDTO calculateReport(String schoolId, String academicYearId) {
 
-                List<StudentLedgerEntry> entries = repo.findAllBySchoolIdOrderByPaidAtDesc(schoolId, Pageable.unpaged())
+                var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
+
+                List<StudentLedgerEntry> entries = repo
+                                .findAllByAcademicYearAndSchool(academicYear.getId(), schoolId, Pageable.unpaged())
                                 .getContent();
 
                 BigDecimal totalDebit = entries.stream()

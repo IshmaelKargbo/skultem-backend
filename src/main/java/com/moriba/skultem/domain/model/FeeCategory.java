@@ -25,4 +25,10 @@ public class FeeCategory extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new FeeCategory(id, schoolId, name, description, now, now);
     }
+
+    public void update(String name, String description) {
+        this.name = name;
+        this.description = description;
+        touch(Instant.now());
+    }
 }

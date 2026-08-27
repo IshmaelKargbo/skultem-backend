@@ -24,6 +24,11 @@ public class School extends AggregateRoot<String> {
     private Owner owner;
     private Status status;
     private List<GradeBand> gradingScale;
+    private String logo;
+    private String principalName;
+    private String principalSignature;
+    private String primaryColor;
+    private String secondaryColor;
 
     public enum Status {
         ACTIVE,
@@ -31,8 +36,12 @@ public class School extends AggregateRoot<String> {
         DELETED
     }
 
+    private static final String DEFAULT_PRIMARY_COLOR = "#1878c5";
+    private static final String DEFAULT_SECONDARY_COLOR = "#0f172a";
+
     public School(String id, String name, String domain, Address address, Owner owner, Status status,
-            List<GradeBand> gradingScale, Instant createdAt, Instant updatedAt) {
+            List<GradeBand> gradingScale, String logo, String principalName, String principalSignature,
+            String primaryColor, String secondaryColor, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -40,18 +49,35 @@ public class School extends AggregateRoot<String> {
         this.owner = owner;
         this.domain = domain;
         this.gradingScale = validateAndNormalizeScale(gradingScale);
+        this.logo = logo;
+        this.principalName = principalName;
+        this.principalSignature = principalSignature;
+        this.primaryColor = primaryColor != null ? primaryColor : DEFAULT_PRIMARY_COLOR;
+        this.secondaryColor = secondaryColor != null ? secondaryColor : DEFAULT_SECONDARY_COLOR;
         touch(updatedAt);
     }
 
     public static School create(String id, String name, String domain, Address address, Owner owner) {
         Instant now = Instant.now();
-        return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), now, now);
+        return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), null, null, null,
+                DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, now, now);
     }
 
     public void update(String name, String domain, Address address) {
         this.address = address;
         this.name = name;
         this.domain = domain;
+        touch(Instant.now());
+    }
+
+    public void updateBranding(String logo, String principalName, String principalSignature, String primaryColor,
+            String secondaryColor) {
+        this.logo = logo;
+        this.principalName = principalName;
+        this.principalSignature = principalSignature;
+        this.primaryColor = primaryColor != null ? primaryColor : DEFAULT_PRIMARY_COLOR;
+        this.secondaryColor = secondaryColor != null ? secondaryColor : DEFAULT_SECONDARY_COLOR;
+        touch(Instant.now());
     }
 
     public void setStatus(Status status) {

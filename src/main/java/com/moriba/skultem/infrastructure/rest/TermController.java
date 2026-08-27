@@ -9,16 +9,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TermDTO;
 import com.moriba.skultem.application.usecase.CreateTermUseCase;
+import com.moriba.skultem.application.usecase.DeleteTermUseCase;
 import com.moriba.skultem.application.usecase.GetActiveTermUseCase;
 import com.moriba.skultem.application.usecase.ActivateTermUseCase;
 import com.moriba.skultem.application.usecase.ListTermByAcademicYearIdUseCase;
 import com.moriba.skultem.application.usecase.ListTermBySchoolIdUseCase;
+import com.moriba.skultem.application.usecase.UpdateTermUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateTermDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +40,8 @@ public class TermController {
     private final GetActiveTermUseCase getActiveTermUseCase;
     private final ListTermBySchoolIdUseCase listTermBySchoolIdUseCase;
     private final ListTermByAcademicYearIdUseCase listTermByAcademicYearIdUseCase;
+    private final UpdateTermUseCase updateTermUseCase;
+    private final DeleteTermUseCase deleteTermUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -52,8 +57,9 @@ public class TermController {
     public ApiResponse<List<TermDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(defaultValue = "1") Integer page) {
-        var res = listTermBySchoolIdUseCase.execute(school, page - 1, size);
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(required = false) String academicYearId) {
+        var res = listTermBySchoolIdUseCase.execute(school, academicYearId, page - 1, size);
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
                 "size", res.getSize(),
@@ -93,6 +99,25 @@ public class TermController {
             @PathVariable String id) {
         var res = activateTermUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Term activated successfully", res);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<TermDTO> update(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody CreateTermDTO param) {
+        var res = updateTermUseCase.execute(school, id, param.name(), param.startDate(), param.endDate());
+        return new ApiResponse<>("success", 200, "Term updated successfully", res);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Void> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        deleteTermUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Term deleted successfully", null);
     }
 
 }

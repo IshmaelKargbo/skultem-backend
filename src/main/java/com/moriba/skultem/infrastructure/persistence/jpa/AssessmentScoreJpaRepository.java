@@ -27,6 +27,9 @@ public interface AssessmentScoreJpaRepository
 
         List<AssessmentScoreEntity> findAllByCycle_Id(String cycleId);
 
+        List<AssessmentScoreEntity> findAllByStudentAssessment_Enrollment_IdAndSchoolId(String enrollmentId,
+                        String schoolId);
+
         boolean existsByStudentAssessment_IdAndCycle_Id(String studentAssessmentId, String cycleId);
 
         boolean existsByStudentAssessment_Enrollment_Clazz_IdAndSchoolIdAndScoreGreaterThan(
@@ -48,6 +51,20 @@ public interface AssessmentScoreJpaRepository
         boolean existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndSchoolIdAndCycle_StatusNot(
                         String classId,
                         String subjectId,
+                        String schoolId,
+                        ClassSubjectAssessmentLifeCycle.Status status);
+
+        boolean existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndScoreGreaterThan(
+                        String classId,
+                        String subjectId,
+                        String academicYearId,
+                        String schoolId,
+                        Integer score);
+
+        boolean existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndCycle_StatusNot(
+                        String classId,
+                        String subjectId,
+                        String academicYearId,
                         String schoolId,
                         ClassSubjectAssessmentLifeCycle.Status status);
 

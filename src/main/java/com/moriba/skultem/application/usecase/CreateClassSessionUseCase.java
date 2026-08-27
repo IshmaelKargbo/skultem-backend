@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AlreadyExistsException;
@@ -28,7 +30,6 @@ public class CreateClassSessionUseCase {
     private final StreamRepository streamRepo;
     private final ClassSectionRepository classSectionRepo;
     private final AcademicYearRepository academicYearRepo;
-    private final ReferenceGeneratorUsecase rg;
 
     public void execute(String schoolId, String classId, String academicYearId, String streamId,
             String sectionId) {
@@ -41,7 +42,7 @@ public class CreateClassSessionUseCase {
         AcademicYear academicYear = academicYearRepo.findByIdAndSchoolId(academicYearId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Academic year not found"));
 
-        if (!academicYear.isActive()) {
+        if (academicYear.isLocked()) {
             throw new IllegalStateException("Cannot create class session in a closed academic year");
         }
 
@@ -56,21 +57,21 @@ public class CreateClassSessionUseCase {
         boolean exists;
         Stream stream = null;
 
-        if (streamId == null) {
+        if (streamId != null) {
             stream = streamRepo.findByIdAndSchoolId(streamId, schoolId)
                     .orElseThrow(() -> new NotFoundException("stream not found"));
-            exists = repo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIsNullAndSchoolId(classId,
-                    academicYearId, sectionId, schoolId);
-        } else {
             exists = repo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
                     classId, academicYearId, sectionId, streamId, schoolId);
+        } else {
+            exists = repo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIsNullAndSchoolId(classId,
+                    academicYearId, sectionId, schoolId);
         }
 
         if (exists) {
             throw new AlreadyExistsException("Class session already exists");
         }
 
-        String id = rg.generate("CLASS_SESSION", "CLS");
+        String id = UUID.randomUUID().toString();
         ClassSession record = ClassSession.create(id, schoolId, clazz, stream, cs.getSection(), academicYear);
         repo.save(record);
     }

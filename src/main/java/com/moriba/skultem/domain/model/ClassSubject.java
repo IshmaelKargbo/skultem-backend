@@ -45,6 +45,10 @@ public class ClassSubject extends AggregateRoot<String> {
         this.locked = true;
     }
 
+    public void unlock() {
+        this.locked = false;
+    }
+
     public boolean isLocked() {
         return Boolean.TRUE.equals(this.locked);
     }
