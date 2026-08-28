@@ -1,11 +1,33 @@
-clear && mvn flyway:migrate \
-  -Dflyway.url="jdbc:postgresql://dpg-d78eboedqaus73ct0c10-a:5432/skultem" \
-  -Dflyway.user="moriba" \
-  -Dflyway.password="7hAhHUxPdmgUFTFCBl6MYkMICDtEGSuv" \
-  -Dflyway.locations="classpath:db/migration"
+# Running Flyway migrations
+
+Requires the flyway-maven-plugin in pom.xml (added — see pom.xml build/plugins).
+
+## Production
+
+Use the External Database URL from the Render dashboard (Postgres instance -> Info tab),
+NOT the bare internal "dpg-...-a" hostname — that only resolves inside Render's private
+network and will fail to connect from a local machine. The external host is region-qualified,
+e.g. dpg-d78eboedqaus73ct0c10-a.frankfurt-postgres.render.com — copy the exact value shown
+in the dashboard, don't guess the region suffix.
+
+Recommended: don't put the production password in this file. Export it as an env var
+instead and reference it, e.g.:
+
+  export FLYWAY_PROD_PASSWORD="7hAhHUxPdmgUFTFCBl6MYkMICDtEGSuv"
+
+  clear && mvn flyway:migrate \
+    -Dflyway.url="jdbc:postgresql://dpg-d78eboedqaus73ct0c10-a.frankfurt-postgres.render.com:5432/skultem" \
+    -Dflyway.user="moriba" \
+    -Dflyway.password="$FLYWAY_PROD_PASSWORD" \
+    -Dflyway.locations="classpath:db/migration"
+
+Tip: run `mvn flyway:info` first (read-only) to see pending migrations before running
+`flyway:migrate` against production.
+
+## Local
 
 clear && mvn flyway:migrate \
-  -Dflyway.url="jdbc:postgresql://localhost:5432/cashflow" \
+  -Dflyway.url="jdbc:postgresql://localhost:5432/skultem" \
   -Dflyway.user="moriba" \
   -Dflyway.password="moriba@2024" \
   -Dflyway.locations="classpath:db/migration"

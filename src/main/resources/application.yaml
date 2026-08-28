@@ -61,10 +61,6 @@ spring:
   threads:
     virtual:
       enabled: true
-supabase:
-  bucket: ${SUPABASE_BUCKET:students}
-  key: ${SUPABASE_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiemppaXZ1dGxjYW5hamJjZHhhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkzMjczOCwiZXhwIjoyMDg2NTA4NzM4fQ.I3f7qa_nk7HKu6_84iQmZ6_BGe23x8tdidm3gZs3WUo}
-  url: ${SUPABASE_URL:https://cbzjiivutlcanajbcdxa.supabase.co}
 r2:
   account-id: ${R2_ACCOUNT_ID:1317919cf429d1c5f81310e82e8f5663}
   access-key-id: ${R2_ACCESS_KEY_ID:a41fa013e777746d53eac8a611b8cd1c}

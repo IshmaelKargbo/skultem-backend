@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 // Cloudflare R2 is S3-compatible, so the AWS SDK's S3 client works against it
 // as-is once pointed at the account's R2 endpoint with "auto" as the region.
-// This service backs school branding uploads (logo, principal signature) -
-// student photo uploads stay on Supabase (SupabaseStorageService), untouched.
+// Backs both school branding uploads (logo, principal signature) and student
+// photo uploads - Supabase storage has been fully retired.
 @Service
 public class R2StorageService {
 

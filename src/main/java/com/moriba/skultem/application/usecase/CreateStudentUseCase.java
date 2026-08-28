@@ -49,7 +49,7 @@ import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Level;
-import com.moriba.skultem.infrastructure.bucket.SupabaseStorageService;
+import com.moriba.skultem.infrastructure.bucket.R2StorageService;
 import com.moriba.skultem.infrastructure.mail.MailService;
 
 import jakarta.transaction.Transactional;
@@ -66,7 +66,7 @@ public class CreateStudentUseCase {
     private final StreamSubjectRepository streamSubjectRepo;
     private final SubjectRepository subjectRepo;
     private final EnrollmentSubjectRepository enrollmentSubjectRepo;
-    private final SupabaseStorageService storageService;
+    private final R2StorageService storageService;
     private final ParentRepository parentRepo;
     private final HouseRepository houseRepo;
     private final StudentParentRepository studentParentRepo;
@@ -353,7 +353,7 @@ public class CreateStudentUseCase {
 
             String path = schoolId + "/" + fileName;
 
-            return storageService.uploadStudentFile(file, path);
+            return storageService.uploadFile(file, path);
         } catch (Exception e) {
             throw new FileUploadException("Failed to upload student photo for studentId=" + studentId);
         }
