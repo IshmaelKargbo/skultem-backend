@@ -50,6 +50,8 @@ public class PaymentEntity {
     @Column(nullable = false)
     private String referenceNo;
 
+    private String externalReference;
+
     private String note;
 
     @Column(nullable = false)

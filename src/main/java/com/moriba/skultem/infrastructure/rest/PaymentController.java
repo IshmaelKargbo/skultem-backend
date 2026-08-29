@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import com.moriba.skultem.application.dto.PaymentDTO;
+import com.moriba.skultem.application.usecase.GetReceiptUseCase;
 import com.moriba.skultem.application.usecase.ListStudentPaymentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.RecordPaymentUseCase;
 import com.moriba.skultem.application.usecase.RecordPaymentUseCase.FeeRecord;
@@ -37,7 +38,8 @@ public class PaymentController {
     private final SumStudentPaymentByFeeUseCase sumStudentPaymentByFeeUseCase;
     private final SumStudentPaymentByFeeThisYearUseCase studentPaymentByFeeThisYearUseCase;
     private final ListStudentPaymentBySchoolUseCase listStudentPaymentBySchoolUseCase;
-    
+    private final GetReceiptUseCase getReceiptUseCase;
+
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -76,6 +78,15 @@ public class PaymentController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Payments fetched successfully", list, meta);
+    }
+
+    @GetMapping("/receipt/{referenceNo}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    public ApiResponse<List<PaymentDTO>> getReceipt(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String referenceNo) {
+        var res = getReceiptUseCase.execute(school, referenceNo);
+        return new ApiResponse<>("success", 200, "Receipt fetched successfully", res);
     }
 
     @GetMapping("/student/{studentId}/{feeId}")

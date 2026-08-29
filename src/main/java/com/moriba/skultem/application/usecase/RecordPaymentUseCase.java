@@ -117,6 +117,7 @@ public class RecordPaymentUseCase {
                                         item.amount(),
                                         param.method(),
                                         receiptNo,
+                                        param.referenceNo(),
                                         param.note(),
                                         Instant.now());
 

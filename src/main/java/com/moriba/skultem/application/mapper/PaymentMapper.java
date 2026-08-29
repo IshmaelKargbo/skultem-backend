@@ -12,6 +12,6 @@ public class PaymentMapper {
         FeeStructureDTO fee = FeeStructureMapper.toDTO(param.getFee());
 
         return new PaymentDTO(param.getId(), name, student.photo(), fee.category().name(), fee.term().name(), param.getAmount(), param.getPaidAt(),
-                param.getMethod(), param.getReferenceNo(), param.getNote(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getMethod(), param.getReferenceNo(), param.getExternalReference(), param.getNote(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

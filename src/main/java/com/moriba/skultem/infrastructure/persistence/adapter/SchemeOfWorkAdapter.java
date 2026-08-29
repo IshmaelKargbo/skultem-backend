@@ -53,12 +53,16 @@ public class SchemeOfWorkAdapter implements SchemeOfWorkRepository {
 
     @Override
     public Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable) {
-        return repo.search(school, subjectId, sessionId, termId, progress, pageable).map(SchemeOfWorkMapper::toDomain);
+        return repo.search(school, subjectId, sessionId, termId,
+                progress != null, progress == Week.State.COMPLETED, progress == Week.State.NOT_STARTED, progress == Week.State.IN_PROGRESS,
+                pageable).map(SchemeOfWorkMapper::toDomain);
     }
 
     @Override
     public Page<SchemeOfWork> searchByTeacher(String teacherId, String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable) {
-        return repo.searchByTeacher(teacherId, school, subjectId, sessionId, termId, progress, pageable).map(SchemeOfWorkMapper::toDomain);
+        return repo.searchByTeacher(teacherId, school, subjectId, sessionId, termId,
+                progress != null, progress == Week.State.COMPLETED, progress == Week.State.NOT_STARTED, progress == Week.State.IN_PROGRESS,
+                pageable).map(SchemeOfWorkMapper::toDomain);
     }
 
 }

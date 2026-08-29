@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
 import com.moriba.skultem.application.dto.BehaviourDTO;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
+import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
 import com.moriba.skultem.application.dto.ReportResponse;
 import com.moriba.skultem.application.dto.StudentAssessmentDTO;
@@ -37,6 +38,7 @@ import com.moriba.skultem.application.usecase.SubjectReportUseCase;
 import com.moriba.skultem.application.usecase.TeacherReportUseCase;
 import com.moriba.skultem.application.usecase.TransactionReportUseCase;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.FilterOperator;
 import com.moriba.skultem.infrastructure.rest.dto.RunReportDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -68,12 +70,44 @@ public class ReportExportService {
 
         public ReportFile exportPayments(String schoolId, String format, String classId, LocalDate startDate,
                         LocalDate endDate) {
-                List<String> headers = List.of("Paid At", "Student", "Class", "Fee Category", "Term", "Amount",
-                                "Method",
+                var dto = new ReportBuilderDTO(schoolId, "payments", dateRangeFilter("paidAt", startDate, endDate));
+                var page = paymentReportUseCase.execute(dto, 0, 0);
+                List<PaymentDTO> records = page.getContent();
+
+                List<String> headers = List.of("Paid At", "Student", "Fee Category", "Term", "Amount", "Method",
                                 "Reference");
-                List<List<String>> rows = null;
+                List<List<String>> rows = records.stream()
+                                .map(r -> List.of(
+                                                formatInstant(r.paidAt()),
+                                                safe(r.student()),
+                                                safe(r.fee()),
+                                                safe(r.term()),
+                                                safe(r.amount()),
+                                                r.paymentMethod() == null ? "" : r.paymentMethod().name(),
+                                                safe(r.referenceNo())))
+                                .toList();
 
                 return build("payments", "Payments Report", headers, rows, format);
+        }
+
+        // BETWEEN/GREATER_THAN/LESS_THAN on the given field, whichever of startDate/endDate were
+        // actually supplied - mirrors the date-range filter shape the /report/export/run and
+        // /widget/run endpoints already accept, so the same "from/to" pair works here too.
+        private List<Filter> dateRangeFilter(String field, LocalDate startDate, LocalDate endDate) {
+                if (startDate == null && endDate == null) {
+                        return List.of();
+                }
+
+                if (startDate != null && endDate != null) {
+                        return List.of(new Filter(field, FilterOperator.BETWEEN, "instant", startDate.toString(),
+                                        endDate.toString(), null));
+                }
+
+                return startDate != null
+                                ? List.of(new Filter(field, FilterOperator.GREATER_THAN, "instant",
+                                                startDate.toString(), null, null))
+                                : List.of(new Filter(field, FilterOperator.LESS_THAN, "instant", endDate.toString(),
+                                                null, null));
         }
 
         public ReportFile exportAttendance(String schoolId, String classSessionId, String format, LocalDate startDate,

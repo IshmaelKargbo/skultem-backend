@@ -21,6 +21,8 @@ public interface PaymentJpaRepository
 
     Page<PaymentEntity> findAllByStudent_Id(String studentId, Pageable pageable);
 
+    List<PaymentEntity> findAllByReferenceNoAndSchoolIdOrderByCreatedAtAsc(String referenceNo, String schoolId);
+
     Page<PaymentEntity> findAllByFee_AcademicYear_IdAndSchoolIdOrderByCreatedAtDesc(
             String academicYearId,
             String schoolId,

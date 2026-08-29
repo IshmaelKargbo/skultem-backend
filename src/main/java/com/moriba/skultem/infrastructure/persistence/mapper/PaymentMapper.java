@@ -21,7 +21,8 @@ public class PaymentMapper {
         }
 
         return new Payment(param.getId(), param.getSchoolId(), student, fee, param.getAmount(), param.getMethod(),
-                param.getReferenceNo(), param.getNote(), param.getPaidAt(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getReferenceNo(), param.getExternalReference(), param.getNote(), param.getPaidAt(),
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static PaymentEntity toEntity(Payment param) {
@@ -47,6 +48,7 @@ public class PaymentMapper {
                 .fee(fee)
                 .method(param.getMethod())
                 .referenceNo(param.getReferenceNo())
+                .externalReference(param.getExternalReference())
                 .note(param.getNote())
                 .amount(param.getAmount())
                 .paidAt(param.getPaidAt())

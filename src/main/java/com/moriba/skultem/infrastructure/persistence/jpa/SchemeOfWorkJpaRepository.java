@@ -1,6 +1,5 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
-import com.moriba.skultem.domain.model.Week;
 import com.moriba.skultem.infrastructure.persistence.entity.SchemeOfWorkEntity;
 
 import org.springframework.data.domain.Page;
@@ -36,6 +35,15 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
     // The progress filter matches a scheme's rolled-up week progress (see Week.deriveProgress):
     // COMPLETED = has weeks and none are anything but COMPLETED; NOT_STARTED = no week has been
     // started (including schemes with no weeks yet); IN_PROGRESS = anything else.
+    //
+    // The filter used to be a single `:progress` parameter compared directly against
+    // com.moriba.skultem.domain.model.Week.State enum literals (e.g. `:progress = ...COMPLETED`).
+    // Hibernate could resolve those literals fine when compared against a mapped attribute
+    // (w.state <> ...COMPLETED), but a parameter compared *only* against a bare enum literal has
+    // no other context to infer its type from, and threw "Could not determine ValueMapping for
+    // SqmParameter" on every call - filtered or not, since the OR chain is always parsed as a
+    // whole. Booleans avoid the ambiguity entirely: SchemeOfWorkAdapter derives one boolean per
+    // branch from the enum, so every parameter here has an unambiguous, always-inferable type.
     @Query("""
                 SELECT s FROM SchemeOfWorkEntity s
                 WHERE s.schoolId = :schoolId
@@ -43,15 +51,15 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
                 AND (:sessionId IS NULL OR s.session.id = :sessionId)
                 AND (:termId IS NULL OR s.term.id = :termId)
                 AND (
-                    :progress IS NULL
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.COMPLETED
+                    :hasProgressFilter = false
+                    OR (:matchCompleted = true
                         AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id)
-                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.COMPLETED))
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.NOT_STARTED
-                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.NOT_STARTED))
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.IN_PROGRESS
-                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.NOT_STARTED)
-                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.COMPLETED))
+                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.COMPLETED))
+                    OR (:matchNotStarted = true
+                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.NOT_STARTED))
+                    OR (:matchInProgress = true
+                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.NOT_STARTED)
+                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.COMPLETED))
                 )
                 ORDER BY s.createdAt DESC
             """)
@@ -60,7 +68,10 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
             @Param("subjectId") String subjectId,
             @Param("sessionId") String sessionId,
             @Param("termId") String termId,
-            @Param("progress") Week.State progress,
+            @Param("hasProgressFilter") boolean hasProgressFilter,
+            @Param("matchCompleted") boolean matchCompleted,
+            @Param("matchNotStarted") boolean matchNotStarted,
+            @Param("matchInProgress") boolean matchInProgress,
             Pageable pageable);
 
     @Query("""
@@ -70,15 +81,15 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
                 AND (:sessionId IS NULL OR s.session.id = :sessionId)
                 AND (:termId IS NULL OR s.term.id = :termId)
                 AND (
-                    :progress IS NULL
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.COMPLETED
+                    :hasProgressFilter = false
+                    OR (:matchCompleted = true
                         AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id)
-                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.COMPLETED))
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.NOT_STARTED
-                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.NOT_STARTED))
-                    OR (:progress = com.moriba.skultem.domain.model.Week.State.IN_PROGRESS
-                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.NOT_STARTED)
-                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week.State.COMPLETED))
+                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.COMPLETED))
+                    OR (:matchNotStarted = true
+                        AND NOT EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.NOT_STARTED))
+                    OR (:matchInProgress = true
+                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.NOT_STARTED)
+                        AND EXISTS (SELECT 1 FROM WeekEntity w WHERE w.scheme.id = s.id AND w.state <> com.moriba.skultem.domain.model.Week$State.COMPLETED))
                 )
                 AND EXISTS (
                     SELECT 1 FROM TeacherSubjectEntity ts
@@ -94,6 +105,9 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
             @Param("subjectId") String subjectId,
             @Param("sessionId") String sessionId,
             @Param("termId") String termId,
-            @Param("progress") Week.State progress,
+            @Param("hasProgressFilter") boolean hasProgressFilter,
+            @Param("matchCompleted") boolean matchCompleted,
+            @Param("matchNotStarted") boolean matchNotStarted,
+            @Param("matchInProgress") boolean matchInProgress,
             Pageable pageable);
 }

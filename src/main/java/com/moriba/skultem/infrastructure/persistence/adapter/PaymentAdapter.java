@@ -39,6 +39,13 @@ public class PaymentAdapter implements PaymentRepository {
     }
 
     @Override
+    public List<Payment> findAllByReferenceNoAndSchoolId(String referenceNo, String schoolId) {
+        return repo.findAllByReferenceNoAndSchoolIdOrderByCreatedAtAsc(referenceNo, schoolId).stream()
+                .map(PaymentMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public BigDecimal sumPaymentsByStudentAndFee(String studentId, String feeId) {
         return repo.sumPaymentsByStudentAndFee(studentId, feeId);
     }

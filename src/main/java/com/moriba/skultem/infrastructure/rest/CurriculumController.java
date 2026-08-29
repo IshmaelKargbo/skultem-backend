@@ -26,7 +26,7 @@ public class CurriculumController {
     private final CurriculumService curriculumSvc;
 
     @PostMapping("/scheme")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeOfWorkDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateSchemeOfWorkDTO param) {
@@ -35,7 +35,7 @@ public class CurriculumController {
     }
 
     @PostMapping("/scheme/week")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<WeekDTO> createWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateWeekDTO param) {
