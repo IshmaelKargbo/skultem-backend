@@ -159,7 +159,10 @@ public class CurriculumService {
     }
 
     public Page<SchemeOfWorkDTO> searchMyScheme(String schoolId, String userId, int page, int size, String subjectId, String sessionId, String termId, String progress) {
-        var teacher = teacherRepo.findByUserId(userId)
+        // findByUserId (not scoped by school) throws NonUniqueResultException for a user who
+        // teaches at more than one school - findByUserIdAndSchoolId resolves the one for the
+        // school they're currently acting in.
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException("teacher not found"));
         Pageable pageable = PageableMapper.toPage(page, size);
         var schemes = repo.searchByTeacher(teacher.getId(), schoolId, blankToNull(subjectId), blankToNull(sessionId), blankToNull(termId), parseProgress(progress), pageable);
@@ -212,7 +215,8 @@ public class CurriculumService {
     }
 
     public Page<LessonDTO> searchMyLessons(String schoolId, String userId, int page, int size) {
-        var teacher = teacherRepo.findByUserId(userId)
+        // Same fix as searchMyScheme above - scope the teacher lookup to this school.
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException("teacher not found"));
         Pageable pageable = PageableMapper.toPage(page, size);
         return lessonRepo.findAllByTeacherIdAndSchoolId(teacher.getId(), schoolId, pageable).map(LessonMapper::toDTO);

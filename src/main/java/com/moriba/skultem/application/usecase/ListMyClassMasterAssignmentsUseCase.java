@@ -41,7 +41,7 @@ public class ListMyClassMasterAssignmentsUseCase {
     private final ValidateNextAcademicYearUseCase validateNextAcademicYearUseCase;
 
     public List<TeacherClassMasterDTO> execute(String schoolId, String userId) {
-        var teacher = teacherRepo.findByUserId(userId)
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
         var activeYear = academicYearRepo.findActiveBySchool(schoolId).orElse(null);

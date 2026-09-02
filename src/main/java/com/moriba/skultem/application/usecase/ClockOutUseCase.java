@@ -31,8 +31,11 @@ public class ClockOutUseCase {
 
     @AuditLogAnnotation(action = "TEACHER_CLOCKED_OUT")
     public ClockOutResponseDTO execute(String schoolId, String userId, double latitude, double longitude) {
-        var teacher = teacherRepo.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("Teacher profile not found for this account"));
+        // Scoped by school - an unscoped findByUserId throws NonUniqueResultException for a
+        // teacher who works at more than one school. See CurriculumService for the same fix.
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
+                .orElseThrow(() -> new NotFoundException(
+                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
 
         var settings = locationRepo.findBySchoolId(schoolId)
                 .orElseThrow(() -> new BadRequestException(

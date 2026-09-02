@@ -1,7 +1,6 @@
 package com.moriba.skultem.application.services;
 
 import com.moriba.skultem.application.dto.*;
-import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.*;
 import com.moriba.skultem.application.usecase.CreatePeriodUseCase;
 import com.moriba.skultem.application.usecase.CreateTimetableUseCase;
@@ -19,8 +18,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -101,10 +103,17 @@ public class TimetableService {
         }).toList();
     }
 
-    // getTiming
+    // getTiming - a school that hasn't configured timing yet has nothing to 404 on; the settings
+    // page just wants sensible defaults to show (and lets the admin save/edit from there), the
+    // same way listWorkingDays/getSubjects degrade to empty rather than erroring.
     public TimingDTO getTiming(String schoolId) {
-        var domain = timingRepo.findBySchoolId(schoolId).orElseThrow(() -> new NotFoundException("timing not found"));
-        return TimingMapper.toDTO(domain);
+        return timingRepo.findBySchoolId(schoolId)
+                .map(TimingMapper::toDTO)
+                .orElseGet(() -> defaultTiming(schoolId));
+    }
+
+    private TimingDTO defaultTiming(String schoolId) {
+        return new TimingDTO(null, schoolId, LocalTime.of(8, 0), LocalTime.of(15, 0), 40, 15, 45, null, null);
     }
 
     // setTiming
@@ -122,9 +131,28 @@ public class TimetableService {
     }
 
     public List<WorkingDayDTO> listWorkingDays(String schoolId) {
-        return workingDayRepo.findAllBySchoolId(schoolId).stream()
+        var days = workingDayRepo.findAllBySchoolId(schoolId);
+
+        if (days.isEmpty()) {
+            return defaultWorkingDays();
+        }
+
+        return days.stream()
                 .sorted(Comparator.comparing(day -> day.getDay().ordinal()))
                 .map(WorkingDayMapper::toDTO)
+                .toList();
+    }
+
+    // A school that hasn't saved working days yet gets the usual school week (Mon-Fri on,
+    // weekend off) rather than an empty list - same reasoning as defaultTiming(): show something
+    // sensible and editable instead of nothing. Every day, weekend included, is still freely
+    // toggleable once Edit is clicked - this is only the starting point.
+    private static final Set<Day> DEFAULT_WORKING_DAYS = EnumSet.of(
+            Day.MONDAY, Day.TUESDAY, Day.WEDNESDAY, Day.THURSDAY, Day.FRIDAY);
+
+    private List<WorkingDayDTO> defaultWorkingDays() {
+        return Arrays.stream(Day.values())
+                .map(day -> new WorkingDayDTO(null, day, null, DEFAULT_WORKING_DAYS.contains(day), null, null))
                 .toList();
     }
 

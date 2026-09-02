@@ -31,9 +31,11 @@ public class TeacherAttendanceController {
 
     private final TeacherAttendanceService service;
 
-    // Teacher self-service - overrides the class-level admin-only restriction for just these two.
+    // Self-service - overrides the class-level admin-only restriction for just these three.
+    // Any staff role can clock themselves in/out, not just teachers - actually succeeding still
+    // requires a Teacher (staff/payroll) record though, see ClockInUseCase.
     @PostMapping("/clock-in")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockInResponseDTO> clockIn(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -44,7 +46,7 @@ public class TeacherAttendanceController {
     }
 
     @PostMapping("/clock-out")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockOutResponseDTO> clockOut(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -55,7 +57,7 @@ public class TeacherAttendanceController {
     }
 
     @GetMapping("/me/today")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<MyAttendanceTodayDTO> myToday(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {

@@ -18,6 +18,8 @@ public interface TeacherRepository {
 
     Optional<Teacher> findByUserId(String userId);
 
+    Optional<Teacher> findByUserIdAndSchoolId(String userId, String schoolId);
+
     boolean existsByStaffIdAndSchool(String staffId, String schoolId);
 
     boolean existsByPhoneAndSchool(String phone, String schoolId);

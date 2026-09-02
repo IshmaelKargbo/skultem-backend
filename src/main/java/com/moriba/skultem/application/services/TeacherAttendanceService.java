@@ -58,8 +58,11 @@ public class TeacherAttendanceService {
     }
 
     public MyAttendanceTodayDTO myTodayStatus(String schoolId, String userId) {
-        var teacher = teacherRepo.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("Teacher profile not found for this account"));
+        // Scoped by school - an unscoped findByUserId throws NonUniqueResultException for a
+        // teacher who works at more than one school.
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
+                .orElseThrow(() -> new NotFoundException(
+                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
 
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, LocalDate.now());
 

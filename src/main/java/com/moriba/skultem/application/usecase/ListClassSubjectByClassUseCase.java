@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.Objects;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,10 +52,21 @@ public class ListClassSubjectByClassUseCase {
         return repo.findAllByClassIdAndSchoolId(classId, school, pageable).map(e -> {
             var academic = academicYearRepo.findActiveBySchool(school)
                     .orElseThrow(() -> new NotFoundException("active academic not found"));
-            var session = classSessionRepo.findByClassIdAndAcademicYearIdAndSchoolId(classId, academic.getId(), school)
-                    .orElseThrow(() -> new NotFoundException("school not found"));
-            var teacher = teacherSubjectRepo
-                    .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
+            // A class with streams (e.g. SSS's Science/Arts/Commercial) has one session per
+            // stream for the same class+year, so "the" session isn't unique without a stream to
+            // narrow by - findByClassIdAndAcademicYearIdAndSchoolId used to assume a single
+            // result and threw IncorrectResultSizeDataAccessException for any such class,
+            // failing this whole listing. Look across every session for the class instead, and
+            // just leave the teacher unresolved if none of them has one - it's supplementary
+            // info here, not something worth failing the subject list over.
+            var sessions = classSessionRepo.findAllByClassIdAndAcademicYearIdAndSchoolId(classId, academic.getId(),
+                    school);
+            var teacher = sessions.stream()
+                    .map(session -> teacherSubjectRepo
+                            .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
+                            .orElse(null))
+                    .filter(Objects::nonNull)
+                    .findFirst()
                     .orElse(null);
 
             return ClassSubjectMapper.toDTO(e, teacher);

@@ -24,6 +24,8 @@ public interface TeacherJpaRepository
 
     Optional<TeacherEntity> findByUserId(String userId);
 
+    Optional<TeacherEntity> findByUserIdAndSchoolId(String userId, String schoolId);
+
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 
     @Query("""

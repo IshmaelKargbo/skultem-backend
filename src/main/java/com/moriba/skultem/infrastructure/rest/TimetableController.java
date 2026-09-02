@@ -56,7 +56,7 @@ public class TimetableController {
     }
 
     @GetMapping("/room")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT')")
     public ApiResponse<List<RoomDTO>> roomSearch(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
@@ -85,7 +85,7 @@ public class TimetableController {
     }
 
     @GetMapping("/working-day")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<List<WorkingDayDTO>> listWorkingDays(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = timetableSvc.listWorkingDays(school);
@@ -105,7 +105,7 @@ public class TimetableController {
     }
 
     @GetMapping("/period/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<List<PeriodDTO>> getTimetable(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @Valid @PathVariable String id) {
         var res = timetableSvc.getTimeTable(id);

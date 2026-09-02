@@ -53,6 +53,11 @@ public class TeacherAdapter implements TeacherRepository {
     }
 
     @Override
+    public Optional<Teacher> findByUserIdAndSchoolId(String userId, String schoolId) {
+        return repo.findByUserIdAndSchoolId(userId, schoolId).map(TeacherMapper::toDomain);
+    }
+
+    @Override
     public Optional<Teacher> findByIdAndSchoolId(String id, String school) {
         return repo.findByIdAndSchoolId(id, school).map(TeacherMapper::toDomain);
     }
