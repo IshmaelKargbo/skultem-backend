@@ -134,4 +134,11 @@ public class ClassSessionAdapter implements ClassSessionRepository {
         return repo.runReport(schoolId, filters, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
+
+    @Override
+    public Optional<ClassSession> findByClassIdAndStreamIdAndAcademicYearId(String classId, String streamId,
+            String academicYearId) {
+        return repo.findByClazz_IdAndAcademicYear_IdAndStream_Id(classId, academicYearId, streamId)
+                .map(ClassSessionMapper::toDomain);
+    }
 }

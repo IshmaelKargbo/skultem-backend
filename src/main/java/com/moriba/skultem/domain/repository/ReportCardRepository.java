@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +16,10 @@ public interface ReportCardRepository {
     Optional<ReportCard> findByIdAndSchoolId(String id, String schoolId);
 
     Optional<ReportCard> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId, String termId);
+
+    // Every report card a student has ever had generated, most recent first - powers the Report
+    // Card tab on the student profile (all terms/years in one place, not just the current term).
+    List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId);
 
     Page<ReportCard> search(String schoolId, String classId, String termId, String search, Pageable pageable);
 

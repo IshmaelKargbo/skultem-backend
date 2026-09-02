@@ -43,6 +43,8 @@ public class UserEntity {
     @Column(nullable = false)
     private Status status;
 
+    private String photo;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

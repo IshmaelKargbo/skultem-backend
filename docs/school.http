@@ -4,15 +4,15 @@ POST {{BaseURL}}/school
 Content-Type: application/json
 
 {
-  "name": "King's Way International School",
-  "domain": "kwis",
+  "name": "Moriba Secondary School",
+  "domain": "moriba",
   "email": "ishmaelkargbo5@outlook.com",
   "city": "Freetown",
   "phone": "+23276380190",
   "chiefdom": "Central 1",
   "region": "Western Area",
-  "district": "Western Urba",
-  "givenNames": "Osman",
+  "district": "Western Urban",
+  "givenNames": "Ishmael",
   "familyName": "Kargbo",
   "password": "Isho@2024",
   "street": "55K Sumaila Town"

@@ -61,6 +61,11 @@ public class TeacherEntity {
     @Column(nullable = false)
     private Status status;
 
+    private String designation;
+
+    @Column(nullable = false)
+    private boolean teaching;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

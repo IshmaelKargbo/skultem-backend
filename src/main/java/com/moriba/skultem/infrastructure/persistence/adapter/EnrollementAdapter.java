@@ -185,4 +185,11 @@ public class EnrollementAdapter implements EnrollmentRepository {
             Enrollment.Status status) {
         return repo.countByStudent_IdAndClazz_IdAndSchoolIdAndStatus(studentId, classId, schoolId, status);
     }
+
+    @Override
+    public Page<Enrollment> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String stream,
+            String academicYearId, Pageable pageable) {
+        return repo.findAllByClazzIdAndAcademicYearIdAndStreamId(classId, academicYearId, stream, pageable)
+                .map(EnrollmentMapper::toDomain);
+    }
 }

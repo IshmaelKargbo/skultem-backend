@@ -12,7 +12,7 @@ public class TeacherMapper {
 
         return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getGender(), param.getTitle(),
                 null, param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getDesignation(), param.isTeaching(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static TeacherDTO toDTO(Teacher param, List<String> classes) {
@@ -20,6 +20,6 @@ public class TeacherMapper {
 
         return new TeacherDTO(param.getId(), param.getSchoolId(), param.getPhone(), param.getGender(), param.getTitle(),
                 classes, param.getStaffId(), user, param.getStreet(), param.getCity(), param.getStatus().toString(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getDesignation(), param.isTeaching(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

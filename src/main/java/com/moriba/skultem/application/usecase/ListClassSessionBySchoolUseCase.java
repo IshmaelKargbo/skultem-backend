@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -74,15 +75,22 @@ public class ListClassSessionBySchoolUseCase {
                     String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
                     String grade = "Grade " + clazz.getDisplayOrder();
 
-                    List<Enrollment> lists = enrollmentRepo
-                            .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
-                                    Pageable.unpaged())
-                            .getContent();
+                    List<Enrollment> lists = new ArrayList<>();
+                    if (streamId != null) {
+                        lists = enrollmentRepo.findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(
+                                clazz.getId(), sectionId, streamId, academicYear.getId(), school);
+                    } else {
+                        lists = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(school, classId,
+                                academicYear.getId(), Pageable.unpaged())
+                                .stream()
+                                .filter(e1 -> e1.getStream() == null && e1.getSection().getId().equals(sectionId))
+                                .toList();
+                    }
 
                     var feeDetail = getFeeDetail(school, lists);
 
                     return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
-                            streamName, streamId, sectionName, sectionId, classLevel, grade,  feeDetail);
+                            streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail);
                 });
     }
 

@@ -28,7 +28,9 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
             """)
     void lockClassSubject(String classId, String subjectId, String schoolId);
 
-    Page<ClassSubjectEntity> findAllByClazz_IdAndSchoolId(String classId, String schoolId, Pageable pageable);
+    Page<ClassSubjectEntity> findAllByClazzIdAndSchoolId(String classId, String schoolId, Pageable pageable);
+
+    Page<ClassSubjectEntity> findAllByClazzIdAndStreamIdAndSchoolId(String classId, String streamId, String schoolId, Pageable pageable);
 
     Page<ClassSubjectEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 

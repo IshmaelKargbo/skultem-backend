@@ -11,5 +11,24 @@ public record CreateUserDTO(
 
         @NotBlank(message = "Given names are required") @Size(min = 2, max = 100, message = "Given names must be between 2 and 100 characters") String givenNames,
 
-        @NotBlank(message = "Family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName) {
+        @NotBlank(message = "Family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName,
+
+        // Whether this account holder is also paid staff - an Admin/Accountant/Proprietor/Owner
+        // with an account role isn't automatically on payroll, so this opts them in. The fields
+        // below are only required when this is true - see CreateUserUseCase.addToPayroll.
+        Boolean includeInPayroll,
+
+        String staffId,
+
+        String phone,
+
+        String street,
+
+        String city,
+
+        String gender,
+
+        String title,
+
+        String designation) {
 }

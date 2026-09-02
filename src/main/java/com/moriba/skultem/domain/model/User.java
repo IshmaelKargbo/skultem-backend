@@ -20,6 +20,11 @@ public class User extends AggregateRoot<String> {
     private String hint;
     private Status status;
 
+    // Shared across every role this account holds (Teacher, Parent, a plain Admin/Accountant/
+    // Proprietor account) - it's a property of the person, not any one role. Optional - null until
+    // uploaded, and can be added or replaced any time after the account is created.
+    private String photo;
+
     public enum Status {
         ACTIVE,
         RESET_PASSWORD,
@@ -28,7 +33,7 @@ public class User extends AggregateRoot<String> {
     }
 
     public User(String id, String givenNames, String familyName, String email, String password, String hint,
-            Status status, Instant createdAt, Instant updatedAt) {
+            Status status, String photo, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.givenNames = givenNames;
         this.familyName = familyName;
@@ -36,6 +41,7 @@ public class User extends AggregateRoot<String> {
         this.password = password;
         this.hint = hint;
         this.status = status;
+        this.photo = photo;
         touch(updatedAt);
     }
 
@@ -43,7 +49,7 @@ public class User extends AggregateRoot<String> {
             String hint) {
         String id = UUID.randomUUID().toString();
         Instant now = Instant.now();
-        return new User(id, givenNames, familyName, email, password, hint, Status.RESET_PASSWORD, now, now);
+        return new User(id, givenNames, familyName, email, password, hint, Status.RESET_PASSWORD, null, now, now);
     }
 
     public void update(String givenNames, String familyName) {
@@ -60,6 +66,11 @@ public class User extends AggregateRoot<String> {
 
     public String getName() {
         return String.join(" ", givenNames, familyName);
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+        touch(Instant.now());
     }
 
     public void resetPassword(String password) {

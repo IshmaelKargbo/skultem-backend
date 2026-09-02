@@ -2,10 +2,12 @@ package com.moriba.skultem.infrastructure.persistence.mapper;
 
 import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.Clazz;
+import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassEntity;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSubjectEntity;
+import com.moriba.skultem.infrastructure.persistence.entity.StreamEntity;
 import com.moriba.skultem.infrastructure.persistence.entity.SubjectEntity;
 import com.moriba.skultem.infrastructure.persistence.entity.SubjectGroupEntity;
 
@@ -13,10 +15,15 @@ public class ClassSubjectMapper {
     public static ClassSubject toDomain(ClassSubjectEntity param) {
         Subject subject = null;
         Clazz clazz = null;
+        Stream stream = null;
         SubjectGroup group = null;
 
         if (param.getClazz() != null) {
             clazz = ClassMapper.toDomain(param.getClazz());
+        }
+
+        if (param.getStream() != null) {
+            stream = StreamMapper.toDomain(param.getStream());
         }
 
         if (param.getSubject() != null) {
@@ -27,7 +34,7 @@ public class ClassSubjectMapper {
             group = SubjectGroupMapper.toDomain(param.getGroup());
         }
 
-        return new ClassSubject(param.getId(), param.getSchoolId(), clazz, subject,
+        return new ClassSubject(param.getId(), param.getSchoolId(), clazz, subject, stream,
                 group, param.getMandatory(), param.getLocked(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -35,6 +42,7 @@ public class ClassSubjectMapper {
         ClassEntity clazz = null;
         SubjectEntity subject = null;
         SubjectGroupEntity group = null;
+        StreamEntity stream = null;
 
         if (param.getClazz() != null) {
             clazz = ClassMapper.toEntity(param.getClazz());
@@ -48,12 +56,17 @@ public class ClassSubjectMapper {
             group = SubjectGroupMapper.toEntity(param.getGroup());
         }
 
+        if (param.getStream() != null) {
+            stream = StreamMapper.toEntity(param.getStream());
+        }
+
         return ClassSubjectEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .clazz(clazz)
                 .subject(subject)
                 .group(group)
+                .stream(stream)
                 .locked(param.getLocked())
                 .mandatory(param.getMandatory())
                 .createdAt(param.getCreatedAt())

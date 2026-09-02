@@ -31,7 +31,8 @@ public class Transaction extends AggregateRoot<String> {
         DISCOUNT,
         REFUND,
         EXPENSE,
-        ADJUSTMENT
+        ADJUSTMENT,
+        PAYROLL
     }
 
     public enum Direction {
@@ -43,7 +44,8 @@ public class Transaction extends AggregateRoot<String> {
         STUDENT,
         EXPENSE,
         SYSTEM,
-        OTHER
+        OTHER,
+        PAYROLL
     }
 
     public Transaction(

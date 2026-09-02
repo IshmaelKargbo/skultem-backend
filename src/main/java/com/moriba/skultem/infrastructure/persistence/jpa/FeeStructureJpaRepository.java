@@ -22,11 +22,17 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
     Optional<FeeStructureEntity> findBySystemTrueAndAcademicYear_IdAndSchoolId(String academicYearId,
             String schoolId);
 
+    // SELECTION is deliberately excluded - it's an explicit, one-off assignment to specific
+    // students made once at creation (see CreateFeeStructureUseCase), never something a later
+    // enrollment (new admission or promotion) should auto-pick-up just because it also has a null
+    // clazz. Without this, a fee meant for a handful of hand-picked students would silently reach
+    // every future enrollment in every class.
     @Query("""
                 SELECT f
                 FROM FeeStructureEntity f
                 WHERE f.schoolId = :schoolId
                 AND f.academicYear.id = :academicYearId
+                AND f.type <> 'SELECTION'
                 AND (
                         f.clazz.id = :classId
                      OR f.clazz IS NULL

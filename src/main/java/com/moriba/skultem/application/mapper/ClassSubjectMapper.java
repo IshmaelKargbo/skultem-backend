@@ -18,6 +18,12 @@ public class ClassSubjectMapper {
         String groupName = "N/A", groupId = "";
         int select = 0;
         String teacherName = "N/A", teacherId = "";
+        String streamName = "N/A", streamId = "";
+
+        if (param.getStream() != null) {
+            streamName = param.getStream().getName();
+            streamId = param.getStream().getId();
+        }
 
         if (group != null) {
             groupName = group.name();
@@ -26,7 +32,7 @@ public class ClassSubjectMapper {
         }
 
         return new ClassSubjectDTO(param.getId(), param.getSchoolId(), className, classId, subjectName, subjectId,
-                groupName, groupId, teacherName, teacherId,
+                streamName, streamId, groupName, groupId, teacherName, teacherId,
                 param.getMandatory(), param.getLocked(), select);
     }
 
@@ -40,6 +46,12 @@ public class ClassSubjectMapper {
         String groupName = "N/A", groupId = "";
         int select = 0;
         String teacherName = "N/A", teacherId = "";
+        String streamName = "N/A", streamId = "";
+
+        if (param.getStream() != null) {
+            streamName = param.getStream().getName();
+            streamId = param.getStream().getId();
+        }
 
         if (group != null) {
             groupName = group.name();
@@ -53,7 +65,7 @@ public class ClassSubjectMapper {
         }
 
         return new ClassSubjectDTO(param.getId(), param.getSchoolId(), className, classId, subjectName, subjectId,
-                groupName, groupId, teacherName, teacherId,
+                streamName, streamId, groupName, groupId, teacherName, teacherId,
                 param.getMandatory(), param.getLocked(), select);
     }
 }

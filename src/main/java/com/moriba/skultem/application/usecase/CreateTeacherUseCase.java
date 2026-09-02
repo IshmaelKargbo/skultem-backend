@@ -50,7 +50,8 @@ public class CreateTeacherUseCase {
     @AuditLogAnnotation(action = "TEACHER_CREATED")
     public TeacherDTO execute(String schoolId, Title title, String givenNames, String familyName, Gender gender,
             String staffId, String email,
-            String phone, String street, String city, String classMaster) {
+            String phone, String street, String city, String classMaster, String designation,
+            boolean sendWelcomeEmail, boolean teaching) {
         var password = generatePassword();
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("no school found"));
 
@@ -79,7 +80,8 @@ public class CreateTeacherUseCase {
         schoolUserRepo.save(schoolUser);
 
         var teacherId = rg.generate("TEACHER", "THR");
-        var teacher = Teacher.create(teacherId, schoolId, title, phone, street, city, gender, staffId, user);
+        var teacher = Teacher.create(teacherId, schoolId, title, phone, street, city, gender, staffId, user,
+                designation, teaching);
         repo.save(teacher);
 
         if (!classMaster.isEmpty() && !classMaster.isBlank()) {
@@ -95,7 +97,10 @@ public class CreateTeacherUseCase {
                     clazz.getSection().getId(), streamId);
         }
 
-        sendWelcomeEmail(school, teacher);
+        if (sendWelcomeEmail) {
+            sendWelcomeEmail(school, teacher);
+        }
+
         logActivityUseCase.log(
                 schoolId,
                 ActivityType.TEACHER,

@@ -32,29 +32,17 @@ public interface EnrollmentRepository {
         List<Enrollment> findAllByStreamIdAndAcademicYearIdAndSchoolId(String stream, String academicYearId,
                         String schoolId);
 
-        /**
-         * Active roster of a specific class session (class + section + stream, streamId may be null) for a given
-         * academic year, used to migrate students during promotion.
-         */
+        Page<Enrollment> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String stream, String academicYearId, Pageable pageable);
+
         List<Enrollment> findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(String classId,
                         String sectionId, String streamId, String academicYearId, String schoolId);
 
-        /**
-         * Whether this class session has ever had any enrollment (any status) for the year - lets the
-         * promotion roster tell "never had students" apart from "already promoted/left".
-         */
         boolean existsAnyByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(String classId,
                         String sectionId, String streamId, String academicYearId, String schoolId);
 
         Optional<Enrollment> findByStudentAndAcademicYearAndSchoolId(String studentId, String academicYearId,
                         String schoolId);
 
-        /**
-         * Most recent enrollment on record for a student, regardless of academic year. Used as a fallback
-         * when the student has no enrollment yet for the active academic year (e.g. right after year
-         * rollover, before they've been re-enrolled/promoted) so they still show up with their last known
-         * class and academic progress instead of disappearing from listings.
-         */
         Optional<Enrollment> findTopByStudentAndSchoolIdOrderByCreatedAtDesc(String studentId, String schoolId);
 
         List<Enrollment> findAllByStudentIdAndClassIdAndSectionIdAndAcademicYearIdAndStreamIdAndSchoolId(
@@ -82,10 +70,6 @@ public interface EnrollmentRepository {
 
         Page<Enrollment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 
-        /**
-         * How many times a student has already repeated a class - used to enforce the school's
-         * max-repeat-count promotion rule.
-         */
         long countByStudentIdAndClassIdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
                         Enrollment.Status status);
 }

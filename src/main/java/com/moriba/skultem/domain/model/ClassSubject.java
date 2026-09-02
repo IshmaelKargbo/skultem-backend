@@ -12,14 +12,16 @@ public class ClassSubject extends AggregateRoot<String> {
     private String schoolId;
     private Clazz clazz;
     private Subject subject;
+    private Stream stream;
     private SubjectGroup group;
     private Boolean mandatory;
     private Boolean locked;
 
-    public ClassSubject(String id, String schoolId, Clazz clazz, Subject subject, SubjectGroup group,
+    public ClassSubject(String id, String schoolId, Clazz clazz, Subject subject, Stream stream, SubjectGroup group,
             Boolean mandatory, Boolean locked, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.subject = subject;
+        this.stream = stream;
         this.group = group;
         this.clazz = clazz;
         this.mandatory = mandatory;
@@ -28,14 +30,15 @@ public class ClassSubject extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static ClassSubject create(String id, String schoolId, Clazz clazz, Subject subject, SubjectGroup group,
+    public static ClassSubject create(String id, String schoolId, Clazz clazz, Subject subject, Stream stream, SubjectGroup group,
             Boolean mandatory) {
         Instant now = Instant.now();
-        return new ClassSubject(id, schoolId, clazz, subject, group, mandatory, false, now, now);
+        return new ClassSubject(id, schoolId, clazz, subject, stream, group, mandatory, false, now, now);
     }
 
-    public void update(Subject subject, SubjectGroup group, Boolean mandatory) {
+    public void update(Subject subject, Stream stream, SubjectGroup group, Boolean mandatory) {
         this.subject = subject;
+        this.stream = stream;
         this.group = group;
         this.mandatory = mandatory;
         touch(Instant.now());

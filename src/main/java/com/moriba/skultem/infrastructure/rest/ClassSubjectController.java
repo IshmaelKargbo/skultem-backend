@@ -38,9 +38,10 @@ public class ClassSubjectController {
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Object> create(
-        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-        @Valid @RequestBody CreateClassSessionDTO param) {
-        createClassSessionUseCase.execute(school, param.classId(), param.academicYear(), param.streamId(), param.sectionId());
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody CreateClassSessionDTO param) {
+        createClassSessionUseCase.execute(school, param.classId(), param.academicYear(), param.streamId(),
+                param.sectionId());
         return new ApiResponse<>("success", 200, "Class session created successfully", null);
     }
 
@@ -49,9 +50,10 @@ public class ClassSubjectController {
     public ApiResponse<List<ClassSubjectDTO>> listByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String classId,
+            @RequestParam(required = false) String stream,
             @RequestParam(required = true, defaultValue = "1") Integer page,
             @RequestParam(required = true, defaultValue = "10") Integer size) {
-        var res = listClassSubjectByClassUseCase.execute(school, classId, page - 1, size);
+        var res = listClassSubjectByClassUseCase.execute(school, classId, stream, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

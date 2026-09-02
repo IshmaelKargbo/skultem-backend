@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -37,6 +38,13 @@ public class ReportCardAdapter implements ReportCardRepository {
     public Optional<ReportCard> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId,
             String termId) {
         return repo.findBySchoolIdAndStudentIdAndTermId(schoolId, studentId, termId).map(ReportCardMapper::toDomain);
+    }
+
+    @Override
+    public List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId) {
+        return repo.findAllBySchoolIdAndStudentIdOrderByGeneratedAtDesc(schoolId, studentId).stream()
+                .map(ReportCardMapper::toDomain)
+                .toList();
     }
 
     @Override

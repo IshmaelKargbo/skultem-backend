@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
@@ -18,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnrollmentStudentsUseCase {
 
+        private static final Logger log = LoggerFactory.getLogger(EnrollmentStudentsUseCase.class);
+
         private final StudentRepository studentRepo;
         private final ClassSectionRepository sectionRepo;
         private final ClassStreamRepository streamRepo;
@@ -25,6 +29,7 @@ public class EnrollmentStudentsUseCase {
         private final AcademicYearRepository academicYearRepo;
         private final EnrollmentCreationService enrollmentCreationService;
         private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
+        private final ApplyApplicableFeesToEnrollmentUseCase applyApplicableFeesToEnrollmentUseCase;
 
         public void execute(EnrollData param) {
 
@@ -75,6 +80,14 @@ public class EnrollmentStudentsUseCase {
                                         academicYear,
                                         stream);
                         provisionStudentAssessmentsUseCase.execute(enrollment);
+
+                        // Best-effort, same as CreateStudentUseCase/ApprovePromotionRequestUseCase - a
+                        // missing/misconfigured fee structure shouldn't fail the whole batch.
+                        try {
+                                applyApplicableFeesToEnrollmentUseCase.execute(enrollment);
+                        } catch (RuleException | NotFoundException e) {
+                                log.warn("Could not apply fee structures for student {}: {}", student.getId(), e.getMessage());
+                        }
                 }
         }
 

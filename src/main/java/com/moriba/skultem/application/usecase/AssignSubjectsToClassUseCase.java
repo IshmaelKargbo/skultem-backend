@@ -18,7 +18,7 @@ import com.moriba.skultem.domain.model.EnrollmentSubject;
 import com.moriba.skultem.domain.model.Subject;
 import com.moriba.skultem.domain.model.SubjectGroup;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
-import com.moriba.skultem.domain.repository.ClassRepository;
+import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.EnrollmentSubjectRepository;
@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class AssignSubjectsToClassUseCase {
-    private final ClassRepository classRepo;
+    private final ClassSessionRepository sessionRepo;
     private final SubjectRepository subjectRepo;
     private final SubjectGroupRepository groupRepo;
     private final ClassSubjectRepository repo;
@@ -54,15 +54,14 @@ public class AssignSubjectsToClassUseCase {
     @AuditLogAnnotation(action = "ASSIGNED_SUBJECT_TO_CLASS")
     public void execute(String schoolId, String classId, List<SubjectAssignment> assignments) {
 
-        var clazz = classRepo.findByIdAndSchool(classId, schoolId)
-                .orElseThrow(() -> new RuleException("Class not found. Please select a valid class."));
+        var session = sessionRepo.findByIdAndSchoolId(classId, schoolId)
+                .orElseThrow(() -> new RuleException("Class session not found. Please create a class session first."));
+
+        var clazz = session.getClazz();
+        var stream = session.getStream();
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                 .orElseThrow(() -> new RuleException("Active academic year not found"));
-
-        if (clazz.getLevel() == Level.SSS) {
-            throw new RuleException("SSS subjects should be assigned to a stream, not directly to a class.");
-        }
 
         assignments = assignments == null ? List.of()
                 : assignments.stream()
@@ -70,7 +69,7 @@ public class AssignSubjectsToClassUseCase {
                         .toList();
 
         var subjectIds = assignments.stream()
-                .map(SubjectAssignment::subjectId)
+                .map(a -> a.subjectId())
                 .toList();
 
         if (subjectIds.size() != subjectIds.stream().distinct().count()) {
@@ -79,9 +78,6 @@ public class AssignSubjectsToClassUseCase {
 
         var existing = repo.findAllByClassIdAndSchoolId(classId, schoolId, Pageable.unpaged());
 
-        // Lock/unlock existing subjects based on grade activity in the *active* academic year only -
-        // grading a subject in a past year must not freeze it out of every year that follows. Without
-        // this, a class's subject curriculum could never change again once any year ever used it.
         existing.forEach(item -> {
             boolean hasGradeActivity = assessmentScoreRepository
                     .existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(classId,
@@ -106,7 +102,7 @@ public class AssignSubjectsToClassUseCase {
                         }));
 
         var incomingSubjectIds = assignments.stream()
-                .map(SubjectAssignment::subjectId)
+                .map(a -> a.subjectId())
                 .collect(Collectors.toSet());
 
         Set<String> removedSubjectIds = existing.stream()
@@ -156,11 +152,11 @@ public class AssignSubjectsToClassUseCase {
                     continue;
                 }
 
-                cs.update(subject, group, core);
+                cs.update(subject, stream, group, core);
                 repo.save(cs);
             } else {
-                var record = ClassSubject.create(
-                        UUID.randomUUID().toString(), schoolId, clazz, subject, group, core);
+                var record = ClassSubject.create(UUID.randomUUID().toString(), schoolId, clazz, subject, stream, group,
+                        core);
                 repo.save(record);
             }
         }
@@ -181,8 +177,7 @@ public class AssignSubjectsToClassUseCase {
                 teacherSubjectRepository.deleteByClassIdAndSubjectIdAndSchoolId(
                         classId,
                         subjectId,
-                        schoolId
-                );
+                        schoolId);
 
                 // Delete class subject
                 repo.delete(cs);
@@ -213,15 +208,13 @@ public class AssignSubjectsToClassUseCase {
 
         var requiredSubjectIds = assignments.stream()
                 .filter(assignment -> assignment.subjectGroupId() == null || assignment.subjectGroupId().isBlank())
-                .map(SubjectAssignment::subjectId)
+                .map(a -> a.subjectId())
                 .toList();
 
         if (requiredSubjectIds.isEmpty() && removedSubjectIds.isEmpty()) {
             return;
         }
 
-        // Scoped to the active academic year only - a class's curriculum edit must never ripple into
-        // enrollments from finished years and rewrite their already-graded subject history.
         var enrollments = enrollmentRepo
                 .findAllByClassAndAcademicAndSchoolId(classId, academicYearId, schoolId, Pageable.unpaged())
                 .getContent();

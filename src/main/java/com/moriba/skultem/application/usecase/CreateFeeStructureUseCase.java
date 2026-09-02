@@ -9,17 +9,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeStructureDTO;
+import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.Material;
+import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
-import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeCategoryRepository;
@@ -40,7 +41,6 @@ public class CreateFeeStructureUseCase {
 
         private final FeeCategoryRepository feeCategoryRepo;
         private final ClassRepository classRepo;
-        private final AcademicYearRepository academicYearRepo;
         private final TermRepository termRepo;
         private final MaterialRepository materialRepo;
         private final FeeStructureRepository repo;
@@ -52,22 +52,35 @@ public class CreateFeeStructureUseCase {
         @AuditLogAnnotation(action = "FEE_STRUCTURE_CREATED")
         public FeeStructureDTO execute(StructureRecord param) {
 
-                var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+                // The academic year comes from the term itself, not "whichever year is currently
+                // active" - a school preparing an upcoming year's fee structures ahead of time
+                // (before activating it) is a normal workflow, same as ApplyApplicableFeesToEnrollmentUseCase
+                // already treating academic year as a property of what it's touching rather than
+                // requiring it to be the active one.
+                var term = termRepo.findByIdAndSchoolId(param.termId(), param.schoolId())
+                                .orElseThrow(() -> new NotFoundException("Term not found"));
+
+                var academicYear = term.getAcademicYear();
+
+                if (academicYear.isLocked()) {
+                        throw new IllegalStateException("Cannot create a fee structure in a closed academic year");
+                }
 
                 var category = feeCategoryRepo.findByIdAndSchool(param.feeCategory(), param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Fee category not found"));
-
-                var term = termRepo.findByIdAndAcademicYearIdAndSchoolId(
-                                param.termId(),
-                                academicYear.getId(),
-                                param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("Term not found"));
 
                 var clazz = param.classId() != null
                                 ? classRepo.findByIdAndSchool(param.classId(), param.schoolId())
                                                 .orElseThrow(() -> new NotFoundException("Class not found"))
                                 : null;
+
+                // Only guards CLASS-type fees - the underlying query compares clazz.id, which never
+                // matches a null clazz (ALL/SELECTION), so it can't reliably catch a duplicate there.
+                if (clazz != null && repo.existsBySchoolAndAcademicYearAndTermAndClassAndCategory(param.schoolId(),
+                                academicYear.getId(), term.getId(), clazz.getId(), category.getId())) {
+                        throw new AlreadyExistsException(category.getName() + " already has a fee structure for "
+                                        + clazz.getName() + " in " + term.getName());
+                }
 
                 Material material = null;
 
@@ -88,13 +101,15 @@ public class CreateFeeStructureUseCase {
                                 param.dueDate(),
                                 param.amount(),
                                 param.description(),
-                                param.allowInstallment());
+                                param.allowInstallment(),
+                                param.newStudentsOnly());
 
                 repo.save(fee);
 
                 List<Enrollment> enrollments;
+                boolean hasExplicitStudents = param.studentIds() != null && !param.studentIds().isEmpty();
 
-                if (param.studentIds() != null && !param.studentIds().isEmpty()) {
+                if (hasExplicitStudents) {
                         enrollments = enrollmentRepo.findAllByStudentIdsAndAcademicYearAndSchoolId(
                                         param.studentIds(),
                                         academicYear.getId(),
@@ -114,6 +129,16 @@ public class CreateFeeStructureUseCase {
                         enrollments = enrollmentRepo.findAllByAcademicSchoolId(
                                         academicYear.getId(),
                                         param.schoolId());
+                }
+
+                // Only reach students whose overall admission was NEW/TRANSFER - not the explicit
+                // selection above, same as ApplyApplicableFeesToEnrollmentUseCase (which is what
+                // enforces this same rule for enrollments created after this fee already exists).
+                if (param.newStudentsOnly() && !hasExplicitStudents) {
+                        enrollments = enrollments.stream()
+                                        .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.NEW
+                                                        || e.getStudent().getEnrollmentType() == EnrollmentType.TRANSFER)
+                                        .toList();
                 }
 
                 int assignedCount = 0;
@@ -162,7 +187,7 @@ public class CreateFeeStructureUseCase {
 
                 String target = clazz != null
                                 ? clazz.getName()
-                                : param.studentIds() != null && !param.studentIds().isEmpty()
+                                : hasExplicitStudents
                                                 ? "Selected students"
                                                 : "All classes";
 
@@ -195,6 +220,7 @@ public class CreateFeeStructureUseCase {
                         String description,
                         boolean hasSuppy,
                         String material,
-                        int totalSupply) {
+                        int totalSupply,
+                        boolean newStudentsOnly) {
         }
 }

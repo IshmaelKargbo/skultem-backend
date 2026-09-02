@@ -25,7 +25,18 @@ public record CreateTeacherDTO(
 
                 @NotBlank(message = "City is required") @Size(min = 2, max = 100, message = "City must be between 2 and 100 characters") String city,
 
-                String classMaster
+                String classMaster,
+
+                @Size(max = 150, message = "Designation must not exceed 150 characters") String designation,
+
+                // Null/absent defaults to true (Add Teacher). The Add Staff form passes false for
+                // staff who won't use the portal - their account still exists (their record needs
+                // *some* identity), it's just never emailed to them.
+                Boolean sendWelcomeEmail,
+
+                // Null/absent defaults to true (Add Teacher). The Add Staff form passes false -
+                // drives whether the Subjects/Curriculum tabs show on their profile.
+                Boolean teaching
 
 ) {
 }

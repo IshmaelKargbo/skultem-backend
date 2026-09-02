@@ -6,6 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ import com.moriba.skultem.application.dto.StudentRecord;
 import com.moriba.skultem.application.services.StudentService;
 import com.moriba.skultem.application.usecase.ActiveCycleUseCase;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase;
+import com.moriba.skultem.application.usecase.UpdateStudentPhotoUseCase;
 import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.vo.Family;
 import com.moriba.skultem.domain.vo.Gender;
@@ -47,6 +49,7 @@ public class StudentController {
         private final RankStudentUseCase rankStudentUseCase;
         private final StudentService studentSvc;
         private final ActiveCycleUseCase activeCycleUseCase;
+        private final UpdateStudentPhotoUseCase updateStudentPhotoUseCase;
 
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -57,6 +60,16 @@ public class StudentController {
                 var args = validateCreateStudentRequest(param, school, photo);
                 var res = createStudentUseCase.execute(args);
                 return new ApiResponse<>("success", 200, "Student created successfully", res);
+        }
+
+        @PatchMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<StudentDTO> updatePhoto(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @RequestPart("photo") MultipartFile photo) {
+                var res = updateStudentPhotoUseCase.execute(school, id, photo);
+                return new ApiResponse<>("success", 200, "Student photo updated successfully", res);
         }
 
         @GetMapping

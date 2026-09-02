@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.AssessmentScore;
+import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.StudentAssessment;
@@ -32,11 +33,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
-// Callers (e.g. ApprovePromotionRequestUseCase) treat RuleException/NotFoundException from here as
-// a per-student, best-effort failure and catch it to keep going - but since this method joins the
-// caller's transaction (default REQUIRED propagation), Spring would otherwise mark that shared
-// transaction rollback-only the moment either exception leaves this method, dooming the whole batch
-// with an UnexpectedRollbackException at commit even though the caller "handled" it.
 @Transactional(dontRollbackOn = { RuleException.class, NotFoundException.class })
 @RequiredArgsConstructor
 public class ProvisionStudentAssessmentsUseCase {
@@ -59,10 +55,18 @@ public class ProvisionStudentAssessmentsUseCase {
         String schoolId = enrollment.getSchoolId();
         String templateId = enrollment.getClazz().getTemplate().getId();
 
-        var session = classSessionRepo
-                .findByAcademicYearAndClassAndSchoolId(enrollment.getAcademicYear().getId(),
-                        enrollment.getClazz().getId(), schoolId)
-                .orElseThrow(() -> new NotFoundException("Class not found"));
+        ClassSession session = null;
+        if (enrollment.getStream() != null) {
+            session = classSessionRepo
+                    .findByClassIdAndStreamIdAndAcademicYearId(enrollment.getClazz().getId(),
+                            enrollment.getStream().getId(), enrollment.getAcademicYear().getId())
+                    .orElseThrow(() -> new NotFoundException("Class session not found"));
+        } else {
+            session = classSessionRepo
+                    .findByAcademicYearAndClassAndSchoolId(enrollment.getAcademicYear().getId(),
+                            enrollment.getClazz().getId(), schoolId)
+                    .orElseThrow(() -> new NotFoundException("Class not found"));
+        }
 
         var assessments = assessmentRepo.findAllByTemplateIdAndSchoolId(templateId, schoolId);
         if (assessments.isEmpty()) {
@@ -163,7 +167,7 @@ public class ProvisionStudentAssessmentsUseCase {
         }
 
         return terms.stream()
-                .sorted(Comparator.comparing(Term::getTermNumber))
+                .sorted(Comparator.comparing(e -> e.getTermNumber()))
                 .toList();
     }
 
@@ -173,7 +177,7 @@ public class ProvisionStudentAssessmentsUseCase {
                 .stream()
                 .map(record -> record.getSubject())
                 .filter(subject -> subject != null)
-                .collect(Collectors.toMap(Subject::getId, subject -> subject, (a, b) -> a))
+                .collect(Collectors.toMap(e -> e.getId(), subject -> subject, (a, b) -> a))
                 .values()
                 .stream()
                 .toList();
@@ -190,7 +194,7 @@ public class ProvisionStudentAssessmentsUseCase {
                     .stream()
                     .filter(item -> Boolean.TRUE.equals(item.getMandatory()))
                     .map(item -> item.getSubject())
-                    .collect(Collectors.toMap(Subject::getId, subject -> subject, (a, b) -> a))
+                    .collect(Collectors.toMap(e -> e.getId(), subject -> subject, (a, b) -> a))
                     .values()
                     .stream()
                     .toList();
@@ -207,7 +211,7 @@ public class ProvisionStudentAssessmentsUseCase {
                 .stream()
                 .filter(item -> Boolean.TRUE.equals(item.getMandatory()))
                 .map(item -> item.getSubject())
-                .collect(Collectors.toMap(Subject::getId, subject -> subject, (a, b) -> a))
+                .collect(Collectors.toMap(e -> e.getId(), subject -> subject, (a, b) -> a))
                 .values()
                 .stream()
                 .toList();

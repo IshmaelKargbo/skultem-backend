@@ -70,7 +70,14 @@ public class ClassSubjectAdapter implements ClassSubjectRepository {
 
     @Override
     public Page<ClassSubject> findAllByClassIdAndSchoolId(String classId, String schoolId, Pageable pagable) {
-        return repo.findAllByClazz_IdAndSchoolId(classId, schoolId, pagable)
+        return repo.findAllByClazzIdAndSchoolId(classId, schoolId, pagable)
+                .map(ClassSubjectMapper::toDomain);
+    }
+
+    @Override
+    public Page<ClassSubject> findAllByClassIdAndStreamIdAndSchoolId(String classId, String streamId, String schoolId,
+            Pageable pageble) {
+        return repo.findAllByClazzIdAndStreamIdAndSchoolId(classId, streamId, schoolId, pageble)
                 .map(ClassSubjectMapper::toDomain);
     }
 }

@@ -55,10 +55,15 @@ import com.moriba.skultem.infrastructure.mail.MailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class CreateStudentUseCase {
+    private static final Logger log = LoggerFactory.getLogger(CreateStudentUseCase.class);
+
     private final StudentRepository repo;
     private final SchoolRepository schoolRepo;
     private final ClassSessionRepository classSessionRepo;
@@ -123,7 +128,12 @@ public class CreateStudentUseCase {
         Enrollment enrollment = enrollStudent(student, session);
         enrolledSubjects(enrollment, selectedOptionIds);
         provisionStudentAssessmentsUseCase.execute(enrollment);
-        applyApplicableFeesToEnrollmentUseCase.execute(enrollment);
+
+        try {
+            applyApplicableFeesToEnrollmentUseCase.execute(enrollment);
+        } catch (RuleException | NotFoundException e) {
+            log.warn("Could not apply fee structures for new student {}: {}", student.getId(), e.getMessage());
+        }
 
         String photoUrl = null;
         if (param.photo() != null && !param.photo().isEmpty()) {
@@ -164,8 +174,6 @@ public class CreateStudentUseCase {
         return enrollment;
     }
 
-    // apply parent details if parentId is provided, otherwise create new parent if
-    // parent details are provided
     private Parent applyParent(String parentId, ParentRequest parent) {
         if (parentId != null && !parentId.isBlank()) {
             return parentRepo.findByIdAndSchoolId(parentId,

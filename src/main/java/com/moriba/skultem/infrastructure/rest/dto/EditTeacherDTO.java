@@ -19,7 +19,9 @@ public record EditTeacherDTO(
 
                 @NotBlank(message = "Street is required") @Size(min = 5, max = 255, message = "Street must be between 5 and 255 characters") String street,
 
-                @NotBlank(message = "City is required") @Size(min = 2, max = 100, message = "City must be between 2 and 100 characters") String city
+                @NotBlank(message = "City is required") @Size(min = 2, max = 100, message = "City must be between 2 and 100 characters") String city,
+
+                @Size(max = 150, message = "Designation must not exceed 150 characters") String designation
 
 ) {
 }

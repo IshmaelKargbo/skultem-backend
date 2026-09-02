@@ -20,6 +20,18 @@ public class Teacher extends AggregateRoot<String> {
     private User user;
     private Status status;
 
+    // Free-text job title/role, e.g. "Mathematics Teacher", "Cleaner", "Security Guard", "Cook" -
+    // this record doubles as the school's general staff record (payroll, salary structures and
+    // attendance all key off it), so this is what tells a non-teaching staff member's role apart
+    // from a classroom teacher's. Optional - null/blank is fine.
+    private String designation;
+
+    // Whether this record represents someone with actual classroom teaching duties - drives
+    // whether the Subjects/Curriculum tabs show on their profile. False for staff added through
+    // Add Staff, and for a User account (Admin/Accountant/Proprietor) opted into payroll - true
+    // for everyone added through Add Teacher.
+    private boolean teaching;
+
     public enum Status {
         ACTIVE,
         INACTIVE,
@@ -28,7 +40,7 @@ public class Teacher extends AggregateRoot<String> {
 
     public Teacher(String id, String schoolId, Title title, String phone, String street, String city, Gender gender,
             String staffId, User user,
-            Status status, Instant createdAt, Instant updatedAt) {
+            Status status, String designation, boolean teaching, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.user = user;
@@ -39,18 +51,21 @@ public class Teacher extends AggregateRoot<String> {
         this.staffId = staffId;
         this.title = title;
         this.status = status;
+        this.designation = designation;
+        this.teaching = teaching;
         touch(updatedAt);
     }
 
     public static Teacher create(String id, String schoolId, Title title, String phone,
-            String street, String city, Gender gender, String staffId, User user) {
+            String street, String city, Gender gender, String staffId, User user, String designation,
+            boolean teaching) {
         Instant now = Instant.now();
-        return new Teacher(id, schoolId, title, phone, street, city, gender, staffId, user, Status.ACTIVE, now,
-                now);
+        return new Teacher(id, schoolId, title, phone, street, city, gender, staffId, user, Status.ACTIVE,
+                designation, teaching, now, now);
     }
 
     public Teacher update(Title title, String phone, String street,
-            String city, Gender gender, String staffId) {
+            String city, Gender gender, String staffId, String designation) {
         if (title != null) {
             this.title = title;
         }
@@ -69,6 +84,9 @@ public class Teacher extends AggregateRoot<String> {
         }
         if (staffId != null) {
             this.staffId = staffId;
+        }
+        if (designation != null) {
+            this.designation = designation;
         }
 
         touch(Instant.now());

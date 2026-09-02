@@ -8,17 +8,22 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
+import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.UserMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.SchoolUser;
+import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
+import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Role;
+import com.moriba.skultem.domain.vo.Title;
 import com.moriba.skultem.infrastructure.mail.MailService;
 import com.moriba.skultem.infrastructure.mail.MailService.WelcomeUserPayload;
 
@@ -35,12 +40,28 @@ public class CreateUserUseCase {
     private final UserRepository repo;
     private final SchoolUserRepository schoolUserRepo;
     private final SchoolRepository schoolRepo;
+    private final TeacherRepository teacherRepo;
+    private final ReferenceGeneratorUsecase rg;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "USER_CREATED")
     public UserDTO execute(String schoolId, String givenNames, String familyName, String email, String role) {
+        return execute(schoolId, givenNames, familyName, email, role, false, null, null, null, null, null, null,
+                null);
+    }
+
+    // Overload for a User with an account role (Admin/Accountant/Proprietor/Owner) who is also
+    // school staff and should be paid - includeInPayroll creates the same Teacher/staff record
+    // Add Teacher and Add Staff create (so SalaryStructure, Payslip and TeacherAttendance all pick
+    // them up), but deliberately does NOT also grant Role.TEACHER - their account keeps only the
+    // role they were actually given. teaching is always false: an Admin/Accountant on payroll
+    // isn't a classroom teacher, so the Subjects/Curriculum tabs on their profile stay hidden.
+    @AuditLogAnnotation(action = "USER_CREATED")
+    public UserDTO execute(String schoolId, String givenNames, String familyName, String email, String role,
+            boolean includeInPayroll, String staffId, String phone, String street, String city, String gender,
+            String title, String designation) {
         User user;
 
         var password = generatePassword();
@@ -67,6 +88,10 @@ public class CreateUserUseCase {
                 .toList();
         schoolUserRepo.save(schoolUser);
 
+        if (includeInPayroll) {
+            addToPayroll(schoolId, user, staffId, phone, street, city, gender, title, designation);
+        }
+
         logActivityUseCase.log(
                 schoolId,
                 ActivityType.USER,
@@ -77,6 +102,32 @@ public class CreateUserUseCase {
         sendAssignEmail(school, user, role, password);
 
         return UserMapper.toDTO(user, roles);
+    }
+
+    private void addToPayroll(String schoolId, User user, String staffId, String phone, String street, String city,
+            String gender, String title, String designation) {
+        if (isBlank(staffId) || isBlank(phone) || isBlank(street) || isBlank(city) || isBlank(gender)
+                || isBlank(title)) {
+            throw new BadRequestException(
+                    "Staff ID, phone, street, city, gender and title are required to include this user in payroll");
+        }
+
+        if (teacherRepo.existsByStaffIdAndSchool(schoolId, staffId)) {
+            throw new AlreadyExistsException("staffId already exist in this school");
+        }
+
+        if (teacherRepo.existsByPhoneAndSchool(schoolId, phone)) {
+            throw new AlreadyExistsException("phone already exist in this school");
+        }
+
+        var teacherId = rg.generate("TEACHER", "THR");
+        var teacher = Teacher.create(teacherId, schoolId, Title.valueOf(title), phone, street, city,
+                Gender.valueOf(gender), staffId, user, designation, false);
+        teacherRepo.save(teacher);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private String generatePassword() {

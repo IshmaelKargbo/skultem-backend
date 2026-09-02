@@ -26,12 +26,26 @@ public class ListClassSubjectByClassUseCase {
     private final ClassSessionRepository classSessionRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
 
-    public Page<ClassSubjectDTO> execute(String school, String classId, int page, int size) {
+    public Page<ClassSubjectDTO> execute(String school, String classId, String stream, int page, int size) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
+
+        if (stream != null && !stream.isEmpty())
+            return repo.findAllByClassIdAndStreamIdAndSchoolId(classId, stream, school, pageable).map(e -> {
+                var academic = academicYearRepo.findActiveBySchool(school)
+                        .orElseThrow(() -> new NotFoundException("active academic not found"));
+                var session = classSessionRepo
+                        .findByClassIdAndStreamIdAndAcademicYearId(classId, stream, academic.getId())
+                        .orElseThrow(() -> new NotFoundException("session not found"));
+                var teacher = teacherSubjectRepo
+                        .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
+                        .orElse(null);
+
+                return ClassSubjectMapper.toDTO(e, teacher);
+            });
 
         return repo.findAllByClassIdAndSchoolId(classId, school, pageable).map(e -> {
             var academic = academicYearRepo.findActiveBySchool(school)
@@ -41,7 +55,7 @@ public class ListClassSubjectByClassUseCase {
             var teacher = teacherSubjectRepo
                     .findBySubjectIdAndSessionIdAndSchoolId(e.getSubject().getId(), session.getId(), school)
                     .orElse(null);
-                    
+
             return ClassSubjectMapper.toDTO(e, teacher);
         });
     }

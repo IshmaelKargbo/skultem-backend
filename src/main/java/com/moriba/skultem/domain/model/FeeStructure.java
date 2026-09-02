@@ -33,6 +33,16 @@ public class FeeStructure extends AggregateRoot<String> {
      */
     private boolean system;
 
+    /**
+     * True for a fee that should only be charged to students whose {@link Student#getEnrollmentType()}
+     * is NEW or TRANSFER (e.g. a Uniform Fee) - never a RE_ENROLLMENT (a returning student). See
+     * ApplyApplicableFeesToEnrollmentUseCase, which enforces this for enrollments created after
+     * this fee already exists, and CreateFeeStructureUseCase, which applies the same filter to the
+     * currently-enrolled roster when backfilling a fee created with this set. Not editable after
+     * creation, same as the rest of what a fee targets - see {@link #update}.
+     */
+    private boolean newStudentsOnly;
+
     public enum Type {
         ALL, SELECTION, CLASS
     }
@@ -40,7 +50,8 @@ public class FeeStructure extends AggregateRoot<String> {
     public FeeStructure(String id, String schoolId, Type type, Clazz clazz, Term term, FeeCategory category,
             AcademicYear academicYear, boolean allowInstallment, Material material, boolean hasSuppy, int totalSupply,
             LocalDate dueDate,
-            BigDecimal amount, String description, boolean system, Instant createdAt, Instant updatedAt) {
+            BigDecimal amount, String description, boolean system, boolean newStudentsOnly, Instant createdAt,
+            Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.amount = amount;
@@ -56,16 +67,17 @@ public class FeeStructure extends AggregateRoot<String> {
         this.dueDate = dueDate;
         this.description = description;
         this.system = system;
+        this.newStudentsOnly = newStudentsOnly;
         touch(updatedAt);
     }
 
     public static FeeStructure create(String schoolId, Type type, Clazz clazz, boolean hasSuppy, int totalSupply,
             Term term, FeeCategory category, Material material, AcademicYear academicYear, LocalDate dueDate,
-            BigDecimal amount, String description, boolean allowInstallment) {
+            BigDecimal amount, String description, boolean allowInstallment, boolean newStudentsOnly) {
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         return new FeeStructure(id, schoolId, type, clazz, term, category, academicYear, allowInstallment, material, hasSuppy,
-                totalSupply, dueDate, amount, description, false, now, now);
+                totalSupply, dueDate, amount, description, false, newStudentsOnly, now, now);
     }
 
     /**
@@ -77,7 +89,7 @@ public class FeeStructure extends AggregateRoot<String> {
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         return new FeeStructure(id, schoolId, Type.ALL, null, term, category, academicYear, false, null, false, 0,
-                dueDate, amount, description, true, now, now);
+                dueDate, amount, description, true, false, now, now);
     }
 
     /**

@@ -37,6 +37,8 @@ public interface ClassSessionRepository {
         Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
                         String schoolId);
 
+        Optional<ClassSession> findByClassIdAndStreamIdAndAcademicYearId(String classId, String streamId, String academicYearId);
+
         Optional<ClassSession> findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(String classId,
                         String academicYearId, String sectionId, String schoolId);
 

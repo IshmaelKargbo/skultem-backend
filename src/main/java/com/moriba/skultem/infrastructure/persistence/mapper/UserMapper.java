@@ -6,7 +6,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.UserEntity;
 public class UserMapper {
     public static User toDomain(UserEntity param) {
         return new User(param.getId(), param.getGivenName(), param.getFamilyName(), param.getEmail(),
-                param.getPassword(), param.getHint(), param.getStatus(),
+                param.getPassword(), param.getHint(), param.getStatus(), param.getPhoto(),
                 param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -14,7 +14,7 @@ public class UserMapper {
         if (param == null) {
             return null;
         }
-        
+
         return UserEntity.builder()
                 .id(param.getId())
                 .email(param.getEmail())
@@ -23,6 +23,7 @@ public class UserMapper {
                 .hint(param.getHint())
                 .familyName(param.getFamilyName())
                 .status(param.getStatus())
+                .photo(param.getPhoto())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

@@ -37,6 +37,10 @@ public class ClassSubjectEntity {
     private SubjectEntity subject;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stream_id")
+    private StreamEntity stream;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_group_id")
     private SubjectGroupEntity group;
 

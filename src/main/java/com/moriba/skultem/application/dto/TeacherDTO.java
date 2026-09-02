@@ -7,6 +7,6 @@ import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Title;
 
 public record TeacherDTO(String id, String schoolId, String phone, Gender gender, Title title, List<String> classes,
-                String staffId, UserDTO user, String street, String city, String status, Instant createdAt,
-                Instant updatedAt) {
+                String staffId, UserDTO user, String street, String city, String status, String designation,
+                boolean teaching, Instant createdAt, Instant updatedAt) {
 }

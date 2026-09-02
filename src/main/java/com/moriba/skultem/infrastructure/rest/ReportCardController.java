@@ -23,6 +23,7 @@ import com.moriba.skultem.application.usecase.GenerateReportCardsUseCase;
 import com.moriba.skultem.application.usecase.GetReportCardStatsUseCase;
 import com.moriba.skultem.application.usecase.GetReportCardUseCase;
 import com.moriba.skultem.application.usecase.ListReportCardsUseCase;
+import com.moriba.skultem.application.usecase.ListStudentReportCardsUseCase;
 import com.moriba.skultem.application.usecase.TrackReportCardDownloadUseCase;
 import com.moriba.skultem.application.usecase.UpdateReportCardRemarkUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
@@ -39,6 +40,7 @@ public class ReportCardController {
 
     private final GenerateReportCardsUseCase generateReportCardsUseCase;
     private final ListReportCardsUseCase listReportCardsUseCase;
+    private final ListStudentReportCardsUseCase listStudentReportCardsUseCase;
     private final GetReportCardUseCase getReportCardUseCase;
     private final GetReportCardStatsUseCase getReportCardStatsUseCase;
     private final UpdateReportCardRemarkUseCase updateReportCardRemarkUseCase;
@@ -74,6 +76,15 @@ public class ReportCardController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Report cards fetched successfully", list, meta);
+    }
+
+    @GetMapping("/student/{studentId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<List<ReportCardSummaryDTO>> byStudent(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String studentId) {
+        var res = listStudentReportCardsUseCase.execute(school, studentId);
+        return new ApiResponse<>("success", 200, "Report cards fetched successfully", res);
     }
 
     @GetMapping("/stats")

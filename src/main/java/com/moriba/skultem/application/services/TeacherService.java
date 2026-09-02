@@ -48,11 +48,11 @@ public class TeacherService {
 
     public TeacherDTO edit(TeacherRecord dto) {
         return teacherUseCase.execute(dto.schoolId(), dto.teacherId(), dto.title(), dto.givenNames(), dto.familyName(),
-                dto.gender(), dto.staffId(), dto.phone(), dto.street(), dto.city());
+                dto.gender(), dto.staffId(), dto.phone(), dto.street(), dto.city(), dto.designation());
     }
 
     public record TeacherRecord(String schoolId, String teacherId, Title title, String givenNames, String familyName,
-            Gender gender, String staffId, String phone, String street, String city) {
+            Gender gender, String staffId, String phone, String street, String city, String designation) {
     }
 
     private List<String> getClasses(String teacherId, String schoolId, String academicYearId) {

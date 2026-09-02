@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping({"/api/v1/assignment", "/api/v1/subject-assignment"})
+@RequestMapping("/api/v1/subject-assignment")
 @RequiredArgsConstructor
 public class SubjectAssignmentController {
     private final AssignSubjectsToClassUseCase assignSubjectsToClassUseCase;

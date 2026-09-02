@@ -73,6 +73,94 @@ public class GetClassSessionUseCase {
                                 streamId, sectionName, sectionId, classLevel, grade, feeDetail);
         }
 
+        public ClassSessionDTO executeByClass(String id, String academicYearId, String school) {
+                var academicYear = academicYearRepo.findByIdAndSchoolId(academicYearId, school)
+                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+
+                var domain = repo.findByAcademicYearAndClassAndSchoolId(academicYearId, id, school)
+                                .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+                var classMaster = classMasterRepo
+                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(domain.getId());
+                String teacherName = "N/A", teacherId = "";
+                String streamName = "N/A", streamId = "";
+
+                if (classMaster.isPresent()) {
+                        var teacher = classMaster.get().getTeacher();
+                        var teacherUser = teacher.getUser();
+                        teacherName = teacherUser.getName();
+                        teacherId = teacher.getId();
+                }
+
+                if (domain.getStream() != null) {
+                        var stream = domain.getStream();
+                        streamName = stream.getName();
+                        streamId = stream.getId();
+                }
+
+                var section = domain.getSection();
+                String sectionName = section.getName(), sectionId = section.getId();
+
+                var clazz = domain.getClazz();
+                String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
+                String grade = "Grade " + clazz.getDisplayOrder();
+
+                List<Enrollment> lists = enrollmentRepo
+                                .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
+                                                Pageable.unpaged())
+                                .getContent();
+
+                var feeDetail = getFeeDetail(school, lists);
+
+                return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
+                                streamName,
+                                streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+        }
+
+        public ClassSessionDTO executeByClassAndStream(String clazzId, String stream, String school, String academicYearId) {
+                var academicYear = academicYearRepo.findByIdAndSchoolId(academicYearId, school)
+                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+
+                var domain = repo.findByClassIdAndStreamIdAndAcademicYearId(clazzId, stream, academicYearId)
+                                .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+                var classMaster = classMasterRepo
+                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(domain.getId());
+                String teacherName = "N/A", teacherId = "";
+                String streamName = "N/A", streamId = "";
+
+                if (classMaster.isPresent()) {
+                        var teacher = classMaster.get().getTeacher();
+                        var teacherUser = teacher.getUser();
+                        teacherName = teacherUser.getName();
+                        teacherId = teacher.getId();
+                }
+
+                if (domain.getStream() != null) {
+                        var strm = domain.getStream();
+                        streamName = strm.getName();
+                        streamId = strm.getId();
+                }
+
+                var section = domain.getSection();
+                String sectionName = section.getName(), sectionId = section.getId();
+
+                var clazz = domain.getClazz();
+                String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
+                String grade = "Grade " + clazz.getDisplayOrder();
+
+                List<Enrollment> lists = enrollmentRepo
+                                .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
+                                                Pageable.unpaged())
+                                .getContent();
+
+                var feeDetail = getFeeDetail(school, lists);
+
+                return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
+                                streamName,
+                                streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+        }
+
         private FeeDetail getFeeDetail(String schoolId, List<Enrollment> enrollments) {
                 BigDecimal totalExpected = BigDecimal.ZERO;
                 BigDecimal totalCollected = BigDecimal.ZERO;

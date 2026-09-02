@@ -56,9 +56,13 @@ public class TeacherController {
                 var title = Title.valueOf(param.title());
                 var gender = Gender.valueOf(param.gender());
 
+                boolean sendWelcomeEmail = param.sendWelcomeEmail() == null || param.sendWelcomeEmail();
+                boolean teaching = param.teaching() == null || param.teaching();
+
                 var res = createTeacherUseCase.execute(school, title, param.givenNames(), param.familyName(), gender,
                                 param.staffId(),
-                                param.email(), param.phone(), param.street(), param.city(), param.classMaster());
+                                param.email(), param.phone(), param.street(), param.city(), param.classMaster(),
+                                param.designation(), sendWelcomeEmail, teaching);
                 return new ApiResponse<>("success", 200,
                                 "Teacher created successfully. Password is generated automatically.", res);
         }
@@ -73,7 +77,7 @@ public class TeacherController {
                 var gender = Gender.valueOf(param.gender());
 
                 var payload = new TeacherRecord(school, id, title, param.givenNames(), param.familyName(), gender,
-                                param.staffId(), param.phone(), param.street(), param.city());
+                                param.staffId(), param.phone(), param.street(), param.city(), param.designation());
                 var res = teacherSvc.edit(payload);
                 return new ApiResponse<>("success", 200,
                                 "Teacher edited successfully.", res);

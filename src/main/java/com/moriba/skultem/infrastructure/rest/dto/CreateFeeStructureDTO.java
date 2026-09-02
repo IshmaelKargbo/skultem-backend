@@ -39,6 +39,12 @@ public record CreateFeeStructureDTO(
 
         boolean allowInstallment,
 
+        // Only ever charged the first time a student enrolls (e.g. Uniform Fee) - never to a
+        // student who's simply continuing/being promoted/re-enrolled into what this fee targets.
+        // Doesn't apply to type SELECTION - an explicit student list is already a deliberate,
+        // one-off assignment regardless of new/existing status.
+        boolean newStudentsOnly,
+
         boolean hasSupply,
 
         @NotBlank(message = "Type is required")
@@ -77,6 +83,11 @@ public record CreateFeeStructureDTO(
                 if (studentIds == null || studentIds.isEmpty()) {
                     throw new IllegalArgumentException(
                             "studentIds are required when type is SELECTION");
+                }
+
+                if (newStudentsOnly) {
+                    throw new IllegalArgumentException(
+                            "newStudentsOnly is not allowed when type is SELECTION");
                 }
             }
 

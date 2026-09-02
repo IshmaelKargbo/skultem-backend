@@ -29,7 +29,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.moriba.skultem.application.usecase.ListUnassignClassBySchoolUseCase;
 
 @RestController
-@RequestMapping({"/api/v1/class/session", "/api/v1/class-session"})
+@RequestMapping("/api/v1/class-session")
 @RequiredArgsConstructor
 public class ClassSessionController {
 
@@ -109,6 +109,27 @@ public class ClassSessionController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
         var res = getClassSessionUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
+    }
+
+    @GetMapping("/class/{id}")
+    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    public ApiResponse<ClassSessionDTO> getByClass(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
+            @PathVariable String id) {
+        var res = getClassSessionUseCase.executeByClass(id, academicYearId, school);
+        return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
+    }
+
+    @GetMapping("/{classId}/stream/{streamId}")
+    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    public ApiResponse<ClassSessionDTO> getByClassAndStream(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classId,
+            @PathVariable String streamId,
+            @RequestParam String academicYearId) {
+        var res = getClassSessionUseCase.executeByClassAndStream(classId, streamId, school, academicYearId);
         return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
     }
 }

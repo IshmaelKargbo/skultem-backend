@@ -31,7 +31,7 @@ public class EditTeacherUseCase {
 
     @AuditLogAnnotation(action = "TEACHER_EDITED")
     public TeacherDTO execute(String schoolId, String teacherId, Title title, String givenNames, String familyName,
-            Gender gender, String staffId, String phone, String street, String city) {
+            Gender gender, String staffId, String phone, String street, String city, String designation) {
 
         schoolRepo.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
@@ -47,6 +47,7 @@ public class EditTeacherUseCase {
         String oldCity = teacher.getCity();
         String oldStaffId = teacher.getStaffId();
         String oldGender = teacher.getGender() != null ? teacher.getGender().name() : null;
+        String oldDesignation = teacher.getDesignation();
         String oldName = user.getGivenNames() + " " + user.getFamilyName();
 
         if (repo.existsByStaffIdAndSchoolAndIdNot(schoolId, staffId, teacherId)) {
@@ -61,7 +62,7 @@ public class EditTeacherUseCase {
         user.update(givenNames, familyName);
         userRepo.save(user);
 
-        teacher.update(title, phone, street, city, gender, staffId);
+        teacher.update(title, phone, street, city, gender, staffId, designation);
         repo.save(teacher);
 
         String meta = buildMeta(
@@ -78,7 +79,9 @@ public class EditTeacherUseCase {
                 oldGender,
                 gender != null ? gender.name() : null,
                 oldStaffId,
-                staffId);
+                staffId,
+                oldDesignation,
+                designation);
 
         logActivityUseCase.log(
                 schoolId,
@@ -93,7 +96,7 @@ public class EditTeacherUseCase {
 
     private String buildMeta(String oldName, String newName, String oldTitle, String newTitle, String oldPhone,
             String newPhone, String oldStreet, String newStreet, String oldCity, String newCity, String oldGender,
-            String newGender, String oldStaffId, String newStaffId) {
+            String newGender, String oldStaffId, String newStaffId, String oldDesignation, String newDesignation) {
         StringBuilder meta = new StringBuilder();
 
         append(meta, "name", oldName, newName);
@@ -103,6 +106,7 @@ public class EditTeacherUseCase {
         append(meta, "city", oldCity, newCity);
         append(meta, "gender", oldGender, newGender);
         append(meta, "staffId", oldStaffId, newStaffId);
+        append(meta, "designation", oldDesignation, newDesignation);
 
         return meta.toString();
     }

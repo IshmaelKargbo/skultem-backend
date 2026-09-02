@@ -8,5 +8,5 @@ import com.moriba.skultem.domain.model.FeeStructure.Type;
 
 public record FeeStructureDTO(String id, Type type, ClassDTO clazz, TermDTO term, FeeCategoryDTO category,
         boolean allowInstallment, boolean hasSupply, int totalSupply, MaterialDTO material, LocalDate dueDate, AcademicYearDTO academicYear, BigDecimal amount,
-        String description, boolean isSystem, Instant createdAt, Instant updatedAt) {
+        String description, boolean isSystem, boolean newStudentsOnly, Instant createdAt, Instant updatedAt) {
 }

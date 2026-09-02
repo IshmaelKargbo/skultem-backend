@@ -11,6 +11,7 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.Student;
+import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
@@ -34,6 +35,12 @@ import lombok.RequiredArgsConstructor;
  * If the school hasn't set up the new year's fee structures yet by the time a student lands here,
  * this is simply a no-op for them - creating the fee structure afterwards already loops over every
  * enrollment that exists at that point, including theirs, so nothing is lost either way.
+ * <p>
+ * A fee marked {@code newStudentsOnly} (e.g. Uniform Fee) is skipped here unless the student's
+ * {@link Student.EnrollmentType} is NEW or TRANSFER - RE_ENROLLMENT (a returning student) doesn't
+ * count as newly enrolling, and this deliberately reads the student's overall admission type
+ * rather than trying to tell "brand-new enrollment" apart from "promoted/re-enrolled" from the
+ * Enrollment history itself.
  */
 @Service
 // Callers (e.g. ApprovePromotionRequestUseCase) treat RuleException/NotFoundException from here as
@@ -57,12 +64,19 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
         List<FeeStructure> fees = feeStructureRepo.findApplicableFees(schoolId, enrollment.getAcademicYear().getId(),
                 enrollment.getClazz().getId());
 
+        boolean isNewlyEnrolling = student.getEnrollmentType() == EnrollmentType.NEW
+                || student.getEnrollmentType() == EnrollmentType.TRANSFER;
+
         int assignedCount = 0;
         BigDecimal totalAssignedAmount = BigDecimal.ZERO;
 
         for (FeeStructure fee : fees) {
             if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(schoolId, enrollment.getId(),
                     student.getId(), fee.getId())) {
+                continue;
+            }
+
+            if (fee.isNewStudentsOnly() && !isNewlyEnrolling) {
                 continue;
             }
 

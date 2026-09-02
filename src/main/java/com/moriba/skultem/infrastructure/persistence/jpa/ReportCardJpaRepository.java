@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +16,8 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
     Optional<ReportCardEntity> findByIdAndSchoolId(String id, String schoolId);
 
     Optional<ReportCardEntity> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId, String termId);
+
+    List<ReportCardEntity> findAllBySchoolIdAndStudentIdOrderByGeneratedAtDesc(String schoolId, String studentId);
 
     long countBySchoolId(String schoolId);
 

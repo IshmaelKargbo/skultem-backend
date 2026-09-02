@@ -24,6 +24,8 @@ public interface ClassSubjectRepository {
 
     Page<ClassSubject> findAllByClassIdAndSchoolId(String classId, String schoolId, Pageable pageble);
 
+    Page<ClassSubject> findAllByClassIdAndStreamIdAndSchoolId(String classId, String streamId, String schoolId, Pageable pageble);
+
     Page<ClassSubject> findBySchool(String school, Pageable pageable);
 
     void delete(ClassSubject domain);
