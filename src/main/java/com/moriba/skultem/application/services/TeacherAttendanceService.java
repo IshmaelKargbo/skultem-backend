@@ -105,6 +105,18 @@ public class TeacherAttendanceService {
                 .toList();
     }
 
+    // Same as forTeacher, but self-service - resolves the teacher from the signed-in user rather
+    // than an admin-supplied teacherId, so a teacher can see their own clock-in/out history from
+    // their own portal (forTeacher above is admin/owner/proprietor-only, for viewing someone
+    // else's profile).
+    public List<TeacherAttendanceDayDTO> myHistory(String schoolId, String userId, LocalDate from, LocalDate to) {
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
+                .orElseThrow(() -> new NotFoundException(
+                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+
+        return forTeacher(schoolId, teacher.getId(), from, to);
+    }
+
     // Admin clocking a teacher in/out on their behalf - no geofence/IP checks (that's the whole
     // point: it's for staff an admin can't rely on to self-service, e.g. an internet outage on
     // their end). See AdminClockInUseCase/AdminClockOutUseCase.

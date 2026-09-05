@@ -22,6 +22,9 @@ public interface ParentRepository {
 
     Page<Parent> findBySchool(String schoolId, Pageable pageable);
 
+    // Matches on name, email or phone - backs the parents list search box.
+    Page<Parent> search(String schoolId, String query, Pageable pageable);
+
     long countAll();
     
     Page<Parent> runReport(String schoolId, List<Filter> filters, Pageable pageable);

@@ -30,6 +30,29 @@ public class PayrollController {
 
     private final PayrollService payrollService;
 
+    // Self-service - overrides the class-level admin-only restriction, same pattern as the
+    // attendance/curriculum "me" endpoints. Scoped to the signed-in user's own teacher record
+    // (see PayrollService#getMySalaryHistory / #getMyPayslip) rather than an admin-supplied
+    // teacherId, so a teacher can't pull another staff member's payroll data.
+    @GetMapping("/me/history")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    public ApiResponse<List<PayslipDTO>> myHistory(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId) {
+        return new ApiResponse<>("success", 200, "Payslip history fetched successfully",
+                payrollService.getMySalaryHistory(school, userId));
+    }
+
+    @GetMapping("/me/payslip/{runId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    public ApiResponse<PayslipDTO> myPayslip(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @PathVariable String runId) {
+        return new ApiResponse<>("success", 200, "Payslip fetched successfully",
+                payrollService.getMyPayslip(school, userId, runId));
+    }
+
     @GetMapping("/salary/summary")
     public ApiResponse<PayrollSummaryDTO> summary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {

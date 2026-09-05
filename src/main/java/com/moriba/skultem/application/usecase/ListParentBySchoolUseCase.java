@@ -28,6 +28,10 @@ public class ListParentBySchoolUseCase {
     private final ListStudentByParentUseCase listStudentByParentUseCase;
 
     public Page<ParentDTO> execute(String schoolId, int page, int size) {
+        return execute(schoolId, page, size, null);
+    }
+
+    public Page<ParentDTO> execute(String schoolId, int page, int size, String query) {
 
         Pageable pageable = Pageable.unpaged();
 
@@ -35,7 +39,10 @@ public class ListParentBySchoolUseCase {
             pageable = PageRequest.of(page - 1, size);
         }
 
-        return repo.findBySchool(schoolId, pageable).map(parent -> {
+        boolean hasQuery = query != null && !query.isBlank();
+        var parents = hasQuery ? repo.search(schoolId, query.trim(), pageable) : repo.findBySchool(schoolId, pageable);
+
+        return parents.map(parent -> {
             BigDecimal totalExpected = BigDecimal.ZERO;
             BigDecimal totalCollected = BigDecimal.ZERO;
             BigDecimal totalOutstanding = BigDecimal.ZERO;

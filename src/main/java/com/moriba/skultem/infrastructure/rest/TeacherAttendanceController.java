@@ -96,6 +96,20 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, message, res);
     }
 
+    // Self-service - overrides the class-level admin-only restriction, same as /me/today. Scoped
+    // to the signed-in user's own teacher record (see TeacherAttendanceService#myHistory) rather
+    // than an admin-supplied teacherId, so a teacher can't pull another staff member's history.
+    @GetMapping("/me/history")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    public ApiResponse<List<TeacherAttendanceDayDTO>> myHistory(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return new ApiResponse<>("success", 200, "Attendance history fetched successfully",
+                service.myHistory(school, userId, from, to));
+    }
+
     @GetMapping("/teacher/{teacherId}")
     public ApiResponse<List<TeacherAttendanceDayDTO>> forTeacher(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,

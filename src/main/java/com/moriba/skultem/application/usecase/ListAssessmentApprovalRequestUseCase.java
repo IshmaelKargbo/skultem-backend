@@ -40,19 +40,51 @@ public class ListAssessmentApprovalRequestUseCase {
         }
 
         public Page<AssessmentApprovalRequestDTO> execute(String schoolId, String masterId, String status,
-                        String academicYearId, int page, int size) {
+                        String query, String academicYearId, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
-                return list(schoolId, masterId, academicYear.getId(), status, page, size);
+                return list(schoolId, masterId, academicYear.getId(), status, query, page, size);
         }
 
         public Page<AssessmentApprovalRequestDTO> executeByUser(String schoolId, String userId, String status,
-                        String academicYearId, int page, int size) {
+                        String query, String academicYearId, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
-                var teacher = teacherRepo.findByUserId(userId)
+                // findByUserId (not scoped by school) throws IncorrectResultSizeDataAccessException for a
+                // teacher who works at more than one school - findByUserIdAndSchoolId resolves the one for
+                // the school they're currently acting in, same fix as elsewhere this bug turned up.
+                var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
-                return list(schoolId, teacher.getId(), academicYear.getId(), status, page, size);
+                return list(schoolId, teacher.getId(), academicYear.getId(), status, query, page, size);
+        }
+
+        // School-wide, unlike execute()/executeByUser() above (both scoped to one class master) -
+        // the admin approval view's default list, so an admin sees everything pending across the
+        // school without first having to know which teacher/class to check.
+        public Page<AssessmentApprovalRequestDTO> executeForSchool(String schoolId, String status, String query,
+                        String academicYearId, int page, int size) {
+                var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
+                AssessmentApprovalRequest.Status parsedStatus = parseStatus(status);
+                Pageable pageable = createPageable(page, size);
+
+                Page<AssessmentApprovalRequest> requests = requestRepo.findAllBySchool(schoolId,
+                                academicYear.getId(), parsedStatus, normalizeQuery(query), pageable);
+
+                return requests.map(this::toDTO);
+        }
+
+        public AssessmentApprovalSummaryDTO summaryForSchool(String schoolId) {
+                var academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
+
+                long pending = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
+                                AssessmentApprovalRequest.Status.PENDING_REVIEW);
+                long approved = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
+                                AssessmentApprovalRequest.Status.APPROVED);
+                long returned = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
+                                AssessmentApprovalRequest.Status.RETURNED);
+
+                return new AssessmentApprovalSummaryDTO(pending, approved, returned);
         }
 
         public AssessmentApprovalSummaryDTO summary(String schoolId, String masterId) {
@@ -65,7 +97,7 @@ public class ListAssessmentApprovalRequestUseCase {
         public AssessmentApprovalSummaryDTO summaryByUser(String schoolId, String userId) {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
-                var teacher = teacherRepo.findByUserId(userId)
+                var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
                 return summarize(teacher.getId(), academicYear.getId());
@@ -82,13 +114,23 @@ public class ListAssessmentApprovalRequestUseCase {
                 return new AssessmentApprovalSummaryDTO(pending, approved, returned);
         }
 
+        // Powers the standalone approval-detail page (grades/approval/[id]) - same access as
+        // approve/return below it (school-scoped only), so a direct link/refresh works exactly
+        // like the list it was opened from.
+        public AssessmentApprovalRequestDTO getOne(String schoolId, String approvalRequestId) {
+                var request = requestRepo.findByIdAndSchoolId(approvalRequestId, schoolId)
+                                .orElseThrow(() -> new NotFoundException("Approval request not found"));
+
+                return toDTO(request);
+        }
+
         private Page<AssessmentApprovalRequestDTO> list(String schoolId, String masterId, String academicYearId,
-                        String status, int page, int size) {
+                        String status, String query, int page, int size) {
                 AssessmentApprovalRequest.Status parsedStatus = parseStatus(status);
                 Pageable pageable = createPageable(page, size);
 
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllByClassMasterSchoolId(masterId,
-                                academicYearId, parsedStatus, pageable);
+                                academicYearId, parsedStatus, normalizeQuery(query), pageable);
 
                 return requests.map(this::toDTO);
         }
@@ -99,6 +141,14 @@ public class ListAssessmentApprovalRequestUseCase {
                 }
 
                 return AssessmentApprovalRequest.Status.valueOf(status);
+        }
+
+        // Empty string, never null - a null String bound into a JPQL "lower(concat('%', :query, '%'))"
+        // (see AssessmentApprovalRequestJpaRepository) leaves Postgres/the JDBC driver unable to infer
+        // the parameter's type from context, and it falls back to bytea - "function lower(bytea) does
+        // not exist". The repository's guard checks for "" instead of NULL for the same reason.
+        private String normalizeQuery(String query) {
+                return (query == null || query.isBlank()) ? "" : query.trim();
         }
 
         private AssessmentApprovalRequestDTO toDTO(AssessmentApprovalRequest r) {

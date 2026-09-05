@@ -53,4 +53,14 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     public Optional<SchoolUser> findBySchoolAndUser(String schoolId, String userId) {
         return repo.findOneBySchoolIdUserIdWithUser(schoolId, userId).map(SchoolUserMapper::toDomain);
     }
+
+    @Override
+    public boolean existsByRole(Role role) {
+        return repo.existsByRole(role);
+    }
+
+    @Override
+    public List<SchoolUser> findAllByUser_Id(String userId) {
+        return repo.findAllByUserId(userId).stream().map(SchoolUserMapper::toDomain).toList();
+    }
 }

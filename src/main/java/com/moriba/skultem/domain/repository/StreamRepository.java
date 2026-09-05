@@ -15,4 +15,7 @@ public interface StreamRepository {
     boolean existsByNameAndSchool(String name, String schoolId);
 
     Page<Stream> findBySchool(String schoolId, Pageable pageable);
+
+    // Matches on name/description - backs the streams list's search box.
+    Page<Stream> search(String schoolId, String query, Pageable pageable);
 }

@@ -17,6 +17,10 @@ public interface StreamSubjectRepository {
 
     Page<StreamSubject> findBySchoolId(String school, Pageable pageable);
 
+    // Matches on stream/subject name, optionally narrowed to one stream - backs the stream
+    // subjects list's search box and stream filter.
+    Page<StreamSubject> search(String school, String streamId, String query, Pageable pageable);
+
     Page<StreamSubject> findAllByStreamIdAndSchoolId(String streamId, String schoolId, Pageable pageable);
 
     boolean existsByStreamAndSubject(String streamId, String subjectId);

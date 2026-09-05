@@ -20,4 +20,13 @@ public interface SchoolUserRepository {
     boolean existsBySchoolAndUserAndRole(String schoolId, String userId, Role role);
 
     List<SchoolUser> findBySchool(String schoolId);
+
+    // Whether anyone anywhere already holds this role, ignoring school - only meaningful for
+    // SYSTEM_ADMIN, which BootstrapSystemAdminUseCase uses to self-disable once one exists.
+    boolean existsByRole(Role role);
+
+    // Every school membership a user holds, across every school - the cross-tenant view
+    // SearchUsersAcrossSchoolsUseCase needs, unlike findAllByUser_IdAndSchoolId above which is
+    // scoped to one school.
+    List<SchoolUser> findAllByUser_Id(String userId);
 }

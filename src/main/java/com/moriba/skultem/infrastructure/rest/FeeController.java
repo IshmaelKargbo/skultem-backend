@@ -131,7 +131,8 @@ public class FeeController {
                 var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classId(),
                                 param.studentIds(), param.feeCategory(), param.termId(), param.materialId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
-                                param.hasSupply(), param.materialId(), param.totalSupply(), param.newStudentsOnly());
+                                param.hasSupply(), param.materialId(), param.totalSupply(), param.newStudentsOnly(),
+                                param.oldStudentsOnly());
                 var res = createFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
         }
@@ -190,9 +191,23 @@ public class FeeController {
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page,
-                        @RequestParam(required = false) String termId) {
+                        @RequestParam(required = false) String termId,
+                        @RequestParam(required = false) String classId,
+                        // NEW or OLD - which side of the newStudentsOnly/oldStudentsOnly split to
+                        // narrow down to, e.g. finding "Class 1's old-students Tuition fee" among
+                        // several fees sharing the same class/term/category. Anything else (including
+                        // absent) means no filtering on this at all.
+                        @RequestParam(required = false) String studentType,
+                        // See ListFeeStructureBySchoolUseCase.SORTABLE_FIELDS - anything else falls back
+                        // to createdAt.
+                        @RequestParam(required = false) String sortBy,
+                        @RequestParam(required = false) String direction) {
 
-                var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size, termId);
+                Boolean newStudentsOnly = "NEW".equalsIgnoreCase(studentType) ? Boolean.TRUE : null;
+                Boolean oldStudentsOnly = "OLD".equalsIgnoreCase(studentType) ? Boolean.TRUE : null;
+
+                var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size, termId, classId,
+                                newStudentsOnly, oldStudentsOnly, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

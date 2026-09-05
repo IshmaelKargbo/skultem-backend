@@ -57,8 +57,9 @@ public class SchoolController {
     @GetMapping
     @PreAuthorize("@permissionService.isSystemAdmin()")
     public ApiResponse<List<SchoolDTO>> list(@RequestParam(required = true, defaultValue = "10") Integer size,
-                                             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listSchoolUseCase.execute(page - 1, size);
+                                             @RequestParam(required = true, defaultValue = "1") Integer page,
+                                             @RequestParam(required = false) String query) {
+        var res = listSchoolUseCase.execute(page - 1, size, query);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

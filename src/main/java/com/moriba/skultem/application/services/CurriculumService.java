@@ -229,4 +229,13 @@ public class CurriculumService {
     public TeacherProgressDetailDTO getTeacherProgress(String schoolId, String teacherId) {
         return getTeacherProgressDetailUseCase.execute(schoolId, teacherId);
     }
+
+    // Self-service version of the above - resolves the teacher from the signed-in user rather
+    // than an admin-supplied teacherId, so a teacher can see their own coverage on their own
+    // /curriculums page (getTeacherProgress above is admin/owner/proprietor-only).
+    public TeacherProgressDetailDTO getMyTeacherProgress(String schoolId, String userId) {
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
+                .orElseThrow(() -> new NotFoundException("teacher not found"));
+        return getTeacherProgressDetailUseCase.execute(schoolId, teacher.getId());
+    }
 }

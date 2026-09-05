@@ -36,10 +36,10 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     }
 
     @Override
-    public boolean existsBySchoolAndAcademicYearAndTermAndClassAndCategory(String schoolId, String academicYearId,
-            String termId, String classId, String categorId) {
-        return repo.existsByAcademicYear_IdAndClazz_IdAndTerm_IdAndCategory_IdAndSchoolId(academicYearId, classId,
-                termId, categorId, schoolId);
+    public boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId,
+            String classId, String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly) {
+        return repo.existsOverlappingFeeStructure(schoolId, academicYearId, termId, classId, categoryId,
+                newStudentsOnly, oldStudentsOnly);
     }
 
     @Override
@@ -85,8 +85,10 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     }
 
     @Override
-    public Page<FeeStructure> search(String schoolId, String termId, Pageable pageable) {
-        return repo.search(schoolId, termId, pageable).map(FeeStructureMapper::toDomain);
+    public Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
+            Boolean oldStudentsOnly, Pageable pageable) {
+        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, pageable)
+                .map(FeeStructureMapper::toDomain);
     }
 
     @Override

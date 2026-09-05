@@ -18,6 +18,10 @@ public interface UserRepository {
 
     Page<User> findBySchool(String school, Pageable pageable);
 
+    // Unscoped by school - matches on email/given name/family name, for
+    // SearchUsersAcrossSchoolsUseCase's cross-tenant lookup.
+    Page<User> search(String query, Pageable pageable);
+
     long countAll();
 
     void delete(User domain);

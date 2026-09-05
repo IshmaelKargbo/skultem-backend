@@ -46,9 +46,10 @@ public class SectionController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SectionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String query,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listSectionBySchoolUseCase.execute(school, page - 1, size);
+        var res = listSectionBySchoolUseCase.execute(school, page - 1, size, query);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

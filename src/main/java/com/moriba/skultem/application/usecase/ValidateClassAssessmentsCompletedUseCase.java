@@ -15,7 +15,9 @@ import lombok.RequiredArgsConstructor;
  * academic year being promoted from, has been completed (COMPLETED) or closed out (LOCKED).
  */
 @Service
-@Transactional
+// See ValidateNextAcademicYearUseCase for why RuleException must not mark this transaction
+// rollback-only - callers like ListMyClassMasterAssignmentsUseCase catch it and keep going.
+@Transactional(dontRollbackOn = RuleException.class)
 @RequiredArgsConstructor
 public class ValidateClassAssessmentsCompletedUseCase {
 

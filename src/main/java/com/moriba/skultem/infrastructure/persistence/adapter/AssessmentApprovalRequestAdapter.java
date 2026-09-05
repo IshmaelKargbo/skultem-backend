@@ -26,8 +26,8 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId,
-            AssessmentApprovalRequest.Status status, Pageable pageable) {
-        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, pageable)
+            AssessmentApprovalRequest.Status status, String query, Pageable pageable) {
+        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, query, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
@@ -35,6 +35,18 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
     public long countByClassMasterSchoolIdAndStatus(String masterId, String academicYearId,
             AssessmentApprovalRequest.Status status) {
         return repo.countForClassMasterByTeacherIdAndStatus(masterId, academicYearId, status);
+    }
+
+    @Override
+    public Page<AssessmentApprovalRequest> findAllBySchool(String schoolId, String academicYearId,
+            AssessmentApprovalRequest.Status status, String query, Pageable pageable) {
+        return repo.findAllBySchool(schoolId, academicYearId, status, query, pageable)
+                .map(AssessmentApprovalRequestMapper::toDomain);
+    }
+
+    @Override
+    public long countBySchoolAndStatus(String schoolId, String academicYearId, AssessmentApprovalRequest.Status status) {
+        return repo.countBySchoolAndStatus(schoolId, academicYearId, status);
     }
 
     @Override

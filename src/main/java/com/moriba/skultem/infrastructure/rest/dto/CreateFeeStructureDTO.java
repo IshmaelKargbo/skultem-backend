@@ -45,6 +45,12 @@ public record CreateFeeStructureDTO(
         // one-off assignment regardless of new/existing status.
         boolean newStudentsOnly,
 
+        // Only ever charged to a student whose overall admission is a re-enrollment (a returning
+        // student) - never a first-time NEW/TRANSFER admission. Mutually exclusive with
+        // newStudentsOnly, and doesn't apply to type SELECTION for the same reason newStudentsOnly
+        // doesn't - an explicit student list is already a deliberate, one-off assignment.
+        boolean oldStudentsOnly,
+
         boolean hasSupply,
 
         @NotBlank(message = "Type is required")
@@ -89,6 +95,11 @@ public record CreateFeeStructureDTO(
                     throw new IllegalArgumentException(
                             "newStudentsOnly is not allowed when type is SELECTION");
                 }
+
+                if (oldStudentsOnly) {
+                    throw new IllegalArgumentException(
+                            "oldStudentsOnly is not allowed when type is SELECTION");
+                }
             }
 
             case "ALL" -> {
@@ -105,6 +116,11 @@ public record CreateFeeStructureDTO(
 
             default -> throw new IllegalArgumentException(
                     "Invalid type");
+        }
+
+        if (newStudentsOnly && oldStudentsOnly) {
+            throw new IllegalArgumentException(
+                    "newStudentsOnly and oldStudentsOnly cannot both be true");
         }
 
         if (classId != null

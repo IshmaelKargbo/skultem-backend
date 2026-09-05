@@ -12,8 +12,34 @@ import org.springframework.data.repository.query.Param;
 import com.moriba.skultem.infrastructure.persistence.entity.FeeStructureEntity;
 
 public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEntity, String> {
-    boolean existsByAcademicYear_IdAndClazz_IdAndTerm_IdAndCategory_IdAndSchoolId(String academicYearId, String classId,
-            String termId, String categoryId, String schoolId);
+    // A fee structure only "overlaps" (and should be blocked as a duplicate) another one covering
+    // the same class/term/category/year if the two could ever charge the same student twice. A
+    // plain fee (neither flag set) overlaps everything, since it reaches every student including
+    // whichever slice a targeted fee reaches. newStudentsOnly and oldStudentsOnly never overlap
+    // each other - they're a deliberate partition (e.g. Tuition: 900 for new students, 700 for old/
+    // returning students in the same class/term) - see CreateFeeStructureUseCase.
+    @Query("""
+                SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END
+                FROM FeeStructureEntity f
+                WHERE f.schoolId = :schoolId
+                AND f.academicYear.id = :academicYearId
+                AND f.term.id = :termId
+                AND f.clazz.id = :classId
+                AND f.category.id = :categoryId
+                AND (
+                        (:newStudentsOnly = true AND f.oldStudentsOnly = false)
+                     OR (:oldStudentsOnly = true AND f.newStudentsOnly = false)
+                     OR (:newStudentsOnly = false AND :oldStudentsOnly = false)
+                )
+            """)
+    boolean existsOverlappingFeeStructure(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("termId") String termId,
+            @Param("classId") String classId,
+            @Param("categoryId") String categoryId,
+            @Param("newStudentsOnly") boolean newStudentsOnly,
+            @Param("oldStudentsOnly") boolean oldStudentsOnly);
 
     boolean existsByCategory_IdAndSchoolId(String categoryId, String schoolId);
 
@@ -59,14 +85,24 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
     Page<FeeStructureEntity> findAllByTerm_IdAndSchoolIdOrderByCreatedAtDesc(String termId, String schoolId,
             Pageable pageable);
 
+    // classId/newStudentsOnly/oldStudentsOnly are all optional filters (a school narrowing the list
+    // down to, say, "Class 1's old-students Tuition fee") - each is skipped when left null, same
+    // pattern as the existing termId filter. No static ORDER BY here - the caller's Pageable always
+    // carries an explicit Sort (see ListFeeStructureBySchoolUseCase), which Spring Data appends for
+    // us; a query can't have both a literal ORDER BY and an injected Pageable sort.
     @Query("""
                 SELECT f FROM FeeStructureEntity f
                 WHERE f.schoolId = :schoolId
                 AND (:termId IS NULL OR f.term.id = :termId)
-                ORDER BY f.createdAt DESC
+                AND (:classId IS NULL OR f.clazz.id = :classId)
+                AND (:newStudentsOnly IS NULL OR f.newStudentsOnly = :newStudentsOnly)
+                AND (:oldStudentsOnly IS NULL OR f.oldStudentsOnly = :oldStudentsOnly)
             """)
     Page<FeeStructureEntity> search(
             @Param("schoolId") String schoolId,
             @Param("termId") String termId,
+            @Param("classId") String classId,
+            @Param("newStudentsOnly") Boolean newStudentsOnly,
+            @Param("oldStudentsOnly") Boolean oldStudentsOnly,
             Pageable pageable);
 }

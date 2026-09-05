@@ -42,6 +42,11 @@ public class ParentAdapter implements ParentRepository {
     }
 
     @Override
+    public Page<Parent> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(ParentMapper::toDomain);
+    }
+
+    @Override
     public boolean existsByPhoneAndSchool(String phone, String schoolId) {
         return repo.existsByPhoneAndSchoolId(phone, schoolId);
     }

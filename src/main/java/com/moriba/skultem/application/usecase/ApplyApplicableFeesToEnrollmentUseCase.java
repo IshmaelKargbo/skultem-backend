@@ -40,7 +40,8 @@ import lombok.RequiredArgsConstructor;
  * {@link Student.EnrollmentType} is NEW or TRANSFER - RE_ENROLLMENT (a returning student) doesn't
  * count as newly enrolling, and this deliberately reads the student's overall admission type
  * rather than trying to tell "brand-new enrollment" apart from "promoted/re-enrolled" from the
- * Enrollment history itself.
+ * Enrollment history itself. A fee marked {@code oldStudentsOnly} is the mirror image - skipped
+ * here unless the student's enrollment type is RE_ENROLLMENT.
  */
 @Service
 // Callers (e.g. ApprovePromotionRequestUseCase) treat RuleException/NotFoundException from here as
@@ -77,6 +78,10 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
             }
 
             if (fee.isNewStudentsOnly() && !isNewlyEnrolling) {
+                continue;
+            }
+
+            if (fee.isOldStudentsOnly() && isNewlyEnrolling) {
                 continue;
             }
 

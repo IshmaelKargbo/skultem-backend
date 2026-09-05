@@ -18,13 +18,16 @@ public class ListSchoolUseCase {
 
     private final SchoolRepository repo;
 
-    public Page<SchoolDTO> execute(int page, int size) {
+    public Page<SchoolDTO> execute(int page, int size, String query) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
 
-        return repo.findAll(pageable).map(SchoolMapper::toDTO);
+        boolean hasQuery = query != null && !query.isBlank();
+        var schools = hasQuery ? repo.search(query.trim(), pageable) : repo.findAll(pageable);
+
+        return schools.map(SchoolMapper::toDTO);
     }
 }

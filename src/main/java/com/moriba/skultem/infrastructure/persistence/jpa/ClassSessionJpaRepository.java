@@ -79,6 +79,30 @@ public interface ClassSessionJpaRepository
 
     Long countBySchoolId(String schoolId);
 
+    // sectionId/streamId/query are always real (possibly empty) strings, never null - a null
+    // String bound into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type
+    // from context and it falls back to bytea ("function lower(bytea) does not exist"). See
+    // ListClassSessionBySchoolUseCase.
+    @Query("""
+                select cs from ClassSessionEntity cs
+                left join cs.stream st
+                where cs.schoolId = :schoolId
+                and cs.academicYear.id = :academicYearId
+                and (:sectionId = '' or cs.section.id = :sectionId)
+                and (:streamId = '' or st.id = :streamId)
+                and (:query = ''
+                     or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
+                     or lower(cs.section.name) like lower(concat('%', :query, '%'))
+                     or lower(st.name) like lower(concat('%', :query, '%')))
+            """)
+    Page<ClassSessionEntity> search(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("sectionId") String sectionId,
+            @Param("streamId") String streamId,
+            @Param("query") String query,
+            Pageable pageable);
+
     default Page<ClassSessionEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         Specification<ClassSessionEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 

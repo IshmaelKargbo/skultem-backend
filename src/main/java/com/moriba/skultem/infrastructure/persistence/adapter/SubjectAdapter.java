@@ -38,7 +38,12 @@ public class SubjectAdapter implements SubjectRepository {
 
     @Override
     public Page<Subject> findBySchool(String school, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(school, pageable).map(SubjectMapper::toDomain);
+        return repo.findAllBySchoolId(school, pageable).map(SubjectMapper::toDomain);
+    }
+
+    @Override
+    public Page<Subject> search(String school, String query, Pageable pageable) {
+        return repo.search(school, query, pageable).map(SubjectMapper::toDomain);
     }
 
     @Override

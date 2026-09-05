@@ -10,7 +10,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional
+// See ValidateNextAcademicYearUseCase for why RuleException must not mark this transaction
+// rollback-only - callers like ListMyClassMasterAssignmentsUseCase catch it and keep going.
+@Transactional(dontRollbackOn = RuleException.class)
 @RequiredArgsConstructor
 public class ValidateAcademicYearTermsUseCase {
 

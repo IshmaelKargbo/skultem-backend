@@ -40,7 +40,7 @@ public class FeeStructureMapper {
         return new FeeStructure(param.getId(), param.getSchoolId(), param.getType(), clazz, term, category, academicYear,
                 param.isAllowInstallment(), material, param.isHasSupply(), param.getTotalSupply(), param.getDueDate(),
                 param.getAmount(), param.getDescription(), param.isSystem(), param.isNewStudentsOnly(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.isOldStudentsOnly(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static FeeStructureEntity toEntity(FeeStructure param) {
@@ -86,6 +86,7 @@ public class FeeStructureMapper {
                 .dueDate(param.getDueDate())
                 .system(param.isSystem())
                 .newStudentsOnly(param.isNewStudentsOnly())
+                .oldStudentsOnly(param.isOldStudentsOnly())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

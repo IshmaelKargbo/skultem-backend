@@ -124,16 +124,21 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessments list fetch successfully", res);
     }
 
-    @GetMapping("/approval/{classMasterId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
-    public ApiResponse<List<AssessmentApprovalRequestDTO>> listAssessmentApprovals(
+    // School-wide - unlike listAssessmentApprovals below (scoped to one teacher's class), this is
+    // the admin approval view's default list, so an admin sees what's pending across the whole
+    // school without first having to know which teacher/class to check. Admin-only (not TEACHER,
+    // unlike the per-teacher endpoints below) - a plain teacher has no business seeing every other
+    // teacher's submissions.
+    @GetMapping("/approval")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    public ApiResponse<List<AssessmentApprovalRequestDTO>> listAllAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String classMasterId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, status, academicYearId, page,
+        var res = listAssessmentApprovalRequestUseCase.executeForSchool(school, status, query, academicYearId, page,
                 size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
@@ -143,6 +148,48 @@ public class AssessmentController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Assessment approval request fetch successfully", list, meta);
+    }
+
+    @GetMapping("/approval/summary")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    public ApiResponse<AssessmentApprovalSummaryDTO> allAssessmentApprovalSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = listAssessmentApprovalRequestUseCase.summaryForSchool(school);
+        return new ApiResponse<>("success", 200, "Assessment approval summary fetch successfully", res);
+    }
+
+    @GetMapping("/approval/{classMasterId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    public ApiResponse<List<AssessmentApprovalRequestDTO>> listAssessmentApprovals(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classMasterId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = true, defaultValue = "10") Integer size,
+            @RequestParam(required = true, defaultValue = "1") Integer page) {
+        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, status, query, academicYearId,
+                page, size);
+        var list = res.getContent();
+        Map<String, Object> meta = Map.of(
+                "page", res.getNumber() + 1,
+                "size", res.getSize(),
+                "count", res.getTotalElements(),
+                "pages", res.getTotalPages());
+
+        return new ApiResponse<>("success", 200, "Assessment approval request fetch successfully", list, meta);
+    }
+
+    // A distinct path (not /approval/{id}) since that shape is already taken by
+    // listAssessmentApprovals above (list-by-class-master) - same path variable count would
+    // otherwise collide. Powers the standalone approval-detail page.
+    @GetMapping("/approval/request/{approvalRequestId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    public ApiResponse<AssessmentApprovalRequestDTO> getAssessmentApprovalRequest(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String approvalRequestId) {
+        var res = listAssessmentApprovalRequestUseCase.getOne(school, approvalRequestId);
+        return new ApiResponse<>("success", 200, "Assessment approval request fetched successfully", res);
     }
 
     @GetMapping("/approval/{classMasterId}/summary")
@@ -160,11 +207,12 @@ public class AssessmentController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, status, academicYearId, page,
-                size);
+        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, status, query, academicYearId,
+                page, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

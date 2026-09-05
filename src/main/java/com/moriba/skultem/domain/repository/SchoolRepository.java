@@ -17,6 +17,10 @@ public interface SchoolRepository {
 
     Page<School> findAll(Pageable pageable);
 
+    // Unscoped by tenant, unlike everything else here - only SystemAdminController's schools
+    // list needs to look across every school at once. Matches on name/domain.
+    Page<School> search(String query, Pageable pageable);
+
     Optional<School> findByDomain(String domain);
 
     void delete(School domain);

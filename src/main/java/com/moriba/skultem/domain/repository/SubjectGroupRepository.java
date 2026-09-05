@@ -20,6 +20,10 @@ public interface SubjectGroupRepository {
 
     Page<SubjectGroup> findBySchool(String schoolId, Pageable pageable);
 
+    // Matches on name, optionally narrowed to one class - backs the subject groups list's search
+    // box and class filter.
+    Page<SubjectGroup> search(String schoolId, String classId, String query, Pageable pageable);
+
     List<SubjectGroup> findAllByIdsAndSchoolId(Set<String> ids, String schoolId);
 
     List<SubjectGroup> findAllByIdInAndStreamAndSchoolId(Set<String> ids, String streamId, String schoolId);

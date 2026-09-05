@@ -32,7 +32,11 @@ public class ListClassSessionByTeacherUseCase {
         var academicYear = resolveAcademicYearUseCase.execute(school, academicYearId);
         Pageable pageable = Pageable.unpaged();
 
-        var teacher = teacherRepo.findByUserId(userId).orElseThrow(() -> new NotFoundException("Teacher not found"));
+        // findByUserId (not scoped by school) throws IncorrectResultSizeDataAccessException for a
+        // teacher who works at more than one school - findByUserIdAndSchoolId resolves the one for
+        // the school they're currently acting in.
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, school)
+                        .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
         return classMasterRepos.findByTeacherAndAcademicYear(teacher.getId(), academicYear.getId(), pageable)
                 .getContent()

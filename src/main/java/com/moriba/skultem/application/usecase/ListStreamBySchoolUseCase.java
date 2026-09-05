@@ -19,10 +19,18 @@ public class ListStreamBySchoolUseCase {
     private final StreamRepository repo;
 
     public Page<StreamDTO> execute(String schoolId, int page, int size) {
+        return execute(schoolId, page, size, null);
+    }
+
+    public Page<StreamDTO> execute(String schoolId, int page, int size, String query) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
-        return repo.findBySchool(schoolId, pageable).map(StreamMapper::toDTO);
+
+        boolean hasQuery = query != null && !query.isBlank();
+        var streams = hasQuery ? repo.search(schoolId, query.trim(), pageable) : repo.findBySchool(schoolId, pageable);
+
+        return streams.map(StreamMapper::toDTO);
     }
 }

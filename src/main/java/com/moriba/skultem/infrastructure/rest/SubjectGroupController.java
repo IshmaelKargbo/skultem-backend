@@ -48,8 +48,13 @@ public class SubjectGroupController {
         public ApiResponse<List<SubjectGroupDTO>> list(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
-                        @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listSubjectGroupBySchoolUseCase.execute(school, page - 1, size);
+                        @RequestParam(required = true, defaultValue = "1") Integer page,
+                        @RequestParam(required = false) String classId,
+                        @RequestParam(required = false) String query,
+                        @RequestParam(required = false) String sortBy,
+                        @RequestParam(required = false) String direction) {
+                var res = listSubjectGroupBySchoolUseCase.execute(school, page - 1, size, classId, query, sortBy,
+                                direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

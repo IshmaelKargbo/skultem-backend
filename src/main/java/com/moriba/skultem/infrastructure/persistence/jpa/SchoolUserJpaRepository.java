@@ -54,4 +54,14 @@ public interface SchoolUserJpaRepository extends JpaRepository<SchoolUserEntity,
     boolean existsBySchoolIdAndUser_IdAndRole(String schoolId, String userId, Role role);
 
     List<SchoolUserEntity> findAllBySchoolId(String schoolId);
+
+    boolean existsByRole(Role role);
+
+    @Query("""
+        select su
+        from SchoolUserEntity su
+        join fetch su.user
+        where su.user.id = :userId
+    """)
+    List<SchoolUserEntity> findAllByUserId(String userId);
 }

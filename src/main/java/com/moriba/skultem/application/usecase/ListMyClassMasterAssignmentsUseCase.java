@@ -100,7 +100,8 @@ public class ListMyClassMasterAssignmentsUseCase {
                     }
 
                     return new TeacherClassMasterDTO(master.getId(), session.getId(), clazz.getId(),
-                            session.getName(), clazz.getName(), activeEnrollments.size(), promotionStatus);
+                            stream != null ? stream.getId() : null, session.getName(), clazz.getName(),
+                            activeEnrollments.size(), promotionStatus);
                 })
                 .toList();
     }

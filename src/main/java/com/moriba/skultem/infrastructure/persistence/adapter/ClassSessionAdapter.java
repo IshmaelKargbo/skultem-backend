@@ -108,6 +108,13 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     }
 
     @Override
+    public Page<ClassSession> search(String schoolId, String academicYearId, String sectionId, String streamId,
+            String query, Pageable pageable) {
+        return repo.search(schoolId, academicYearId, sectionId, streamId, query, pageable)
+                .map(ClassSessionMapper::toDomain);
+    }
+
+    @Override
     public List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
             String schoolId) {
         return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAsc(classId, academicYearId, schoolId)

@@ -13,9 +13,11 @@ import com.moriba.skultem.application.usecase.GetSchoolUseCase;
 import com.moriba.skultem.application.usecase.LoginUseCase;
 import com.moriba.skultem.application.usecase.LogoutUseCase;
 import com.moriba.skultem.application.usecase.RefreshTokenUseCase;
+import com.moriba.skultem.application.usecase.SystemAdminLoginUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.LoginDTO;
 import com.moriba.skultem.infrastructure.rest.dto.RefreshTokenRequest;
+import com.moriba.skultem.infrastructure.rest.dto.SystemAdminLoginDTO;
 import com.moriba.skultem.infrastructure.security.JwtUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +32,7 @@ import ua_parser.Parser;
 public class AuthController {
 
     private final LoginUseCase loginUseCase;
+    private final SystemAdminLoginUseCase systemAdminLoginUseCase;
     private final JwtUtil jwt;
     private final LogoutUseCase logoutUseCase;
     private final GetSchoolUseCase getSchoolUseCase;
@@ -42,6 +45,47 @@ public class AuthController {
             @Valid @RequestBody LoginDTO param,
             HttpServletRequest request) {
 
+        DeviceInfo device = resolveDeviceInfo(request);
+
+        LoginResponse res = loginUseCase.execute(
+                param.domain(),
+                param.email(),
+                param.password(),
+                device.ipAddress(),
+                device.device(),
+                device.deviceType(),
+                device.os(),
+                device.browser(),
+                device.userAgent());
+
+        return new ApiResponse<>("success", 200, "Login successful", res);
+    }
+
+    // See SystemAdminLoginUseCase - no school domain, unlike /login above.
+    @PostMapping("/system-admin-login")
+    public ApiResponse<LoginResponse> systemAdminLogin(
+            @Valid @RequestBody SystemAdminLoginDTO param,
+            HttpServletRequest request) {
+
+        DeviceInfo device = resolveDeviceInfo(request);
+
+        LoginResponse res = systemAdminLoginUseCase.execute(
+                new SystemAdminLoginUseCase.Credentials(param.email(), param.password()),
+                device.ipAddress(),
+                device.device(),
+                device.deviceType(),
+                device.os(),
+                device.browser(),
+                device.userAgent());
+
+        return new ApiResponse<>("success", 200, "Login successful", res);
+    }
+
+    private record DeviceInfo(String ipAddress, String device, String deviceType, String os, String browser,
+            String userAgent) {
+    }
+
+    private DeviceInfo resolveDeviceInfo(HttpServletRequest request) {
         String ipAddress = request.getHeader("X-Forwarded-For");
         if (ipAddress == null || ipAddress.isBlank()) {
             ipAddress = request.getRemoteAddr();
@@ -71,20 +115,7 @@ public class AuthController {
             deviceType = "Desktop";
         }
 
-        String device = deviceType;
-
-        LoginResponse res = loginUseCase.execute(
-                param.domain(),
-                param.email(),
-                param.password(),
-                ipAddress,
-                device,
-                deviceType,
-                os,
-                browser,
-                userAgent);
-
-        return new ApiResponse<>("success", 200, "Login successful", res);
+        return new DeviceInfo(ipAddress, deviceType, deviceType, os, browser, userAgent);
     }
 
     @PostMapping("/refresh")

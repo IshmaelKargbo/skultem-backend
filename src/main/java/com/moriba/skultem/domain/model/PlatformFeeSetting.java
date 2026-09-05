@@ -8,13 +8,15 @@ import com.moriba.skultem.domain.shared.AggregateRoot;
 import lombok.Getter;
 
 /**
- * The one global row controlling the platform fee every school's students are charged - see
- * SeedPlatformFeeForAcademicYearUseCase. Set only through a SYSTEM_ADMIN-only endpoint; no school
- * admin/accountant can read or change it via anything reachable from a school's own screens.
+ * One row per school controlling the platform fee that school's students are charged - see
+ * SeedPlatformFeeForAcademicYearUseCase. The id IS the school's id (one setting per school, no
+ * separate schoolId column needed) - before this became per-school, a single row shared by every
+ * school lived under the fixed id "platform-fee" (see V32__platform_fee_per_school.sql). Set only
+ * through a SYSTEM_ADMIN-only endpoint; no school admin/accountant can read or change it via
+ * anything reachable from a school's own screens.
  */
 @Getter
 public class PlatformFeeSetting extends AggregateRoot<String> {
-    public static final String ID = "platform-fee";
 
     private BigDecimal amount;
 
@@ -24,9 +26,9 @@ public class PlatformFeeSetting extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static PlatformFeeSetting create(BigDecimal amount) {
+    public static PlatformFeeSetting create(String schoolId, BigDecimal amount) {
         Instant now = Instant.now();
-        return new PlatformFeeSetting(ID, amount, now, now);
+        return new PlatformFeeSetting(schoolId, amount, now, now);
     }
 
     public void updateAmount(BigDecimal amount) {

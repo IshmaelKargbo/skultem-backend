@@ -42,6 +42,11 @@ public class SchoolAdapter implements SchoolRepository {
     }
 
     @Override
+    public Page<School> search(String query, Pageable pageable) {
+        return repo.search(query, pageable).map(SchoolMapper::toDomain);
+    }
+
+    @Override
     public void delete(School domain) {
         SchoolEntity entity = SchoolMapper.toEntity(domain);
         repo.delete(entity);

@@ -45,6 +45,11 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/auth/**").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/demos").permitAll()
                                                 .requestMatchers("/api/v1/school/**").permitAll()
+                                                // Reachable pre-auth by design - see
+                                                // BootstrapSystemAdminUseCase for how this stays safe
+                                                // without a logged-in caller.
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/system/bootstrap")
+                                                .permitAll()
                                                 .requestMatchers("/ws/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex

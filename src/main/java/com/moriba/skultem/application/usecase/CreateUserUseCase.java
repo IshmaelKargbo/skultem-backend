@@ -10,6 +10,7 @@ import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.UserMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.School;
@@ -74,13 +75,20 @@ public class CreateUserUseCase {
             repo.save(user);
         }
 
-        if (schoolUserRepo.existsBySchoolAndUserAndRole(schoolId, user.getId(), Role.valueOf(role))) {
+        var roleEnum = Role.valueOf(role);
+
+        // SYSTEM_ADMIN is a cross-tenant, platform-wide role - never something a school's own
+        // ADMIN/OWNER/PROPRIETOR (who gate this endpoint) can hand out, or every school could
+        // mint its own super-admin. See BootstrapSystemAdminUseCase for the only path onto it.
+        if (roleEnum == Role.SYSTEM_ADMIN) {
+            throw new RuleException("SYSTEM_ADMIN cannot be assigned through this endpoint");
+        }
+
+        if (schoolUserRepo.existsBySchoolAndUserAndRole(schoolId, user.getId(), roleEnum)) {
             throw new AlreadyExistsException("user already exist in this school");
         }
 
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("school not found"));
-
-        var roleEnum = Role.valueOf(role);
         var schoolUser = SchoolUser.create(schoolId, user, roleEnum);
 
         List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), schoolId).stream()

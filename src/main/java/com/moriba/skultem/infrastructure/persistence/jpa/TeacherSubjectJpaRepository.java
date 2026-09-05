@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.TeacherSubjectEntity;
@@ -49,6 +51,31 @@ public interface TeacherSubjectJpaRepository
                         Pageable pageable);
 
         Page<TeacherSubjectEntity> findAllBySession_AcademicYear_IdAndSchoolId(String academicYear, String schoolId,
+                        Pageable pageable);
+
+        // query/classId are always real (possibly empty) strings, never null - a null String bound
+        // into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type from
+        // context and it falls back to bytea ("function lower(bytea) does not exist"). See
+        // ListTeacherSubjectBySchoolUseCase.
+        @Query("""
+                                select ts from TeacherSubjectEntity ts
+                                join ts.session s
+                                join ts.teacher t
+                                join t.user u
+                                join ts.subject subj
+                                where ts.schoolId = :schoolId
+                                and s.academicYear.id = :academicYearId
+                                and (:classId = '' or s.clazz.id = :classId)
+                                and (:query = ''
+                                     or lower(u.givenName) like lower(concat('%', :query, '%'))
+                                     or lower(u.familyName) like lower(concat('%', :query, '%'))
+                                     or lower(subj.name) like lower(concat('%', :query, '%')))
+                        """)
+        Page<TeacherSubjectEntity> search(
+                        @Param("schoolId") String schoolId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("classId") String classId,
+                        @Param("query") String query,
                         Pageable pageable);
 
         default Page<TeacherSubjectEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {

@@ -20,5 +20,8 @@ public interface SectionRepository {
 
     Page<Section> findBySchoolId(String schoolId, Pageable pageable);
 
+    // Matches on name/description - backs the sections list's search box.
+    Page<Section> search(String schoolId, String query, Pageable pageable);
+
     void delete(Section domain);
 }

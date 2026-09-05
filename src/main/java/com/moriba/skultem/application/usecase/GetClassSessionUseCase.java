@@ -61,10 +61,7 @@ public class GetClassSessionUseCase {
                 String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
                 String grade = "Grade " + clazz.getDisplayOrder();
 
-                List<Enrollment> lists = enrollmentRepo
-                                .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
-                                                Pageable.unpaged())
-                                .getContent();
+                List<Enrollment> lists = resolveEnrollments(school, classId, sectionId, streamId, academicYear.getId());
 
                 var feeDetail = getFeeDetail(school, lists);
 
@@ -105,10 +102,7 @@ public class GetClassSessionUseCase {
                 String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
                 String grade = "Grade " + clazz.getDisplayOrder();
 
-                List<Enrollment> lists = enrollmentRepo
-                                .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
-                                                Pageable.unpaged())
-                                .getContent();
+                List<Enrollment> lists = resolveEnrollments(school, classId, sectionId, streamId, academicYear.getId());
 
                 var feeDetail = getFeeDetail(school, lists);
 
@@ -149,16 +143,34 @@ public class GetClassSessionUseCase {
                 String clazzName = clazz.getName(), classId = clazz.getId(), classLevel = clazz.getLevel().name();
                 String grade = "Grade " + clazz.getDisplayOrder();
 
-                List<Enrollment> lists = enrollmentRepo
-                                .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), school,
-                                                Pageable.unpaged())
-                                .getContent();
+                List<Enrollment> lists = resolveEnrollments(school, classId, sectionId, streamId, academicYear.getId());
 
                 var feeDetail = getFeeDetail(school, lists);
 
                 return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
                                 streamName,
                                 streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+        }
+
+        // A class with streams (e.g. SSS2 split into Science/Art) shares one Clazz across every
+        // stream, so counting "students in this class" by classId alone - as this used to do -
+        // double counts every other stream's students into this session's total. Match the
+        // section+stream this specific session actually is, the same way
+        // ListClassSessionBySchoolUseCase's admin-facing list already does; a class with no
+        // streams instead matches on class+section with no stream, since streamId is blank/null.
+        private List<Enrollment> resolveEnrollments(String schoolId, String classId, String sectionId,
+                        String streamId, String academicYearId) {
+                if (streamId != null && !streamId.isBlank()) {
+                        return enrollmentRepo.findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(
+                                        classId, sectionId, streamId, academicYearId, schoolId);
+                }
+
+                return enrollmentRepo
+                                .findAllByClassAndAcademicAndSchoolId(classId, academicYearId, schoolId,
+                                                Pageable.unpaged())
+                                .stream()
+                                .filter(e -> e.getStream() == null && e.getSection().getId().equals(sectionId))
+                                .toList();
         }
 
         private FeeDetail getFeeDetail(String schoolId, List<Enrollment> enrollments) {

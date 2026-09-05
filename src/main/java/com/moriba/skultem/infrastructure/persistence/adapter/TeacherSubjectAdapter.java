@@ -90,6 +90,12 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
     }
 
     @Override
+    public Page<TeacherSubject> search(String schoolId, String academicYearId, String classId, String query,
+            Pageable pageable) {
+        return repo.search(schoolId, academicYearId, classId, query, pageable).map(TeacherSubjectMapper::toDomain);
+    }
+
+    @Override
     public Optional<TeacherSubject> findBySubjectIdAndSessionIdAndSchoolId(String subjectId, String sessionId,
             String schoolId) {
         return repo.findBySubject_IdAndSession_IdAndSchoolId(subjectId, sessionId, schoolId)

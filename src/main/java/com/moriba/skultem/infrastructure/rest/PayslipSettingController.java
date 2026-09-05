@@ -24,8 +24,11 @@ public class PayslipSettingController {
     private final GetPayslipSettingUseCase getPayslipSettingUseCase;
     private final SavePayslipSettingUseCase savePayslipSettingUseCase;
 
+    // Read-only branding (logo, accent color, footer note) - opened to TEACHER too so a
+    // teacher's own self-service payslip (payroll/history) renders with the school's actual
+    // branding instead of falling back to blank/default styling. Saving stays admin-only.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPayslipSettingUseCase.execute(school);

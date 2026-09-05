@@ -22,5 +22,8 @@ public interface SubjectRepository {
 
     Page<Subject> findBySchool(String school, Pageable pageable);
 
+    // Matches on name or code - backs the subjects list search box.
+    Page<Subject> search(String school, String query, Pageable pageable);
+
     void delete(Subject domain);
 }

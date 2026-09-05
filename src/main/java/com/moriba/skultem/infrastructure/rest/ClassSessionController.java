@@ -63,9 +63,13 @@ public class ClassSessionController {
     public ApiResponse<List<ClassSessionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String query,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listClassSessionBySchoolUseCase.execute(school, academicYearId, page - 1, size);
+        var res = listClassSessionBySchoolUseCase.execute(school, academicYearId, page - 1, size, sectionId, streamId,
+                query);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

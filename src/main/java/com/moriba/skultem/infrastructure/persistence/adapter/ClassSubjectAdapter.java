@@ -51,6 +51,12 @@ public class ClassSubjectAdapter implements ClassSubjectRepository {
     }
 
     @Override
+    public Page<ClassSubject> search(String school, String classId, Boolean mandatory, String query,
+            Pageable pageable) {
+        return repo.search(school, classId, mandatory, query, pageable).map(ClassSubjectMapper::toDomain);
+    }
+
+    @Override
     public void delete(ClassSubject domain) {
         var entity = ClassSubjectMapper.toEntity(domain);
         repo.delete(entity);

@@ -16,7 +16,13 @@ import lombok.RequiredArgsConstructor;
  * out before doing the review work, instead of the request failing deep inside approval.
  */
 @Service
-@Transactional
+// dontRollbackOn: RuleException here means "not ready yet", a routine outcome for callers like
+// ListMyClassMasterAssignmentsUseCase that catch it and keep computing the dashboard - without
+// this, Spring still marks the (shared, REQUIRED-propagation) transaction rollback-only when this
+// method throws, so the caller's catch is pointless and its own commit blows up afterwards with
+// UnexpectedRollbackException. Callers that instead let it propagate (e.g. actually submitting a
+// promotion) are unaffected - nothing was written yet, so the request still fails either way.
+@Transactional(dontRollbackOn = RuleException.class)
 @RequiredArgsConstructor
 public class ValidateNextAcademicYearUseCase {
 

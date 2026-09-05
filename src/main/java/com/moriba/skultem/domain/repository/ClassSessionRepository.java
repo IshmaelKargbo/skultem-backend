@@ -34,6 +34,11 @@ public interface ClassSessionRepository {
 
         Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId, Pageable pageable);
 
+        // Matches on class/section/stream name, optionally narrowed to one section and/or stream -
+        // backs the classes list's search box and filters.
+        Page<ClassSession> search(String schoolId, String academicYearId, String sectionId, String streamId,
+                        String query, Pageable pageable);
+
         Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
                         String schoolId);
 

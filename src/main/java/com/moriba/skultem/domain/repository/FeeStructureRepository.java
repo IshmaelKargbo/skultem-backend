@@ -17,8 +17,11 @@ public interface FeeStructureRepository {
 
     List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId);
 
-    boolean existsBySchoolAndAcademicYearAndTermAndClassAndCategory(String schoolId, String academicYearId,
-            String termId, String classId, String categorId);
+    // See FeeStructureJpaRepository.existsOverlappingFeeStructure - a plain fee overlaps everything
+    // for the same class/term/category/year, while newStudentsOnly and oldStudentsOnly never
+    // overlap each other since they're a deliberate partition of the same roster.
+    boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId, String classId,
+            String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly);
 
     boolean existsByCategoryAndSchool(String categoryId, String schoolId);
 
@@ -30,7 +33,8 @@ public interface FeeStructureRepository {
 
     Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable);
 
-    Page<FeeStructure> search(String schoolId, String termId, Pageable pageable);
+    Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
+            Boolean oldStudentsOnly, Pageable pageable);
 
     Page<FeeStructure> findBySchoolAndAcademic(String schoolId, String academicYearId, Pageable pageable);
 

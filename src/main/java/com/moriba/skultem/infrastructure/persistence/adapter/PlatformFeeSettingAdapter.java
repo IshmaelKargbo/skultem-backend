@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -27,8 +28,15 @@ public class PlatformFeeSettingAdapter implements PlatformFeeSettingRepository {
     }
 
     @Override
-    public Optional<PlatformFeeSetting> find() {
-        return repo.findById(PlatformFeeSetting.ID)
+    public Optional<PlatformFeeSetting> findBySchool(String schoolId) {
+        return repo.findById(schoolId)
                 .map(e -> new PlatformFeeSetting(e.getId(), e.getAmount(), e.getUpdatedAt(), e.getUpdatedAt()));
+    }
+
+    @Override
+    public List<PlatformFeeSetting> findAll() {
+        return repo.findAll().stream()
+                .map(e -> new PlatformFeeSetting(e.getId(), e.getAmount(), e.getUpdatedAt(), e.getUpdatedAt()))
+                .toList();
     }
 }

@@ -46,6 +46,11 @@ public class SectionAdapter implements SectionRepository {
     }
 
     @Override
+    public Page<Section> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(SectionMapper::toDomain);
+    }
+
+    @Override
     public Optional<Section> findByNameAndSchoolId(String name, String schoolId) {
         return repo.findByNameAndSchoolId(name, schoolId).map(SectionMapper::toDomain);
     }

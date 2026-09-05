@@ -195,6 +195,18 @@ public class CurriculumController {
         return new ApiResponse<>("success", 200, "Lesson notes fetched successfully", res.getContent(), meta);
     }
 
+    // Self-service - a teacher's own coverage, for the "My Progress" card on their own
+    // /curriculums page (Spring matches this literal "/me" segment ahead of the
+    // /teacher-progress/{teacherId} path variable below regardless of declaration order).
+    @GetMapping("/teacher-progress/me")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    public ApiResponse<TeacherProgressDetailDTO> getMyTeacherProgress(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId) {
+        var res = curriculumSvc.getMyTeacherProgress(school, userId);
+        return new ApiResponse<>("success", 200, "Teacher progress fetched successfully", res);
+    }
+
     @GetMapping("/teacher-progress")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<TeacherProgressDTO>> getTeacherProgress(

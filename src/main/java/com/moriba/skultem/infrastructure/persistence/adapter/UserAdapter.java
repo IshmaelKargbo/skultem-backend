@@ -45,6 +45,11 @@ public class UserAdapter implements UserRepository {
     }
 
     @Override
+    public Page<User> search(String query, Pageable pageable) {
+        return repo.search(query, pageable).map(UserMapper::toDomain);
+    }
+
+    @Override
     public long countAll() {
         return repo.count();
     }

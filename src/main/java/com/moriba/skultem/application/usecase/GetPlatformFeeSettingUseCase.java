@@ -12,9 +12,9 @@ import lombok.RequiredArgsConstructor;
 public class GetPlatformFeeSettingUseCase {
     private final PlatformFeeSettingRepository repo;
 
-    public PlatformFeeSettingDTO execute() {
-        return repo.find()
-                .map(s -> new PlatformFeeSettingDTO(s.getAmount(), s.getUpdatedAt()))
-                .orElse(new PlatformFeeSettingDTO(null, null));
+    public PlatformFeeSettingDTO execute(String schoolId) {
+        return repo.findBySchool(schoolId)
+                .map(s -> new PlatformFeeSettingDTO(schoolId, s.getAmount(), s.getUpdatedAt()))
+                .orElse(new PlatformFeeSettingDTO(schoolId, null, null));
     }
 }

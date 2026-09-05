@@ -20,12 +20,19 @@ public class ListSectionBySchoolUseCase {
     private final SectionRepository repo;
 
     public Page<SectionDTO> execute(String school, int page, int size) {
+        return execute(school, page, size, null);
+    }
+
+    public Page<SectionDTO> execute(String school, int page, int size, String query) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
 
-        return repo.findBySchoolId(school, pageable).map(SectionMapper::toDTO);
+        boolean hasQuery = query != null && !query.isBlank();
+        var sections = hasQuery ? repo.search(school, query.trim(), pageable) : repo.findBySchoolId(school, pageable);
+
+        return sections.map(SectionMapper::toDTO);
     }
 }

@@ -32,6 +32,11 @@ public class SubjectGroupAdapter implements SubjectGroupRepository {
     }
 
     @Override
+    public Page<SubjectGroup> search(String schoolId, String classId, String query, Pageable pageable) {
+        return repo.search(schoolId, classId, query, pageable).map(SubjectGroupMapper::toDomain);
+    }
+
+    @Override
     public Optional<SubjectGroup> findByIdAndSchoolId(String id, String schoolId) {
         return repo.findByIdAndSchoolId(id, schoolId).map(SubjectGroupMapper::toDomain);
     }

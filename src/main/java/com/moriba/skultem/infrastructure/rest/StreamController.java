@@ -49,9 +49,10 @@ public class StreamController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<StreamDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String query,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listStreamBySchoolUseCase.execute(school, page - 1, size);
+        var res = listStreamBySchoolUseCase.execute(school, page - 1, size, query);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -67,8 +68,13 @@ public class StreamController {
     public ApiResponse<List<StreamSubjectDTO>> listSubjects(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listStreamSubjectBySchoolUseCase.execute(school, page - 1, size);
+            @RequestParam(required = true, defaultValue = "1") Integer page,
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction) {
+        var res = listStreamSubjectBySchoolUseCase.execute(school, page - 1, size, streamId, query, sortBy,
+                direction);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

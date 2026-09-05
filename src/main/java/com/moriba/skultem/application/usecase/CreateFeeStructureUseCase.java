@@ -76,10 +76,18 @@ public class CreateFeeStructureUseCase {
 
                 // Only guards CLASS-type fees - the underlying query compares clazz.id, which never
                 // matches a null clazz (ALL/SELECTION), so it can't reliably catch a duplicate there.
-                if (clazz != null && repo.existsBySchoolAndAcademicYearAndTermAndClassAndCategory(param.schoolId(),
-                                academicYear.getId(), term.getId(), clazz.getId(), category.getId())) {
+                // A plain fee (neither flag set) can't coexist with anything else for the same
+                // class/term/category, but a newStudentsOnly and an oldStudentsOnly fee are allowed
+                // to coexist - that's how a school charges, say, 900 Tuition for new students and 700
+                // for old/returning students in the same class - see existsOverlappingFeeStructure.
+                if (clazz != null && repo.existsOverlappingFeeStructure(param.schoolId(), academicYear.getId(),
+                                term.getId(), clazz.getId(), category.getId(), param.newStudentsOnly(),
+                                param.oldStudentsOnly())) {
                         throw new AlreadyExistsException(category.getName() + " already has a fee structure for "
-                                        + clazz.getName() + " in " + term.getName());
+                                        + clazz.getName() + " in " + term.getName()
+                                        + (param.newStudentsOnly() || param.oldStudentsOnly()
+                                                        ? " that overlaps this one"
+                                                        : ""));
                 }
 
                 Material material = null;
@@ -102,7 +110,8 @@ public class CreateFeeStructureUseCase {
                                 param.amount(),
                                 param.description(),
                                 param.allowInstallment(),
-                                param.newStudentsOnly());
+                                param.newStudentsOnly(),
+                                param.oldStudentsOnly());
 
                 repo.save(fee);
 
@@ -138,6 +147,14 @@ public class CreateFeeStructureUseCase {
                         enrollments = enrollments.stream()
                                         .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.NEW
                                                         || e.getStudent().getEnrollmentType() == EnrollmentType.TRANSFER)
+                                        .toList();
+                }
+
+                // Mirror image of the above - only reach students whose overall admission was
+                // RE_ENROLLMENT (a returning student), same as ApplyApplicableFeesToEnrollmentUseCase.
+                if (param.oldStudentsOnly() && !hasExplicitStudents) {
+                        enrollments = enrollments.stream()
+                                        .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.RE_ENROLLMENT)
                                         .toList();
                 }
 
@@ -221,6 +238,7 @@ public class CreateFeeStructureUseCase {
                         boolean hasSuppy,
                         String material,
                         int totalSupply,
-                        boolean newStudentsOnly) {
+                        boolean newStudentsOnly,
+                        boolean oldStudentsOnly) {
         }
 }

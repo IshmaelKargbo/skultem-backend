@@ -35,6 +35,11 @@ public class StreamAdapter implements StreamRepository {
     }
 
     @Override
+    public Page<Stream> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(StreamMapper::toDomain);
+    }
+
+    @Override
     public Optional<Stream> findByIdAndSchoolId(String id, String schoolId) {
         return repo.findByIdAndSchoolId(id, schoolId).map(StreamMapper::toDomain);
     }

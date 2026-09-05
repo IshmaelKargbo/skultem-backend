@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.infrastructure.persistence.entity.StreamSubjectEntity;
 
@@ -33,4 +34,22 @@ public interface StreamSubjectJpaRepository extends JpaRepository<StreamSubjectE
             String schoolId);
 
     Page<StreamSubjectEntity> findAllByStreamIdAndSchoolIdOrderByCreatedAtAsc(String streamId, String schoolId, Pageable pageable);
+
+    // streamId/query are always real (possibly empty) strings, never null - a null String bound
+    // into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type from context
+    // and it falls back to bytea ("function lower(bytea) does not exist"). See
+    // ListStreamSubjectBySchoolUseCase.
+    @Query("""
+                select ss from StreamSubjectEntity ss
+                where ss.schoolId = :schoolId
+                and (:streamId = '' or ss.stream.id = :streamId)
+                and (:query = ''
+                     or lower(ss.stream.name) like lower(concat('%', :query, '%'))
+                     or lower(ss.subject.name) like lower(concat('%', :query, '%')))
+            """)
+    Page<StreamSubjectEntity> search(
+            @Param("schoolId") String schoolId,
+            @Param("streamId") String streamId,
+            @Param("query") String query,
+            Pageable pageable);
 }

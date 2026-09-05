@@ -21,4 +21,12 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, String> {
             """)
     Page<UserEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
+    @Query("""
+                select u from UserEntity u
+                where lower(u.email) like lower(concat('%', :query, '%'))
+                   or lower(u.givenName) like lower(concat('%', :query, '%'))
+                   or lower(u.familyName) like lower(concat('%', :query, '%'))
+            """)
+    Page<UserEntity> search(String query, Pageable pageable);
+
 }

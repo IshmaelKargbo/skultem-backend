@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.ParentEntity;
@@ -21,6 +23,20 @@ public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>
     Optional<ParentEntity> findByIdAndSchoolId(String id, String schoolId);
 
     Page<ParentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+
+    // Matches on name, email or phone - backs the parents list search box.
+    @Query("""
+                select p from ParentEntity p
+                join p.user u
+                where p.schoolId = :schoolId
+                and (
+                    lower(u.givenName) like lower(concat('%', :query, '%'))
+                    or lower(u.familyName) like lower(concat('%', :query, '%'))
+                    or lower(u.email) like lower(concat('%', :query, '%'))
+                    or lower(p.phone) like lower(concat('%', :query, '%'))
+                )
+            """)
+    Page<ParentEntity> search(@Param("schoolId") String schoolId, @Param("query") String query, Pageable pageable);
 
     default Page<ParentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         Specification<ParentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

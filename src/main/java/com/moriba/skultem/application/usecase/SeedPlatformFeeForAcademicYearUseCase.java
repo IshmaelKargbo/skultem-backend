@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.FeeCategory;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.PlatformFeeSetting;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
@@ -34,9 +35,10 @@ import lombok.RequiredArgsConstructor;
  * runs - a student who enrolls afterwards doesn't retroactively get it, matching how
  * {@link CreateFeeStructureUseCase} already behaves for school-created fees.
  * <p>
- * A school gets no platform fee at all until a SYSTEM_ADMIN has set an amount via
+ * A school gets no platform fee at all until a SYSTEM_ADMIN has set an amount for it via
  * {@link UpdatePlatformFeeSettingUseCase} - this is a deliberate no-op, not a failure, so schools
- * aren't blocked from activating a term before that amount exists.
+ * aren't blocked from activating a term before that amount exists. Each school's amount is
+ * independent - see {@link PlatformFeeSetting}.
  */
 @Service
 @Transactional
@@ -57,7 +59,7 @@ public class SeedPlatformFeeForAcademicYearUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     public void execute(String schoolId, AcademicYear academicYear, Term term) {
-        var setting = settingRepo.find().orElse(null);
+        var setting = settingRepo.findBySchool(schoolId).orElse(null);
         if (setting == null || !setting.isConfigured()) {
             return;
         }

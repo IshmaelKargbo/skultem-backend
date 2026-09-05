@@ -77,6 +77,9 @@ public class FeeStructureEntity {
     @Column(nullable = false)
     private boolean newStudentsOnly;
 
+    @Column(nullable = false)
+    private boolean oldStudentsOnly;
+
     private Instant createdAt;
     private Instant updatedAt;
 }
