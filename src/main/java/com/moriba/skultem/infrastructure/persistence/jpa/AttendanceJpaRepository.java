@@ -76,6 +76,30 @@ public interface AttendanceJpaRepository
                         LocalDate start,
                         LocalDate end);
 
+        // Per-student attendance counts for one class since a given date - backs the "needs
+        // attention" flag (ComputeClassAttentionUseCase). "late" counts as attended, same
+        // convention as fetchDailyClassAttendanceSummary/weeklyAttendance above; a holiday isn't
+        // held against a student, so it's excluded from both the numerator and denominator.
+        @Query("""
+                            SELECT
+                                e.id,
+                                SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
+                                COUNT(a)
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            WHERE a.schoolId = :schoolId
+                              AND e.clazz.id = :classId
+                              AND e.academicYear.id = :academicYearId
+                              AND a.date >= :since
+                              AND a.holiday = false
+                            GROUP BY e.id
+                        """)
+        List<Object[]> attendanceCountsByClassSince(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("since") LocalDate since);
+
         List<AttendanceEntity> findAllByEnrollment_Clazz_IdAndEnrollment_Section_IdAndDateAndSchoolId(String classId,
                         String sectionId, LocalDate date, String schoolId);
 

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.ClassAttentionDTO;
+import com.moriba.skultem.application.dto.ClassAttentionSummaryDTO;
 import com.moriba.skultem.application.dto.ClassDTO;
 import com.moriba.skultem.application.dto.ClassMasterDTO;
 import com.moriba.skultem.application.dto.ClassOverviewDTO;
@@ -21,7 +23,9 @@ import com.moriba.skultem.application.dto.ClassSectionDTO;
 import com.moriba.skultem.application.dto.ClassStreamDTO;
 import com.moriba.skultem.application.dto.ClassSubjectResponse;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.usecase.ComputeClassAttentionUseCase;
 import com.moriba.skultem.application.usecase.CreateClassUseCase;
+import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
 import com.moriba.skultem.application.usecase.GetClassOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetClassSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetClassUseCase;
@@ -55,6 +59,8 @@ public class ClassController {
     private final GetClassUseCase getClassUseCase;
     private final GetClassSubjectUseCase getClassSubjectUseCase;
     private final GetClassOverviewUseCase getClassOverviewUseCase;
+    private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
+    private final ListClassesNeedingAttentionUseCase listClassesNeedingAttentionUseCase;
     private final GetCurrentClassMasterUseCase getCurrentClassMasterUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
@@ -80,6 +86,19 @@ public class ClassController {
 
         var res = nextClassUseCase.execute(school, param.id(), param.nextClass());
         return new ApiResponse<>("success", 200, "Next class set successfully", res);
+    }
+
+    // Registered ahead of GetMapping("/{id}") is unnecessary here - Spring MVC always prefers a
+    // literal path segment over a variable one, but the explicit segment ("attention-summary" -
+    // not just "attention", which would collide with GetMapping("/{id}/attention")'s pattern under
+    // a different base) makes that not even a close call.
+    @GetMapping("/attention-summary")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ClassAttentionSummaryDTO> attentionSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId) {
+        var res = listClassesNeedingAttentionUseCase.execute(school, academicYearId);
+        return new ApiResponse<>("success", 200, "Class attention summary fetched successfully", res);
     }
 
     @GetMapping
@@ -162,6 +181,16 @@ public class ClassController {
             @PathVariable String id) {
         var res = getClassOverviewUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
+    }
+
+    @GetMapping("/{id}/attention")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    public ApiResponse<ClassAttentionDTO> attention(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @RequestParam(required = false) String academicYearId) {
+        var res = computeClassAttentionUseCase.execute(school, id, academicYearId);
+        return new ApiResponse<>("success", 200, "Class attention fetched successfully", res);
     }
 
     @PutMapping("/{id}/terminal")

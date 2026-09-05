@@ -31,5 +31,10 @@ public interface AttendanceRepository {
 
     List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end);
 
+    // Row shape: [enrollmentId (String), presentCount (Long), totalCount (Long)] - see
+    // ComputeClassAttentionUseCase.
+    List<Object[]> attendanceCountsByClassSince(String schoolId, String classId, String academicYearId,
+            LocalDate since);
+
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

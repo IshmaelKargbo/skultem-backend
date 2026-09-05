@@ -83,7 +83,7 @@ public class ClassReportUseCase {
                         var feeDetail = getFeeDetail(request.schoolId(), lists);
 
                         return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
-                                        streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                                        streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
                 });
         }
 

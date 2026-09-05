@@ -67,7 +67,7 @@ public class GetClassSessionUseCase {
 
                 return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
                                 streamName,
-                                streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                                streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
         }
 
         public ClassSessionDTO executeByClass(String id, String academicYearId, String school) {
@@ -108,7 +108,7 @@ public class GetClassSessionUseCase {
 
                 return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
                                 streamName,
-                                streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                                streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
         }
 
         public ClassSessionDTO executeByClassAndStream(String clazzId, String stream, String school, String academicYearId) {
@@ -149,7 +149,7 @@ public class GetClassSessionUseCase {
 
                 return new ClassSessionDTO(domain.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
                                 streamName,
-                                streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                                streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
         }
 
         // A class with streams (e.g. SSS2 split into Science/Art) shares one Clazz across every

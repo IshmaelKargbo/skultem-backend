@@ -57,9 +57,11 @@ public class ParentController {
         public ApiResponse<List<ParentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String query,
+                        @RequestParam(required = false) String sortBy,
+                        @RequestParam(required = false) String direction,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listParentBySchoolUseCase.execute(school, page, size, query);
+                var res = listParentBySchoolUseCase.execute(school, page, size, query, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

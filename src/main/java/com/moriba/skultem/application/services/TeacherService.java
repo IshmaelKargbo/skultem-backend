@@ -1,10 +1,12 @@
 package com.moriba.skultem.application.services;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.TeacherDTO;
@@ -28,13 +30,30 @@ public class TeacherService {
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EditTeacherUseCase teacherUseCase;
 
+    // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
+    // u.<field>"/"t.<field>", so an unchecked client value would let someone probe/sort by
+    // arbitrary entity fields. See ListFeeStructureBySchoolUseCase for the same pattern.
+    private static final Set<String> SORTABLE_FIELDS = Set.of("user.givenName", "user.familyName", "createdAt");
+
     public Page<TeacherDTO> search(String search, int page, int size, String schoolId) {
+        return search(search, page, size, schoolId, null, null);
+    }
+
+    public Page<TeacherDTO> search(String search, int page, int size, String schoolId, String sortBy,
+            String direction) {
+        Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = (size > 0)
-                ? PageRequest.of(page, size)
-                : Pageable.unpaged();
+                ? PageRequest.of(page, size, sort)
+                : Pageable.unpaged(sort);
 
         return repo.search(search, schoolId, pageable)
                 .map(TeacherMapper::toDTO);
+    }
+
+    private Sort resolveSort(String sortBy, String direction) {
+        String field = (sortBy != null && SORTABLE_FIELDS.contains(sortBy)) ? sortBy : "createdAt";
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return Sort.by(dir, field);
     }
 
     public TeacherDTO getById(String id, String academicYearId) {

@@ -1,7 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
@@ -29,6 +28,10 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class UpdateUserPhotoUseCase {
+    // See R2StorageService.uploadPhoto - keeps a full-resolution phone photo from being served
+    // unchanged to every teacher/parent list's avatar.
+    private static final int MAX_PHOTO_DIMENSION = 512;
+
     private final UserRepository repo;
     private final SchoolUserRepository schoolUserRepo;
     private final R2StorageService storageService;
@@ -64,12 +67,14 @@ public class UpdateUserPhotoUseCase {
                 throw new RuleException("Photo must have a valid file extension");
             }
 
-            String extension = originalFilename.substring(extensionStart).toLowerCase(Locale.ROOT);
             // Deliberately not scoped under schoolId like student/school-asset uploads - a User's
             // photo follows the person across every school they belong to, not just the active one.
-            String path = "users/" + userId + extension;
+            // The extension itself no longer feeds into the path - uploadPhoto always re-encodes as
+            // JPEG - but the check above still catches a file with no extension at all as a basic
+            // sanity check.
+            String basePath = "users/" + userId;
 
-            return storageService.uploadFile(file, path);
+            return storageService.uploadPhoto(file, basePath, MAX_PHOTO_DIMENSION);
         } catch (RuleException e) {
             throw e;
         } catch (Exception e) {

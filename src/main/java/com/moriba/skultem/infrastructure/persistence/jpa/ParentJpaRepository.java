@@ -22,7 +22,10 @@ public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>
 
     Optional<ParentEntity> findByIdAndSchoolId(String id, String schoolId);
 
-    Page<ParentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+    // No baked-in ORDER BY - the caller's Pageable carries the Sort (see
+    // ListParentBySchoolUseCase.resolveSort), and a fixed order here would either dominate or
+    // conflict with it.
+    Page<ParentEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
     // Matches on name, email or phone - backs the parents list search box.
     @Query("""

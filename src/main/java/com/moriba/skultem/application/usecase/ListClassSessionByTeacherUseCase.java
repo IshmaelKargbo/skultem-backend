@@ -73,7 +73,7 @@ public class ListClassSessionByTeacherUseCase {
 
                     return new ClassSessionDTO(session.getId(), clazzName, classId, teacherName, teacherId,
                             lists.size(),
-                            streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                            streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
                 })
                 .toList();
     }

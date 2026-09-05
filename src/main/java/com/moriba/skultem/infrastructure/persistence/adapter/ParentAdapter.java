@@ -38,7 +38,7 @@ public class ParentAdapter implements ParentRepository {
 
     @Override
     public Page<Parent> findBySchool(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(ParentMapper::toDomain);
+        return repo.findAllBySchoolId(schoolId, pageable).map(ParentMapper::toDomain);
     }
 
     @Override

@@ -2,11 +2,13 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeDetail;
@@ -27,16 +29,26 @@ public class ListParentBySchoolUseCase {
     private final @Lazy GetFeeDetailUsecase getFeeDetailUsecase;
     private final ListStudentByParentUseCase listStudentByParentUseCase;
 
+    // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
+    // u.<field>"/"p.<field>", so an unchecked client value would let someone probe/sort by
+    // arbitrary entity fields. See ListFeeStructureBySchoolUseCase for the same pattern.
+    private static final Set<String> SORTABLE_FIELDS = Set.of("user.givenName", "user.familyName", "createdAt");
+
     public Page<ParentDTO> execute(String schoolId, int page, int size) {
-        return execute(schoolId, page, size, null);
+        return execute(schoolId, page, size, null, null, null);
     }
 
     public Page<ParentDTO> execute(String schoolId, int page, int size, String query) {
+        return execute(schoolId, page, size, query, null, null);
+    }
 
-        Pageable pageable = Pageable.unpaged();
+    public Page<ParentDTO> execute(String schoolId, int page, int size, String query, String sortBy,
+            String direction) {
+        Sort sort = resolveSort(sortBy, direction);
+        Pageable pageable = Pageable.unpaged(sort);
 
         if (size > 0) {
-            pageable = PageRequest.of(page - 1, size);
+            pageable = PageRequest.of(page - 1, size, sort);
         }
 
         boolean hasQuery = query != null && !query.isBlank();
@@ -72,5 +84,11 @@ public class ListParentBySchoolUseCase {
             var feeDetail = new FeeDetail(totalExpected, totalCollected, totalOutstanding, status);
             return ParentMapper.toDTO(parent, feeDetail, students.size());
         });
+    }
+
+    private Sort resolveSort(String sortBy, String direction) {
+        String field = (sortBy != null && SORTABLE_FIELDS.contains(sortBy)) ? sortBy : "createdAt";
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return Sort.by(dir, field);
     }
 }

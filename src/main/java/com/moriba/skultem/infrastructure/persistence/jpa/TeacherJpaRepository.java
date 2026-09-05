@@ -28,6 +28,8 @@ public interface TeacherJpaRepository
 
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 
+    // No ORDER BY here - the caller's Pageable carries the Sort (see TeacherService.search), and a
+    // fixed order here would either dominate or conflict with it.
     @Query("""
                 SELECT t
                 FROM TeacherEntity t
@@ -41,7 +43,6 @@ public interface TeacherJpaRepository
                      OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
                      OR LOWER(t.phone) LIKE LOWER(CONCAT('%', :search, '%'))
                   )
-                ORDER BY t.createdAt DESC
             """)
     Page<TeacherEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
             Pageable pageable);

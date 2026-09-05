@@ -31,6 +31,7 @@ public class ListClassSessionBySchoolUseCase {
     private final GetFeeDetailUsecase getFeeDetailUsecase;
     private final ClassMasterRepository classMasterRepos;
     private final EnrollmentRepository enrollmentRepo;
+    private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
 
     public Page<ClassSessionDTO> execute(String school, int page, int size) {
         return execute(school, null, page, size);
@@ -107,8 +108,17 @@ public class ListClassSessionBySchoolUseCase {
 
         var feeDetail = getFeeDetail(school, lists);
 
+        // Best-effort - a class the attention computation can't handle (e.g. a data issue for one
+        // row) shouldn't take down the whole list.
+        boolean needsAttention;
+        try {
+            needsAttention = computeClassAttentionUseCase.execute(school, classId, academicYearId).flaggedCount() > 0;
+        } catch (Exception ex) {
+            needsAttention = false;
+        }
+
         return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
-                streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail);
+                streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail, needsAttention);
     }
 
     // Empty string, never null - see the repository's search query for why.

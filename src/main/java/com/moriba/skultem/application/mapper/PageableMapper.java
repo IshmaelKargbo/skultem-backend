@@ -2,6 +2,7 @@ package com.moriba.skultem.application.mapper;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 public class PageableMapper {
 
@@ -13,7 +14,19 @@ public class PageableMapper {
         if (page < 1) {
             page = 1;
         }
-        
+
         return PageRequest.of(page - 1, size);
+    }
+
+    public static Pageable toPage(int page, int size, Sort sort) {
+        if (size == 0) {
+            return Pageable.unpaged(sort);
+        }
+
+        if (page < 1) {
+            page = 1;
+        }
+
+        return PageRequest.of(page - 1, size, sort);
     }
 }

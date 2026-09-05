@@ -58,7 +58,10 @@ public class ListTeacherSubjectBySchoolUseCase {
     }
 
     private Sort resolveSort(String sortBy, String direction) {
-        String field = SORTABLE_FIELDS.contains(sortBy) ? sortBy : "assignedAt";
+        // Set.of(...) throws NPE from .contains(null), not just "false" like a HashSet would -
+        // sortBy is null whenever a caller doesn't pass it at all, so that null check must come
+        // first.
+        String field = (sortBy != null && SORTABLE_FIELDS.contains(sortBy)) ? sortBy : "assignedAt";
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return Sort.by(dir, field);
     }

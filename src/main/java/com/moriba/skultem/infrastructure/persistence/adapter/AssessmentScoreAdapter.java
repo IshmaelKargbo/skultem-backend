@@ -152,4 +152,10 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     public Integer getStudentRank(String schoolId, String classId, String termId, String studentId) {
         return repo.getStudentRank(schoolId, classId, termId, studentId);
     }
+
+    @Override
+    public List<Object[]> averageScoresByClassAndTerm(String schoolId, String classId, String termId,
+            ClassSubjectAssessmentLifeCycle.Status draftStatus) {
+        return repo.averageScoresByClassAndTerm(schoolId, classId, termId, draftStatus);
+    }
 }

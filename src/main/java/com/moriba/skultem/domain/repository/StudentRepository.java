@@ -18,7 +18,7 @@ public interface StudentRepository {
 
     Page<Student> findByParentAndSchoolId(String parentId, String schoolId, Pageable pageable);
 
-    Page<Student> search(String value, String schoolId, String academicYearId, Pageable pageable);
+    Page<Student> search(String value, String schoolId, String academicYearId, String classId, Pageable pageable);
 
     long countAll();
 }

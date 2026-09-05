@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -63,6 +62,10 @@ import org.slf4j.LoggerFactory;
 @RequiredArgsConstructor
 public class CreateStudentUseCase {
     private static final Logger log = LoggerFactory.getLogger(CreateStudentUseCase.class);
+
+    // See R2StorageService.uploadPhoto - keeps a full-resolution phone photo from being served
+    // unchanged to every student list's avatar.
+    private static final int MAX_PHOTO_DIMENSION = 512;
 
     private final StudentRepository repo;
     private final SchoolRepository schoolRepo;
@@ -355,13 +358,13 @@ public class CreateStudentUseCase {
                 throw new RuleException("Student photo must have a valid file extension");
             }
 
-            String extension = originalFilename.substring(extensionStart).toLowerCase(Locale.ROOT);
+            // The extension itself no longer feeds into the storage path - uploadPhoto always
+            // re-encodes as JPEG (see R2StorageService, and UpdateStudentPhotoUseCase for the
+            // equivalent used when replacing a photo after enrollment) - but the check above still
+            // catches a file with no extension at all as a basic sanity check.
+            String basePath = schoolId + "/" + studentId;
 
-            String fileName = studentId + extension;
-
-            String path = schoolId + "/" + fileName;
-
-            return storageService.uploadFile(file, path);
+            return storageService.uploadPhoto(file, basePath, MAX_PHOTO_DIMENSION);
         } catch (Exception e) {
             throw new FileUploadException("Failed to upload student photo for studentId=" + studentId);
         }

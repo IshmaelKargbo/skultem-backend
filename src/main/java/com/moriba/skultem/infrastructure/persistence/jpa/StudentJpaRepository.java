@@ -20,6 +20,11 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
         // Deliberately *not* filtered to Student.status = ACTIVE - a student who's since graduated or
         // was promoted/repeated (see ApprovePromotionRequestUseCase) is still part of that year's
         // history and can still owe fees for it, so only an actual (soft) delete excludes them.
+        // No ORDER BY here - the caller's Pageable carries the Sort (see StudentService.search /
+        // ListStudentBySchoolUseCase), and a fixed order here would either dominate or conflict
+        // with it. classId is always a real (possibly empty) string, never null - see the note on
+        // AssessmentApprovalRequestJpaRepository for why a null bound into a comparison like this
+        // is asking for trouble.
         @Query("""
                             SELECT s
                             FROM StudentEntity s
@@ -30,6 +35,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                                     WHERE e.student = s
                                       AND e.schoolId = :schoolId
                                       AND e.academicYear.id = :academicYearId
+                                      AND (:classId = '' OR e.clazz.id = :classId)
                               )
                               AND (
                                     :search IS NULL
@@ -38,11 +44,10 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                                  OR LOWER(s.familyName) LIKE LOWER(CONCAT('%', :search, '%'))
                                  OR LOWER(CAST(s.admissionNumber AS string)) LIKE LOWER(CONCAT('%', :search, '%'))
                               )
-                            ORDER BY s.createdAt DESC
                         """)
         Page<StudentEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
                         @Param("academicYearId") String academicYearId, @Param("excludedStatus") Status excludedStatus,
-                        Pageable pageable);
+                        @Param("classId") String classId, Pageable pageable);
 
         Page<StudentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
