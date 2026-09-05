@@ -4,12 +4,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-public record SalaryStructureDTO(
+public record SalaryTemplateDTO(
         String id,
         String schoolId,
-        TeacherDTO teacher,
-        String templateId,
-        String templateName,
+        String name,
         BigDecimal basicSalary,
         List<PayComponentDTO> allowances,
         List<PayComponentDTO> deductions,

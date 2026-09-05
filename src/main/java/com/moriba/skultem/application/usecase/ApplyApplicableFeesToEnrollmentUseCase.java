@@ -41,7 +41,8 @@ import lombok.RequiredArgsConstructor;
  * count as newly enrolling, and this deliberately reads the student's overall admission type
  * rather than trying to tell "brand-new enrollment" apart from "promoted/re-enrolled" from the
  * Enrollment history itself. A fee marked {@code oldStudentsOnly} is the mirror image - skipped
- * here unless the student's enrollment type is RE_ENROLLMENT.
+ * here unless the student's enrollment type is RE_ENROLLMENT. A fee with a {@code gender} set is
+ * skipped here unless it matches the student's own gender.
  */
 @Service
 // Callers (e.g. ApprovePromotionRequestUseCase) treat RuleException/NotFoundException from here as
@@ -82,6 +83,10 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
             }
 
             if (fee.isOldStudentsOnly() && isNewlyEnrolling) {
+                continue;
+            }
+
+            if (fee.getGender() != null && fee.getGender() != student.getGender()) {
                 continue;
             }
 

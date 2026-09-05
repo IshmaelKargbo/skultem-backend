@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.vo.Gender;
 
 public interface FeeStructureRepository {
     void save(FeeStructure domain);
@@ -18,10 +19,10 @@ public interface FeeStructureRepository {
     List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId);
 
     // See FeeStructureJpaRepository.existsOverlappingFeeStructure - a plain fee overlaps everything
-    // for the same class/term/category/year, while newStudentsOnly and oldStudentsOnly never
-    // overlap each other since they're a deliberate partition of the same roster.
+    // for the same class/term/category/year, while newStudentsOnly/oldStudentsOnly and different
+    // genders are each a deliberate partition that's allowed to coexist.
     boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId, String classId,
-            String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly);
+            String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender);
 
     boolean existsByCategoryAndSchool(String categoryId, String schoolId);
 
@@ -34,7 +35,7 @@ public interface FeeStructureRepository {
     Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable);
 
     Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
-            Boolean oldStudentsOnly, Pageable pageable);
+            Boolean oldStudentsOnly, Gender gender, Pageable pageable);
 
     Page<FeeStructure> findBySchoolAndAcademic(String schoolId, String academicYearId, Pageable pageable);
 

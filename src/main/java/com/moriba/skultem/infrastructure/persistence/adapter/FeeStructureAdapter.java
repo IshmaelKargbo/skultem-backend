@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.infrastructure.persistence.jpa.FeeStructureJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.FeeStructureMapper;
 
@@ -37,9 +38,9 @@ public class FeeStructureAdapter implements FeeStructureRepository {
 
     @Override
     public boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId,
-            String classId, String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly) {
+            String classId, String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender) {
         return repo.existsOverlappingFeeStructure(schoolId, academicYearId, termId, classId, categoryId,
-                newStudentsOnly, oldStudentsOnly);
+                newStudentsOnly, oldStudentsOnly, gender);
     }
 
     @Override
@@ -86,8 +87,8 @@ public class FeeStructureAdapter implements FeeStructureRepository {
 
     @Override
     public Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
-            Boolean oldStudentsOnly, Pageable pageable) {
-        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, pageable)
+            Boolean oldStudentsOnly, Gender gender, Pageable pageable) {
+        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
                 .map(FeeStructureMapper::toDomain);
     }
 

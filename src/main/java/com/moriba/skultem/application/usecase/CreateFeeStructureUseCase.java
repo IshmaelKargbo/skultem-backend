@@ -3,7 +3,9 @@ package com.moriba.skultem.application.usecase;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,14 +15,17 @@ import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.Enrollment;
+import com.moriba.skultem.domain.model.FeeCategory;
 import com.moriba.skultem.domain.model.FeeStructure;
-import com.moriba.skultem.domain.model.Material;
+import com.moriba.skultem.domain.model.FeeStructureSupplyItem;
 import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
+import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeCategoryRepository;
@@ -29,6 +34,8 @@ import com.moriba.skultem.domain.repository.MaterialRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.infrastructure.rest.dto.FeeStructureSupplyItemInputDTO;
 import com.moriba.skultem.utils.Generate;
 
 import jakarta.transaction.Transactional;
@@ -49,14 +56,12 @@ public class CreateFeeStructureUseCase {
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final LogActivityUseCase logActivityUseCase;
 
+        // A CLASS-type fee can target several classes at once (see CreateFeeStructureDTO.classIds) -
+        // each one still becomes its own independent FeeStructure row, created and backfilled exactly
+        // as it always was for a single class, just looped. ALL/SELECTION never had a class to loop
+        // over, so they run the same single pass they always did (one iteration, classId null).
         @AuditLogAnnotation(action = "FEE_STRUCTURE_CREATED")
-        public FeeStructureDTO execute(StructureRecord param) {
-
-                // The academic year comes from the term itself, not "whichever year is currently
-                // active" - a school preparing an upcoming year's fee structures ahead of time
-                // (before activating it) is a normal workflow, same as ApplyApplicableFeesToEnrollmentUseCase
-                // already treating academic year as a property of what it's touching rather than
-                // requiring it to be the active one.
+        public List<FeeStructureDTO> execute(StructureRecord param) {
                 var term = termRepo.findByIdAndSchoolId(param.termId(), param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Term not found"));
 
@@ -69,49 +74,75 @@ public class CreateFeeStructureUseCase {
                 var category = feeCategoryRepo.findByIdAndSchool(param.feeCategory(), param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Fee category not found"));
 
-                var clazz = param.classId() != null
-                                ? classRepo.findByIdAndSchool(param.classId(), param.schoolId())
+                // Resolved once, then re-materialized with a fresh id per class below (createForClass) -
+                // each class gets its own independent FeeStructure, so its supply items need their own
+                // ids too, not one shared set of item objects reused across every row.
+                List<ResolvedSupplyItem> resolvedSupplyItems = new ArrayList<>();
+                if (param.supplyItems() != null) {
+                        for (var item : param.supplyItems()) {
+                                var material = materialRepo.findByIdAndSchool(item.materialId(), param.schoolId())
+                                                .orElseThrow(() -> new NotFoundException("Material not found"));
+                                resolvedSupplyItems.add(new ResolvedSupplyItem(material, item.quantity()));
+                        }
+                }
+
+                List<String> classIds = param.classIds() != null && !param.classIds().isEmpty()
+                                ? param.classIds()
+                                : java.util.Collections.singletonList(null);
+
+                List<FeeStructureDTO> created = new ArrayList<>();
+
+                for (String classId : classIds) {
+                        created.add(createForClass(param, term, academicYear, category, resolvedSupplyItems, classId));
+                }
+
+                return created;
+        }
+
+        private FeeStructureDTO createForClass(StructureRecord param, Term term, AcademicYear academicYear,
+                        FeeCategory category, List<ResolvedSupplyItem> resolvedSupplyItems, String classId) {
+
+                var clazz = classId != null
+                                ? classRepo.findByIdAndSchool(classId, param.schoolId())
                                                 .orElseThrow(() -> new NotFoundException("Class not found"))
                                 : null;
 
                 // Only guards CLASS-type fees - the underlying query compares clazz.id, which never
                 // matches a null clazz (ALL/SELECTION), so it can't reliably catch a duplicate there.
-                // A plain fee (neither flag set) can't coexist with anything else for the same
-                // class/term/category, but a newStudentsOnly and an oldStudentsOnly fee are allowed
-                // to coexist - that's how a school charges, say, 900 Tuition for new students and 700
-                // for old/returning students in the same class - see existsOverlappingFeeStructure.
+                // A plain fee (neither flag set, no gender) can't coexist with anything else for the
+                // same class/term/category, but newStudentsOnly/oldStudentsOnly and different genders
+                // are each a deliberate partition allowed to coexist - see existsOverlappingFeeStructure.
                 if (clazz != null && repo.existsOverlappingFeeStructure(param.schoolId(), academicYear.getId(),
                                 term.getId(), clazz.getId(), category.getId(), param.newStudentsOnly(),
-                                param.oldStudentsOnly())) {
+                                param.oldStudentsOnly(), param.gender())) {
                         throw new AlreadyExistsException(category.getName() + " already has a fee structure for "
                                         + clazz.getName() + " in " + term.getName()
-                                        + (param.newStudentsOnly() || param.oldStudentsOnly()
+                                        + (param.newStudentsOnly() || param.oldStudentsOnly() || param.gender() != null
                                                         ? " that overlaps this one"
                                                         : ""));
                 }
 
-                Material material = null;
-
-                if (param.hasSuppy && param.materialId != null) {
-                        material = materialRepo.findByIdAndSchool(param.materialId, param.schoolId).orElseThrow(() -> new NotFoundException("material not found"));
-                }
+                List<FeeStructureSupplyItem> supplyItems = resolvedSupplyItems.stream()
+                                .map(r -> new FeeStructureSupplyItem(UUID.randomUUID().toString(), r.material(),
+                                                r.quantity()))
+                                .toList();
 
                 var fee = FeeStructure.create(
                                 param.schoolId(),
                                 param.type(),
                                 clazz,
                                 param.hasSuppy(),
-                                param.totalSupply(),
+                                supplyItems,
                                 term,
                                 category,
-                                material,
                                 academicYear,
                                 param.dueDate(),
                                 param.amount(),
                                 param.description(),
                                 param.allowInstallment(),
                                 param.newStudentsOnly(),
-                                param.oldStudentsOnly());
+                                param.oldStudentsOnly(),
+                                param.gender());
 
                 repo.save(fee);
 
@@ -155,6 +186,16 @@ public class CreateFeeStructureUseCase {
                 if (param.oldStudentsOnly() && !hasExplicitStudents) {
                         enrollments = enrollments.stream()
                                         .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.RE_ENROLLMENT)
+                                        .toList();
+                }
+
+                // Same "not for an explicit selection" rule as newStudentsOnly/oldStudentsOnly above
+                // (and enforced the same way at the DTO level) - a hand-picked list of students is
+                // already a deliberate, one-off assignment, so a gender filter would only add a
+                // confusing silent exclusion rather than anything useful.
+                if (param.gender() != null && !hasExplicitStudents) {
+                        enrollments = enrollments.stream()
+                                        .filter(e -> e.getStudent().getGender() == param.gender())
                                         .toList();
                 }
 
@@ -223,22 +264,24 @@ public class CreateFeeStructureUseCase {
                 return FeeStructureMapper.toDTO(fee);
         }
 
+        private record ResolvedSupplyItem(com.moriba.skultem.domain.model.Material material, int quantity) {
+        }
+
         public record StructureRecord(
                         String schoolId,
                         Type type,
-                        String classId,
+                        List<String> classIds,
                         List<String> studentIds,
                         String feeCategory,
                         String termId,
-                        String materialId,
                         BigDecimal amount,
                         LocalDate dueDate,
                         boolean allowInstallment,
                         String description,
                         boolean hasSuppy,
-                        String material,
-                        int totalSupply,
+                        List<FeeStructureSupplyItemInputDTO> supplyItems,
                         boolean newStudentsOnly,
-                        boolean oldStudentsOnly) {
+                        boolean oldStudentsOnly,
+                        Gender gender) {
         }
 }

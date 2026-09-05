@@ -2,23 +2,21 @@ package com.moriba.skultem.infrastructure.persistence.mapper;
 
 import java.util.List;
 
-import com.moriba.skultem.domain.model.SalaryStructure;
+import com.moriba.skultem.domain.model.SalaryTemplate;
 import com.moriba.skultem.domain.vo.PayComponent;
 import com.moriba.skultem.infrastructure.persistence.entity.PayComponentEmbeddable;
-import com.moriba.skultem.infrastructure.persistence.entity.SalaryStructureEntity;
+import com.moriba.skultem.infrastructure.persistence.entity.SalaryTemplateEntity;
 
-public class SalaryStructureMapper {
-    public static SalaryStructure toDomain(SalaryStructureEntity param) {
+public class SalaryTemplateMapper {
+    public static SalaryTemplate toDomain(SalaryTemplateEntity param) {
         if (param == null) {
             return null;
         }
 
-        return new SalaryStructure(
+        return new SalaryTemplate(
                 param.getId(),
                 param.getSchoolId(),
-                TeacherMapper.toDomain(param.getTeacher()),
-                param.getTemplateId(),
-                param.getTemplateName(),
+                param.getName(),
                 param.getBasicSalary(),
                 toDomainItems(param.getAllowances()),
                 toDomainItems(param.getDeductions()),
@@ -26,13 +24,15 @@ public class SalaryStructureMapper {
                 param.getUpdatedAt());
     }
 
-    public static SalaryStructureEntity toEntity(SalaryStructure param) {
-        return SalaryStructureEntity.builder()
+    public static SalaryTemplateEntity toEntity(SalaryTemplate param) {
+        if (param == null) {
+            return null;
+        }
+
+        return SalaryTemplateEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
-                .teacher(TeacherMapper.toEntity(param.getTeacher()))
-                .templateId(param.getTemplateId())
-                .templateName(param.getTemplateName())
+                .name(param.getName())
                 .basicSalary(param.getBasicSalary())
                 .allowances(toEntityItems(param.getAllowances()))
                 .deductions(toEntityItems(param.getDeductions()))

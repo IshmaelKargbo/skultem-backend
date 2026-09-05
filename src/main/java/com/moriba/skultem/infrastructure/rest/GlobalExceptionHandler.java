@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,6 +49,38 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return build(HttpStatus.BAD_REQUEST, "ILLEGAL_ARGUMENT", ex);
+    }
+
+    // A request DTO's compact constructor (e.g. UpdateFeeStructureDTO, CreateFeeStructureDTO -
+    // cross-field checks like "newStudentsOnly and oldStudentsOnly cannot both be true") throws
+    // IllegalArgumentException while Jackson is still building the object from the request body,
+    // before @Valid ever runs - Spring wraps that as HttpMessageNotReadableException rather than
+    // delivering it as a bare IllegalArgumentException, so it was falling through to the generic
+    // 500 handler below instead of the IllegalArgumentException one above. Unwrap it here so those
+    // checks actually surface as the 400 they're meant to be.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+        // Jackson wraps a compact constructor's thrown exception in its own
+        // ValueInstantiationException first, which HttpMessageNotReadableException then wraps
+        // again - the IllegalArgumentException we actually want is a level further down than
+        // getCause() alone reaches, so walk the whole chain for it.
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause instanceof IllegalArgumentException iae) {
+                return build(HttpStatus.BAD_REQUEST, "ILLEGAL_ARGUMENT", iae);
+            }
+            cause = cause.getCause();
+        }
+
+        log.warn("Malformed request body: {}", ex.getMessage());
+
+        return ResponseEntity.badRequest().body(
+                new ApiErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "MALFORMED_REQUEST",
+                        "The request body is missing or malformed.",
+                        LocalDateTime.now(),
+                        null));
     }
 
     @ExceptionHandler(FileUploadException.class)

@@ -184,22 +184,27 @@ public class RecordPaymentUseCase {
 
                 BigDecimal outstanding = calculateOutstanding(fee, student.getId());
 
-                // FULLY PAID
+                // FULLY PAID - issue every material this fee bundles (e.g. Uniform + House Colour +
+                // Necktie), each checked/created independently so a partial re-run (or a fee edited to
+                // add a new line after some materials were already issued) never double-issues one
+                // that's already out.
                 if (outstanding.compareTo(BigDecimal.ZERO) == 0) {
-                        boolean alreadyIssued = supplyRepo.existsByStudentIdAndMaterialIdAndSchoolId(
-                                        student.getId(),
-                                        fee.getMaterial().getId(),
-                                        fee.getSchoolId());
+                        for (var item : fee.getSupplyItems()) {
+                                boolean alreadyIssued = supplyRepo.existsByStudentIdAndMaterialIdAndSchoolId(
+                                                student.getId(),
+                                                item.getMaterial().getId(),
+                                                fee.getSchoolId());
 
-                        if (alreadyIssued) {
-                                return;
+                                if (alreadyIssued) {
+                                        continue;
+                                }
+
+                                createSupplyUseCase.execute(
+                                                fee.getSchoolId(),
+                                                student.getId(),
+                                                item.getMaterial().getId(),
+                                                item.getQuantity());
                         }
-
-                        createSupplyUseCase.execute(
-                                        fee.getSchoolId(),
-                                        student.getId(),
-                                        fee.getMaterial().getId(),
-                                        fee.getTotalSupply());
                 }
         }
 

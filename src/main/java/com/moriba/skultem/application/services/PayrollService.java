@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.PayrollRunDTO;
@@ -14,21 +15,28 @@ import com.moriba.skultem.application.dto.PayrollRunDetailDTO;
 import com.moriba.skultem.application.dto.PayrollSummaryDTO;
 import com.moriba.skultem.application.dto.PayslipDTO;
 import com.moriba.skultem.application.dto.SalaryStructureDTO;
+import com.moriba.skultem.application.dto.SalaryTemplateDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.PayrollRunMapper;
 import com.moriba.skultem.application.mapper.PayslipMapper;
 import com.moriba.skultem.application.mapper.SalaryStructureMapper;
 import com.moriba.skultem.application.usecase.CreatePayrollRunUseCase;
+import com.moriba.skultem.application.usecase.CreateSalaryTemplateUseCase;
+import com.moriba.skultem.application.usecase.DeleteSalaryTemplateUseCase;
 import com.moriba.skultem.application.usecase.GeneratePayrollRunUseCase;
+import com.moriba.skultem.application.usecase.GetSalaryTemplateUseCase;
+import com.moriba.skultem.application.usecase.ListSalaryTemplateBySchoolUseCase;
 import com.moriba.skultem.application.usecase.PublishPayrollRunUseCase;
 import com.moriba.skultem.application.usecase.SetSalaryStructureUseCase;
 import com.moriba.skultem.application.usecase.TogglePayslipIncludedUseCase;
+import com.moriba.skultem.application.usecase.UpdateSalaryTemplateUseCase;
 import com.moriba.skultem.domain.model.PayrollRun;
 import com.moriba.skultem.domain.model.SalaryStructure;
 import com.moriba.skultem.domain.repository.PayrollRunRepository;
 import com.moriba.skultem.domain.repository.PayslipRepository;
 import com.moriba.skultem.domain.repository.SalaryStructureRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.infrastructure.rest.dto.PayComponentItemDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,15 +54,61 @@ public class PayrollService {
     private final TogglePayslipIncludedUseCase togglePayslipIncludedUseCase;
     private final GeneratePayrollRunUseCase generatePayrollRunUseCase;
     private final PublishPayrollRunUseCase publishPayrollRunUseCase;
+    private final CreateSalaryTemplateUseCase createSalaryTemplateUseCase;
+    private final UpdateSalaryTemplateUseCase updateSalaryTemplateUseCase;
+    private final GetSalaryTemplateUseCase getSalaryTemplateUseCase;
+    private final ListSalaryTemplateBySchoolUseCase listSalaryTemplateBySchoolUseCase;
+    private final DeleteSalaryTemplateUseCase deleteSalaryTemplateUseCase;
 
-    public SalaryStructureDTO setSalary(String schoolId, String teacherId, BigDecimal basicSalary,
-            BigDecimal allowances, BigDecimal deductions) {
-        return setSalaryStructureUseCase.execute(schoolId, teacherId, basicSalary, allowances, deductions);
+    // Whitelisted rather than handed straight to Sort.by(sortBy) - see ListSubjectBySchoolUseCase
+    // for why. teacher.user.givenName/familyName mirror TeacherService's own sortable fields for
+    // the same nested-path sort.
+    private static final java.util.Set<String> SALARY_SORTABLE_FIELDS = java.util.Set
+            .of("teacher.user.givenName", "teacher.user.familyName", "basicSalary", "createdAt");
+
+    public SalaryStructureDTO setSalary(String schoolId, String teacherId, String templateId, BigDecimal basicSalary,
+            List<PayComponentItemDTO> allowances, List<PayComponentItemDTO> deductions) {
+        return setSalaryStructureUseCase.execute(schoolId, teacherId, templateId, basicSalary, allowances,
+                deductions);
     }
 
-    public Page<SalaryStructureDTO> listSalaries(String schoolId, int page, int size, String search) {
-        Pageable pageable = size > 0 ? PageRequest.of(page - 1, size) : Pageable.unpaged();
-        return salaryRepo.search(search, schoolId, pageable).map(SalaryStructureMapper::toDTO);
+    public Page<SalaryStructureDTO> listSalaries(String schoolId, int page, int size, String search, String sortBy,
+            String direction) {
+        String field = (sortBy != null && SALARY_SORTABLE_FIELDS.contains(sortBy)) ? sortBy : "createdAt";
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(dir, field);
+
+        Pageable pageable = size > 0 ? PageRequest.of(page - 1, size, sort) : Pageable.unpaged(sort);
+
+        boolean hasQuery = search != null && !search.isBlank();
+        var structures = hasQuery
+                ? salaryRepo.search(search.trim(), schoolId, pageable)
+                : salaryRepo.findAllBySchoolId(schoolId, pageable);
+
+        return structures.map(SalaryStructureMapper::toDTO);
+    }
+
+    public SalaryTemplateDTO createSalaryTemplate(String schoolId, String name, BigDecimal basicSalary,
+            List<PayComponentItemDTO> allowances, List<PayComponentItemDTO> deductions) {
+        return createSalaryTemplateUseCase.execute(schoolId, name, basicSalary, allowances, deductions);
+    }
+
+    public SalaryTemplateDTO updateSalaryTemplate(String schoolId, String templateId, String name,
+            BigDecimal basicSalary, List<PayComponentItemDTO> allowances, List<PayComponentItemDTO> deductions) {
+        return updateSalaryTemplateUseCase.execute(schoolId, templateId, name, basicSalary, allowances, deductions);
+    }
+
+    public SalaryTemplateDTO getSalaryTemplate(String schoolId, String templateId) {
+        return getSalaryTemplateUseCase.execute(schoolId, templateId);
+    }
+
+    public Page<SalaryTemplateDTO> listSalaryTemplates(String schoolId, int page, int size, String search,
+            String sortBy, String direction) {
+        return listSalaryTemplateBySchoolUseCase.execute(schoolId, page - 1, size, search, sortBy, direction);
+    }
+
+    public void deleteSalaryTemplate(String schoolId, String templateId) {
+        deleteSalaryTemplateUseCase.execute(schoolId, templateId);
     }
 
     public SalaryStructureDTO getSalaryByTeacher(String schoolId, String teacherId) {
@@ -128,9 +182,28 @@ public class PayrollService {
         return createPayrollRunUseCase.execute(schoolId, period, payDate);
     }
 
-    public Page<PayrollRunDTO> listRuns(String schoolId, int page, int size) {
-        Pageable pageable = size > 0 ? PageRequest.of(page - 1, size) : Pageable.unpaged();
-        return runRepo.findAllBySchoolId(schoolId, pageable).map(PayrollRunMapper::toDTO);
+    private static final java.util.Set<String> RUN_SORTABLE_FIELDS = java.util.Set.of("period", "payDate", "status",
+            "createdAt");
+
+    public Page<PayrollRunDTO> listRuns(String schoolId, int page, int size, String search, String status,
+            String sortBy, String direction) {
+        String field = (sortBy != null && RUN_SORTABLE_FIELDS.contains(sortBy)) ? sortBy : "createdAt";
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(dir, field);
+
+        Pageable pageable = size > 0 ? PageRequest.of(page - 1, size, sort) : Pageable.unpaged(sort);
+
+        PayrollRun.Status statusFilter = null;
+        if (status != null && !status.isBlank()) {
+            statusFilter = PayrollRun.Status.valueOf(status.toUpperCase());
+        }
+
+        boolean hasFilter = (search != null && !search.isBlank()) || statusFilter != null;
+        var runs = hasFilter
+                ? runRepo.search(schoolId, search == null ? null : search.trim(), statusFilter, pageable)
+                : runRepo.findAllBySchoolId(schoolId, pageable);
+
+        return runs.map(PayrollRunMapper::toDTO);
     }
 
     public PayrollRunDetailDTO getRunDetail(String schoolId, String runId) {

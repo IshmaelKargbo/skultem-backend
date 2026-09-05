@@ -12,9 +12,11 @@ import com.moriba.skultem.application.dto.PayrollRunDetailDTO;
 import com.moriba.skultem.application.dto.PayrollSummaryDTO;
 import com.moriba.skultem.application.dto.PayslipDTO;
 import com.moriba.skultem.application.dto.SalaryStructureDTO;
+import com.moriba.skultem.application.dto.SalaryTemplateDTO;
 import com.moriba.skultem.application.services.PayrollService;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreatePayrollRunDTO;
+import com.moriba.skultem.infrastructure.rest.dto.SaveSalaryTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SetSalaryStructureDTO;
 import com.moriba.skultem.infrastructure.rest.dto.TogglePayslipDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
@@ -63,8 +65,8 @@ public class PayrollController {
     public ApiResponse<SalaryStructureDTO> setSalary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SetSalaryStructureDTO param) {
-        var res = payrollService.setSalary(school, param.teacherId(), param.basicSalary(), param.allowances(),
-                param.deductions());
+        var res = payrollService.setSalary(school, param.teacherId(), param.templateId(), param.basicSalary(),
+                param.allowances(), param.deductions());
         return new ApiResponse<>("success", 200, "Salary structure saved successfully", res);
     }
 
@@ -73,10 +75,60 @@ public class PayrollController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(required = false) String search) {
-        var res = payrollService.listSalaries(school, page, size, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction) {
+        var res = payrollService.listSalaries(school, page, size, search, sortBy, direction);
         Map<String, Object> meta = MetaMapper.toMeta(res);
         return new ApiResponse<>("success", 200, "Salary structures fetched successfully", res.getContent(), meta);
+    }
+
+    @PostMapping("/salary-template")
+    public ApiResponse<SalaryTemplateDTO> createSalaryTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody SaveSalaryTemplateDTO param) {
+        var res = payrollService.createSalaryTemplate(school, param.name(), param.basicSalary(), param.allowances(),
+                param.deductions());
+        return new ApiResponse<>("success", 200, "Salary template created successfully", res);
+    }
+
+    @PutMapping("/salary-template/{templateId}")
+    public ApiResponse<SalaryTemplateDTO> updateSalaryTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId,
+            @Valid @RequestBody SaveSalaryTemplateDTO param) {
+        var res = payrollService.updateSalaryTemplate(school, templateId, param.name(), param.basicSalary(),
+                param.allowances(), param.deductions());
+        return new ApiResponse<>("success", 200, "Salary template updated successfully", res);
+    }
+
+    @GetMapping("/salary-template")
+    public ApiResponse<List<SalaryTemplateDTO>> listSalaryTemplates(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction) {
+        var res = payrollService.listSalaryTemplates(school, page, size, search, sortBy, direction);
+        Map<String, Object> meta = MetaMapper.toMeta(res);
+        return new ApiResponse<>("success", 200, "Salary templates fetched successfully", res.getContent(), meta);
+    }
+
+    @GetMapping("/salary-template/{templateId}")
+    public ApiResponse<SalaryTemplateDTO> getSalaryTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId) {
+        return new ApiResponse<>("success", 200, "Salary template fetched successfully",
+                payrollService.getSalaryTemplate(school, templateId));
+    }
+
+    @DeleteMapping("/salary-template/{templateId}")
+    public ApiResponse<Void> deleteSalaryTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId) {
+        payrollService.deleteSalaryTemplate(school, templateId);
+        return new ApiResponse<>("success", 200, "Salary template deleted successfully", null);
     }
 
     @GetMapping("/salary/teacher/{teacherId}")
@@ -107,8 +159,12 @@ public class PayrollController {
     public ApiResponse<List<PayrollRunDTO>> listRuns(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(defaultValue = "1") Integer page) {
-        var res = payrollService.listRuns(school, page, size);
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction) {
+        var res = payrollService.listRuns(school, page, size, search, status, sortBy, direction);
         Map<String, Object> meta = MetaMapper.toMeta(res);
         return new ApiResponse<>("success", 200, "Payroll runs fetched successfully", res.getContent(), meta);
     }

@@ -21,6 +21,7 @@ import com.moriba.skultem.application.mapper.TermMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.FeeStructureSupplyItem;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
@@ -127,22 +128,31 @@ public class ConfigureNextAcademicYearUseCase {
 
             LocalDate dueDate = sourceFee.getDueDate() != null ? sourceFee.getDueDate().plusYears(1) : null;
 
+            // Fresh ids for the copy's own supply items - they belong to this new FeeStructure row,
+            // not shared with the source fee's.
+            List<FeeStructureSupplyItem> supplyItems = sourceFee.getSupplyItems() == null
+                    ? List.of()
+                    : sourceFee.getSupplyItems().stream()
+                            .map(item -> new FeeStructureSupplyItem(java.util.UUID.randomUUID().toString(),
+                                    item.getMaterial(), item.getQuantity()))
+                            .toList();
+
             var copy = FeeStructure.create(
                     schoolId,
                     sourceFee.getType(),
                     sourceFee.getClazz(),
                     sourceFee.isHasSupply(),
-                    sourceFee.getTotalSupply(),
+                    supplyItems,
                     nextTerm,
                     sourceFee.getCategory(),
-                    sourceFee.getMaterial(),
                     nextYear,
                     dueDate,
                     sourceFee.getAmount(),
                     sourceFee.getDescription(),
                     sourceFee.isAllowInstallment(),
                     sourceFee.isNewStudentsOnly(),
-                    sourceFee.isOldStudentsOnly());
+                    sourceFee.isOldStudentsOnly(),
+                    sourceFee.getGender());
 
             feeStructureRepo.save(copy);
             copied++;

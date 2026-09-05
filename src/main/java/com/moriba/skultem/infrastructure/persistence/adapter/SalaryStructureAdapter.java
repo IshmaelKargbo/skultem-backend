@@ -48,4 +48,9 @@ public class SalaryStructureAdapter implements SalaryStructureRepository {
     public List<SalaryStructure> findAllBySchoolId(String schoolId) {
         return repo.findAllBySchoolId(schoolId).stream().map(SalaryStructureMapper::toDomain).toList();
     }
+
+    @Override
+    public Page<SalaryStructure> findAllBySchoolId(String schoolId, Pageable pageable) {
+        return repo.findAllBySchoolId(schoolId, pageable).map(SalaryStructureMapper::toDomain);
+    }
 }

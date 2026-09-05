@@ -20,4 +20,6 @@ public interface SalaryStructureRepository {
     Page<SalaryStructure> search(String value, String schoolId, Pageable pageable);
 
     List<SalaryStructure> findAllBySchoolId(String schoolId);
+
+    Page<SalaryStructure> findAllBySchoolId(String schoolId, Pageable pageable);
 }

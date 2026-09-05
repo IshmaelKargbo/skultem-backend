@@ -9,15 +9,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.infrastructure.persistence.entity.FeeStructureEntity;
 
 public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEntity, String> {
     // A fee structure only "overlaps" (and should be blocked as a duplicate) another one covering
     // the same class/term/category/year if the two could ever charge the same student twice. A
-    // plain fee (neither flag set) overlaps everything, since it reaches every student including
-    // whichever slice a targeted fee reaches. newStudentsOnly and oldStudentsOnly never overlap
-    // each other - they're a deliberate partition (e.g. Tuition: 900 for new students, 700 for old/
-    // returning students in the same class/term) - see CreateFeeStructureUseCase.
+    // plain fee (neither flag set, no gender) overlaps everything, since it reaches every student
+    // including whichever slice a targeted fee reaches. newStudentsOnly and oldStudentsOnly never
+    // overlap each other - they're a deliberate partition (e.g. Tuition: 900 for new students, 700
+    // for old/returning students in the same class/term) - see CreateFeeStructureUseCase. Gender
+    // works the same way: a MALE-only and a FEMALE-only fee (e.g. two Uniform fees priced
+    // differently per gender) never overlap each other, but either overlaps a fee with no gender
+    // restriction, since that one still reaches their students too.
     @Query("""
                 SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END
                 FROM FeeStructureEntity f
@@ -31,6 +35,7 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
                      OR (:oldStudentsOnly = true AND f.newStudentsOnly = false)
                      OR (:newStudentsOnly = false AND :oldStudentsOnly = false)
                 )
+                AND (:gender IS NULL OR f.gender IS NULL OR f.gender = :gender)
             """)
     boolean existsOverlappingFeeStructure(
             @Param("schoolId") String schoolId,
@@ -39,7 +44,8 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             @Param("classId") String classId,
             @Param("categoryId") String categoryId,
             @Param("newStudentsOnly") boolean newStudentsOnly,
-            @Param("oldStudentsOnly") boolean oldStudentsOnly);
+            @Param("oldStudentsOnly") boolean oldStudentsOnly,
+            @Param("gender") Gender gender);
 
     boolean existsByCategory_IdAndSchoolId(String categoryId, String schoolId);
 
@@ -97,6 +103,7 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
                 AND (:classId IS NULL OR f.clazz.id = :classId)
                 AND (:newStudentsOnly IS NULL OR f.newStudentsOnly = :newStudentsOnly)
                 AND (:oldStudentsOnly IS NULL OR f.oldStudentsOnly = :oldStudentsOnly)
+                AND (:gender IS NULL OR f.gender = :gender)
             """)
     Page<FeeStructureEntity> search(
             @Param("schoolId") String schoolId,
@@ -104,5 +111,6 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             @Param("classId") String classId,
             @Param("newStudentsOnly") Boolean newStudentsOnly,
             @Param("oldStudentsOnly") Boolean oldStudentsOnly,
+            @Param("gender") Gender gender,
             Pageable pageable);
 }

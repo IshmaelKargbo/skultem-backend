@@ -3,9 +3,13 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.moriba.skultem.domain.model.FeeStructure.Type;
+import com.moriba.skultem.domain.vo.Gender;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +18,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,9 +43,10 @@ public class FeeStructureEntity {
     @JoinColumn(name = "class_id")
     private ClassEntity clazz;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "material_id")
-    private MaterialEntity material;
+    @OneToMany(mappedBy = "feeStructure", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    @Builder.Default
+    private List<FeeStructureSupplyItemEntity> supplyItems = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
@@ -56,8 +63,6 @@ public class FeeStructureEntity {
     private boolean allowInstallment;
 
     private boolean hasSupply;
-
-    private int totalSupply;
 
     @Column(nullable = false)
     private LocalDate dueDate;
@@ -79,6 +84,9 @@ public class FeeStructureEntity {
 
     @Column(nullable = false)
     private boolean oldStudentsOnly;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     private Instant createdAt;
     private Instant updatedAt;

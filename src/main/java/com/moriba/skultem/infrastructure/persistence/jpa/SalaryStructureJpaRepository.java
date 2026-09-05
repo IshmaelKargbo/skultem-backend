@@ -20,6 +20,10 @@ public interface SalaryStructureJpaRepository extends JpaRepository<SalaryStruct
 
     List<SalaryStructureEntity> findAllBySchoolId(String schoolId);
 
+    Page<SalaryStructureEntity> findAllBySchoolId(String schoolId, Pageable pageable);
+
+    // No ORDER BY here - the caller's Pageable carries the Sort (see PayrollService.listSalaries),
+    // and a hardcoded clause here would conflict with it rather than just being overridden.
     @Query("""
                 SELECT s FROM SalaryStructureEntity s
                 JOIN s.teacher t
@@ -31,7 +35,6 @@ public interface SalaryStructureJpaRepository extends JpaRepository<SalaryStruct
                     OR LOWER(u.familyName) LIKE LOWER(CONCAT('%', :search, '%'))
                     OR LOWER(t.staffId) LIKE LOWER(CONCAT('%', :search, '%'))
                 )
-                ORDER BY s.createdAt DESC
             """)
     Page<SalaryStructureEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
             Pageable pageable);

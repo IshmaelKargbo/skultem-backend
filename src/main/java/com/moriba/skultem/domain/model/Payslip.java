@@ -48,14 +48,18 @@ public class Payslip extends AggregateRoot<String> {
     public static Payslip fromSalaryStructure(String id, PayrollRun run, SalaryStructure structure) {
         Instant now = Instant.now();
 
+        // Allowances/deductions are itemized on SalaryStructure (see PayComponent) but a Payslip
+        // keeps its historical snapshot flat, same as before this changed - resolving the lines
+        // down to totals here is enough to keep payroll history accurate without also needing to
+        // freeze a full item breakdown per past payslip.
         return new Payslip(
                 id,
                 structure.getSchoolId(),
                 run.getId(),
                 structure.getTeacher(),
                 structure.getBasicSalary(),
-                structure.getAllowances(),
-                structure.getDeductions(),
+                structure.totalAllowances(),
+                structure.totalDeductions(),
                 true,
                 now,
                 now);

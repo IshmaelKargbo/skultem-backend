@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.vo.Gender;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -26,13 +27,13 @@ public class ListFeeStructureBySchoolUseCase {
     private static final Set<String> SORTABLE_FIELDS = Set.of("amount", "dueDate", "createdAt");
 
     public Page<FeeStructureDTO> execute(String schoolId, int page, int size, String termId, String classId,
-            Boolean newStudentsOnly, Boolean oldStudentsOnly, String sortBy, String direction) {
+            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, String sortBy, String direction) {
         Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = Pageable.unpaged(sort);
         if (size > 0) {
             pageable = PageRequest.of(page, size, sort);
         }
-        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, pageable)
+        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
                 .map(FeeStructureMapper::toDTO);
     }
 

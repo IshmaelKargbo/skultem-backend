@@ -6,17 +6,25 @@ import java.util.List;
 
 import org.hibernate.validator.constraints.Length;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record CreateFeeStructureDTO(
 
-        String classId,
+        // A CLASS-type fee can now target several classes in one request - e.g. Class 1 and Class
+        // 2 sharing the same Tuition amount - by creating one FeeStructure per class behind the
+        // scenes (see CreateFeeStructureUseCase). Each class still gets its own independent
+        // FeeStructure row (so editing/deleting one later never touches the others); this is only
+        // a bulk-create convenience, not a shared record.
+        @Size(max = 50, message = "Too many classes selected")
+        List<
+                @NotBlank(message = "Class id cannot be blank")
+                String> classIds,
 
         @Size(max = 500, message = "Too many students selected")
         List<
@@ -51,6 +59,12 @@ public record CreateFeeStructureDTO(
         // doesn't - an explicit student list is already a deliberate, one-off assignment.
         boolean oldStudentsOnly,
 
+        // Null reaches every gender. Set when a fee only applies to one - most commonly a supply
+        // fee (hasSupply) priced differently for boys vs girls (e.g. two Uniform fees, same
+        // category/term/class, one MALE and one FEMALE) - but not restricted to supply fees only.
+        @Pattern(regexp = "MALE|FEMALE", message = "Gender must be MALE or FEMALE")
+        String gender,
+
         boolean hasSupply,
 
         @NotBlank(message = "Type is required")
@@ -59,10 +73,10 @@ public record CreateFeeStructureDTO(
                 message = "Type must be ALL, CLASS or SELECTION")
         String type,
 
-        @PositiveOrZero(message = "Total supply cannot be negative")
-        int totalSupply,
-
-        String materialId,
+        // One or more materials this fee bundles when hasSupply is true - e.g. a Uniform fee
+        // carrying the Uniform itself, a House Colour, and a Necktie, each its own line.
+        @Valid
+        List<FeeStructureSupplyItemInputDTO> supplyItems,
 
         @Length(
                 max = 255,
@@ -72,16 +86,15 @@ public record CreateFeeStructureDTO(
 ) {
 
     public CreateFeeStructureDTO {
-        classId = normalize(classId);
-        materialId = normalize(materialId);
         description = normalize(description);
+        gender = normalize(gender);
 
         switch (type) {
 
             case "CLASS" -> {
-                if (classId == null) {
+                if (classIds == null || classIds.isEmpty()) {
                     throw new IllegalArgumentException(
-                            "classId is required when type is CLASS");
+                            "At least one class is required when type is CLASS");
                 }
             }
 
@@ -100,12 +113,17 @@ public record CreateFeeStructureDTO(
                     throw new IllegalArgumentException(
                             "oldStudentsOnly is not allowed when type is SELECTION");
                 }
+
+                if (gender != null) {
+                    throw new IllegalArgumentException(
+                            "gender is not allowed when type is SELECTION - an explicit student list is already a deliberate assignment");
+                }
             }
 
             case "ALL" -> {
-                if (classId != null) {
+                if (classIds != null && !classIds.isEmpty()) {
                     throw new IllegalArgumentException(
-                            "classId is not allowed when type is ALL");
+                            "classIds are not allowed when type is ALL");
                 }
 
                 if (studentIds != null && !studentIds.isEmpty()) {
@@ -123,36 +141,27 @@ public record CreateFeeStructureDTO(
                     "newStudentsOnly and oldStudentsOnly cannot both be true");
         }
 
-        if (classId != null
+        if (classIds != null
+                && !classIds.isEmpty()
                 && studentIds != null
                 && !studentIds.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "Cannot provide both classId and studentIds");
+                    "Cannot provide both classIds and studentIds");
         }
 
         if (hasSupply) {
 
-            if (materialId == null) {
+            if (supplyItems == null || supplyItems.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "materialId is required when hasSupply is true");
-            }
-
-            if (totalSupply <= 0) {
-                throw new IllegalArgumentException(
-                        "totalSupply must be greater than zero");
+                        "At least one supply item is required when hasSupply is true");
             }
 
         } else {
 
-            if (totalSupply > 0) {
+            if (supplyItems != null && !supplyItems.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "totalSupply must be zero when hasSupply is false");
-            }
-
-            if (materialId != null) {
-                throw new IllegalArgumentException(
-                        "materialId is not allowed when hasSupply is false");
+                        "supplyItems are not allowed when hasSupply is false");
             }
         }
     }

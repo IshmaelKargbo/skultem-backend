@@ -64,6 +64,7 @@ import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
 import com.moriba.skultem.application.usecase.StudentLedgerReportUseCase;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
+import com.moriba.skultem.domain.vo.Gender;
 
 @RestController
 @RequestMapping("/api/v1/fee")
@@ -120,21 +121,22 @@ public class FeeController {
 
         @PostMapping("/structure")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
-        public ApiResponse<FeeStructureDTO> createStructure(
+        public ApiResponse<List<FeeStructureDTO>> createStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeStructureDTO param) {
 
-                if (param.hasSupply() && param.totalSupply() == 0) {
-                        throw new BadRequestException("total supply is required");
-                }
+                Gender gender = param.gender() != null ? Gender.valueOf(param.gender()) : null;
 
-                var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classId(),
-                                param.studentIds(), param.feeCategory(), param.termId(), param.materialId(),
+                var payload = new StructureRecord(school, Type.valueOf(param.type()), param.classIds(),
+                                param.studentIds(), param.feeCategory(), param.termId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
-                                param.hasSupply(), param.materialId(), param.totalSupply(), param.newStudentsOnly(),
-                                param.oldStudentsOnly());
+                                param.hasSupply(), param.supplyItems(), param.newStudentsOnly(),
+                                param.oldStudentsOnly(), gender);
                 var res = createFeeStructureUseCase.execute(payload);
-                return new ApiResponse<>("success", 200, "Fee structure created successfully", res);
+                String message = res.size() > 1
+                                ? "Fee structure created for " + res.size() + " classes successfully"
+                                : "Fee structure created successfully";
+                return new ApiResponse<>("success", 200, message, res);
         }
 
         @PutMapping("/structure/{feeId}")
@@ -144,13 +146,12 @@ public class FeeController {
                         @PathVariable String feeId,
                         @Valid @RequestBody UpdateFeeStructureDTO param) {
 
-                if (param.hasSupply() && param.totalSupply() == 0) {
-                        throw new BadRequestException("total supply is required");
-                }
+                Gender gender = param.gender() != null ? Gender.valueOf(param.gender()) : null;
 
-                var payload = new UpdateRecord(school, feeId, param.feeCategory(), param.termId(), param.materialId(),
+                var payload = new UpdateRecord(school, feeId, param.feeCategory(), param.termId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
-                                param.hasSupply(), param.totalSupply());
+                                param.hasSupply(), param.supplyItems(), param.newStudentsOnly(), param.oldStudentsOnly(),
+                                gender);
                 var res = updateFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure updated successfully", res);
         }
@@ -198,6 +199,7 @@ public class FeeController {
                         // several fees sharing the same class/term/category. Anything else (including
                         // absent) means no filtering on this at all.
                         @RequestParam(required = false) String studentType,
+                        @RequestParam(required = false) String gender,
                         // See ListFeeStructureBySchoolUseCase.SORTABLE_FIELDS - anything else falls back
                         // to createdAt.
                         @RequestParam(required = false) String sortBy,
@@ -205,9 +207,10 @@ public class FeeController {
 
                 Boolean newStudentsOnly = "NEW".equalsIgnoreCase(studentType) ? Boolean.TRUE : null;
                 Boolean oldStudentsOnly = "OLD".equalsIgnoreCase(studentType) ? Boolean.TRUE : null;
+                Gender genderFilter = gender != null && !gender.isBlank() ? Gender.valueOf(gender.toUpperCase()) : null;
 
                 var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size, termId, classId,
-                                newStudentsOnly, oldStudentsOnly, sortBy, direction);
+                                newStudentsOnly, oldStudentsOnly, genderFilter, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

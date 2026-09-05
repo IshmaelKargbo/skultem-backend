@@ -8,15 +8,12 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record SetSalaryStructureDTO(
+// Shared by create and update - a template has no state machine to protect (unlike a
+// SalaryStructure once it's been used in a payroll run), so both endpoints accept the same shape.
+public record SaveSalaryTemplateDTO(
 
-        @NotBlank(message = "Teacher is required")
-        String teacherId,
-
-        // Which SalaryTemplate this was built from, if any - purely for display/traceability
-        // (see SalaryStructure). Not required: an admin can build allowances/deductions entirely
-        // by hand without ever picking a template.
-        String templateId,
+        @NotBlank(message = "Name is required")
+        String name,
 
         @NotNull(message = "Basic salary is required")
         @DecimalMin(value = "0", message = "Basic salary cannot be negative")

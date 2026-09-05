@@ -2,6 +2,9 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -9,12 +12,14 @@ import com.moriba.skultem.application.dto.FeeStructureDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
-import com.moriba.skultem.domain.model.Material;
+import com.moriba.skultem.domain.model.FeeStructureSupplyItem;
 import com.moriba.skultem.domain.repository.FeeCategoryRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.MaterialRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.infrastructure.rest.dto.FeeStructureSupplyItemInputDTO;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -48,14 +53,18 @@ public class UpdateFeeStructureUseCase {
                 param.schoolId())
                 .orElseThrow(() -> new NotFoundException("Term not found"));
 
-        Material material = null;
-        if (param.hasSupply() && param.materialId() != null) {
-            material = materialRepo.findByIdAndSchool(param.materialId(), param.schoolId())
-                    .orElseThrow(() -> new NotFoundException("Material not found"));
+        List<FeeStructureSupplyItem> supplyItems = new ArrayList<>();
+        if (param.supplyItems() != null) {
+            for (var item : param.supplyItems()) {
+                var material = materialRepo.findByIdAndSchool(item.materialId(), param.schoolId())
+                        .orElseThrow(() -> new NotFoundException("Material not found"));
+                supplyItems.add(new FeeStructureSupplyItem(UUID.randomUUID().toString(), material, item.quantity()));
+            }
         }
 
-        fee.update(term, category, material, param.hasSupply(), param.totalSupply(), param.dueDate(), param.amount(),
-                param.description(), param.allowInstallment());
+        fee.update(term, category, supplyItems, param.hasSupply(), param.dueDate(), param.amount(),
+                param.description(), param.allowInstallment(), param.newStudentsOnly(), param.oldStudentsOnly(),
+                param.gender());
 
         repo.save(fee);
 
@@ -75,12 +84,14 @@ public class UpdateFeeStructureUseCase {
             String feeId,
             String feeCategory,
             String termId,
-            String materialId,
             BigDecimal amount,
             LocalDate dueDate,
             boolean allowInstallment,
             String description,
             boolean hasSupply,
-            int totalSupply) {
+            List<FeeStructureSupplyItemInputDTO> supplyItems,
+            boolean newStudentsOnly,
+            boolean oldStudentsOnly,
+            Gender gender) {
     }
 }

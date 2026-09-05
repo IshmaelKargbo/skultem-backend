@@ -14,5 +14,7 @@ public interface PayrollRunRepository {
 
     Page<PayrollRun> findAllBySchoolId(String schoolId, Pageable pageable);
 
+    Page<PayrollRun> search(String schoolId, String query, PayrollRun.Status status, Pageable pageable);
+
     Optional<PayrollRun> findLatestBySchoolId(String schoolId);
 }

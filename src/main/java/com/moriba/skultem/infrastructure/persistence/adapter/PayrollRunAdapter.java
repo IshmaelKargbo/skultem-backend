@@ -30,7 +30,12 @@ public class PayrollRunAdapter implements PayrollRunRepository {
 
     @Override
     public Page<PayrollRun> findAllBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(PayrollRunMapper::toDomain);
+        return repo.findAllBySchoolId(schoolId, pageable).map(PayrollRunMapper::toDomain);
+    }
+
+    @Override
+    public Page<PayrollRun> search(String schoolId, String query, PayrollRun.Status status, Pageable pageable) {
+        return repo.search(schoolId, query, status, pageable).map(PayrollRunMapper::toDomain);
     }
 
     @Override

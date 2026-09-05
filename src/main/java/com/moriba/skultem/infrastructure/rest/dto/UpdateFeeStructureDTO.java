@@ -2,13 +2,15 @@ package com.moriba.skultem.infrastructure.rest.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.hibernate.validator.constraints.Length;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 
 public record UpdateFeeStructureDTO(
 
@@ -29,33 +31,38 @@ public record UpdateFeeStructureDTO(
 
         boolean hasSupply,
 
-        @PositiveOrZero(message = "Total supply cannot be negative")
-        int totalSupply,
-
-        String materialId,
+        // One or more materials this fee bundles when hasSupply is true - e.g. a Uniform fee
+        // carrying the Uniform itself, a House Colour, and a Necktie, each its own line.
+        @Valid
+        List<FeeStructureSupplyItemInputDTO> supplyItems,
 
         @Length(max = 255, message = "Description must not exceed 255 characters")
-        String description
+        String description,
+
+        boolean newStudentsOnly,
+
+        boolean oldStudentsOnly,
+
+        @Pattern(regexp = "MALE|FEMALE", message = "Gender must be MALE or FEMALE")
+        String gender
 
 ) {
 
     public UpdateFeeStructureDTO {
-        materialId = normalize(materialId);
         description = normalize(description);
+        gender = normalize(gender);
+
+        if (newStudentsOnly && oldStudentsOnly) {
+            throw new IllegalArgumentException("newStudentsOnly and oldStudentsOnly cannot both be true");
+        }
 
         if (hasSupply) {
-            if (materialId == null) {
-                throw new IllegalArgumentException("materialId is required when hasSupply is true");
-            }
-            if (totalSupply <= 0) {
-                throw new IllegalArgumentException("totalSupply must be greater than zero");
+            if (supplyItems == null || supplyItems.isEmpty()) {
+                throw new IllegalArgumentException("At least one supply item is required when hasSupply is true");
             }
         } else {
-            if (totalSupply > 0) {
-                throw new IllegalArgumentException("totalSupply must be zero when hasSupply is false");
-            }
-            if (materialId != null) {
-                throw new IllegalArgumentException("materialId is not allowed when hasSupply is false");
+            if (supplyItems != null && !supplyItems.isEmpty()) {
+                throw new IllegalArgumentException("supplyItems are not allowed when hasSupply is false");
             }
         }
     }

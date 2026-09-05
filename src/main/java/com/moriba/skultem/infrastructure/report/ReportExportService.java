@@ -156,7 +156,8 @@ public class ReportExportService {
 
         public ReportFile exportFees(String schoolId, String format, String classId, LocalDate startDate,
                         LocalDate endDate) {
-                var page = listFeeStructureBySchoolUseCase.execute(schoolId, 0, 0, null, null, null, null, null, null);
+                var page = listFeeStructureBySchoolUseCase.execute(schoolId, 0, 0, null, null, null, null, null, null,
+                                null);
                 List<FeeStructureDTO> records = page.getContent();
 
                 List<String> headers = List.of("Class", "Term", "Category", "Amount", "Due Date", "Installment",
