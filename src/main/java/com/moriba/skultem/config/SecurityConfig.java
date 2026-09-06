@@ -66,6 +66,12 @@ public class SecurityConfig {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOriginPatterns(List.of(
                                 "http://localhost:3000",
+                                // Every *.localhost host resolves to loopback (RFC 6761), which is how the
+                                // frontend simulates subdomains locally - a school tenant (myschool.localhost)
+                                // or the admin portal (admin.localhost) - see utils/tenant.ts. Without this,
+                                // the browser's CORS preflight rejects those origins outright and every
+                                // request from them (including login) fails before it reaches a controller.
+                                "http://*.localhost:3000",
                                 "https://*.skultem.space"));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList(

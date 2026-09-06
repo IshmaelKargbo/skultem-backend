@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.persistence.jpa.UserJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.UserMapper;
 
@@ -47,6 +48,11 @@ public class UserAdapter implements UserRepository {
     @Override
     public Page<User> search(String query, Pageable pageable) {
         return repo.search(query, pageable).map(UserMapper::toDomain);
+    }
+
+    @Override
+    public Page<User> searchByRole(Role role, String query, Pageable pageable) {
+        return repo.searchByRole(role, query, pageable).map(UserMapper::toDomain);
     }
 
     @Override

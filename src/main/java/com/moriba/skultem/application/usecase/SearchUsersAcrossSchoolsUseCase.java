@@ -10,6 +10,7 @@ import com.moriba.skultem.application.dto.UserWithSchoolsDTO;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.vo.Role;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,17 @@ public class SearchUsersAcrossSchoolsUseCase {
     private final SchoolUserRepository schoolUserRepo;
     private final SchoolRepository schoolRepo;
 
-    public Page<UserWithSchoolsDTO> execute(String query, int page, int size) {
+    // `role` narrows the base search to users holding it in at least one school membership (e.g.
+    // Role.SYSTEM_ADMIN, for the "System Admins" roster on /system/users) - null runs the plain
+    // unscoped search instead.
+    public Page<UserWithSchoolsDTO> execute(String query, Role role, int page, int size) {
         Pageable pageable = size > 0 ? PageRequest.of(page, size) : Pageable.unpaged();
 
-        return userRepo.search(query, pageable).map(user -> {
+        var users = role != null
+                ? userRepo.searchByRole(role, query, pageable)
+                : userRepo.search(query, pageable);
+
+        return users.map(user -> {
             var memberships = schoolUserRepo.findAllByUser_Id(user.getId()).stream()
                     .map(su -> {
                         // A school can be deleted/renamed without cleaning up old memberships
