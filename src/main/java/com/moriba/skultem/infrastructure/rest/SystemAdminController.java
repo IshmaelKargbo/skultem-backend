@@ -52,8 +52,6 @@ public class SystemAdminController {
         return new ApiResponse<SchoolDTO>("success", 200, "School status updated successfully", res);
     }
 
-    // Cross-tenant user lookup - e.g. helping a locked-out school owner, or checking which
-    // schools an email address already belongs to. See SearchUsersAcrossSchoolsUseCase.
     @GetMapping("/users")
     @PreAuthorize("@permissionService.isSystemAdmin()")
     public ApiResponse<List<UserWithSchoolsDTO>> searchUsers(
@@ -71,8 +69,6 @@ public class SystemAdminController {
         return new ApiResponse<>("success", 200, "Users fetched successfully", list, meta);
     }
 
-    // Reachable pre-auth - see SecurityConfig and BootstrapSystemAdminUseCase for how this stays
-    // safe without @PreAuthorize.
     @PostMapping("/bootstrap")
     public ApiResponse<UserDTO> bootstrap(@Valid @RequestBody BootstrapSystemAdminDTO param) {
         var res = bootstrapSystemAdminUseCase.execute(param.token(), param.domain(), param.email(), param.password(),
