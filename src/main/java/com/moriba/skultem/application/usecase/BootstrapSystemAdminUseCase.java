@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.UserMapper;
+import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SchoolRepository;
@@ -33,6 +35,12 @@ import lombok.RequiredArgsConstructor;
  * The latter makes this self-disabling after first use - once bootstrapped, further SYSTEM_ADMIN
  * accounts are created the ordinary way (an existing SYSTEM_ADMIN using CreateUserUseCase, which
  * permits it - see there) rather than through this endpoint again.
+ * <p>
+ * {@code domain} is optional. {@code school_users.school_id} is NOT NULL at the DB level, so the
+ * new SchoolUser row still needs some school to point at, but which one doesn't matter - see
+ * PermissionService.isSystemAdmin(), which grants full access off the role alone and never
+ * consults the anchor school. Callers who don't care can omit domain and let this pick any
+ * existing school; only pass one to anchor onto a specific school on purpose.
  * <p>
  * Deliberately not {@code @AuditLogAnnotation} - that aspect logs every argument verbatim
  * (see AuditAspect.generateDetails), which would put the bootstrap token and the new admin's
@@ -63,8 +71,7 @@ public class BootstrapSystemAdminUseCase {
             throw new RuleException("A system admin already exists - use an existing admin account to create more");
         }
 
-        var school = schoolRepo.findByDomain(domain)
-                .orElseThrow(() -> new NotFoundException("School not found"));
+        var school = resolveAnchorSchool(domain);
 
         User user;
         if (userRepo.existsByEmail(email)) {
@@ -96,6 +103,17 @@ public class BootstrapSystemAdminUseCase {
                 user.getId());
 
         return UserMapper.toDTO(user, List.of(Role.SYSTEM_ADMIN));
+    }
+
+    private School resolveAnchorSchool(String domain) {
+        if (domain != null && !domain.isBlank()) {
+            return schoolRepo.findByDomain(domain)
+                    .orElseThrow(() -> new NotFoundException("School not found"));
+        }
+
+        return schoolRepo.findAll(PageRequest.of(0, 1)).stream().findFirst()
+                .orElseThrow(() -> new RuleException(
+                        "No school exists yet - create one first (POST /api/v1/school), or pass domain to anchor onto a specific one"));
     }
 
     private boolean constantTimeEquals(String a, String b) {

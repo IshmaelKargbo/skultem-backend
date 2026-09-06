@@ -4,15 +4,15 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-// See BootstrapSystemAdminUseCase - the only path onto Role.SYSTEM_ADMIN. domain identifies the
-// existing school this account's SchoolUser row (and therefore its login) is anchored to, same as
-// every other role - SYSTEM_ADMIN just isn't scoped to it once granted (see PermissionService).
+// See BootstrapSystemAdminUseCase - the only path onto Role.SYSTEM_ADMIN. domain optionally
+// picks the existing school this account's SchoolUser row (and therefore its login) is anchored
+// to - SYSTEM_ADMIN isn't scoped to it once granted (see PermissionService), so most callers can
+// leave it out and let the use case anchor onto any existing school.
 public record BootstrapSystemAdminDTO(
 
         @NotBlank(message = "Bootstrap token is required")
         String token,
 
-        @NotBlank(message = "School domain is required")
         String domain,
 
         @NotBlank(message = "Email is required")

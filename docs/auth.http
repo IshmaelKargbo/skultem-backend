@@ -7,10 +7,41 @@ Content-Type: application/json
   "password": "Isho@2024"
 }
 
+
 ###
 POST http://localhost:8080/api/v1/auth/refresh
 Content-Type: application/json
 
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWEwNzhiZC1kNzJiLTQyYjQtOTczMC1kNzIyYmU1YTliOGUiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3Mzc0MDI5MSwiZXhwIjoxNzc0MzQ1MDkxfQ.2X9ZTHJ_sEKuWZV2tcSKttNMHyUXv6bwttEgz8nfan0"
+}
+
+
+### domain is optional - omit it and this anchors the new SYSTEM_ADMIN onto any existing school
+# (its role isn't scoped to that school anyway, see BootstrapSystemAdminUseCase). Pass domain only
+# to anchor onto a specific one on purpose.
+POST http://localhost:8080/api/v1/system/bootstrap
+Content-Type: application/json
+
+{
+  "token": "<SYSTEM_ADMIN_BOOTSTRAP_TOKEN value>",
+  "email": "admin@your-domain",
+  "password": "...",
+  "givenNames": "...",
+  "familyName": "..."
+}
+
+
+### Production - see docs/PRODUCTION_BOOTSTRAP.md. Run this once, right after setting
+# SYSTEM_ADMIN_BOOTSTRAP_TOKEN on the deployed backend and creating the school (POST
+# /api/v1/school against the same host) - then unset/rotate that env var immediately.
+POST https://api.skultem.com/api/v1/system/bootstrap
+Content-Type: application/json
+
+{
+  "token": "6fK89mP4xQ4vL7sN3cR1yT1wH2jD0gB8zA2eU9iX4qW7",
+  "email": "ishmaelkargbo5@outlook.com",
+  "password": "Isho@2024",
+  "givenNames": "Ishmael",
+  "familyName": "Kargbo"
 }

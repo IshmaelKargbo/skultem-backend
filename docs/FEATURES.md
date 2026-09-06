@@ -1,5 +1,10 @@
 # Skultem API Feature Notes
 
+## Production Setup
+
+- First-deploy bootstrap (infra, secrets, first school, first `SYSTEM_ADMIN`):
+  `docs/PRODUCTION_BOOTSTRAP.md`
+
 ## Class And Stream Subject Selection
 
 - `GET /api/v1/class/subject/{classId}`
