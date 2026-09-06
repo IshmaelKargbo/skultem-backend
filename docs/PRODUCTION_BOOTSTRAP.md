@@ -47,6 +47,13 @@ startup (`spring.flyway.enabled: true`) and applies `db/migration` against the
 configured database — no manual migration step needed. Confirm the app is up via
 `GET /actuator/health`.
 
+If the instance has 512Mi of RAM or less (e.g. Render's smallest plan), the JVM
+can get OOM-killed mid-boot — Hikari connects and Flyway migrates fine, then it
+dies while Hibernate is building the metamodel, before Tomcat ever binds its
+port. `Dockerfile` already caps heap/metaspace/GC via `JAVA_TOOL_OPTIONS` for
+this reason; if it still OOMs, bump the instance's memory plan rather than
+squeezing those caps further.
+
 ## 4. Create the first school
 
 `POST /api/v1/school` is unauthenticated by design (`SecurityConfig` permits all
