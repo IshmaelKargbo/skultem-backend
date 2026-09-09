@@ -54,6 +54,16 @@ public class SchoolController {
         return new ApiResponse<>("success", 200, "School created successfully", res);
     }
 
+    // Public (no auth) - powers the "Trusted by N schools" line on the login page, which is
+    // rendered before anyone has signed in. /api/v1/school/** is already open at the filter-chain
+    // level (SecurityConfig) for the signup flow above; this is deliberately the one endpoint
+    // under it with no @PreAuthorize, since it exposes nothing but a count.
+    @GetMapping("/count")
+    public ApiResponse<Map<String, Long>> count() {
+        return new ApiResponse<>("success", 200, "School count fetched successfully",
+                Map.of("count", schoolSvc.countAll()));
+    }
+
     @GetMapping
     @PreAuthorize("@permissionService.isSystemAdmin()")
     public ApiResponse<List<SchoolDTO>> list(@RequestParam(required = true, defaultValue = "10") Integer size,

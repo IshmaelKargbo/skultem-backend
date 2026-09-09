@@ -30,6 +30,7 @@ import com.moriba.skultem.application.usecase.GetTeacherProgressDetailUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherProgressUseCase;
 import com.moriba.skultem.application.usecase.ManageSchemeOfWorkUseCase;
 import com.moriba.skultem.application.usecase.UpdateLessonStateUseCase;
+import com.moriba.skultem.application.usecase.UpdateSchemeStateUseCase;
 import com.moriba.skultem.application.usecase.UpdateWeekStateUseCase;
 import com.moriba.skultem.domain.model.Lesson;
 import com.moriba.skultem.domain.model.SchemeOfWork;
@@ -60,9 +61,14 @@ public class CurriculumService {
     private final GetTeacherProgressUseCase getTeacherProgressUseCase;
     private final GetTeacherProgressDetailUseCase getTeacherProgressDetailUseCase;
     private final GetChildCurriculumUseCase getChildCurriculumUseCase;
+    private final UpdateSchemeStateUseCase updateSchemeStateUseCase;
 
     public List<ChildSchemeOfWorkDTO> getChildCurriculum(String schoolId, String parentUserId, String studentId, String termId) {
         return getChildCurriculumUseCase.execute(schoolId, parentUserId, studentId, blankToNull(termId));
+    }
+
+    public SchemeOfWorkDTO updateSchemeState(String schoolId, String schemeId, String state) {
+        return updateSchemeStateUseCase.execute(schoolId, schemeId, SchemeOfWork.State.valueOf(state));
     }
 
     public Page<SchemeOfWorkDTO> searchScheme(int page, int size, String school, String subjectId, String sessionId, String termId, String progress) {

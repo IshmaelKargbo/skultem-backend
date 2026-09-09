@@ -18,4 +18,8 @@ public class SchoolService {
        return SchoolMapper.toDTO(domain);
     }
 
+    public long countAll() {
+        return repo.countAll();
+    }
+
 }

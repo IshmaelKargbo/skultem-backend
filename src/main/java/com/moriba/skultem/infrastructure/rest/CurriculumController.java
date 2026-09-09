@@ -89,6 +89,18 @@ public class CurriculumController {
         return new ApiResponse<>("success", 200, "Curriculum fetched successfully", res);
     }
 
+    @PatchMapping("/scheme/{id}/state")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    public ApiResponse<SchemeOfWorkDTO> updateSchemeState(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateSchemeStateDTO param) {
+        var res = curriculumSvc.updateSchemeState(school, id, param.state());
+        String message = "PUBLISH".equals(param.state()) ? "Scheme of work published successfully"
+                : "Scheme of work moved back to draft";
+        return new ApiResponse<>("success", 200, message, res);
+    }
+
     @GetMapping("/scheme/one/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeOfWorkDTO> getSchemaOfWork(

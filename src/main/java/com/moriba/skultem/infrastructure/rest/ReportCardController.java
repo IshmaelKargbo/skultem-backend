@@ -47,7 +47,7 @@ public class ReportCardController {
     private final TrackReportCardDownloadUseCase trackReportCardDownloadUseCase;
 
     @PostMapping("/generate")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<GenerateReportCardsResultDTO> generate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -59,7 +59,7 @@ public class ReportCardController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ReportCardSummaryDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -91,7 +91,7 @@ public class ReportCardController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<ReportCardStatsDTO> stats(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardStatsUseCase.execute(school);
@@ -99,7 +99,7 @@ public class ReportCardController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfReportCard(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -108,7 +108,7 @@ public class ReportCardController {
     }
 
     @PatchMapping("/{id}/remark")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<ReportCardDTO> updateRemark(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -118,7 +118,7 @@ public class ReportCardController {
     }
 
     @PostMapping("/{id}/download")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfReportCard(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)")
     public ApiResponse<Void> trackDownload(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

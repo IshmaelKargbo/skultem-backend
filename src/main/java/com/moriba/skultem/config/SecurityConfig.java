@@ -72,6 +72,7 @@ public class SecurityConfig {
                                 // the browser's CORS preflight rejects those origins outright and every
                                 // request from them (including login) fails before it reaches a controller.
                                 "http://*.localhost:3000",
+                                "http://*.localhost:3099",
                                 "https://*.skultem.space"));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList(
