@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
+import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.PromotionRequestRepository;
+import com.moriba.skultem.domain.repository.ReportCardRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
@@ -24,6 +26,8 @@ public class PermissionService {
     private final TeacherRepository teacherRepo;
     private final ClassMasterRepository classMasterRepo;
     private final PromotionRequestRepository promotionRequestRepo;
+    private final ParentRepository parentRepo;
+    private final ReportCardRepository reportCardRepo;
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -145,6 +149,30 @@ public class PermissionService {
 
         return role == Role.TEACHER &&
                 currentUserId().equals(teacher.get().getUser().getId());
+    }
+
+    // Is the signed-in PARENT actually this student's parent? Report cards (and other
+    // parent-facing, per-child reads) take a studentId or a document id straight from the
+    // request rather than deriving it from the caller's own children, so this is what actually
+    // stops one family from viewing another's by guessing/enumerating an id - see
+    // GetChildCurriculumUseCase for the same shape of check on the curriculum side.
+    public boolean isParentOfStudent(String schoolId, String studentId) {
+        if (!hasRole(Role.PARENT)) {
+            return false;
+        }
+
+        var student = studentRepo.findByIdAndSchoolId(studentId, schoolId);
+        if (student.isEmpty() || student.get().getParent() == null) {
+            return false;
+        }
+
+        var parent = parentRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
+        return parent.isPresent() && parent.get().getId().equals(student.get().getParent().getId());
+    }
+
+    public boolean isParentOfReportCard(String schoolId, String reportCardId) {
+        var card = reportCardRepo.findByIdAndSchoolId(reportCardId, schoolId);
+        return card.isPresent() && isParentOfStudent(schoolId, card.get().getStudentId());
     }
 
     public boolean canPromoteClassSession(String schoolId, String sessionId) {

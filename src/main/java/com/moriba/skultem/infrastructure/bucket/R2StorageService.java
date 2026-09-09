@@ -3,10 +3,15 @@ package com.moriba.skultem.infrastructure.bucket;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Base64;
 
 import javax.imageio.ImageIO;
@@ -34,6 +39,10 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 // photo uploads - Supabase storage has been fully retired.
 @Service
 public class R2StorageService {
+
+    // Shared across every uploadPhotoFromUrl() call rather than built per-request - the JDK client
+    // pools its own connections internally.
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     private final S3Client client;
     private final String bucket;
@@ -103,6 +112,61 @@ public class R2StorageService {
             return uploadFile(file, basePath + extensionFor(contentType, file.getOriginalFilename()));
         }
 
+        return downscaleAndStore(original, basePath, maxDimension);
+    }
+
+    // Re-fetches a photo that's already stored somewhere (a legacy full-resolution upload, or one
+    // hosted on a since-retired provider - Supabase, in this app's case) and re-hosts it through the
+    // same downscale pipeline as a fresh upload. Existing students enrolled before that pipeline
+    // existed otherwise keep serving whatever was originally uploaded - often several times the
+    // dimensions a UAvatar ever needs - to every list page forever. Throws if the source can't be
+    // fetched at all (a dead link) so the caller can decide how to handle that student's photo field
+    // instead of silently storing a broken one.
+    public String uploadPhotoFromUrl(String sourceUrl, String basePath, int maxDimension) throws IOException {
+        byte[] bytes;
+        String contentType;
+        try {
+            HttpResponse<byte[]> response = HTTP_CLIENT.send(
+                    HttpRequest.newBuilder(URI.create(sourceUrl)).timeout(Duration.ofSeconds(20)).GET().build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() != 200) {
+                throw new IOException("Fetch failed with status " + response.statusCode() + " for " + sourceUrl);
+            }
+
+            bytes = response.body();
+            contentType = response.headers().firstValue("Content-Type").orElse("application/octet-stream");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while fetching " + sourceUrl, e);
+        }
+
+        BufferedImage original;
+        try (InputStream in = new ByteArrayInputStream(bytes)) {
+            original = ImageIO.read(in);
+        }
+
+        if (original == null) {
+            // Can't decode as a raster image - re-host the bytes unchanged rather than drop the
+            // photo entirely.
+            String path = basePath + extensionFor(contentType, sourceUrl);
+            try {
+                client.putObject(
+                        PutObjectRequest.builder().bucket(bucket).key(path).contentType(contentType).build(),
+                        RequestBody.fromBytes(bytes));
+            } catch (S3Exception ex) {
+                throw new StorageException(
+                        "Upload failed with status " + ex.statusCode(),
+                        ex.awsErrorDetails() != null ? ex.awsErrorDetails().errorMessage() : ex.getMessage(),
+                        ex);
+            }
+            return publicUrl + "/" + path;
+        }
+
+        return downscaleAndStore(original, basePath, maxDimension);
+    }
+
+    private String downscaleAndStore(BufferedImage original, String basePath, int maxDimension) throws IOException {
         int width = original.getWidth();
         int height = original.getHeight();
         double scale = Math.min(1.0, Math.min((double) maxDimension / width, (double) maxDimension / height));

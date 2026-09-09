@@ -45,6 +45,12 @@ public class Clazz extends AggregateRoot<String> {
         return new Clazz(id, school, template, name, level, displayOrder, null, false, Status.ACTIVE, now, now);
     }
 
+    public void rename(String name, int displayOrder) {
+        this.name = name;
+        this.displayOrder = displayOrder;
+        touch(Instant.now());
+    }
+
     public void setTerminal(boolean state) {
         this.terminal = state;
         touch(Instant.now());

@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.LessonDTO;
 import com.moriba.skultem.application.dto.SchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.SchemeProgressDTO;
@@ -72,6 +73,20 @@ public class CurriculumController {
         var res = curriculumSvc.searchMyScheme(school, userId, page, size, subjectId, sessionId, termId, progress);
         Map<String, Object> meta = MetaMapper.toMeta(res);
         return new ApiResponse<>("success", 200, "Scheme of work fetched successfully", res.getContent(), meta);
+    }
+
+    // Self-service for a parent - their own child's published scheme(s) of work, resolved from
+    // the child's class session server-side (see GetChildCurriculumUseCase) rather than trusting
+    // a client-supplied sessionId, and filtered to PUBLISH only.
+    @GetMapping("/scheme/child/{studentId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PARENT')")
+    public ApiResponse<List<ChildSchemeOfWorkDTO>> getChildCurriculum(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @PathVariable String studentId,
+            @RequestParam(required = false) String termId) {
+        var res = curriculumSvc.getChildCurriculum(school, userId, studentId, termId);
+        return new ApiResponse<>("success", 200, "Curriculum fetched successfully", res);
     }
 
     @GetMapping("/scheme/one/{id}")

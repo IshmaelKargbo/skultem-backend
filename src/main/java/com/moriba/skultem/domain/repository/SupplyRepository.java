@@ -17,4 +17,7 @@ public interface SupplyRepository {
     Page<Supply> findBySchool(String schoolId, Pageable pageable);
 
     Page<Supply> findByStudentAndSchool(String studentId, String schoolId, Pageable pageable);
+
+    // Matches on student name/admission number or material name - backs the supply list's search box.
+    Page<Supply> search(String schoolId, String query, Pageable pageable);
 }

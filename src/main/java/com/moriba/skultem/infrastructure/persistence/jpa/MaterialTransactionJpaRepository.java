@@ -9,4 +9,6 @@ import com.moriba.skultem.infrastructure.persistence.entity.MaterialTransactionE
 public interface MaterialTransactionJpaRepository extends JpaRepository<MaterialTransactionEntity, String> {
     Page<MaterialTransactionEntity> findAllByMaterialIdAndSchoolIdOrderByCreatedAtDesc(String materialId,
             String schoolId, Pageable pageable);
+
+    boolean existsByMaterial_IdAndSchoolId(String materialId, String schoolId);
 }

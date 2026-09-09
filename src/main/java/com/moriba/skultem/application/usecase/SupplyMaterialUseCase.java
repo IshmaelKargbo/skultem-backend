@@ -55,7 +55,10 @@ public class SupplyMaterialUseCase {
 
         materialTransactionRepo.save(mt);
         var material = domain.getMaterial();
-        material.deduct(qty);
+        // Deduct exactly what was actually collected (capped above), not the raw request - a staff
+        // member typing a qty larger than what's left over-deducted stock by the difference while
+        // under-recording what the student actually received.
+        material.deduct(qtyToCollect);
         materialRepo.save(material);
 
         // activity log

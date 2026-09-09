@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.AlreadyExistsException;
+import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.FileUploadException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
@@ -39,6 +40,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuleException.class)
     public ResponseEntity<ApiErrorResponse> handleRule(RuleException ex) {
         return build(HttpStatus.BAD_REQUEST, "RULE_VIOLATION", ex);
+    }
+
+    // Was missing entirely - BadRequestException (geofence/IP checks on clock-in/out, payroll
+    // run and leave request validation, user creation, etc.) fell through to the generic
+    // Exception handler below, so its specific, actionable message (e.g. "You're about 808m
+    // from the school - you need to be within 150m to clock in.") never reached the caller,
+    // surfacing instead as a useless "Something went wrong. Please try again later." 500.
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException ex) {
+        return build(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

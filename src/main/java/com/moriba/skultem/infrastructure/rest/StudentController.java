@@ -31,6 +31,7 @@ import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetStudentUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
 import com.moriba.skultem.application.usecase.RankStudentUseCase;
+import com.moriba.skultem.application.usecase.ReprocessStudentPhotosUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStudentDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
@@ -50,6 +51,7 @@ public class StudentController {
         private final StudentService studentSvc;
         private final ActiveCycleUseCase activeCycleUseCase;
         private final UpdateStudentPhotoUseCase updateStudentPhotoUseCase;
+        private final ReprocessStudentPhotosUseCase reprocessStudentPhotosUseCase;
 
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -70,6 +72,18 @@ public class StudentController {
                         @RequestPart("photo") MultipartFile photo) {
                 var res = updateStudentPhotoUseCase.execute(school, id, photo);
                 return new ApiResponse<>("success", 200, "Student photo updated successfully", res);
+        }
+
+        // Maintenance operation - re-hosts every existing student photo in the school through the
+        // same downscale pipeline a fresh upload goes through (see R2StorageService.uploadPhoto),
+        // and clears any photo that's now a dead link. Fixes students enrolled before that pipeline
+        // existed, or imported directly, without needing every one of them re-uploaded by hand.
+        @PostMapping("/photos/reprocess")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<ReprocessStudentPhotosUseCase.Summary> reprocessPhotos(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+                var res = reprocessStudentPhotosUseCase.execute(school);
+                return new ApiResponse<>("success", 200, "Student photos reprocessed successfully", res);
         }
 
         @GetMapping
@@ -116,7 +130,7 @@ public class StudentController {
         }
 
         @GetMapping("/fee/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT')")
         public ApiResponse<List<StudentFeeDTO>> listStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId,

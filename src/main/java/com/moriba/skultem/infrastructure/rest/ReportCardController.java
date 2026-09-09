@@ -78,8 +78,11 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report cards fetched successfully", list, meta);
     }
 
+    // A parent sees their own child's report cards this way; #studentId is otherwise unscoped to
+    // the caller, so isParentOfStudent is what actually stops one family from browsing another's
+    // by guessing/enumerating a studentId.
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)")
     public ApiResponse<List<ReportCardSummaryDTO>> byStudent(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId) {
@@ -96,7 +99,7 @@ public class ReportCardController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfReportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -115,7 +118,7 @@ public class ReportCardController {
     }
 
     @PostMapping("/{id}/download")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfReportCard(#school, #id)")
     public ApiResponse<Void> trackDownload(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

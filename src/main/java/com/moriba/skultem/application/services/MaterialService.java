@@ -18,8 +18,12 @@ import com.moriba.skultem.application.mapper.SupplyMapper;
 import com.moriba.skultem.application.usecase.CreateMaterialCategoryUseCase;
 import com.moriba.skultem.application.usecase.CreateMaterialUseCase;
 import com.moriba.skultem.application.usecase.CreateSupplyUseCase;
+import com.moriba.skultem.application.usecase.DeleteMaterialCategoryUseCase;
+import com.moriba.skultem.application.usecase.DeleteMaterialUseCase;
 import com.moriba.skultem.application.usecase.ReStockMaterialUseCase;
 import com.moriba.skultem.application.usecase.SupplyMaterialUseCase;
+import com.moriba.skultem.application.usecase.UpdateMaterialCategoryUseCase;
+import com.moriba.skultem.application.usecase.UpdateMaterialUseCase;
 import com.moriba.skultem.domain.model.Material.Unit;
 import com.moriba.skultem.domain.repository.MaterialCategoryRepository;
 import com.moriba.skultem.domain.repository.MaterialRepository;
@@ -41,13 +45,33 @@ public class MaterialService {
     private final CreateSupplyUseCase createSupplyUseCase;
     private final SupplyMaterialUseCase supplyMaterialUseCase;
     private final ReStockMaterialUseCase reStockMaterialUseCase;
+    private final UpdateMaterialCategoryUseCase updateMaterialCategoryUseCase;
+    private final DeleteMaterialCategoryUseCase deleteMaterialCategoryUseCase;
+    private final UpdateMaterialUseCase updateMaterialUseCase;
+    private final DeleteMaterialUseCase deleteMaterialUseCase;
 
     public MaterialCategoryDTO createMaterialCategory(String schoolId, String name, String description) {
         return createMaterialCategoryUseCase.execute(schoolId, name, description);
     }
 
+    public MaterialCategoryDTO updateMaterialCategory(String schoolId, String categoryId, String name, String description) {
+        return updateMaterialCategoryUseCase.execute(schoolId, categoryId, name, description);
+    }
+
+    public void deleteMaterialCategory(String schoolId, String categoryId) {
+        deleteMaterialCategoryUseCase.execute(schoolId, categoryId);
+    }
+
     public MaterialDTO createMaterial(String schoolId, String name, Unit unit, BigInteger qty, String categoryId) {
         return createMaterialUseCase.execute(schoolId, name, unit, qty, categoryId);
+    }
+
+    public MaterialDTO updateMaterial(String schoolId, String id, String name, Unit unit, String categoryId) {
+        return updateMaterialUseCase.execute(schoolId, id, name, unit, categoryId);
+    }
+
+    public void deleteMaterial(String schoolId, String id) {
+        deleteMaterialUseCase.execute(schoolId, id);
     }
 
     public MaterialDTO restockMaterial(String schoolId, String id, int qty, String note) {
@@ -62,24 +86,32 @@ public class MaterialService {
         return createSupplyUseCase.execute(schoolId, studentId, materialId, qty);
     }
 
-    public Page<MaterialCategoryDTO> listCategory(String school, int page, int size) {
+    public Page<MaterialCategoryDTO> listCategory(String school, int page, int size, String search) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page - 1, size);
         }
 
-        return categoryRepo.findBySchool(school, pageable).map(MaterialCategoryMapper::toDTO);
+        boolean hasQuery = search != null && !search.isBlank();
+        var result = hasQuery ? categoryRepo.search(school, search.trim(), pageable)
+                : categoryRepo.findBySchool(school, pageable);
+
+        return result.map(MaterialCategoryMapper::toDTO);
     }
 
-    public Page<MaterialDTO> listMaterial(String school, int page, int size) {
+    public Page<MaterialDTO> listMaterial(String school, int page, int size, String search) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page - 1, size);
         }
 
-        return materialRepo.findBySchool(school, pageable).map(MaterialMapper::toDTO);
+        boolean hasQuery = search != null && !search.isBlank();
+        var result = hasQuery ? materialRepo.search(school, search.trim(), pageable)
+                : materialRepo.findBySchool(school, pageable);
+
+        return result.map(MaterialMapper::toDTO);
     }
 
     public Page<MaterialTrasactionDTO> listMaterialTransaction(String school, String materialId, int page, int size) {
@@ -93,13 +125,17 @@ public class MaterialService {
                 .map(MaterialTransactionMapper::toDTO);
     }
 
-    public Page<SupplyDTO> listSupply(String school, int page, int size) {
+    public Page<SupplyDTO> listSupply(String school, int page, int size, String search) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page - 1, size);
         }
 
-        return supplyRepo.findBySchool(school, pageable).map(SupplyMapper::toDTO);
+        boolean hasQuery = search != null && !search.isBlank();
+        var result = hasQuery ? supplyRepo.search(school, search.trim(), pageable)
+                : supplyRepo.findBySchool(school, pageable);
+
+        return result.map(SupplyMapper::toDTO);
     }
 }

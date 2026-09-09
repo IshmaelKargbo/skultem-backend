@@ -41,7 +41,7 @@ public class PaymentController {
     private final GetReceiptUseCase getReceiptUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RecordPaymentDTO param) {
         var method = PaymentMethod.valueOf(param.method());
@@ -53,7 +53,7 @@ public class PaymentController {
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<BigDecimal> countThisYearFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId,
@@ -63,7 +63,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -81,7 +81,7 @@ public class PaymentController {
     }
 
     @GetMapping("/receipt/{referenceNo}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> getReceipt(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String referenceNo) {
@@ -90,7 +90,7 @@ public class PaymentController {
     }
 
     @GetMapping("/student/{studentId}/{feeId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<BigDecimal> sumByStudentAndFee(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String feeId, @PathVariable String studentId) {

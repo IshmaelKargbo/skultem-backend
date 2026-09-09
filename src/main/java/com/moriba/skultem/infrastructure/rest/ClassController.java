@@ -37,9 +37,11 @@ import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTerminalUseCase;
+import com.moriba.skultem.application.usecase.UpdateClassUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.NextClassDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTerminalDTO;
 
@@ -65,6 +67,7 @@ public class ClassController {
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
     private final UpdateClassTerminalUseCase updateClassTerminalUseCase;
+    private final UpdateClassUseCase updateClassUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -191,6 +194,16 @@ public class ClassController {
             @RequestParam(required = false) String academicYearId) {
         var res = computeClassAttentionUseCase.execute(school, id, academicYearId);
         return new ApiResponse<>("success", 200, "Class attention fetched successfully", res);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ClassDTO> update(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateClassDTO param) {
+        var res = updateClassUseCase.execute(school, id, param.name(), param.levelOrder());
+        return new ApiResponse<>("success", 200, "Class updated successfully", res);
     }
 
     @PutMapping("/{id}/terminal")

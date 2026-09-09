@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.mapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import com.moriba.skultem.application.dto.FeeStructureDTO;
 import com.moriba.skultem.application.dto.StudentDTO;
@@ -18,9 +19,18 @@ public class StudentFeeMapper {
 
         String clazz = param.getEnrollment().getClazz().getName();
         String studentName = String.join(" ", student.givenNames(), student.familyName());
-        BigDecimal balance = fee.amount().subtract(amountPaid);
 
-        String status = resolveStatus(amountPaid, fee.amount());
+        // Net of any discount linked to this student's fee - without this a discounted fee
+        // never shows as fully paid/settled even once the (lower) amount actually owed has
+        // been paid in full.
+        BigDecimal discount = param.getDiscount() != null ? param.getDiscount().computeSavings() : BigDecimal.ZERO;
+        BigDecimal netPayable = fee.amount().subtract(discount);
+        BigDecimal balance = netPayable.subtract(amountPaid);
+        if (balance.compareTo(BigDecimal.ZERO) < 0) {
+            balance = BigDecimal.ZERO;
+        }
+
+        String status = resolveStatus(amountPaid, netPayable, fee.dueDate());
 
         return new StudentFeeDTO(
                 student.id(),
@@ -37,13 +47,19 @@ public class StudentFeeMapper {
                 param.getUpdatedAt());
     }
 
-    private static String resolveStatus(BigDecimal amountPaid, BigDecimal feeAmount) {
-        if (amountPaid.compareTo(feeAmount) >= 0) {
+    private static String resolveStatus(BigDecimal amountPaid, BigDecimal netPayable, LocalDate dueDate) {
+        if (amountPaid.compareTo(netPayable) >= 0) {
             return "Paid";
-        } else if (amountPaid.compareTo(BigDecimal.ZERO) > 0) {
-            return "Partial";
-        } else {
-            return "Pending";
         }
+
+        if (dueDate != null && dueDate.isBefore(LocalDate.now())) {
+            return "Overdue";
+        }
+
+        if (amountPaid.compareTo(BigDecimal.ZERO) > 0) {
+            return "Partial";
+        }
+
+        return "Pending";
     }
 }

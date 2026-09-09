@@ -15,13 +15,17 @@ import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialDTO;
 import com.moriba.skultem.infrastructure.rest.dto.RestockMaterialDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SupplyMaterialDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateMaterialCategoryDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateMaterialDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
@@ -46,6 +50,25 @@ public class MaterialController {
         return new ApiResponse<>("success", 200, "Material category successfully", res);
     }
 
+    @PutMapping("/category/{categoryId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ApiResponse<MaterialCategoryDTO> updateCategory(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String categoryId,
+            @Valid @RequestBody UpdateMaterialCategoryDTO param) {
+        var res = service.updateMaterialCategory(school, categoryId, param.name(), param.description());
+        return new ApiResponse<>("success", 200, "Material category updated successfully", res);
+    }
+
+    @DeleteMapping("/category/{categoryId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ApiResponse<Object> deleteCategory(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String categoryId) {
+        service.deleteMaterialCategory(school, categoryId);
+        return new ApiResponse<>("success", 200, "Material category deleted successfully", null);
+    }
+
     @PostMapping()
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialDTO> createMaterial(
@@ -54,6 +77,25 @@ public class MaterialController {
         var res = service.createMaterial(school, param.name(), Unit.valueOf(param.unit()), param.inStock(),
                 param.categoryId());
         return new ApiResponse<>("success", 200, "Material category successfully", res);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ApiResponse<MaterialDTO> updateMaterial(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateMaterialDTO param) {
+        var res = service.updateMaterial(school, id, param.name(), Unit.valueOf(param.unit()), param.categoryId());
+        return new ApiResponse<>("success", 200, "Material updated successfully", res);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ApiResponse<Object> deleteMaterial(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        service.deleteMaterial(school, id);
+        return new ApiResponse<>("success", 200, "Material deleted successfully", null);
     }
 
     @PostMapping("/restock")
@@ -79,9 +121,10 @@ public class MaterialController {
     public ApiResponse<List<MaterialCategoryDTO>> listCategory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+            @RequestParam(required = true, defaultValue = "1") Integer page,
+            @RequestParam(required = false) String search) {
 
-        var res = service.listCategory(school, page, size);
+        var res = service.listCategory(school, page, size, search);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -97,9 +140,10 @@ public class MaterialController {
     public ApiResponse<List<MaterialDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+            @RequestParam(required = true, defaultValue = "1") Integer page,
+            @RequestParam(required = false) String search) {
 
-        var res = service.listMaterial(school, page, size);
+        var res = service.listMaterial(school, page, size, search);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -115,9 +159,10 @@ public class MaterialController {
     public ApiResponse<List<SupplyDTO>> listSupply(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+            @RequestParam(required = true, defaultValue = "1") Integer page,
+            @RequestParam(required = false) String search) {
 
-        var res = service.listSupply(school, page, size);
+        var res = service.listSupply(school, page, size, search);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

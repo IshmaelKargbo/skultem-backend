@@ -92,7 +92,7 @@ public class FeeController {
         private final DeleteFeeCategoryUseCase deleteFeeCategoryUseCase;
 
         @PostMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeCategoryDTO param) {
@@ -101,7 +101,7 @@ public class FeeController {
         }
 
         @PutMapping("/category/{categoryId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> updateCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String categoryId,
@@ -111,7 +111,7 @@ public class FeeController {
         }
 
         @DeleteMapping("/category/{categoryId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> deleteCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String categoryId) {
@@ -120,7 +120,7 @@ public class FeeController {
         }
 
         @PostMapping("/structure")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeStructureDTO>> createStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeStructureDTO param) {
@@ -140,7 +140,7 @@ public class FeeController {
         }
 
         @PutMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<FeeStructureDTO> updateStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId,
@@ -157,7 +157,7 @@ public class FeeController {
         }
 
         @GetMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<FeeStructureDTO> getStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -167,7 +167,7 @@ public class FeeController {
         }
 
         @DeleteMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> deleteStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -177,7 +177,7 @@ public class FeeController {
         }
 
         @PostMapping("/structure/assign")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentFeeDTO> assignStructureToStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody AssignFeeToStudentDTO param) {
@@ -187,7 +187,7 @@ public class FeeController {
         }
 
         @GetMapping("/structure")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeStructureDTO>> listStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -224,7 +224,7 @@ public class FeeController {
         }
 
         @GetMapping("/structure/count/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Long> countFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -235,7 +235,7 @@ public class FeeController {
         }
 
         @GetMapping("/student/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<BigDecimal> countStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId) {
@@ -246,7 +246,7 @@ public class FeeController {
         }
 
         @PostMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeDiscountDTO param) {
@@ -259,7 +259,7 @@ public class FeeController {
         }
 
         @GetMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeDiscountDTO>> listAllDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -293,7 +293,7 @@ public class FeeController {
         }
 
         @GetMapping("/discount/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<FeeDiscountReportDTO> calculateDiscountReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
 
@@ -303,7 +303,7 @@ public class FeeController {
         }
 
         @GetMapping("/ledger")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerPagedDTO> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
@@ -323,7 +323,7 @@ public class FeeController {
         }
 
         @PostMapping("/ledger/recompute")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR')")
         public ApiResponse<RecomputeStudentLedgerBalancesUseCase.Result> recomputeLedgerBalances(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
 
@@ -335,7 +335,7 @@ public class FeeController {
         }
 
         @GetMapping("/ledger/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerReportDTO> calculateLedgerReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId) {
@@ -346,7 +346,7 @@ public class FeeController {
         }
 
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeCategoryDTO>> list(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,

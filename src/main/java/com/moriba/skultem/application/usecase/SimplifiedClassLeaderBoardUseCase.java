@@ -86,13 +86,20 @@ public class SimplifiedClassLeaderBoardUseCase {
                         String grade = resolveScoreGradeUseCase.execute(request.schoolId(), cumulativeWeight,
                                         lastScore.getStatus());
 
+                        // Same pass mark the last assessment itself was graded against (AssessmentScore#isPassed) -
+                        // whether the subject's cumulative weighted score clears it is what "failed this subject"
+                        // actually means, not just being the lowest-scoring subject in the list.
+                        int passMark = lastScore.getAssessment().getTemplate().getPassMark();
+                        boolean passed = cumulativeWeight >= passMark;
+
                         breakdown.add(new BreakdownDTO(
                                         lastScore.getStudentAssessment().getTeacherSubject().getId(),
                                         lastScore.getStudentAssessment().getTeacherSubject().getSubject().getName(),
                                         cumulativeWeight,
                                         grade,
                                         trend,
-                                        scoresDTO));
+                                        scoresDTO,
+                                        passed));
                 }
 
                 // Sort by cumulative score descending

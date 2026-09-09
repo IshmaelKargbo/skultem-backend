@@ -111,8 +111,16 @@ public class AssessmentScore extends AggregateRoot<String> {
         return getStatus() == ClassSubjectAssessmentLifeCycle.Status.COMPLETED;
     }
 
+    // The lifecycle only allows APPROVED -> COMPLETED and APPROVED -> LOCKED (see
+    // ClassSubjectAssessmentLifeCycle.complete()/lock()) - so a cycle sitting at COMPLETED or
+    // LOCKED necessarily passed through APPROVED already. Checking for the literal APPROVED
+    // status alone meant every score for a finished (COMPLETED) or archived (LOCKED) term - the
+    // overwhelmingly common case once a term is over - was treated as unapproved and hidden,
+    // e.g. from SimplifiedClassLeaderBoardUseCase's parent/student-facing subject breakdown.
     public boolean isApproved() {
-        return getStatus() == ClassSubjectAssessmentLifeCycle.Status.APPROVED;
+        return getStatus() == ClassSubjectAssessmentLifeCycle.Status.APPROVED
+                || getStatus() == ClassSubjectAssessmentLifeCycle.Status.COMPLETED
+                || getStatus() == ClassSubjectAssessmentLifeCycle.Status.LOCKED;
     }
 
     public boolean isPassed() {

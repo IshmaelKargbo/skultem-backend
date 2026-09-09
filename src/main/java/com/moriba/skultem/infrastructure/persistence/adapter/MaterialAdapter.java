@@ -25,8 +25,18 @@ public class MaterialAdapter implements MaterialRepository {
     }
 
     @Override
+    public void deleteById(String id) {
+        repo.deleteById(id);
+    }
+
+    @Override
     public boolean existByNameAndSchoolId(String name, String schoolId) {
         return repo.existsByNameIgnoreCaseAndSchoolId(name, schoolId);
+    }
+
+    @Override
+    public boolean existsByCategoryAndSchool(String categoryId, String schoolId) {
+        return repo.existsByCategory_IdAndSchoolId(categoryId, schoolId);
     }
 
     @Override
@@ -37,6 +47,11 @@ public class MaterialAdapter implements MaterialRepository {
     @Override
     public Page<Material> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(MaterialMapper::toDomain);
+    }
+
+    @Override
+    public Page<Material> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(MaterialMapper::toDomain);
     }
 
 }

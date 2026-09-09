@@ -75,6 +75,14 @@ public class Material extends AggregateRoot<String> {
         );
     }
 
+    // RENAME / RECATEGORIZE - stock is managed separately via stock()/deduct(), never here
+    public void update(String name, Unit unit, MaterialCategory category) {
+        this.name = name;
+        this.unit = unit;
+        this.category = category;
+        touch(Instant.now());
+    }
+
     // ADD STOCK
     public void stock(int qty) {
         validateQty(qty);

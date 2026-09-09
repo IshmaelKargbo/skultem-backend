@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.LessonDTO;
 import com.moriba.skultem.application.dto.SchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.SchemeProgressDTO;
@@ -24,6 +25,7 @@ import com.moriba.skultem.application.mapper.SchemeOfWorkMapper;
 import com.moriba.skultem.application.mapper.WeekMapper;
 import com.moriba.skultem.application.usecase.CreateLessonUseCase;
 import com.moriba.skultem.application.usecase.CreateWeekUseCase;
+import com.moriba.skultem.application.usecase.GetChildCurriculumUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherProgressDetailUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherProgressUseCase;
 import com.moriba.skultem.application.usecase.ManageSchemeOfWorkUseCase;
@@ -57,6 +59,11 @@ public class CurriculumService {
     private final UpdateWeekStateUseCase updateWeekStateUseCase;
     private final GetTeacherProgressUseCase getTeacherProgressUseCase;
     private final GetTeacherProgressDetailUseCase getTeacherProgressDetailUseCase;
+    private final GetChildCurriculumUseCase getChildCurriculumUseCase;
+
+    public List<ChildSchemeOfWorkDTO> getChildCurriculum(String schoolId, String parentUserId, String studentId, String termId) {
+        return getChildCurriculumUseCase.execute(schoolId, parentUserId, studentId, blankToNull(termId));
+    }
 
     public Page<SchemeOfWorkDTO> searchScheme(int page, int size, String school, String subjectId, String sessionId, String termId, String progress) {
         Pageable pageable = PageableMapper.toPage(page, size);

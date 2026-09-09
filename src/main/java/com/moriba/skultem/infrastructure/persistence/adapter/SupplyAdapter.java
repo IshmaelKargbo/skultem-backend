@@ -45,4 +45,9 @@ public class SupplyAdapter implements SupplyRepository {
                 .map(SupplyMapper::toDomain);
     }
 
+    @Override
+    public Page<Supply> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(SupplyMapper::toDomain);
+    }
+
 }

@@ -26,5 +26,10 @@ public class MaterialTransactionAdapter implements MaterialTransactionRepository
     public Page<MaterialTransaction> findByMaterialIdAndSchool(String materialId, String schoolId, Pageable pageable) {
         return repo.findAllByMaterialIdAndSchoolIdOrderByCreatedAtDesc(materialId, schoolId, pageable).map(MaterialTransactionMapper::toDomain);
     }
-    
+
+    @Override
+    public boolean existsByMaterialAndSchool(String materialId, String schoolId) {
+        return repo.existsByMaterial_IdAndSchoolId(materialId, schoolId);
+    }
+
 }
