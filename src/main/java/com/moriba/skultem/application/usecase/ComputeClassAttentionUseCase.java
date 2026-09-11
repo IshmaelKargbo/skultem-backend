@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Pageable;
@@ -71,7 +72,8 @@ public class ComputeClassAttentionUseCase {
         Map<String, double[]> academicAverages = new HashMap<>(); // enrollmentId -> [average, count]
         if (activeTerm != null) {
             for (Object[] row : scoreRepo.averageScoresByClassAndTerm(schoolId, classId, activeTerm.getId(),
-                    ClassSubjectAssessmentLifeCycle.Status.DRAFT)) {
+                    List.of(ClassSubjectAssessmentLifeCycle.Status.DRAFT,
+                            ClassSubjectAssessmentLifeCycle.Status.LOCKED))) {
                 academicAverages.put((String) row[0], new double[] {
                         ((Number) row[1]).doubleValue(),
                         ((Number) row[2]).doubleValue()

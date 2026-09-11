@@ -43,7 +43,8 @@ public interface AssessmentScoreRepository {
     Integer getStudentRank(String schoolId, String classId, String termId, String studentId);
 
     // Row shape: [enrollmentId (String), averageScore (Double), scoreCount (Long)] - see
-    // ComputeClassAttentionUseCase. draftStatus is excluded (see the JPA query for why).
+    // ComputeClassAttentionUseCase. excludedStatuses (DRAFT, LOCKED) are left out (see the JPA
+    // query for why).
     List<Object[]> averageScoresByClassAndTerm(String schoolId, String classId, String termId,
-            ClassSubjectAssessmentLifeCycle.Status draftStatus);
+            List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 }

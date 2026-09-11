@@ -98,12 +98,20 @@ public interface AssessmentScoreJpaRepository
         // report cards use (GenerateReportCardsUseCase) - good enough for a heuristic, without needing
         // that heavier per-subject computation for every class on a list page.
         //
-        // Excludes DRAFT cycles - a ClassSubjectAssessmentLifeCycle's score rows are scaffolded for
-        // every student up front at score=0 before a teacher enters anything, and a term that just
-        // started is mostly DRAFT cycles. Without this filter, every student in a freshly-opened
-        // term gets flagged as failing purely because nothing has been graded yet. Same cutoff
-        // AssessmentScoreAdapter#existsGradeActivityByClassIdAndSchoolId already uses to decide
-        // whether a class has "real" grade activity.
+        // Excludes DRAFT and LOCKED cycles - a ClassSubjectAssessmentLifeCycle's score rows are
+        // scaffolded for every student up front at score=0 before a teacher enters anything, and a
+        // term that just started is mostly DRAFT cycles (the first assessment position) or LOCKED
+        // ones (every later position, provisioned "not yet open" - see
+        // ProvisionStudentAssessmentsUseCase - only DRAFT to SUBMITTED to ... to LOCKED once a
+        // teacher actually advances through it). Without this filter, every student in a
+        // freshly-opened term gets flagged as failing purely because nothing has been graded yet,
+        // since a never-touched future position's score of 0 pulls the average straight to zero.
+        // A genuinely-graded-then-closed-out cycle also ends at LOCKED, so this trades a small
+        // amount of accuracy for a mid-term class (its most recent locked term's average won't
+        // count here) against not flagging students on assessments nobody has touched yet - the
+        // right call for a "needs attention right now" signal, unlike
+        // ComputeEnrollmentYearAverageUseCase's year-end average, which deliberately does count
+        // LOCKED because by then every cycle is expected to have actually been completed.
         @Query("""
                         SELECT
                             sa.enrollment.id,
@@ -115,14 +123,14 @@ public interface AssessmentScoreJpaRepository
                         WHERE a.schoolId = :schoolId
                           AND sa.enrollment.clazz.id = :classId
                           AND sa.term.id = :termId
-                          AND cy.status <> :draftStatus
+                          AND cy.status NOT IN :excludedStatuses
                         GROUP BY sa.enrollment.id
                         """)
         List<Object[]> averageScoresByClassAndTerm(
                         @Param("schoolId") String schoolId,
                         @Param("classId") String classId,
                         @Param("termId") String termId,
-                        @Param("draftStatus") ClassSubjectAssessmentLifeCycle.Status draftStatus);
+                        @Param("excludedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 
         default Page<AssessmentScoreEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<AssessmentScoreEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
