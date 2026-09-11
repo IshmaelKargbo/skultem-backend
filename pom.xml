@@ -91,6 +91,13 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- CSV parsing (bulk uploads, e.g. Scheme of Work) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.10.0</version>
+        </dependency>
+
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

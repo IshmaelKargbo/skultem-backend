@@ -20,6 +20,7 @@ public class IdCardSettingMapper {
                 param.getSchoolAddress(),
                 param.getPrincipalName(),
                 param.getFields(),
+                param.getStaffFields(),
                 param.getValidityYears());
     }
 }

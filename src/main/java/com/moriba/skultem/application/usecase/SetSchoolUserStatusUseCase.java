@@ -7,6 +7,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
+import com.moriba.skultem.domain.repository.UserSessionRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +25,26 @@ import lombok.RequiredArgsConstructor;
 public class SetSchoolUserStatusUseCase {
     private final SchoolUserRepository schoolUserRepo;
     private final SchoolRepository schoolRepo;
+    private final UserSessionRepository sessionRepo;
 
     public UserSchoolMembershipDTO execute(String schoolId, String userId, String status) {
         var schoolUser = schoolUserRepo.findBySchoolAndUser(schoolId, userId)
                 .orElseThrow(() -> new NotFoundException("membership not found"));
 
-        schoolUser.setStatus(SchoolUser.Status.valueOf(status));
+        var newStatus = SchoolUser.Status.valueOf(status);
+        schoolUser.setStatus(newStatus);
         schoolUserRepo.save(schoolUser);
+
+        // LoginUseCase already rejects a non-ACTIVE membership, but that only stops a *new*
+        // login - without this, someone already signed in keeps using that session until it
+        // expires on its own. See JwtAuthFilter, which validates the session on every request.
+        if (newStatus != SchoolUser.Status.ACTIVE) {
+            sessionRepo.findAllByUserAndSchoolIdAndActive(userId, schoolId, true)
+                    .forEach(session -> {
+                        session.deactivate();
+                        sessionRepo.save(session);
+                    });
+        }
 
         var school = schoolRepo.findById(schoolId);
         var schoolName = school.map(s -> s.getName()).orElse("Unknown school");

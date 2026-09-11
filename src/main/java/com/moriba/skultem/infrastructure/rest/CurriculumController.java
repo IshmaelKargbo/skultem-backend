@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.application.dto.BulkSchemeOfWorkResultDTO;
 import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.LessonDTO;
 import com.moriba.skultem.application.dto.SchemeOfWorkDTO;
@@ -7,6 +8,7 @@ import com.moriba.skultem.application.dto.SchemeProgressDTO;
 import com.moriba.skultem.application.dto.TeacherProgressDTO;
 import com.moriba.skultem.application.dto.TeacherProgressDetailDTO;
 import com.moriba.skultem.application.dto.WeekDTO;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.services.CurriculumService;
 import com.moriba.skultem.infrastructure.rest.dto.*;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
@@ -15,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +37,32 @@ public class CurriculumController {
             @Valid @RequestBody CreateSchemeOfWorkDTO param) {
         var res = curriculumSvc.create(school, param.session(), param.term(), param.subject());
         return new ApiResponse<>("success", 200, "Scheme of work created successfully", res);
+    }
+
+    // CSV upload with a "class,subject,term,week,topic,subTopic,objectives" header - each row is
+    // one week; objectives is optional and "|"-separated for more than one. Rows sharing the same
+    // class/subject/term reuse (or create once) the same scheme. Names are
+    // matched against the school's current active academic year (see BulkCreateSchemeOfWorkUseCase
+    // for how an ambiguous class name, e.g. one with multiple sections/streams, is resolved). Each
+    // row succeeds or fails independently, so a typo in one row doesn't block the rest of the file.
+    @PostMapping(value = "/scheme/bulk", consumes = "multipart/form-data")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<BulkSchemeOfWorkResultDTO> bulkCreate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuleException("Choose a CSV file to upload.");
+        }
+
+        try {
+            var res = curriculumSvc.bulkCreate(school, file.getInputStream());
+            String message = res.failed() == 0
+                    ? "Created " + res.created() + " week(s)" + (res.skipped() > 0 ? ", " + res.skipped() + " already existed" : "")
+                    : "Created " + res.created() + ", skipped " + res.skipped() + ", " + res.failed() + " failed - see details";
+            return new ApiResponse<>("success", 200, message, res);
+        } catch (IOException e) {
+            throw new RuleException("Could not read the uploaded file.");
+        }
     }
 
     @PostMapping("/scheme/week")

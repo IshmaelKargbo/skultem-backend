@@ -98,6 +98,19 @@ public class Teacher extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    public void activate() {
+        this.status = Status.ACTIVE;
+        touch(Instant.now());
+    }
+
+    // Deactivating staff (resigned/fired, or a temporary suspension) is reversible, unlike
+    // softDelete above - the payroll/attendance history stays intact and status can be flipped
+    // back to ACTIVE later.
+    public void deactivate() {
+        this.status = Status.INACTIVE;
+        touch(Instant.now());
+    }
+
     public String getName() {
         return String.join(" ", title.toSentenceCase(), user.getName());
     }

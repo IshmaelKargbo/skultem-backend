@@ -52,6 +52,8 @@ public class SchoolEntity {
 
     private String logo;
 
+    private String motto;
+
     @Column(name = "principal_name")
     private String principalName;
 

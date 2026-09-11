@@ -42,7 +42,7 @@ public class UserAdapter implements UserRepository {
 
     @Override
     public Page<User> findBySchool(String school, Pageable pageable) {
-        return repo.findAllBySchoolId(school, pageable).map(UserMapper::toDomain);
+        return repo.findAllBySchoolId(school, Role.PARENT, pageable).map(UserMapper::toDomain);
     }
 
     @Override

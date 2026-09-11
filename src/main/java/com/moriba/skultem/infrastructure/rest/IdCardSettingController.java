@@ -40,7 +40,7 @@ public class IdCardSettingController {
         var dto = new IdCardSettingDTO(param.layout(), param.profileShape(), param.headerColor(),
                 param.footerColor(), param.headerTextColor(), param.primaryTextColor(), param.widthMm(),
                 param.heightMm(), param.bgImageUrl(), param.bgOpacity(), param.schoolName(), param.schoolAddress(),
-                param.principalName(), param.fields(), param.validityYears());
+                param.principalName(), param.fields(), param.staffFields(), param.validityYears());
         var res = saveIdCardSettingUseCase.execute(school, dto);
         return new ApiResponse<>("success", 200, "ID card settings saved successfully", res);
     }

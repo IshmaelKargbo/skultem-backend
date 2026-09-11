@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.usecase.AssignSubjectsToStreamUseCase;
 import com.moriba.skultem.application.usecase.AssignSubjectsToClassUseCase;
+import com.moriba.skultem.application.usecase.DuplicateClassSubjectsUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignSubjectsDTO;
+import com.moriba.skultem.infrastructure.rest.dto.DuplicateClassSubjectsDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SubjectAssignmentDTO;
 
 import jakarta.validation.Valid;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class SubjectAssignmentController {
     private final AssignSubjectsToClassUseCase assignSubjectsToClassUseCase;
     private final AssignSubjectsToStreamUseCase assignStreamSubjectsUseCase;
+    private final DuplicateClassSubjectsUseCase duplicateClassSubjectsUseCase;
 
     @PostMapping("/class/{classId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -50,6 +53,16 @@ public class SubjectAssignmentController {
                 .collect(Collectors.toList());
         assignStreamSubjectsUseCase.execute(school, streamId, assignments);
         return new ApiResponse<>("success", 200, "Subjects assigned to stream successfully", null);
+    }
+
+    @PostMapping("/class/{classId}/duplicate")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Object> duplicateToClasses(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classId,
+            @Valid @RequestBody DuplicateClassSubjectsDTO param) {
+        var result = duplicateClassSubjectsUseCase.execute(school, classId, param.targetClassIds());
+        return new ApiResponse<>("success", 200, "Class subjects duplicated", result);
     }
 
     private AssignSubjectsToClassUseCase.SubjectAssignment toClassAssignment(SubjectAssignmentDTO dto) {

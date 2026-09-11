@@ -11,7 +11,8 @@ public class IdCardSettingMapper {
                 param.getHeaderColor(), param.getFooterColor(), param.getHeaderTextColor(),
                 param.getPrimaryTextColor(), param.getWidthMm(), param.getHeightMm(), param.getBgImageUrl(),
                 param.getBgOpacity(), param.getSchoolName(), param.getSchoolAddress(), param.getPrincipalName(),
-                param.getFields(), param.getValidityYears(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getFields(), param.getStaffFields(), param.getValidityYears(), param.getCreatedAt(),
+                param.getUpdatedAt());
     }
 
     public static IdCardSettingEntity toEntity(IdCardSetting param) {
@@ -34,6 +35,7 @@ public class IdCardSettingMapper {
                 .schoolAddress(param.getSchoolAddress())
                 .principalName(param.getPrincipalName())
                 .fields(param.getFields())
+                .staffFields(param.getStaffFields())
                 .validityYears(param.getValidityYears())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())

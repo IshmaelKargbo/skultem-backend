@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.moriba.skultem.application.dto.LoginResponse;
 import com.moriba.skultem.application.error.AccessDeniedException;
+import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.UserSession;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserSessionRepository;
@@ -49,9 +50,17 @@ public class RefreshTokenUseCase {
 
         String userId = session.getUser().getId();
 
-        var schoolUsers = schoolUserRepo.findAllByUser_IdAndSchoolId(userId, session.getSchoolId());
+        // ACTIVE only, same as LoginUseCase - a role deactivated after this session was issued
+        // (see SetUserAccessUseCase/RemoveRoleUseCase, which already kill the session outright)
+        // must not keep getting silently re-granted every time the access token is refreshed.
+        var schoolUsers = schoolUserRepo.findAllByUser_IdAndSchoolId(userId, session.getSchoolId()).stream()
+                .filter(su -> su.getStatus() == SchoolUser.Status.ACTIVE)
+                .toList();
+
         if (schoolUsers.isEmpty()) {
-            throw new AccessDeniedException("User has no role in this school");
+            session.deactivate();
+            sessionRepo.save(session);
+            throw new AccessDeniedException("Your access to this school has been deactivated. Contact your school admin.");
         }
 
         List<Role> roles = schoolUsers.stream().map(su -> su.getRole()).toList();

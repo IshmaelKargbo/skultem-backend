@@ -15,5 +15,6 @@ public record IdCardSettingDTO(
         String schoolAddress,
         String principalName,
         String fields,
+        String staffFields,
         int validityYears) {
 }

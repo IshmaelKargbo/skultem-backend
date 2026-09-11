@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.security.SecureRandom;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class CreateTeacherUseCase {
+    private static final Logger log = LoggerFactory.getLogger(CreateTeacherUseCase.class);
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
     private static final int PASSWORD_LENGTH = 12;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -98,7 +101,16 @@ public class CreateTeacherUseCase {
         }
 
         if (sendWelcomeEmail) {
-            sendWelcomeEmail(school, teacher);
+            // The teacher (and any class master assignment above) is already persisted at this
+            // point - a flaky/misconfigured mail provider must not roll that back and report the
+            // whole "Add Teacher" request as failed. Log and move on; the teacher can be resent
+            // their welcome email later.
+            try {
+                sendWelcomeEmail(school, teacher);
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to teacher {} ({}): {}", teacher.getId(),
+                        teacher.getUser().getEmail(), e.getMessage(), e);
+            }
         }
 
         logActivityUseCase.log(

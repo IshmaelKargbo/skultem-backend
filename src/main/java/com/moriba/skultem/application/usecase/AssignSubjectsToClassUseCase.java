@@ -76,11 +76,23 @@ public class AssignSubjectsToClassUseCase {
             throw new RuleException("Duplicate subjects detected.");
         }
 
-        var existing = repo.findAllByClassIdAndSchoolId(classId, schoolId, Pageable.unpaged());
+        // clazz.getId(), not classId (the class *session* id looked up above) - ClassSubject rows
+        // are keyed by the underlying Clazz (and, for a streamed class like an SSS stream, by
+        // Stream too), not the session, so querying by classId here always came back empty: every
+        // save silently re-created every subject as a fresh row instead of updating/locking/
+        // removing the existing ones. A class with streams (SSS's Art/Science/Commercial) shares
+        // one Clazz across every stream, so without narrowing by stream this would pull every
+        // stream's subjects together - locking Art's Maths because Science's Maths has grades, and
+        // colliding on "Duplicate subjects detected" whenever the same subject is core in more than
+        // one stream.
+        var existing = stream != null
+                ? repo.findAllByClassIdAndStreamIdAndSchoolId(clazz.getId(), stream.getId(), schoolId,
+                        Pageable.unpaged())
+                : repo.findAllByClassIdAndSchoolId(clazz.getId(), schoolId, Pageable.unpaged());
 
         existing.forEach(item -> {
             boolean hasGradeActivity = assessmentScoreRepository
-                    .existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(classId,
+                    .existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(clazz.getId(),
                             item.getSubject().getId(), academicYear.getId(), schoolId);
 
             if (hasGradeActivity && !item.isLocked()) {
@@ -129,7 +141,7 @@ public class AssignSubjectsToClassUseCase {
             if (assignment.subjectGroupId() != null && !assignment.subjectGroupId().isBlank()) {
                 group = groupRepo.findByIdAndClassSchoolId(
                         assignment.subjectGroupId(),
-                        classId,
+                        clazz.getId(),
                         schoolId)
                         .orElseThrow(
                                 () -> new RuleException("Subject group not found: " + assignment.subjectGroupId()));
@@ -173,20 +185,31 @@ public class AssignSubjectsToClassUseCase {
 
                 String subjectId = cs.getSubject().getId();
 
-                // Remove teacher assignment
-                teacherSubjectRepository.deleteByClassIdAndSubjectIdAndSchoolId(
-                        classId,
-                        subjectId,
-                        schoolId);
+                // Remove teacher assignment - keyed by the Clazz (via the session), same as above,
+                // but narrowed to this stream when there is one so removing the subject from Art
+                // doesn't also unassign the teacher teaching it in Science.
+                if (stream != null) {
+                    teacherSubjectRepository.deleteByStreamIdAndSubjectIdAndSchoolId(
+                            stream.getId(),
+                            subjectId,
+                            schoolId);
+                } else {
+                    teacherSubjectRepository.deleteByClassIdAndSubjectIdAndSchoolId(
+                            clazz.getId(),
+                            subjectId,
+                            schoolId);
+                }
 
                 // Delete class subject
                 repo.delete(cs);
             }
         }
 
-        // Sync enrolled students for remaining and new subjects
-        syncAssessmentsForEnrolledStudents(schoolId, classId, academicYear.getId(), assignments, incomingSubjects,
-                removedSubjectIds);
+        // Sync enrolled students for remaining and new subjects - Enrollment is also keyed by the
+        // Clazz, not the session, so this needs clazz.getId() too, narrowed to the stream (if any)
+        // so a subject change in Art doesn't touch Science's enrolled students.
+        syncAssessmentsForEnrolledStudents(schoolId, clazz.getId(), stream != null ? stream.getId() : null,
+                academicYear.getId(), assignments, incomingSubjects, removedSubjectIds);
 
         String meta = "assignedCount=" + incomingSubjects.size() + ";removedCount=" + removedSubjectIds.size();
         logActivityUseCase.log(
@@ -201,6 +224,7 @@ public class AssignSubjectsToClassUseCase {
     private void syncAssessmentsForEnrolledStudents(
             String schoolId,
             String classId,
+            String streamId,
             String academicYearId,
             List<SubjectAssignment> assignments,
             Map<String, Subject> incomingSubjects,
@@ -215,9 +239,14 @@ public class AssignSubjectsToClassUseCase {
             return;
         }
 
-        var enrollments = enrollmentRepo
-                .findAllByClassAndAcademicAndSchoolId(classId, academicYearId, schoolId, Pageable.unpaged())
-                .getContent();
+        var enrollments = streamId != null
+                ? enrollmentRepo
+                        .findAllByClassIdAndStreamIdAndAcademicYearId(classId, streamId, academicYearId,
+                                Pageable.unpaged())
+                        .getContent()
+                : enrollmentRepo
+                        .findAllByClassAndAcademicAndSchoolId(classId, academicYearId, schoolId, Pageable.unpaged())
+                        .getContent();
 
         for (var enrollment : enrollments) {
             for (String removedSubjectId : removedSubjectIds) {

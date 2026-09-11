@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.UserMapper;
+import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.Role;
@@ -25,8 +26,11 @@ public class GetUserUseCase {
     public UserDTO execute(String schoolId, String id) {
         var record = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        List<Role> roles = schoolUserRepo.findAllByUser_IdAndSchoolId(id, schoolId).stream().map(e -> e.getRole())
-                .toList();
-        return UserMapper.toDTO(record, roles);
+        var memberships = schoolUserRepo.findAllByUser_IdAndSchoolId(id, schoolId);
+        List<Role> roles = memberships.stream().map(e -> e.getRole()).toList();
+        String schoolStatus = memberships.isEmpty() ? null
+                : memberships.stream().anyMatch(m -> m.getStatus() == SchoolUser.Status.ACTIVE) ? "ACTIVE"
+                        : "INACTIVE";
+        return UserMapper.toDTO(record, roles, schoolStatus);
     }
 }

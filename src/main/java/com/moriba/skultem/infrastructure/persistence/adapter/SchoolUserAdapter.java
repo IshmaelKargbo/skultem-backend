@@ -25,6 +25,12 @@ public class SchoolUserAdapter implements SchoolUserRepository {
     }
 
     @Override
+    public void delete(SchoolUser domain) {
+        var entity = SchoolUserMapper.toEntity(domain);
+        repo.delete(entity);
+    }
+
+    @Override
     public Optional<SchoolUser> findBySchoolAndUserAndRole(String schoolId, String userId, Role role) {
         return repo.findBySchoolIdAndUserIdWithUser(schoolId, userId, role).map(SchoolUserMapper::toDomain);
     }

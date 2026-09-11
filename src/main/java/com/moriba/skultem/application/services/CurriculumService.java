@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.moriba.skultem.application.dto.BulkSchemeOfWorkResultDTO;
 import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.LessonDTO;
 import com.moriba.skultem.application.dto.SchemeOfWorkDTO;
@@ -24,6 +25,7 @@ import com.moriba.skultem.application.mapper.PageableMapper;
 import com.moriba.skultem.application.mapper.SchemeOfWorkMapper;
 import com.moriba.skultem.application.mapper.WeekMapper;
 import com.moriba.skultem.application.usecase.CreateLessonUseCase;
+import com.moriba.skultem.application.usecase.BulkCreateSchemeOfWorkUseCase;
 import com.moriba.skultem.application.usecase.CreateWeekUseCase;
 import com.moriba.skultem.application.usecase.GetChildCurriculumUseCase;
 import com.moriba.skultem.application.usecase.GetTeacherProgressDetailUseCase;
@@ -54,6 +56,7 @@ public class CurriculumService {
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final TeacherRepository teacherRepo;
     private final ManageSchemeOfWorkUseCase manageSchemeOfWorkUseCase;
+    private final BulkCreateSchemeOfWorkUseCase bulkCreateSchemeOfWorkUseCase;
     private final CreateWeekUseCase weekUseCase;
     private final CreateLessonUseCase createLessonUseCase;
     private final UpdateLessonStateUseCase updateLessonStateUseCase;
@@ -139,6 +142,10 @@ public class CurriculumService {
     public SchemeOfWorkDTO create(String schoolId, String sessionId, String termId, String subjectId) {
         var res = manageSchemeOfWorkUseCase.execute(schoolId, subjectId, sessionId, termId);
         return SchemeOfWorkMapper.toDTO(res);
+    }
+
+    public BulkSchemeOfWorkResultDTO bulkCreate(String schoolId, java.io.InputStream csv) {
+        return bulkCreateSchemeOfWorkUseCase.execute(schoolId, csv);
     }
 
     public WeekDTO createWeek(String schoolId, String scheme, int week, String topic, String subtopic,

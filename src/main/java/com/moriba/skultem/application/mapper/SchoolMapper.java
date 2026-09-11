@@ -6,8 +6,8 @@ import com.moriba.skultem.domain.model.School;
 public class SchoolMapper {
     public static SchoolDTO toDTO(School param) {
         return new SchoolDTO(param.getId(), param.getName(), param.getDomain(), param.getAddress(), param.getOwner(),
-                param.getStatus(), param.getGradingScale(), param.getLogo(), param.getPrincipalName(),
-                param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getStatus(), param.getGradingScale(), param.getLogo(), param.getMotto(),
+                param.getPrincipalName(), param.getPrincipalSignature(), param.getPrimaryColor(),
+                param.getSecondaryColor(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

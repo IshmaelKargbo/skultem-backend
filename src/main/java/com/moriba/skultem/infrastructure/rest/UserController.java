@@ -15,8 +15,11 @@ import com.moriba.skultem.application.usecase.GetUserPayrollStatusUseCase;
 import com.moriba.skultem.application.usecase.GetUserUseCase;
 import com.moriba.skultem.application.usecase.IncludeUserInPayrollUseCase;
 import com.moriba.skultem.application.usecase.ListUserBySchoolUseCase;
+import com.moriba.skultem.application.usecase.RemoveRoleUseCase;
 import com.moriba.skultem.application.usecase.ResetPasswordUseCase;
+import com.moriba.skultem.application.usecase.SetUserAccessUseCase;
 import com.moriba.skultem.application.usecase.UpdateUserPhotoUseCase;
+import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignRoleDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateUserDTO;
@@ -27,6 +30,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +54,8 @@ public class UserController {
     private final GetUserPayrollStatusUseCase getUserPayrollStatusUseCase;
     private final IncludeUserInPayrollUseCase includeUserInPayrollUseCase;
     private final UpdateUserPhotoUseCase updateUserPhotoUseCase;
+    private final SetUserAccessUseCase setUserAccessUseCase;
+    private final RemoveRoleUseCase removeRoleUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -98,6 +104,35 @@ public class UserController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Users fetched successfully", list, meta);
+    }
+
+    // Deactivate (or reactivate) any user at this school - not just a Teacher/payroll record
+    // (TeacherController has a narrower version of this scoped to staff). Flips every role the
+    // target holds at this school together and signs out any session they're currently using.
+    // Blocked from deactivating your own account or a SYSTEM_ADMIN. See SetUserAccessUseCase.
+    @PatchMapping("/{id}/access")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<UserDTO> setAccess(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String actingUserId,
+            @PathVariable String id,
+            @RequestParam("active") boolean active) {
+        var res = setUserAccessUseCase.execute(school, id, actingUserId, active);
+        String message = active ? "User reactivated successfully" : "User deactivated successfully";
+        return new ApiResponse<>("success", 200, message, res);
+    }
+
+    // Revoke one specific role from a user at this school (e.g. they keep Teacher but no longer
+    // need Accountant) - the removal counterpart to /assign. See RemoveRoleUseCase.
+    @DeleteMapping("/{id}/role")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<UserDTO> removeRole(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String actingUserId,
+            @PathVariable String id,
+            @RequestParam("role") String role) {
+        var res = removeRoleUseCase.execute(school, id, actingUserId, Role.valueOf(role));
+        return new ApiResponse<>("success", 200, "Role removed successfully", res);
     }
 
     @GetMapping("/notifications")

@@ -60,6 +60,9 @@ public class IdCardSettingEntity {
     @Column(nullable = false, columnDefinition = "text")
     private String fields;
 
+    @Column(columnDefinition = "text")
+    private String staffFields;
+
     @Column(nullable = false)
     private int validityYears;
 

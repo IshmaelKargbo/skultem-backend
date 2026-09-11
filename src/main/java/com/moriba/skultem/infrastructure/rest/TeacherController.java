@@ -83,6 +83,21 @@ public class TeacherController {
                                 "Teacher edited successfully.", res);
         }
 
+        // Deactivate (fired/resigned/suspended) or reactivate a staff member - blocks/restores
+        // their portal login and, on deactivate, signs out any session they're currently using.
+        // See SetTeacherStatusUseCase.
+        @PatchMapping("/{id}/status")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<TeacherDTO> setStatus(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId,
+                        @PathVariable String id,
+                        @RequestParam("active") boolean active) {
+                var res = teacherSvc.setStatus(school, id, userId, active);
+                String message = active ? "Staff reactivated successfully" : "Staff deactivated successfully";
+                return new ApiResponse<>("success", 200, message, res);
+        }
+
         @GetMapping
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherDTO>> listBySchool(

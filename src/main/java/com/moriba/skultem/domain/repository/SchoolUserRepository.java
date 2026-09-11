@@ -9,6 +9,8 @@ import com.moriba.skultem.domain.vo.Role;
 public interface SchoolUserRepository {
     void save(SchoolUser domain);
 
+    void delete(SchoolUser domain);
+
     Optional<SchoolUser> findBySchoolAndUserAndRole(String schoolId, String userId, Role role);
 
     List<SchoolUser> findAllByUser_IdAndSchoolId(String userId, String schoolId);

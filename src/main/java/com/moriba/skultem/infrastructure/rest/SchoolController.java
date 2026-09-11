@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.AssetDataUriDTO;
 import com.moriba.skultem.application.dto.OwnerDTO;
 import com.moriba.skultem.application.dto.SchoolBrandingAssetsDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.usecase.CreateSchoolUseCase;
+import com.moriba.skultem.application.usecase.GetAssetDataUriUseCase;
 import com.moriba.skultem.application.usecase.GetSchoolBrandingAssetsUseCase;
 import com.moriba.skultem.application.usecase.ListSchoolUseCase;
 import com.moriba.skultem.application.usecase.UpdateSchoolBrandingUseCase;
@@ -43,6 +45,7 @@ public class SchoolController {
     private final UpdateSchoolUseCase updateSchoolUseCase;
     private final UpdateSchoolBrandingUseCase updateSchoolBrandingUseCase;
     private final GetSchoolBrandingAssetsUseCase getSchoolBrandingAssetsUseCase;
+    private final GetAssetDataUriUseCase getAssetDataUriUseCase;
     private final SchoolService schoolSvc;
 
     @PostMapping
@@ -98,6 +101,17 @@ public class SchoolController {
         return new ApiResponse<>("success", 200, "School branding assets fetched successfully", res);
     }
 
+    // Same idea as branding/assets above but for any one R2 asset URL - used for a student/staff
+    // photo on the ID card, which needs the same same-origin swap right before PDF/print capture.
+    @GetMapping("/asset-as-data-uri")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    public ApiResponse<AssetDataUriDTO> getAssetAsDataUri(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String url) {
+        var res = getAssetDataUriUseCase.execute(url);
+        return new ApiResponse<>("success", 200, "Asset fetched successfully", res);
+    }
+
     @PutMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SchoolDTO> update(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -110,13 +124,14 @@ public class SchoolController {
     @PutMapping(value = "/branding", consumes = "multipart/form-data")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SchoolDTO> updateBranding(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String motto,
             @RequestParam(required = false) String principalName,
             @RequestParam(required = false) String primaryColor,
             @RequestParam(required = false) String secondaryColor,
             @RequestPart(required = false) MultipartFile logo,
             @RequestPart(required = false) MultipartFile principalSignature) {
-        var res = updateSchoolBrandingUseCase.execute(school, principalName, logo, principalSignature, primaryColor,
-                secondaryColor);
+        var res = updateSchoolBrandingUseCase.execute(school, motto, principalName, logo, principalSignature,
+                primaryColor, secondaryColor);
         return new ApiResponse<>("success", 200, "School branding updated successfully", res);
     }
 }

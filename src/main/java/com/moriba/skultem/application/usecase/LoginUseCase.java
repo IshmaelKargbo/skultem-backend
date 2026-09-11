@@ -13,6 +13,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.AuditLog;
 import com.moriba.skultem.domain.model.SchoolUser;
+import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.model.UserSession;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
@@ -60,6 +61,13 @@ public class LoginUseCase {
                         throw new AccessDeniedException("Invalid password");
                 }
 
+                // RESET_PASSWORD is a normal, expected state for a freshly-created account (see
+                // User.create) and must still be allowed to log in - only a deliberately
+                // deactivated account is blocked here.
+                if (user.getStatus() == User.Status.INACTIVE || user.getStatus() == User.Status.DELETED) {
+                        throw new AccessDeniedException("Your account has been deactivated. Contact your school admin.");
+                }
+
                 List<SchoolUser> schoolUsers = schoolUserRepository.findAllByUser_IdAndSchoolId(user.getId(),
                                 school.getId());
 
@@ -67,7 +75,20 @@ public class LoginUseCase {
                         throw new AccessDeniedException("Invalid email or password");
                 }
 
-                var roles = schoolUsers.stream()
+                // A person can hold more than one role at the same school (e.g. Teacher and
+                // Accountant) - only the roles whose membership is still ACTIVE grant access, so
+                // deactivating one of them doesn't silently leave the other logged in with it, and
+                // doesn't lock out a still-active one either.
+                List<SchoolUser> activeSchoolUsers = schoolUsers.stream()
+                                .filter(su -> su.getStatus() == SchoolUser.Status.ACTIVE)
+                                .toList();
+
+                if (activeSchoolUsers.isEmpty()) {
+                        throw new AccessDeniedException(
+                                        "Your access to this school has been deactivated. Contact your school admin.");
+                }
+
+                var roles = activeSchoolUsers.stream()
                                 .map(SchoolUser::getRole)
                                 .distinct()
                                 .toList();

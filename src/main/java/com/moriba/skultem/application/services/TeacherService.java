@@ -14,6 +14,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
 import com.moriba.skultem.application.usecase.EditTeacherUseCase;
 import com.moriba.skultem.application.usecase.ResolveAcademicYearUseCase;
+import com.moriba.skultem.application.usecase.SetTeacherStatusUseCase;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.Gender;
@@ -29,6 +30,7 @@ public class TeacherService {
     private final ClassMasterRepository classMasterRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EditTeacherUseCase teacherUseCase;
+    private final SetTeacherStatusUseCase setTeacherStatusUseCase;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // u.<field>"/"t.<field>", so an unchecked client value would let someone probe/sort by
@@ -68,6 +70,10 @@ public class TeacherService {
     public TeacherDTO edit(TeacherRecord dto) {
         return teacherUseCase.execute(dto.schoolId(), dto.teacherId(), dto.title(), dto.givenNames(), dto.familyName(),
                 dto.gender(), dto.staffId(), dto.phone(), dto.street(), dto.city(), dto.designation());
+    }
+
+    public TeacherDTO setStatus(String schoolId, String teacherId, String actingUserId, boolean activate) {
+        return setTeacherStatusUseCase.execute(schoolId, teacherId, actingUserId, activate);
     }
 
     public record TeacherRecord(String schoolId, String teacherId, Title title, String givenNames, String familyName,

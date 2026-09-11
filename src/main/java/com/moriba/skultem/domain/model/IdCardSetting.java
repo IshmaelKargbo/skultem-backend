@@ -28,12 +28,16 @@ public class IdCardSetting extends AggregateRoot<String> {
     private String schoolAddress;
     private String principalName;
     private String fields;
+    // Staff cards reuse every visual setting above (colour/layout/dimensions/background) - only
+    // the field list differs, so it's the one extra property needed rather than a parallel set of
+    // colour/layout columns.
+    private String staffFields;
     private int validityYears;
 
     public IdCardSetting(String id, String schoolId, String layout, String profileShape, String headerColor,
             String footerColor, String headerTextColor, String primaryTextColor, int widthMm, int heightMm,
             String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress, String principalName,
-            String fields, int validityYears, Instant createdAt, Instant updatedAt) {
+            String fields, String staffFields, int validityYears, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.layout = layout;
@@ -50,6 +54,7 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.schoolAddress = schoolAddress;
         this.principalName = principalName;
         this.fields = fields;
+        this.staffFields = staffFields;
         this.validityYears = validityYears > 0 ? validityYears : 1;
         touch(updatedAt);
     }
@@ -57,17 +62,17 @@ public class IdCardSetting extends AggregateRoot<String> {
     public static IdCardSetting create(String id, String schoolId, String layout, String profileShape,
             String headerColor, String footerColor, String headerTextColor, String primaryTextColor, int widthMm,
             int heightMm, String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress,
-            String principalName, String fields, int validityYears) {
+            String principalName, String fields, String staffFields, int validityYears) {
         Instant now = Instant.now();
         return new IdCardSetting(id, schoolId, layout, profileShape, headerColor, footerColor, headerTextColor,
                 primaryTextColor, widthMm, heightMm, bgImageUrl, bgOpacity, schoolName, schoolAddress, principalName,
-                fields, validityYears, now, now);
+                fields, staffFields, validityYears, now, now);
     }
 
     public void update(String layout, String profileShape, String headerColor, String footerColor,
             String headerTextColor, String primaryTextColor, int widthMm, int heightMm, String bgImageUrl,
             int bgOpacity, String schoolName, String schoolAddress, String principalName, String fields,
-            int validityYears) {
+            String staffFields, int validityYears) {
         this.layout = layout;
         this.profileShape = profileShape;
         this.headerColor = headerColor;
@@ -82,6 +87,7 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.schoolAddress = schoolAddress;
         this.principalName = principalName;
         this.fields = fields;
+        this.staffFields = staffFields;
         this.validityYears = validityYears > 0 ? validityYears : 1;
         touch(Instant.now());
     }

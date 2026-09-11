@@ -24,7 +24,7 @@ public class UpdateSchoolBrandingUseCase {
     private final SchoolRepository repo;
     private final R2StorageService storageService;
 
-    public SchoolDTO execute(String schoolId, String principalName, MultipartFile logo,
+    public SchoolDTO execute(String schoolId, String motto, String principalName, MultipartFile logo,
             MultipartFile principalSignature, String primaryColor, String secondaryColor) {
         School school = repo.findById(schoolId).orElseThrow(() -> new NotFoundException("school not found"));
 
@@ -38,12 +38,13 @@ public class UpdateSchoolBrandingUseCase {
             signatureUrl = upload(principalSignature, schoolId, "principal-signature");
         }
 
+        String schoolMotto = motto != null ? motto : school.getMotto();
         String name = principalName != null ? principalName : school.getPrincipalName();
         String primary = primaryColor != null && !primaryColor.isBlank() ? primaryColor : school.getPrimaryColor();
         String secondary = secondaryColor != null && !secondaryColor.isBlank() ? secondaryColor
                 : school.getSecondaryColor();
 
-        school.updateBranding(logoUrl, name, signatureUrl, primary, secondary);
+        school.updateBranding(logoUrl, schoolMotto, name, signatureUrl, primary, secondary);
         repo.save(school);
         return SchoolMapper.toDTO(school);
     }

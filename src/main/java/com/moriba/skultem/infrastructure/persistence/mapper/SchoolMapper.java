@@ -18,7 +18,7 @@ public class SchoolMapper {
                 });
 
         return new School(param.getId(), param.getName(), param.getDomain(), address, owner,
-                param.getStatus(), gradingScale, param.getLogo(), param.getPrincipalName(),
+                param.getStatus(), gradingScale, param.getLogo(), param.getMotto(), param.getPrincipalName(),
                 param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
                 param.getCreatedAt(), param.getUpdatedAt());
     }
@@ -37,6 +37,7 @@ public class SchoolMapper {
                 .domain(args.getDomain())
                 .status(args.getStatus())
                 .logo(args.getLogo())
+                .motto(args.getMotto())
                 .principalName(args.getPrincipalName())
                 .principalSignature(args.getPrincipalSignature())
                 .primaryColor(args.getPrimaryColor())

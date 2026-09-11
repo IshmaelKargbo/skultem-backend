@@ -15,12 +15,22 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, String> {
 
     Optional<UserEntity> findByEmail(String email);
 
+    // Excludes PARENT - this backs the school-admin "Team Access" list (see
+    // ListUserBySchoolUseCase), which is for managing staff/admin portal access, not browsing
+    // every parent account at the school. Order is baked into the query (rather than left to the
+    // caller's Pageable) because Spring Data resolves an external Sort's property names against
+    // this query's FROM-clause root (SchoolUserEntity), not the projected UserEntity - appending
+    // "order by createdAt" would sort by school_users.created_at while only users.* is selected,
+    // which fails outright under SELECT DISTINCT (Postgres requires ORDER BY expressions to
+    // appear in the select list). Callers should pass an unsorted Pageable for this method.
     @Query("""
-                select su.user
+                select distinct su.user
                 from SchoolUserEntity su
                 where su.schoolId = :schoolId
+                and su.role <> :excludedRole
+                order by su.user.createdAt desc
             """)
-    Page<UserEntity> findAllBySchoolId(String schoolId, Pageable pageable);
+    Page<UserEntity> findAllBySchoolId(String schoolId, Role excludedRole, Pageable pageable);
 
     @Query("""
                 select u from UserEntity u

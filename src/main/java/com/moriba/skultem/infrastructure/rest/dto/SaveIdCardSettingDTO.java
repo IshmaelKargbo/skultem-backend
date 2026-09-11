@@ -17,5 +17,6 @@ public record SaveIdCardSettingDTO(
         String schoolAddress,
         String principalName,
         @NotBlank(message = "Fields are required") String fields,
+        String staffFields,
         int validityYears) {
 }
