@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Supply;
+import com.moriba.skultem.domain.model.Supply.Status;
 import com.moriba.skultem.domain.repository.SupplyRepository;
 import com.moriba.skultem.infrastructure.persistence.jpa.SupplyJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.SupplyMapper;
@@ -50,4 +52,9 @@ public class SupplyAdapter implements SupplyRepository {
         return repo.search(schoolId, query, pageable).map(SupplyMapper::toDomain);
     }
 
+    @Override
+    public Page<Supply> findUncollectedBySchool(String schoolId, Pageable pageable) {
+        return repo.findAllBySchoolIdAndStatusInOrderByCreatedAtDesc(schoolId,
+                List.of(Status.PENDING, Status.PARTIAL), pageable).map(SupplyMapper::toDomain);
+    }
 }

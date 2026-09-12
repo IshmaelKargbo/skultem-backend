@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest.dto;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.hibernate.validator.constraints.Length;
@@ -19,5 +20,14 @@ public record CreateMaterialDTO(
         @PositiveOrZero(message = "Stock quantity cannot be negative")
         BigInteger inStock,
 
+        // The selling price per unit - defaults to 0 when omitted, so existing integrations that
+        // don't send it yet don't break.
+        @PositiveOrZero(message = "Price cannot be negative")
+        BigDecimal price,
+
         @NotBlank(message = "Category id is required") String categoryId) {
+
+    public CreateMaterialDTO {
+        if (price == null) price = BigDecimal.ZERO;
+    }
 }

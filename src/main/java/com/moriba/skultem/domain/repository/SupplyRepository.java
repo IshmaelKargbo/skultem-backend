@@ -20,4 +20,8 @@ public interface SupplyRepository {
 
     // Matches on student name/admission number or material name - backs the supply list's search box.
     Page<Supply> search(String schoolId, String query, Pageable pageable);
+
+    // PENDING or PARTIAL - a student is still owed some or all of it. Backs the "Pending Pickups"
+    // view, which combines these with unfulfilled MaterialSales - see GetPendingPickupsUseCase.
+    Page<Supply> findUncollectedBySchool(String schoolId, Pageable pageable);
 }

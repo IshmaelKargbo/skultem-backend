@@ -8,6 +8,6 @@ public class MaterialMapper {
     public static MaterialDTO toDTO(Material param) {
         if (param == null) return null;
         var category = MaterialCategoryMapper.toDTO(param.getCategory());
-    return new MaterialDTO(param.getId(), param.getName(), param.getUnit(), category, param.getStockQuantity(), param.getReorderLevel(), param.getLastRestockedAt(), param.getCreatedAt(), param.getUpdatedAt());
+    return new MaterialDTO(param.getId(), param.getName(), param.getUnit(), category, param.getStockQuantity(), param.getPrice(), param.getReorderLevel(), param.getLastRestockedAt(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

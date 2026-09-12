@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.springframework.stereotype.Service;
@@ -27,14 +28,15 @@ public class CreateMaterialUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "MATERIAL_CREATED")
-    public MaterialDTO execute(String schoolId, String name, Unit unit, BigInteger qty, String categoryId) {
+    public MaterialDTO execute(String schoolId, String name, Unit unit, BigInteger qty, BigDecimal price,
+            String categoryId) {
         if (repo.existByNameAndSchoolId(name, schoolId)) {
             throw new AlreadyExistsException("Material already exists");
         }
 
         var category = categoryRepo.findByIdAndSchool(categoryId, schoolId)
                 .orElseThrow(() -> new NotFoundException("category not found"));
-        var domain = Material.create(schoolId, name, unit, qty, category);
+        var domain = Material.create(schoolId, name, unit, qty, price, category);
         repo.save(domain);
 
         logActivityUseCase.log(schoolId, ActivityType.FEES, "Material category created",

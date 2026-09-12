@@ -41,13 +41,19 @@ public class SupplyEntity {
     @Column(nullable = false)
     private Status status;
 
+    // Nullable - a walk-in buyer (sale-linked only) is recorded via customerName instead.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
+    @JoinColumn(name = "student_id", nullable = true)
     private StudentEntity student;
+
+    private String customerName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
     private MaterialEntity material;
+
+    // Set only when this Supply was created by a MaterialSale rather than a paid fee.
+    private String sourceSaleId;
 
     private Instant collectedOn;
     private Instant createdAt;

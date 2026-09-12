@@ -75,7 +75,7 @@ public class MaterialController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateMaterialDTO param) {
         var res = service.createMaterial(school, param.name(), Unit.valueOf(param.unit()), param.inStock(),
-                param.categoryId());
+                param.price(), param.categoryId());
         return new ApiResponse<>("success", 200, "Material category successfully", res);
     }
 
@@ -85,7 +85,8 @@ public class MaterialController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
             @Valid @RequestBody UpdateMaterialDTO param) {
-        var res = service.updateMaterial(school, id, param.name(), Unit.valueOf(param.unit()), param.categoryId());
+        var res = service.updateMaterial(school, id, param.name(), Unit.valueOf(param.unit()), param.price(),
+                param.categoryId());
         return new ApiResponse<>("success", 200, "Material updated successfully", res);
     }
 

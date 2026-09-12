@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.services;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.springframework.data.domain.Page;
@@ -62,12 +63,14 @@ public class MaterialService {
         deleteMaterialCategoryUseCase.execute(schoolId, categoryId);
     }
 
-    public MaterialDTO createMaterial(String schoolId, String name, Unit unit, BigInteger qty, String categoryId) {
-        return createMaterialUseCase.execute(schoolId, name, unit, qty, categoryId);
+    public MaterialDTO createMaterial(String schoolId, String name, Unit unit, BigInteger qty, BigDecimal price,
+            String categoryId) {
+        return createMaterialUseCase.execute(schoolId, name, unit, qty, price, categoryId);
     }
 
-    public MaterialDTO updateMaterial(String schoolId, String id, String name, Unit unit, String categoryId) {
-        return updateMaterialUseCase.execute(schoolId, id, name, unit, categoryId);
+    public MaterialDTO updateMaterial(String schoolId, String id, String name, Unit unit, BigDecimal price,
+            String categoryId) {
+        return updateMaterialUseCase.execute(schoolId, id, name, unit, price, categoryId);
     }
 
     public void deleteMaterial(String schoolId, String id) {

@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -8,12 +9,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.moriba.skultem.domain.model.Supply.Status;
 import com.moriba.skultem.infrastructure.persistence.entity.SupplyEntity;
 
 public interface SupplyJpaRepository extends JpaRepository<SupplyEntity, String> {
     Page<SupplyEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
     Page<SupplyEntity> findAllByStudentIdAndSchoolIdOrderByCreatedAtDesc(String studentId, String schoolId,
+            Pageable pageable);
+
+    Page<SupplyEntity> findAllBySchoolIdAndStatusInOrderByCreatedAtDesc(String schoolId, List<Status> statuses,
             Pageable pageable);
 
     boolean existsByStudentIdAndMaterialIdAndSchoolId(String studentId, String materialId, String schoolId);

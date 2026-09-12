@@ -32,7 +32,10 @@ public class Transaction extends AggregateRoot<String> {
         REFUND,
         EXPENSE,
         ADJUSTMENT,
-        PAYROLL
+        PAYROLL,
+        // A material sale (uniforms, socks, ...) - see CreateMaterialSaleUseCase /
+        // RecordMaterialSalePaymentUseCase, both post here for money actually collected.
+        SALE
     }
 
     public enum Direction {
@@ -45,7 +48,8 @@ public class Transaction extends AggregateRoot<String> {
         EXPENSE,
         SYSTEM,
         OTHER,
-        PAYROLL
+        PAYROLL,
+        MATERIAL_SALE
     }
 
     public Transaction(

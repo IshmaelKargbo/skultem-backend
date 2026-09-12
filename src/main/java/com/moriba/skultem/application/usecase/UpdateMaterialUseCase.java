@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.MaterialDTO;
@@ -24,7 +26,8 @@ public class UpdateMaterialUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "MATERIAL_UPDATED")
-    public MaterialDTO execute(String schoolId, String id, String name, Unit unit, String categoryId) {
+    public MaterialDTO execute(String schoolId, String id, String name, Unit unit, BigDecimal price,
+            String categoryId) {
         var material = repo.findByIdAndSchool(id, schoolId)
                 .orElseThrow(() -> new NotFoundException("Material not found"));
 
@@ -35,7 +38,7 @@ public class UpdateMaterialUseCase {
         var category = categoryRepo.findByIdAndSchool(categoryId, schoolId)
                 .orElseThrow(() -> new NotFoundException("category not found"));
 
-        material.update(name, unit, category);
+        material.update(name, unit, category, price);
         repo.save(material);
 
         logActivityUseCase.log(schoolId, ActivityType.FEES, "Material updated",

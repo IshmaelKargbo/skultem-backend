@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.entity;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 
@@ -37,6 +38,9 @@ public class MaterialEntity {
 
     @Column(nullable = false)
     private BigInteger stockQuantity;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
 
     @Column(nullable = false)
     private int reorderLevel;

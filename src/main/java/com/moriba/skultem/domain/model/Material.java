@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.model;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.UUID;
@@ -16,6 +17,11 @@ public class Material extends AggregateRoot<String> {
     private Unit unit;
     private MaterialCategory category;
     private BigInteger stockQuantity;
+    // The selling price per unit - lets a sale pre-fill its unit price from the catalog instead
+    // of someone re-typing (and potentially mis-typing) it on every single sale. A sale still
+    // captures its own unitPrice snapshot at the time it's made (see MaterialSale), so changing
+    // this later never rewrites the price of a sale already recorded.
+    private BigDecimal price;
     private int reorderLevel;
     private Instant lastRestockedAt;
 
@@ -30,6 +36,7 @@ public class Material extends AggregateRoot<String> {
             Unit unit,
             MaterialCategory category,
             BigInteger stockQuantity,
+            BigDecimal price,
             int reorderLevel,
             Instant lastRestockedAt,
             Instant createdAt,
@@ -41,6 +48,7 @@ public class Material extends AggregateRoot<String> {
         this.unit = unit;
         this.category = category;
         this.stockQuantity = stockQuantity != null ? stockQuantity : BigInteger.ZERO;
+        this.price = price != null ? price : BigDecimal.ZERO;
         this.reorderLevel = reorderLevel;
         this.lastRestockedAt = lastRestockedAt;
 
@@ -53,12 +61,17 @@ public class Material extends AggregateRoot<String> {
             String name,
             Unit unit,
             BigInteger qty,
+            BigDecimal price,
             MaterialCategory category
     ) {
         Instant now = Instant.now();
 
         if (qty == null || qty.compareTo(BigInteger.ZERO) < 0) {
             throw new IllegalArgumentException("Initial quantity cannot be negative");
+        }
+
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price cannot be negative");
         }
 
         return new Material(
@@ -68,6 +81,7 @@ public class Material extends AggregateRoot<String> {
                 unit,
                 category,
                 qty,
+                price,
                 0,
                 null,
                 now,
@@ -75,11 +89,16 @@ public class Material extends AggregateRoot<String> {
         );
     }
 
-    // RENAME / RECATEGORIZE - stock is managed separately via stock()/deduct(), never here
-    public void update(String name, Unit unit, MaterialCategory category) {
+    // RENAME / RECATEGORIZE / REPRICE - stock is managed separately via stock()/deduct(), never here
+    public void update(String name, Unit unit, MaterialCategory category, BigDecimal price) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price cannot be negative");
+        }
+
         this.name = name;
         this.unit = unit;
         this.category = category;
+        this.price = price;
         touch(Instant.now());
     }
 

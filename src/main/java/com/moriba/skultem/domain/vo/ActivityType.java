@@ -10,6 +10,7 @@ public enum ActivityType {
     GRADE,
     FEES,
     SUPPLY,
+    SALE,
     EXPENSE,
     PAYMENT,
     SCHOOL,

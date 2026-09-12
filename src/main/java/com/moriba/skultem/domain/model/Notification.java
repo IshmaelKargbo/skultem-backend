@@ -26,7 +26,10 @@ public class Notification extends AggregateRoot<String> {
         REMINDER,
         BEHAVIOUR,
         FEE,
-        ASSESSMENT
+        ASSESSMENT,
+        // A material was actually handed over - fee-entitled or bought outright, since both now
+        // collect through the same Supply mechanism. See SupplyMaterialUseCase.
+        SUPPLY
     }
 
     public Notification(String id, String schoolId, User owner, Type type,

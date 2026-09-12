@@ -7,25 +7,27 @@ public class SupplyMapper {
     public static Supply toDomain(SupplyEntity param) {
         if (param == null) return null;
 
-        var student = StudentMapper.toDomain(param.getStudent());
+        var student = param.getStudent() != null ? StudentMapper.toDomain(param.getStudent()) : null;
         var material = MaterialMapper.toDomain(param.getMaterial());
-        return new Supply(param.getId(), param.getSchoolId(), student, material, param.getQty(),
-                param.getCollectedQty(), param.getStatus(), param.getCollectedOn(), param.getCreatedAt(),
-                param.getUpdatedAt());
+        return new Supply(param.getId(), param.getSchoolId(), student, param.getCustomerName(), material,
+                param.getQty(), param.getCollectedQty(), param.getStatus(), param.getCollectedOn(),
+                param.getSourceSaleId(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static SupplyEntity toEntity(Supply param) {
         if (param == null) return null;
-        var student = StudentMapper.toEntity(param.getStudent());
+        var student = param.getStudent() != null ? StudentMapper.toEntity(param.getStudent()) : null;
         var material = MaterialMapper.toEntity(param.getMaterial());
 
         return SupplyEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
                 .student(student)
+                .customerName(param.getCustomerName())
                 .qty(param.getQty())
                 .collectedQty(param.getCollectedQty())
                 .material(material)
+                .sourceSaleId(param.getSourceSaleId())
                 .collectedOn(param.getCollectedOn())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
