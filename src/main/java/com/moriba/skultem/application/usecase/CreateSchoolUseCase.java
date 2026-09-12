@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.security.SecureRandom;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateSchoolUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(CreateSchoolUseCase.class);
+
     private final SchoolRepository repo;
     private final UserRepository userRepo;
     private final SchoolUserRepository schoolUserRepo;
@@ -36,6 +40,7 @@ public class CreateSchoolUseCase {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final LogActivityUseCase logActivityUseCase;
+    private final EnsurePlatformFeeSettingUseCase ensurePlatformFeeSettingUseCase;
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
     private static final int PASSWORD_LENGTH = 8;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -52,6 +57,14 @@ public class CreateSchoolUseCase {
         var owner = new Owner(ownerDto.givenNames(), ownerDto.familyName(), ownerDto.email(), ownerDto.phone());
         var school = School.create(id, name, cleanDomain, address, owner);
         repo.save(school);
+
+        // Best-effort - a new school with no platform fee copied yet just gets caught by the
+        // startup sweep instead (see BackfillPlatformFeesUseCase); it shouldn't block signup.
+        try {
+            ensurePlatformFeeSettingUseCase.execute(school.getId());
+        } catch (Exception e) {
+            log.warn("Could not set a default platform fee for new school {}: {}", school.getId(), e.getMessage());
+        }
 
         logActivityUseCase.log(
                 school.getId(),

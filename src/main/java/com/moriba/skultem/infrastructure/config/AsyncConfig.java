@@ -26,4 +26,26 @@ public class AsyncConfig {
 
         return executor;
     }
+
+    // Backs BackfillPlatformFeesUseCase.executeForSchoolAsync - a plain unqualified @Async falls
+    // back to Spring's SimpleAsyncTaskExecutor, which spawns a brand-new, unpooled thread (and a
+    // brand-new DB connection) per call with no upper bound. A small, bounded pool here means this
+    // background reconciliation can never outcompete normal request traffic (payments, etc.) for
+    // connections out of the shared pool, no matter how many "get school info" requests land at
+    // once across however many schools.
+    @Bean(name = "platformFeeExecutor")
+    public Executor platformFeeExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(50);
+        executor.setKeepAliveSeconds(60);
+        executor.setThreadNamePrefix("platform-fee-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
+        executor.initialize();
+
+        return executor;
+    }
 }
