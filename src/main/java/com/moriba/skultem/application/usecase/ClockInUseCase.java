@@ -36,7 +36,7 @@ public class ClockInUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "TEACHER_CLOCKED_IN")
-    public ClockInResponseDTO execute(String schoolId, String userId, double latitude, double longitude) {
+    public ClockInResponseDTO execute(String schoolId, String userId, double latitude, double longitude, Double accuracyMeters) {
         // Scoped by school - an unscoped findByUserId throws NonUniqueResultException for a
         // teacher who works at more than one school. See CurriculumService for the same fix.
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
@@ -55,7 +55,7 @@ public class ClockInUseCase {
 
         double distance = settings.distanceMetersTo(latitude, longitude);
 
-        if (!settings.isWithinRange(latitude, longitude)) {
+        if (!settings.isWithinRange(latitude, longitude, accuracyMeters)) {
             throw new BadRequestException(String.format(
                     "You're about %.0fm from the school - you need to be within %dm to clock in.",
                     distance, settings.getRadiusMeters()));

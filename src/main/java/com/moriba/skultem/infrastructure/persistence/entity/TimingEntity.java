@@ -23,6 +23,12 @@ public class TimingEntity {
     private String schoolId;
 
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private boolean isDefault;
+
+    @Column(nullable = false)
     private LocalTime startTime;
 
     @Column(nullable = false)

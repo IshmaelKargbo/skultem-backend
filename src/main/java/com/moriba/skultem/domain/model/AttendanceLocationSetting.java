@@ -115,4 +115,21 @@ public class AttendanceLocationSetting extends AggregateRoot<String> {
     public boolean isWithinRange(double lat, double lng) {
         return distanceMetersTo(lat, lng) <= radiusMeters;
     }
+
+    // A device's reported GPS fix is never exact - the browser hands back an accuracy radius
+    // (position.coords.accuracy) alongside the coordinates, and on phones/indoors that's commonly
+    // 20-100m even when the device is genuinely standing on school grounds. Comparing the raw
+    // distance against radiusMeters with no allowance for that meant a teacher on a different
+    // device (weaker GPS fix) could get rejected at the exact same spot an admin's device cleared
+    // fine. Widen the effective radius by the reported accuracy, capped so a wildly inaccurate or
+    // spoofed accuracy value can't be used to defeat the geofence entirely.
+    private static final double MAX_ACCURACY_TOLERANCE_METERS = 100;
+
+    public boolean isWithinRange(double lat, double lng, Double accuracyMeters) {
+        double tolerance = accuracyMeters == null || accuracyMeters <= 0
+                ? 0
+                : Math.min(accuracyMeters, MAX_ACCURACY_TOLERANCE_METERS);
+
+        return distanceMetersTo(lat, lng) <= radiusMeters + tolerance;
+    }
 }

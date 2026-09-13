@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface WorkingDayJpaRepository extends JpaRepository<WorkingDayEntity, String> {
-    boolean existsByDayAndSchoolId(WorkingDay.Day day, String schoolId);
+    boolean existsByDayAndTiming_Id(WorkingDay.Day day, String timingId);
 
-    Optional<WorkingDayEntity> findByDayAndSchoolId(WorkingDay.Day day, String schoolId);
+    Optional<WorkingDayEntity> findByDayAndTiming_Id(WorkingDay.Day day, String timingId);
 
-    List<WorkingDayEntity> findAllBySchoolId(String schoolId);
+    List<WorkingDayEntity> findAllByTiming_Id(String timingId);
+
+    void deleteAllByTiming_Id(String timingId);
 }

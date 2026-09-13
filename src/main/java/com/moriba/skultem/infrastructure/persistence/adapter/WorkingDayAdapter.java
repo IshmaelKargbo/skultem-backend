@@ -22,17 +22,22 @@ public class WorkingDayAdapter implements WorkingDayRepository {
     }
 
     @Override
-    public List<WorkingDay> findAllBySchoolId(String school) {
-        return repo.findAllBySchoolId(school).stream().map(WorkingDayMapper::toDomain).toList();
+    public List<WorkingDay> findAllByTimingId(String timingId) {
+        return repo.findAllByTiming_Id(timingId).stream().map(WorkingDayMapper::toDomain).toList();
     }
 
     @Override
-    public Optional<WorkingDay> findByDayAndSchoolId(WorkingDay.Day day, String school) {
-        return repo.findByDayAndSchoolId(day, school).map(WorkingDayMapper::toDomain);
+    public Optional<WorkingDay> findByDayAndTimingId(WorkingDay.Day day, String timingId) {
+        return repo.findByDayAndTiming_Id(day, timingId).map(WorkingDayMapper::toDomain);
     }
 
     @Override
-    public boolean existsByDayAndSchoolId(WorkingDay.Day day, String schoolId) {
-        return repo.existsByDayAndSchoolId(day, schoolId);
+    public boolean existsByDayAndTimingId(WorkingDay.Day day, String timingId) {
+        return repo.existsByDayAndTiming_Id(day, timingId);
+    }
+
+    @Override
+    public void deleteAllByTimingId(String timingId) {
+        repo.deleteAllByTiming_Id(timingId);
     }
 }

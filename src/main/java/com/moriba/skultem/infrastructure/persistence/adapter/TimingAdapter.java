@@ -7,6 +7,7 @@ import com.moriba.skultem.infrastructure.persistence.mapper.TimingMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,12 +22,27 @@ public class TimingAdapter implements TimingRepository {
     }
 
     @Override
-    public Optional<Timing> findBySchoolId(String school) {
-        return repo.findBySchoolId(school).map(TimingMapper::toDomain);
+    public Optional<Timing> findByIdAndSchoolId(String id, String schoolId) {
+        return repo.findByIdAndSchoolId(id, schoolId).map(TimingMapper::toDomain);
     }
 
     @Override
-    public boolean existsBySchoolId(String schoolId) {
-        return repo.existsBySchoolId(schoolId);
+    public List<Timing> findAllBySchoolId(String schoolId) {
+        return repo.findAllBySchoolId(schoolId).stream().map(TimingMapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<Timing> findDefaultBySchoolId(String schoolId) {
+        return repo.findBySchoolIdAndIsDefaultTrue(schoolId).map(TimingMapper::toDomain);
+    }
+
+    @Override
+    public boolean existsDefaultBySchoolId(String schoolId) {
+        return repo.existsBySchoolIdAndIsDefaultTrue(schoolId);
+    }
+
+    @Override
+    public void delete(Timing domain) {
+        repo.deleteById(domain.getId());
     }
 }

@@ -8,9 +8,13 @@ import java.util.Optional;
 public interface WorkingDayRepository {
     void save(WorkingDay domain);
 
-    List<WorkingDay> findAllBySchoolId(String school);
+    // Scoped by timingId rather than schoolId - a school can have several Timing templates, each
+    // with its own set of working days (see WorkingDay.timing / TimingLevel).
+    List<WorkingDay> findAllByTimingId(String timingId);
 
-    Optional<WorkingDay> findByDayAndSchoolId(WorkingDay.Day day, String school);
+    Optional<WorkingDay> findByDayAndTimingId(WorkingDay.Day day, String timingId);
 
-    boolean existsByDayAndSchoolId(WorkingDay.Day day, String schoolId);
+    boolean existsByDayAndTimingId(WorkingDay.Day day, String timingId);
+
+    void deleteAllByTimingId(String timingId);
 }

@@ -44,6 +44,27 @@ class AttendanceLocationSettingTest {
     }
 
     @Test
+    void isWithinRangeWithAccuracyWidensTheRadiusByTheDevicesReportedAccuracy() {
+        // ~166.98m north of the school - just outside the plain 150m radius.
+        var setting = settingAt(0, 0, 150, null);
+
+        assertThat(setting.isWithinRange(0.0015, 0)).isFalse();
+        assertThat(setting.isWithinRange(0.0015, 0, null)).isFalse();
+        assertThat(setting.isWithinRange(0.0015, 0, 0.0)).isFalse();
+
+        // A device reporting ~30m of GPS uncertainty should clear it.
+        assertThat(setting.isWithinRange(0.0015, 0, 30.0)).isTrue();
+    }
+
+    @Test
+    void isWithinRangeCapsHowMuchAccuracyCanWidenTheRadius() {
+        // ~277m north of the school - a wildly generous claimed accuracy must not paper over that.
+        var setting = settingAt(0, 0, 150, null);
+
+        assertThat(setting.isWithinRange(0.0025, 0, 5000.0)).isFalse();
+    }
+
+    @Test
     void hasIpRestrictionIsFalseWhenAllowedIpsIsNullOrBlank() {
         assertThat(settingAt(0, 0, 150, null).hasIpRestriction()).isFalse();
         assertThat(settingAt(0, 0, 150, "").hasIpRestriction()).isFalse();

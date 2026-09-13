@@ -14,7 +14,12 @@ public record ClockInDTO(
         @NotNull(message = "Longitude is required")
         @DecimalMin(value = "-180", message = "Longitude must be between -180 and 180")
         @DecimalMax(value = "180", message = "Longitude must be between -180 and 180")
-        Double longitude
+        Double longitude,
+
+        // The device's reported GPS accuracy radius in metres (position.coords.accuracy).
+        // Optional - older clients that don't send it just get no tolerance widening.
+        @DecimalMin(value = "0", message = "Accuracy cannot be negative")
+        Double accuracy
 
 ) {
 }

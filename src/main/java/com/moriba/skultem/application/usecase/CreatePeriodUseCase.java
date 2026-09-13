@@ -2,11 +2,11 @@ package com.moriba.skultem.application.usecase;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Period;
 import com.moriba.skultem.domain.model.Timing;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.PeriodRepository;
-import com.moriba.skultem.domain.repository.TimingRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CreatePeriodUseCase {
 
-    private final TimingRepository timingRepo;
+    private final ResolveTimingForLevelUseCase resolveTimingForLevelUseCase;
     private final ClassSessionRepository sessionRepo;
     private final PeriodRepository repo;
     private final LogActivityUseCase logActivityUseCase;
@@ -41,11 +41,10 @@ public class CreatePeriodUseCase {
 
     private Period create(String schoolId, String sessionId, Period.Type type) {
 
-        var timing = timingRepo.findBySchoolId(schoolId)
-                .orElseThrow(() -> new NotFoundException("No timing found"));
-
         var session = sessionRepo.findByIdAndSchoolId(sessionId, schoolId)
                 .orElseThrow(() -> new NotFoundException("No class found"));
+
+        var timing = resolveTiming(schoolId, session);
 
         String id = UUID.randomUUID().toString();
 
@@ -73,6 +72,13 @@ public class CreatePeriodUseCase {
         );
 
         return domain;
+    }
+
+    // The class's Level (PRIMARY/JSS/SSS, via its Clazz) picks which Timing template applies -
+    // falling back to the school's default template when that level has no explicit assignment.
+    private Timing resolveTiming(String schoolId, ClassSession session) {
+        var level = session.getClazz() != null ? session.getClazz().getLevel() : null;
+        return resolveTimingForLevelUseCase.execute(schoolId, level);
     }
 
     private PeriodDuration getDuration(

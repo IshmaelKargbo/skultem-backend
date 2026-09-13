@@ -40,7 +40,7 @@ public class TeacherAttendanceController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
             @Valid @RequestBody ClockInDTO param) {
-        var res = service.clockIn(school, userId, param.latitude(), param.longitude());
+        var res = service.clockIn(school, userId, param.latitude(), param.longitude(), param.accuracy());
         String message = res.alreadyClockedIn() ? "You've already clocked in today" : "Clocked in successfully";
         return new ApiResponse<>("success", 200, message, res);
     }
@@ -51,7 +51,7 @@ public class TeacherAttendanceController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
             @Valid @RequestBody ClockInDTO param) {
-        var res = service.clockOut(school, userId, param.latitude(), param.longitude());
+        var res = service.clockOut(school, userId, param.latitude(), param.longitude(), param.accuracy());
         String message = res.alreadyClockedOut() ? "You've already clocked out today" : "Clocked out successfully";
         return new ApiResponse<>("success", 200, message, res);
     }

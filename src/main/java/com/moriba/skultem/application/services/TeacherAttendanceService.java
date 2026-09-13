@@ -45,12 +45,12 @@ public class TeacherAttendanceService {
     private final AdminClockInUseCase adminClockInUseCase;
     private final AdminClockOutUseCase adminClockOutUseCase;
 
-    public ClockInResponseDTO clockIn(String schoolId, String userId, double latitude, double longitude) {
-        return clockInUseCase.execute(schoolId, userId, latitude, longitude);
+    public ClockInResponseDTO clockIn(String schoolId, String userId, double latitude, double longitude, Double accuracyMeters) {
+        return clockInUseCase.execute(schoolId, userId, latitude, longitude, accuracyMeters);
     }
 
-    public ClockOutResponseDTO clockOut(String schoolId, String userId, double latitude, double longitude) {
-        return clockOutUseCase.execute(schoolId, userId, latitude, longitude);
+    public ClockOutResponseDTO clockOut(String schoolId, String userId, double latitude, double longitude, Double accuracyMeters) {
+        return clockOutUseCase.execute(schoolId, userId, latitude, longitude, accuracyMeters);
     }
 
     public void mark(String schoolId, LocalDate date, List<TeacherAttendanceRecordDTO> records) {

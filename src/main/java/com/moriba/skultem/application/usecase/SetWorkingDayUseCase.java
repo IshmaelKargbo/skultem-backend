@@ -22,10 +22,10 @@ public class SetWorkingDayUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "WORKING_DAY_SET")
-    public List<WorkingDay> execute(String schoolId, List<WorkingDayRecord> days) {
+    public List<WorkingDay> execute(String schoolId, String timingId, List<WorkingDayRecord> days) {
 
-        var timing = timingRepo.findBySchoolId(schoolId)
-                .orElseThrow(() -> new NotFoundException("No school timing has been configured yet"));
+        var timing = timingRepo.findByIdAndSchoolId(timingId, schoolId)
+                .orElseThrow(() -> new NotFoundException("No timing template found"));
 
         List<WorkingDay> result = new ArrayList<>();
 
@@ -33,9 +33,9 @@ public class SetWorkingDayUseCase {
 
             WorkingDay domain;
 
-            if (repo.existsByDayAndSchoolId(record.day(), schoolId)) {
+            if (repo.existsByDayAndTimingId(record.day(), timingId)) {
 
-                domain = repo.findByDayAndSchoolId(record.day(), schoolId)
+                domain = repo.findByDayAndTimingId(record.day(), timingId)
                         .orElseThrow(() -> new NotFoundException("Working day not found"));
 
                 domain.setState(record.state());
@@ -58,7 +58,7 @@ public class SetWorkingDayUseCase {
                 schoolId,
                 ActivityType.SCHOOL,
                 "Working days updated",
-                "Configured " + days.size() + " working days",
+                "Configured " + days.size() + " working days for " + timing.getName(),
                 null,
                 timing.getId()
         );
