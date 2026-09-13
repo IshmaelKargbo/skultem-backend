@@ -79,10 +79,6 @@ public interface ClassSessionJpaRepository
 
     Long countBySchoolId(String schoolId);
 
-    // sectionId/streamId/query are always real (possibly empty) strings, never null - a null
-    // String bound into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type
-    // from context and it falls back to bytea ("function lower(bytea) does not exist"). See
-    // ListClassSessionBySchoolUseCase.
     @Query("""
                 select cs from ClassSessionEntity cs
                 left join cs.stream st
