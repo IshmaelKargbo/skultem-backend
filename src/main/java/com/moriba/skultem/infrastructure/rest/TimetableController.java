@@ -184,6 +184,18 @@ public class TimetableController {
         return new ApiResponse<>("success", 200, "period delete successfully", res);
     }
 
+    // Adjusts a single period's start/end time on that period's own class session only - other
+    // classes sharing the same Timing template or Level are untouched.
+    @PatchMapping("/period/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<PeriodDTO> updatePeriod(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdatePeriodDTO param) {
+        var res = timetableSvc.updatePeriod(school, id, param.startTime(), param.endTime());
+        return new ApiResponse<>("success", 200, "Period time updated successfully", res);
+    }
+
     @DeleteMapping("/room/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<RoomDTO> deleteRoom(

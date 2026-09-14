@@ -13,6 +13,7 @@ import com.moriba.skultem.application.usecase.ResolveTimingForLevelUseCase;
 import com.moriba.skultem.application.usecase.SaveTimingUseCase;
 import com.moriba.skultem.application.usecase.SetDefaultTimingUseCase;
 import com.moriba.skultem.application.usecase.SetWorkingDayUseCase;
+import com.moriba.skultem.application.usecase.UpdatePeriodUseCase;
 import com.moriba.skultem.domain.model.WorkingDay.Day;
 import com.moriba.skultem.domain.repository.*;
 import com.moriba.skultem.domain.vo.Level;
@@ -53,6 +54,7 @@ public class TimetableService {
     private final CreatePeriodUseCase createPeriodUseCase;
     private final SetWorkingDayUseCase setWorkingDayUseCase;
     private final DeletePeriodUseCase deletePeriodUseCase;
+    private final UpdatePeriodUseCase updatePeriodUseCase;
 
     public Page<RoomDTO> searchRoom(String schoolId, String value, int page, int size) {
         Pageable pageable = PageableMapper.toPage(page, size);
@@ -184,6 +186,19 @@ public class TimetableService {
     public PeriodDTO deletePeriod(String id) {
         var domain = deletePeriodUseCase.execute(id);
         return PeriodMapper.toDTO(domain, null);
+    }
+
+    // Adjusts one period's start/end time. Scoped to a single Period, which belongs to a single
+    // ClassSession, so this can only ever affect that one class's timetable.
+    public PeriodDTO updatePeriod(String schoolId, String id, LocalTime startTime, LocalTime endTime) {
+        var domain = updatePeriodUseCase.execute(schoolId, id, startTime, endTime);
+        List<TimetableDTO> subjects = new ArrayList<>();
+
+        if (!domain.isBreak() && !domain.isLunch()) {
+            subjects = getSubjects(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
+        }
+
+        return PeriodMapper.toDTO(domain, subjects);
     }
 
     // The working days that apply to a specific class session's timetable grid - resolved via
