@@ -83,4 +83,17 @@ public class User extends AggregateRoot<String> {
         this.status = Status.ACTIVE;
         touch(Instant.now());
     }
+
+    // An admin issuing a brand new temporary password on this user's behalf - e.g. they're
+    // locked out and can't reach the self-service resetPassword() flow above (which requires
+    // already being in RESET_PASSWORD state to use). Works from any state and puts the account
+    // into RESET_PASSWORD, exactly like a freshly created account (see create()), so the admin
+    // can hand the plaintext temp password to them and they're forced through /reset-password
+    // the next time they log in.
+    public void issueTemporaryPassword(String passwordHash, String hint) {
+        this.password = passwordHash;
+        this.hint = hint;
+        this.status = Status.RESET_PASSWORD;
+        touch(Instant.now());
+    }
 }

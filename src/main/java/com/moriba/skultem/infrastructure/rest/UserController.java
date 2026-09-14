@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.AdminResetPasswordResultDTO;
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.dto.UserPayrollStatusDTO;
 import com.moriba.skultem.application.services.UserService;
+import com.moriba.skultem.application.usecase.AdminResetPasswordUseCase;
 import com.moriba.skultem.application.usecase.CreateUserUseCase;
 import com.moriba.skultem.application.usecase.GetUserPayrollStatusUseCase;
 import com.moriba.skultem.application.usecase.GetUserUseCase;
@@ -49,6 +51,7 @@ public class UserController {
     private final CreateUserUseCase createUserUseCase;
     private final ListUserBySchoolUseCase listUserBySchoolUseCase;
     private final ResetPasswordUseCase resetPasswordUseCase;
+    private final AdminResetPasswordUseCase adminResetPasswordUseCase;
     private final UserService svc;
     private final GetUserUseCase getUserUseCase;
     private final GetUserPayrollStatusUseCase getUserPayrollStatusUseCase;
@@ -86,6 +89,23 @@ public class UserController {
         var payload = new ResetPasswordUseCase.ResetPassword(userId, param.password(), school);
         var res = resetPasswordUseCase.execute(payload);
         return new ApiResponse<>("success", 200, "User reset password successfully", res);
+    }
+
+    // An ADMIN/OWNER/PROPRIETOR issuing a brand new temporary password for a staff member -
+    // e.g. they're locked out and can't reach the self-service resetPassword() above (which
+    // only works while the caller's own account is already in RESET_PASSWORD state). Unlike
+    // that endpoint, this one works on any staff account and puts it into RESET_PASSWORD, so
+    // the temporaryPassword in the response is meant to be shared with them directly (call,
+    // chat, in person) - they're forced through /reset-password on next login.
+    // See AdminResetPasswordUseCase.
+    @PostMapping("/{id}/reset-password")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<AdminResetPasswordResultDTO> adminResetPassword(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String actingUserId,
+            @PathVariable String id) {
+        var res = adminResetPasswordUseCase.execute(school, id, actingUserId);
+        return new ApiResponse<>("success", 200, "Temporary password generated successfully", res);
     }
 
     @GetMapping
