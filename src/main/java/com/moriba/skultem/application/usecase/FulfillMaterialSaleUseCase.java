@@ -47,13 +47,11 @@ public class FulfillMaterialSaleUseCase {
         supplyMaterialUseCase.execute(schoolId, domain.getSupplyId(), domain.getQuantity(),
                 note != null && !note.isBlank() ? note : "Pre-sold item fulfilled");
 
-        try {
-            domain.fulfill();
-        } catch (IllegalStateException ex) {
-            throw new RuleException(ex.getMessage());
-        }
-
-        repo.save(domain);
+        // SupplyMaterialUseCase just collected this sale's whole linked Supply, which marks and
+        // saves this exact sale FULFILLED itself (see Supply#sourceSaleId there) - re-read it
+        // fresh rather than trust this now-stale copy.
+        domain = repo.findByIdAndSchool(id, schoolId)
+                .orElseThrow(() -> new NotFoundException("sale not found"));
 
         String buyer = domain.getStudent() != null ? domain.getStudent().getName() : domain.getCustomerName();
 

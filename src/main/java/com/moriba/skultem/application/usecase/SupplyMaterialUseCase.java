@@ -12,12 +12,14 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.events.SupplyCollectedEvent;
 import com.moriba.skultem.application.mapper.SupplyMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.MaterialSale;
 import com.moriba.skultem.domain.model.MaterialTransaction;
 import com.moriba.skultem.domain.model.MaterialTransaction.Direction;
 import com.moriba.skultem.domain.model.Supply;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SupplyRepository;
 import com.moriba.skultem.domain.repository.MaterialRepository;
+import com.moriba.skultem.domain.repository.MaterialSaleRepository;
 import com.moriba.skultem.domain.repository.MaterialTransactionRepository;
 import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
@@ -36,6 +38,7 @@ public class SupplyMaterialUseCase {
     private final SupplyRepository repo;
     private final MaterialRepository materialRepo;
     private final MaterialTransactionRepository materialTransactionRepo;
+    private final MaterialSaleRepository materialSaleRepo;
     private final StudentParentRepository studentParentRepo;
     private final ApplicationEventPublisher eventPublisher;
     private final LogActivityUseCase logActivityUseCase;
@@ -74,6 +77,21 @@ public class SupplyMaterialUseCase {
         // under-recording what the student actually received.
         material.deduct(qtyToCollect);
         materialRepo.save(material);
+
+        // If this Supply came from a sale rather than a paid fee (see Supply#sourceSaleId), keep
+        // that sale's status in sync now that the goods have actually changed hands - it's only
+        // "handed over" once its whole linked Supply is collected, mirroring the COLLECTED
+        // transition above. This is the only place that happens, so a sale fulfilled through the
+        // Sales module's own "Fulfill" action (see FulfillMaterialSaleUseCase) and one collected
+        // straight from the general Supply page both stay consistent.
+        if (domain.getSourceSaleId() != null && domain.getStatus() == Supply.Status.COLLECTED) {
+            materialSaleRepo.findByIdAndSchool(domain.getSourceSaleId(), schoolId)
+                    .filter(sale -> sale.getStatus() == MaterialSale.Status.PENDING_SUPPLY)
+                    .ifPresent(sale -> {
+                        sale.fulfill();
+                        materialSaleRepo.save(sale);
+                    });
+        }
 
         // activity log
         logActivityUseCase.log(
