@@ -53,14 +53,19 @@ public class Attendance extends AggregateRoot<String> {
     }
 
     public String getStatus() {
+        // A "late" mark is recorded as present=true, late=true (the student did show up, just
+        // late) - checking present first, as this used to, always won and reported "Present"
+        // before late was ever consulted, silently hiding every late arrival (from this school's
+        // reports, the parent portal calendar, everywhere getStatus() is used) behind a 100%
+        // present rate.
+        if (isPresent() && isLate())
+            return "Late";
         if (isPresent())
             return "Present";
         if (isExcused())
             return "Excused";
         if (isHoliday())
             return "Holiday";
-        if (isLate())
-            return "Late";
         return "Absent";
     }
 }
