@@ -19,8 +19,15 @@ import lombok.RequiredArgsConstructor;
 // Settles a pre-sold ("settle later") sale once stock has actually arrived, by collecting its
 // linked Supply - the same mechanism a fee-entitled Supply already uses. See
 // CreateMaterialSaleUseCase and Supply#sourceSaleId.
+//
+// dontRollbackOn: the catch below handles supplyMaterialUseCase's IllegalStateException (a
+// concurrent duplicate fulfill), but SupplyMaterialUseCase is its own @Transactional bean joining
+// this same transaction - by the time that exception reaches our catch, its proxy has already
+// marked the shared transaction rollback-only, so without this we'd "handle" it here and still
+// blow up with UnexpectedRollbackException at commit. See CreateMaterialSaleUseCase for the same
+// pattern.
 @Service
-@Transactional
+@Transactional(dontRollbackOn = IllegalStateException.class)
 @RequiredArgsConstructor
 public class FulfillMaterialSaleUseCase {
 
@@ -44,8 +51,27 @@ public class FulfillMaterialSaleUseCase {
                     + " first");
         }
 
-        supplyMaterialUseCase.execute(schoolId, domain.getSupplyId(), domain.getQuantity(),
-                note != null && !note.isBlank() ? note : "Pre-sold item fulfilled");
+        try {
+            supplyMaterialUseCase.execute(schoolId, domain.getSupplyId(), domain.getQuantity(),
+                    note != null && !note.isBlank() ? note : "Pre-sold item fulfilled");
+        } catch (IllegalStateException ex) {
+            // Two concurrent "Fulfill" requests for the same sale (double-click, a retried
+            // request) can both pass the PENDING_SUPPLY check above before either commits - the
+            // first collects the whole linked Supply and flips this sale to FULFILLED, then the
+            // second reaches here to find nothing left to collect. Re-read: if the other request
+            // really did already fulfill it, this one is a harmless duplicate - treat it as
+            // success instead of surfacing a conflict for something that, from the caller's
+            // perspective, already happened. Any other state (still PENDING_SUPPLY) means this
+            // genuinely failed, so let it propagate.
+            var fresh = repo.findByIdAndSchool(id, schoolId)
+                    .orElseThrow(() -> new NotFoundException("sale not found"));
+
+            if (fresh.getStatus() != Status.FULFILLED) {
+                throw ex;
+            }
+
+            return MaterialSaleMapper.toDTO(fresh);
+        }
 
         // SupplyMaterialUseCase just collected this sale's whole linked Supply, which marks and
         // saves this exact sale FULFILLED itself (see Supply#sourceSaleId there) - re-read it

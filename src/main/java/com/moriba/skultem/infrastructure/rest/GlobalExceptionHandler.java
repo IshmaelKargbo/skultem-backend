@@ -62,6 +62,17 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "ILLEGAL_ARGUMENT", ex);
     }
 
+    // Domain guards like Supply#collect()/MaterialSale#fulfill() throw this when the entity's
+    // state no longer allows the requested transition (e.g. two concurrent "Fulfill"/"Collect"
+    // requests for the same Supply race past their pre-checks and the loser hits an
+    // already-exhausted quantity). That's a client-facing conflict, not a server bug - it was
+    // falling through to the generic 500 handler below, showing "Something went wrong" instead of
+    // the specific, actionable reason.
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalState(IllegalStateException ex) {
+        return build(HttpStatus.CONFLICT, "CONFLICT", ex);
+    }
+
     // A request DTO's compact constructor (e.g. UpdateFeeStructureDTO, CreateFeeStructureDTO -
     // cross-field checks like "newStudentsOnly and oldStudentsOnly cannot both be true") throws
     // IllegalArgumentException while Jackson is still building the object from the request body,
