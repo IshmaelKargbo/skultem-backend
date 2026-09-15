@@ -13,6 +13,7 @@ import com.moriba.skultem.domain.model.TeacherAttendance;
 import com.moriba.skultem.domain.repository.AttendanceLocationSettingRepository;
 import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.domain.vo.ActivityType;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,7 +62,7 @@ public class ClockInUseCase {
                     distance, settings.getRadiusMeters()));
         }
 
-        var today = LocalDate.now();
+        var today = LocalDate.now(SchoolTimeZone.ZONE);
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, today);
 
         if (existing.isPresent()) {

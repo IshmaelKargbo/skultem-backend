@@ -11,6 +11,7 @@ import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.AttendanceLocationSettingRepository;
 import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.domain.vo.ActivityType;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +56,7 @@ public class ClockOutUseCase {
                     distance, settings.getRadiusMeters()));
         }
 
-        var today = LocalDate.now();
+        var today = LocalDate.now(SchoolTimeZone.ZONE);
         var attendance = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, today)
                 .orElseThrow(() -> new BadRequestException("You haven't clocked in today yet"));
 

@@ -29,6 +29,7 @@ import com.moriba.skultem.domain.model.Teacher;
 import com.moriba.skultem.domain.model.TeacherAttendance;
 import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.infrastructure.rest.dto.TeacherAttendanceRecordDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -64,7 +65,8 @@ public class TeacherAttendanceService {
                 .orElseThrow(() -> new NotFoundException(
                         "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
 
-        var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, LocalDate.now());
+        var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId,
+                LocalDate.now(SchoolTimeZone.ZONE));
 
         return existing.map(a -> new MyAttendanceTodayDTO(a.getStatus(), a.getClockedInAt(), a.getClockedOutAt()))
                 .orElse(new MyAttendanceTodayDTO(null, null, null));

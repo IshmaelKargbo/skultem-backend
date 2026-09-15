@@ -11,6 +11,7 @@ import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.TeacherAttendance;
 import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
+import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.domain.vo.ActivityType;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +38,7 @@ public class AdminClockInUseCase {
                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
         String ip = getClientIp();
-        var today = LocalDate.now();
+        var today = LocalDate.now(SchoolTimeZone.ZONE);
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, today);
 
         if (existing.isPresent()) {

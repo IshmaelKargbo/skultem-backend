@@ -44,6 +44,8 @@ spring:
     baseline-description: baseline
     enabled: true
     locations: classpath:db/migration
+  jackson:
+    time-zone: Africa/Freetown
   jpa:
     hibernate:
       ddl-auto: validate
@@ -63,10 +65,6 @@ spring:
       enabled: true
 system:
   admin:
-    # Gate for POST /api/v1/system/bootstrap (BootstrapSystemAdminUseCase) - deliberately no
-    # fallback value like the secrets above. Left unset, the endpoint refuses every request
-    # rather than falling open. Set it, call the endpoint once to create the first SYSTEM_ADMIN,
-    # then unset/rotate it - the endpoint also self-disables once any SYSTEM_ADMIN exists.
     bootstrap-token: ${SYSTEM_ADMIN_BOOTSTRAP_TOKEN:}
 r2:
   account-id: ${R2_ACCOUNT_ID:1317919cf429d1c5f81310e82e8f5663}
