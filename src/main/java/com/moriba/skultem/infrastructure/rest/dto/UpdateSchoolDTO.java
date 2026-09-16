@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -16,6 +18,8 @@ public record UpdateSchoolDTO(
 
         @NotBlank(message = "Chiefdom is required") @Size(min = 5, max = 255, message = "Chiefdom must be between 5 and 255 characters") String chiefdom,
 
-        @NotBlank(message = "City is required") String city
+        @NotBlank(message = "City is required") String city,
+
+        @DecimalMin(value = "0", message = "Attendance threshold cannot be less than 0") @DecimalMax(value = "100", message = "Attendance threshold cannot be greater than 100") Double attendanceThreshold
 ) {
 }

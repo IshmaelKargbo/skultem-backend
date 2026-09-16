@@ -15,6 +15,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.SubjectEntity;
 public interface SubjectJpaRepository extends JpaRepository<SubjectEntity, String> {
     boolean existsByCodeIgnoreCaseAndSchoolId(String code, String schoolId);
 
+    boolean existsByCodeIgnoreCaseAndSchoolIdAndIdNot(String code, String schoolId, String id);
+
     Optional<SubjectEntity> findByIdAndSchoolId(String id, String schoolId);
 
     List<SubjectEntity> findAllByIdInAndSchoolId(Set<String> ids, String schoolId);

@@ -198,6 +198,25 @@ public class PermissionService {
         return master.isPresent() && master.get().getTeacher().getId().equals(teacher.get().getId());
     }
 
+    // "Their own classes" for a Teacher means being that class session's class master - the same
+    // relationship ListClassSessionByTeacherUseCase uses to build a teacher's class list (the
+    // "/class-sessions/me" dropdown Mark Attendance and the Daily Register both feed from), so a
+    // teacher can't view another class's register just by knowing/guessing its classSessionId.
+    public boolean canAccessClassSessionAsTeacher(String schoolId, String classSessionId) {
+        if (!hasRole(Role.TEACHER)) {
+            return false;
+        }
+
+        var teacher = teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
+        if (teacher.isEmpty()) {
+            return false;
+        }
+
+        var master = classMasterRepo.findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(classSessionId);
+
+        return master.isPresent() && master.get().getTeacher().getId().equals(teacher.get().getId());
+    }
+
     public boolean canManagePromotionRequest(String schoolId, String requestId) {
         if (isSystemAdmin()) {
             return true;

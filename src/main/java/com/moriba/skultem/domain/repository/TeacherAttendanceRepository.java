@@ -11,6 +11,8 @@ public interface TeacherAttendanceRepository {
 
     void saveAll(List<TeacherAttendance> domains);
 
+    void delete(TeacherAttendance domain);
+
     Optional<TeacherAttendance> findByTeacherIdAndSchoolIdAndDate(String teacherId, String schoolId, LocalDate date);
 
     List<TeacherAttendance> findAllBySchoolIdAndDate(String schoolId, LocalDate date);
@@ -21,4 +23,8 @@ public interface TeacherAttendanceRepository {
     // profile page, as opposed to the whole-school roster/history views above.
     List<TeacherAttendance> findAllBySchoolIdAndTeacherIdBetween(String schoolId, String teacherId, LocalDate from,
             LocalDate to);
+
+    // Row shape: [teacherId, presentCount (Long), lateCount (Long), absentOrExcusedCount (Long),
+    // totalCount (Long)] - see TeacherAttendanceJpaRepository.attendanceCountsByTeacherAndDateRange.
+    List<Object[]> attendanceCountsByTeacherAndDateRange(String schoolId, LocalDate startDate, LocalDate endDate);
 }

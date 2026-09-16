@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 
@@ -16,10 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AttendanceDTO;
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
+import com.moriba.skultem.application.dto.ClassAttendanceSummaryDTO;
 import com.moriba.skultem.application.dto.ClassSessionAttendanceDTO;
+import com.moriba.skultem.application.dto.InspectionReportDTO;
+import com.moriba.skultem.application.dto.InspectionReportType;
+import com.moriba.skultem.application.dto.StudentAttendanceSummaryDTO;
+import com.moriba.skultem.application.dto.TermAttendanceSummaryDTO;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.DeleteAttendanceUseCase;
 import com.moriba.skultem.application.usecase.DeleteClassSessionAttendanceUseCase;
+import com.moriba.skultem.application.usecase.GenerateClassAttendanceSummaryUseCase;
+import com.moriba.skultem.application.usecase.GenerateDailyAttendanceRegisterUseCase;
+import com.moriba.skultem.application.usecase.GenerateInspectionReportUseCase;
+import com.moriba.skultem.application.usecase.GenerateMonthlyAttendanceSummaryUseCase;
+import com.moriba.skultem.application.usecase.GenerateTermAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GetAttendanceUseCase;
 import com.moriba.skultem.application.usecase.GetClassSessionAttendanceUseCase;
 import com.moriba.skultem.application.usecase.ListAttendanceBySchoolUseCase;
@@ -42,6 +54,11 @@ public class AttendanceController {
     private final DeleteClassSessionAttendanceUseCase deleteClassSessionAttendanceUseCase;
     private final AttendanceReportUseCase attendanceReportUseCase;
     private final GetClassSessionAttendanceUseCase getClassSessionAttendanceUseCase;
+    private final GenerateDailyAttendanceRegisterUseCase generateDailyAttendanceRegisterUseCase;
+    private final GenerateMonthlyAttendanceSummaryUseCase generateMonthlyAttendanceSummaryUseCase;
+    private final GenerateTermAttendanceSummaryUseCase generateTermAttendanceSummaryUseCase;
+    private final GenerateInspectionReportUseCase generateInspectionReportUseCase;
+    private final GenerateClassAttendanceSummaryUseCase generateClassAttendanceSummaryUseCase;
 
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
@@ -128,6 +145,63 @@ public class AttendanceController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Class attendance sheet fetched successfully", list, meta);
+    }
+
+    @GetMapping("/register/{classSessionId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') "
+            + "or @permissionService.canAccessClassSessionAsTeacher(#school, #classSessionId)")
+    public ApiResponse<ClassSessionAttendanceDTO> getDailyRegister(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classSessionId,
+            @RequestParam(required = true) LocalDate date) {
+        var res = generateDailyAttendanceRegisterUseCase.execute(school, classSessionId, date);
+        return new ApiResponse<>("success", 200, "Daily attendance register fetched successfully", res);
+    }
+
+    @GetMapping("/summary/monthly")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<List<StudentAttendanceSummaryDTO>> getMonthlySummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) String classSessionId,
+            @RequestParam(required = true) Integer year,
+            @RequestParam(required = true) Integer month) {
+        var res = generateMonthlyAttendanceSummaryUseCase.execute(school, classSessionId, YearMonth.of(year, month));
+        return new ApiResponse<>("success", 200, "Monthly attendance summary fetched successfully", res);
+    }
+
+    @GetMapping("/summary/term")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<TermAttendanceSummaryDTO> getTermSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) String classSessionId,
+            @RequestParam(required = true) String termId) {
+        var res = generateTermAttendanceSummaryUseCase.execute(school, classSessionId, termId);
+        return new ApiResponse<>("success", 200, "Term attendance summary fetched successfully", res);
+    }
+
+    @GetMapping("/summary/class")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ClassAttendanceSummaryDTO> getClassSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId) {
+        var res = generateClassAttendanceSummaryUseCase.execute(school, academicYearId, termId);
+        return new ApiResponse<>("success", 200, "Class attendance summary fetched successfully", res);
+    }
+
+    @GetMapping("/inspection-report")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<InspectionReportDTO> getInspectionReport(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) InspectionReportType reportType,
+            @RequestParam(required = true) String classSessionId,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        var res = generateInspectionReportUseCase.execute(school, reportType, classSessionId, termId, date, year,
+                month);
+        return new ApiResponse<>("success", 200, "Inspection report generated successfully", res);
     }
 
     private MarkRecord toMarkRecord(ClassAttendanceMarkDTO param) {

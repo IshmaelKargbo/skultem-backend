@@ -20,7 +20,7 @@ public class SchoolMapper {
         return new School(param.getId(), param.getName(), param.getDomain(), address, owner,
                 param.getStatus(), gradingScale, param.getLogo(), param.getMotto(), param.getPrincipalName(),
                 param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getAttendanceThreshold(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static SchoolEntity toEntity(School args) {
@@ -42,6 +42,7 @@ public class SchoolMapper {
                 .principalSignature(args.getPrincipalSignature())
                 .primaryColor(args.getPrimaryColor())
                 .secondaryColor(args.getSecondaryColor())
+                .attendanceThreshold(args.getAttendanceThreshold())
                 .createdAt(args.getCreatedAt())
                 .updatedAt(args.getUpdatedAt())
                 .build();

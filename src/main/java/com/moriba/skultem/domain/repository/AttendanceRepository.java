@@ -36,5 +36,23 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsByClassSince(String schoolId, String classId, String academicYearId,
             LocalDate since);
 
+    // Per-student attendance counts for one class SESSION (class + section + stream, matching the
+    // same section/stream scoping GetClassSessionAttendanceUseCase's roster uses) over an explicit
+    // date range - backs Monthly Summary, Term Summary and the matching Inspection Report types.
+    // A null streamId matches enrollments with no stream (the "no stream" class session), same
+    // null-safe convention as loadSessionEnrollments. Row shape: [enrollmentId, studentId,
+    // givenNames, familyName, admissionNumber, gender (Gender), presentOrLateCount (Long),
+    // lateCount (Long), totalRecorded (Long)].
+    List<Object[]> attendanceCountsBySessionAndDateRange(String schoolId, String classId, String sectionId,
+            String streamId, String academicYearId, LocalDate startDate, LocalDate endDate);
+
+    // Per-student attendance counts across EVERY class session in the school for one date range -
+    // backs Class Summary (one row per class session, computed by grouping these rows in Java
+    // rather than issuing one query per class session). Row shape: [classId, className, sectionId,
+    // sectionName, streamId (nullable), streamName (nullable), enrollmentId, studentId, gender
+    // (Gender), presentOrLateCount (Long), lateCount (Long), totalRecorded (Long)].
+    List<Object[]> attendanceCountsBySchoolAndDateRange(String schoolId, String academicYearId, LocalDate startDate,
+            LocalDate endDate);
+
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

@@ -37,6 +37,11 @@ public class SubjectAdapter implements SubjectRepository {
     }
 
     @Override
+    public boolean existsByCodeAndSchoolAndIdNot(String code, String school, String subjectId) {
+        return repo.existsByCodeIgnoreCaseAndSchoolIdAndIdNot(code, school, subjectId);
+    }
+
+    @Override
     public Page<Subject> findBySchool(String school, Pageable pageable) {
         return repo.findAllBySchoolId(school, pageable).map(SubjectMapper::toDomain);
     }

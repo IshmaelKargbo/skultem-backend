@@ -14,8 +14,8 @@ public class AttendanceMapper {
         }
 
         return new Attendance(param.getId(), param.getSchoolId(), enrollment, param.getDate(), param.isPresent(),
-                param.isExcused(), param.isLate(), param.getReason(), param.isHoliday(), param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.isExcused(), param.isLate(), param.getReason(), param.isHoliday(),
+                param.getRecordedByUserId(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static AttendanceEntity toEntity(Attendance args) {
@@ -35,6 +35,7 @@ public class AttendanceMapper {
                 .late(args.isLate())
                 .reason(args.getReason())
                 .holiday(args.isHoliday())
+                .recordedByUserId(args.getRecordedByUserId())
                 .createdAt(args.getCreatedAt())
                 .updatedAt(args.getUpdatedAt())
                 .build();

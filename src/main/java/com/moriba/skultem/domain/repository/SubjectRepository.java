@@ -20,6 +20,8 @@ public interface SubjectRepository {
 
     boolean existsByCodeAndSchool(String code, String school);
 
+    boolean existsByCodeAndSchoolAndIdNot(String code, String school, String subjectId);
+
     Page<Subject> findBySchool(String school, Pageable pageable);
 
     // Matches on name or code - backs the subjects list search box.

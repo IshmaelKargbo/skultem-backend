@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,14 @@ import com.moriba.skultem.application.dto.MyAttendanceTodayDTO;
 import com.moriba.skultem.application.dto.TeacherAttendanceDayDTO;
 import com.moriba.skultem.application.dto.TeacherAttendanceDaySummaryDTO;
 import com.moriba.skultem.application.dto.TeacherAttendanceRosterDTO;
+import com.moriba.skultem.application.dto.TeacherAttendanceSummaryRowDTO;
+import com.moriba.skultem.application.dto.TeacherManagementReportDTO;
+import com.moriba.skultem.application.dto.TeacherManagementReportType;
+import com.moriba.skultem.application.dto.TermTeacherAttendanceSummaryDTO;
 import com.moriba.skultem.application.services.TeacherAttendanceService;
+import com.moriba.skultem.application.usecase.GenerateMonthlyTeacherAttendanceSummaryUseCase;
+import com.moriba.skultem.application.usecase.GenerateTeacherManagementReportUseCase;
+import com.moriba.skultem.application.usecase.GenerateTermTeacherAttendanceSummaryUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.ClockInDTO;
 import com.moriba.skultem.infrastructure.rest.dto.MarkTeacherAttendanceDTO;
@@ -30,6 +38,9 @@ import lombok.RequiredArgsConstructor;
 public class TeacherAttendanceController {
 
     private final TeacherAttendanceService service;
+    private final GenerateMonthlyTeacherAttendanceSummaryUseCase generateMonthlyTeacherAttendanceSummaryUseCase;
+    private final GenerateTermTeacherAttendanceSummaryUseCase generateTermTeacherAttendanceSummaryUseCase;
+    private final GenerateTeacherManagementReportUseCase generateTeacherManagementReportUseCase;
 
     // Self-service - overrides the class-level admin-only restriction for just these three.
     // Any staff role can clock themselves in/out, not just teachers - actually succeeding still
@@ -96,6 +107,16 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, message, res);
     }
 
+    // Undoes today's most recent clock event (clock-out if there is one, otherwise clock-in) -
+    // for correcting a mistaken clock. Inherits the class-level ADMIN/OWNER/PROPRIETOR gate.
+    @PostMapping("/{teacherId}/admin-unclock")
+    public ApiResponse<Void> adminUnclock(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherId) {
+        service.adminUnclock(school, teacherId);
+        return new ApiResponse<>("success", 200, "Clock corrected successfully", null);
+    }
+
     // Self-service - overrides the class-level admin-only restriction, same as /me/today. Scoped
     // to the signed-in user's own teacher record (see TeacherAttendanceService#myHistory) rather
     // than an admin-supplied teacherId, so a teacher can't pull another staff member's history.
@@ -143,5 +164,34 @@ public class TeacherAttendanceController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return new ApiResponse<>("success", 200, "Roster fetched successfully", service.roster(school, date));
+    }
+
+    @GetMapping("/summary/monthly")
+    public ApiResponse<List<TeacherAttendanceSummaryRowDTO>> getMonthlySummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) Integer year,
+            @RequestParam(required = true) Integer month) {
+        var res = generateMonthlyTeacherAttendanceSummaryUseCase.execute(school, YearMonth.of(year, month));
+        return new ApiResponse<>("success", 200, "Monthly attendance summary fetched successfully", res);
+    }
+
+    @GetMapping("/summary/term")
+    public ApiResponse<TermTeacherAttendanceSummaryDTO> getTermSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) String termId) {
+        var res = generateTermTeacherAttendanceSummaryUseCase.execute(school, termId);
+        return new ApiResponse<>("success", 200, "Term attendance summary fetched successfully", res);
+    }
+
+    @GetMapping("/management-report")
+    public ApiResponse<TeacherManagementReportDTO> getManagementReport(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) TeacherManagementReportType reportType,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        var res = generateTeacherManagementReportUseCase.execute(school, reportType, termId, date, year, month);
+        return new ApiResponse<>("success", 200, "Management report generated successfully", res);
     }
 }

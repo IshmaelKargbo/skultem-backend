@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 class AttendanceTest {
 
     private Attendance attendanceWith(boolean present, boolean excused, boolean late, boolean holiday) {
-        return Attendance.create("A-1", "school-1", null, LocalDate.now(), present, excused, late, null, holiday);
+        return Attendance.create("A-1", "school-1", null, LocalDate.now(), present, excused, late, null, holiday,
+                null);
     }
 
     @Test

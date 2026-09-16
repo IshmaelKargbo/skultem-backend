@@ -14,12 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.StreamDTO;
-import com.moriba.skultem.application.dto.StreamSubjectDTO;
 import com.moriba.skultem.application.usecase.CreateStreamUseCase;
 import com.moriba.skultem.application.usecase.GetStreamUseCase;
 import com.moriba.skultem.application.usecase.ListStreamBySchoolUseCase;
-import com.moriba.skultem.application.usecase.ListStreamSubjectBySchoolUseCase;
-import com.moriba.skultem.application.usecase.ListStreamSubjectByStreamUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStreamDTO;
 
@@ -32,8 +29,6 @@ import lombok.RequiredArgsConstructor;
 public class StreamController {
     private final CreateStreamUseCase createStreamUseCase;
     private final ListStreamBySchoolUseCase listStreamBySchoolUseCase;
-    private final ListStreamSubjectBySchoolUseCase listStreamSubjectBySchoolUseCase;
-    private final ListStreamSubjectByStreamUseCase listStreamSubjectByStreamUseCase;
     private final GetStreamUseCase getStreamUseCase;
 
     @PostMapping
@@ -61,48 +56,6 @@ public class StreamController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Streams fetched successfully", list, meta);
-    }
-
-    @GetMapping("/subject")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
-    public ApiResponse<List<StreamSubjectDTO>> listSubjects(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page,
-            @RequestParam(required = false) String streamId,
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String direction) {
-        var res = listStreamSubjectBySchoolUseCase.execute(school, page - 1, size, streamId, query, sortBy,
-                direction);
-        var list = res.getContent();
-        Map<String, Object> meta = Map.of(
-                "page", res.getNumber() + 1,
-                "size", res.getSize(),
-                "count", res.getTotalElements(),
-                "pages", res.getTotalPages());
-
-        return new ApiResponse<>("success", 200, "Stream subjects fetched successfully", list,
-                meta);
-    }
-
-    @GetMapping("/subject/{streamId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
-    public ApiResponse<List<StreamSubjectDTO>> listSubjectsByStreamId(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable(required = true) String streamId,
-            @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listStreamSubjectByStreamUseCase.execute(school, streamId, page - 1, size);
-        var list = res.getContent();
-        Map<String, Object> meta = Map.of(
-                "page", res.getNumber() + 1,
-                "size", res.getSize(),
-                "count", res.getTotalElements(),
-                "pages", res.getTotalPages());
-
-        return new ApiResponse<>("success", 200, "Stream subjects fetched successfully", list,
-                meta);
     }
 
     @GetMapping("/{id}")

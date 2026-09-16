@@ -13,6 +13,7 @@ import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.infrastructure.rest.dto.TeacherAttendanceRecordDTO;
+import com.moriba.skultem.infrastructure.security.PermissionService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +31,14 @@ public class MarkTeacherAttendanceUseCase {
 
     @AuditLogAnnotation(action = "TEACHER_ATTENDANCE_MARKED")
     public void execute(String schoolId, LocalDate date, List<TeacherAttendanceRecordDTO> records) {
+        String recordedByUserId = PermissionService.getCurrentUser().userId();
+
         var toSave = records.stream().map(record -> {
             var existing = repo.findByTeacherIdAndSchoolIdAndDate(record.teacherId(), schoolId, date);
 
             if (existing.isPresent()) {
                 var attendance = existing.get();
-                attendance.update(record.status(), record.note());
+                attendance.update(record.status(), record.note(), recordedByUserId);
                 return attendance;
             }
 
@@ -43,7 +46,7 @@ public class MarkTeacherAttendanceUseCase {
                     .orElseThrow(() -> new NotFoundException("Teacher not found: " + record.teacherId()));
 
             return TeacherAttendance.mark(UUID.randomUUID().toString(), schoolId, teacher, date, record.status(),
-                    record.note());
+                    record.note(), recordedByUserId);
         }).toList();
 
         repo.saveAll(toSave);

@@ -8,6 +8,7 @@ public class SchoolMapper {
         return new SchoolDTO(param.getId(), param.getName(), param.getDomain(), param.getAddress(), param.getOwner(),
                 param.getStatus(), param.getGradingScale(), param.getLogo(), param.getMotto(),
                 param.getPrincipalName(), param.getPrincipalSignature(), param.getPrimaryColor(),
-                param.getSecondaryColor(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getSecondaryColor(), param.getAttendanceThreshold(), param.getCreatedAt(),
+                param.getUpdatedAt());
     }
 }

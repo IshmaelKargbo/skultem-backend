@@ -31,6 +31,11 @@ public class TeacherAttendance extends AggregateRoot<String> {
     private boolean clockInByAdmin;
     private boolean clockOutByAdmin;
 
+    // Who pressed "Mark Attendance" for a plain status mark (as opposed to a real clock event,
+    // which already has clockIn/OutByAdmin) - null for a self clock-in/out, or for a mark made
+    // before this field existed. Daily Register renders "-" for either case.
+    private String recordedByUserId;
+
     public enum Status {
         PRESENT,
         LATE,
@@ -51,6 +56,7 @@ public class TeacherAttendance extends AggregateRoot<String> {
             String clockOutIp,
             boolean clockInByAdmin,
             boolean clockOutByAdmin,
+            String recordedByUserId,
             Instant createdAt,
             Instant updatedAt) {
 
@@ -66,16 +72,17 @@ public class TeacherAttendance extends AggregateRoot<String> {
         this.clockOutIp = clockOutIp;
         this.clockInByAdmin = clockInByAdmin;
         this.clockOutByAdmin = clockOutByAdmin;
+        this.recordedByUserId = recordedByUserId;
 
         touch(updatedAt);
     }
 
     public static TeacherAttendance mark(String id, String schoolId, Teacher teacher, LocalDate date, Status status,
-            String note) {
+            String note, String recordedByUserId) {
         Instant now = Instant.now();
 
         return new TeacherAttendance(id, schoolId, teacher, date, status, note, null, null, null, null, false, false,
-                now, now);
+                recordedByUserId, now, now);
     }
 
     public static TeacherAttendance clockIn(String id, String schoolId, Teacher teacher, LocalDate date,
@@ -83,7 +90,7 @@ public class TeacherAttendance extends AggregateRoot<String> {
         Instant now = Instant.now();
 
         return new TeacherAttendance(id, schoolId, teacher, date, Status.PRESENT, null, now, ip, null, null, false,
-                false, now, now);
+                false, null, now, now);
     }
 
     // Same as clockIn(), but recorded by an admin on the teacher's behalf - see AdminClockInUseCase.
@@ -92,12 +99,13 @@ public class TeacherAttendance extends AggregateRoot<String> {
         Instant now = Instant.now();
 
         return new TeacherAttendance(id, schoolId, teacher, date, Status.PRESENT, null, now, ip, null, null, true,
-                false, now, now);
+                false, null, now, now);
     }
 
-    public void update(Status status, String note) {
+    public void update(Status status, String note, String recordedByUserId) {
         this.status = status;
         this.note = note;
+        this.recordedByUserId = recordedByUserId;
         touch(Instant.now());
     }
 
@@ -141,6 +149,22 @@ public class TeacherAttendance extends AggregateRoot<String> {
         this.clockedOutAt = Instant.now();
         this.clockOutIp = ip;
         this.clockOutByAdmin = true;
+        touch(Instant.now());
+    }
+
+    // Undoes a clock-OUT only (clock-in stays intact, teacher goes back to "clocked in, not yet
+    // clocked out") - for correcting a mistaken clock-out. Status is untouched since clock-out
+    // never sets it in the first place. Undoing a clock-IN is a different operation - see
+    // AdminUnclockUseCase, which deletes the row entirely rather than mutating it, since
+    // clocking in is the only thing that created the row and set status=PRESENT to begin with.
+    public void adminUnclockOut() {
+        if (!alreadyClockedOut()) {
+            throw new BadRequestException("This teacher hasn't been clocked out yet");
+        }
+
+        this.clockedOutAt = null;
+        this.clockOutIp = null;
+        this.clockOutByAdmin = false;
         touch(Instant.now());
     }
 

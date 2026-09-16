@@ -10,6 +10,7 @@ import com.moriba.skultem.domain.vo.Owner;
 
 public record SchoolDTO(String id, String name, String domain, Address address, Owner owner, Status status,
         List<GradeBand> gradingScale, String logo, String motto, String principalName, String principalSignature,
-        String primaryColor, String secondaryColor, Instant createdAt, Instant updatedAt) {
+        String primaryColor, String secondaryColor, Double attendanceThreshold, Instant createdAt,
+        Instant updatedAt) {
 
 }

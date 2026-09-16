@@ -14,6 +14,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.StudentEntity;
 public interface StudentJpaRepository extends JpaRepository<StudentEntity, String> {
         boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId);
 
+        boolean existsByAdmissionNumberAndSchoolIdAndIdNot(String admissionNumber, String schoolId, String id);
+
         // Scoped to students who haven't been deleted and have some enrollment for the given academic
         // year, so a student with no relationship to that year at all doesn't linger in this listing
         // (and every picker built on it: behaviour, discounts, supplies, payments, reports, ...).

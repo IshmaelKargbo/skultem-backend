@@ -14,5 +14,9 @@ public record ClassSessionAttendanceDTO(
         int absentCount,
         int excusedCount,
         int lateCount,
+        int totalBoys,
+        int totalGirls,
+        int presentBoys,
+        int presentGirls,
         List<ClassSessionAttendanceRecordDTO> records) {
 }

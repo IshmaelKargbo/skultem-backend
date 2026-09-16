@@ -17,9 +17,10 @@ import lombok.RequiredArgsConstructor;
 public class UpdateSchoolUseCase {
     private final SchoolRepository repo;
 
-    public SchoolDTO execute(String schoolId, String name, String domain, Address address) {
+    public SchoolDTO execute(String schoolId, String name, String domain, Address address,
+            Double attendanceThreshold) {
         var school = repo.findById(schoolId).orElseThrow(() -> new NotFoundException("school not found"));
-        school.update(name, domain, address);
+        school.update(name, domain, address, attendanceThreshold);
         repo.save(school);
         return SchoolMapper.toDTO(school);
     }

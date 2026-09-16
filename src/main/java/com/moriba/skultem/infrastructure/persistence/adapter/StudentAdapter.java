@@ -30,6 +30,12 @@ public class StudentAdapter implements StudentRepository {
     }
 
     @Override
+    public boolean existsByAdmissionNumberAndSchoolIdAndIdNot(String admissionNumber, String schoolId,
+            String studentId) {
+        return repo.existsByAdmissionNumberAndSchoolIdAndIdNot(admissionNumber, schoolId, studentId);
+    }
+
+    @Override
     public Page<Student> findBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(StudentMapper::toDomain);
     }

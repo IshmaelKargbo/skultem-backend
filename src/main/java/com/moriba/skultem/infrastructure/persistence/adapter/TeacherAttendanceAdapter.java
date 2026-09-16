@@ -29,6 +29,11 @@ public class TeacherAttendanceAdapter implements TeacherAttendanceRepository {
     }
 
     @Override
+    public void delete(TeacherAttendance domain) {
+        repo.deleteById(domain.getId());
+    }
+
+    @Override
     public Optional<TeacherAttendance> findByTeacherIdAndSchoolIdAndDate(String teacherId, String schoolId,
             LocalDate date) {
         return repo.findByTeacher_IdAndSchoolIdAndDate(teacherId, schoolId, date).map(TeacherAttendanceMapper::toDomain);
@@ -50,5 +55,11 @@ public class TeacherAttendanceAdapter implements TeacherAttendanceRepository {
         return repo.findAllBySchoolIdAndTeacher_IdAndDateBetween(schoolId, teacherId, from, to).stream()
                 .map(TeacherAttendanceMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public List<Object[]> attendanceCountsByTeacherAndDateRange(String schoolId, LocalDate startDate,
+            LocalDate endDate) {
+        return repo.attendanceCountsByTeacherAndDateRange(schoolId, startDate, endDate);
     }
 }

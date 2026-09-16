@@ -33,6 +33,7 @@ import com.moriba.skultem.domain.repository.HolidayRepository;
 import com.moriba.skultem.domain.repository.NotificationRepository;
 import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.vo.Priority;
+import com.moriba.skultem.infrastructure.security.PermissionService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -85,6 +86,8 @@ public class MarkClassSessionAttendanceUseCase {
             throw new RuleException("Cannot mark attendance on a weekend or holiday");
         }
 
+        String recordedByUserId = PermissionService.getCurrentUser().userId();
+
         return records.stream().map(record -> {
             var enrollment = enrollmentByStudent.get(record.studentId());
             if (enrollment == null) {
@@ -102,14 +105,15 @@ public class MarkClassSessionAttendanceUseCase {
 
                 String prevStatus = attendance.getStatus();
 
-                attendance.update(record.present(), record.excused(), record.late(), record.reason(), holiday);
+                attendance.update(record.present(), record.excused(), record.late(), record.reason(), holiday,
+                        recordedByUserId);
                 attendanceRepo.save(attendance);
 
                 parents.forEach(parent -> notifyParentForAttendanceChange(attendance, parent, prevStatus));
             } else {
                 var id = UUID.randomUUID().toString();
                 attendance = Attendance.create(id, schoolId, enrollment, date, record.present(), record.excused(),
-                        record.late(), record.reason(), holiday);
+                        record.late(), record.reason(), holiday, recordedByUserId);
                 attendanceRepo.save(attendance);
 
                 parents.forEach(parent -> notifyParentForAttendanceChange(attendance, parent, null));

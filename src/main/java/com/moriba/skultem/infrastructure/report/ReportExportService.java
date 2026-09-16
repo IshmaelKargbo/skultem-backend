@@ -12,13 +12,20 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import com.moriba.skultem.application.dto.AssessmentScoreDTO;
+import com.moriba.skultem.application.dto.AttendanceDTO;
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
 import com.moriba.skultem.application.dto.BehaviourDTO;
+import com.moriba.skultem.application.dto.ClassSessionDTO;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
 import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.dto.ReportBuilderDTO;
 import com.moriba.skultem.application.dto.ReportResponse;
 import com.moriba.skultem.application.dto.StudentAssessmentDTO;
+import com.moriba.skultem.application.dto.StudentDTO;
+import com.moriba.skultem.application.dto.StudentFeeDTO;
+import com.moriba.skultem.application.dto.TeacherDTO;
+import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.ClassReportUseCase;
@@ -197,6 +204,211 @@ public class ReportExportService {
                                         safe(score.weightScore()),
                                         safe(score.status()))));
                 }
+
+                return build("grades", "Grades Report", headers, rows, format);
+        }
+
+        // Hard cap on rows returned by the generic builder-driven export below. Unlike the
+        // entity-specific export endpoints (exportPayments/exportFees/etc. above) which are
+        // already narrowed by required params like classId/date range, this export accepts
+        // arbitrary report-builder filters that could otherwise match a school's entire history
+        // (e.g. "payments" with no filters at all). Capping here avoids an accidentally
+        // unbounded query locking up the server/DB for a large school.
+        private static final int EXPORT_ROW_CAP = 5000;
+
+        // Generic export for the Report Builder (backs POST /report/export/run/download):
+        // mirrors runReport()'s entity+filter resolution, but instead of returning a JSON page
+        // it pulls up to EXPORT_ROW_CAP rows via the same use case runReport() would call and
+        // renders them to CSV/PDF using the same column set shown in the on-screen builder
+        // tables (see app/components/report/table/*.vue).
+        public ReportFile exportBuilderReport(String schoolId, RunReportDTO param, String format,
+                        String academicYearId) {
+                String type = normalizeType(param.entity());
+
+                List<Filter> filters = param.filters()
+                                .stream()
+                                .map(e -> new Filter(
+                                                e.field(),
+                                                e.operator(),
+                                                e.type(),
+                                                e.value(),
+                                                e.valueTo(),
+                                                e.values()))
+                                .toList();
+
+                filters = scopeReportToAcademicYearUseCase.execute(schoolId, type, filters, academicYearId);
+
+                var report = new ReportBuilderDTO(schoolId, param.entity(), filters);
+
+                return switch (type) {
+                        case "students" -> exportStudentsBuilder(report, format);
+                        case "teachers" -> exportTeachersBuilder(report, format);
+                        case "classes" -> exportClassesBuilder(report, format);
+                        case "subjects" -> exportSubjectsBuilder(report, format);
+                        case "attendances" -> exportAttendancesBuilder(report, format);
+                        case "fees" -> exportStudentFeesBuilder(report, format);
+                        case "payments" -> exportPaymentsBuilder(report, format);
+                        case "grades" -> exportGradesBuilder(report, format);
+                        default -> throw new NotFoundException("Unsupported report type for export");
+                };
+        }
+
+        private ReportFile exportStudentsBuilder(ReportBuilderDTO report, String format) {
+                List<StudentDTO> records = studentReportUseCase.execute(report, 0, EXPORT_ROW_CAP).getContent();
+
+                List<String> headers = List.of("Name", "Age", "Gender", "Class", "Guardian", "Guardian Phone",
+                                "City", "Street", "Status");
+                List<List<String>> rows = records.stream()
+                                .map(s -> List.of(
+                                                (safe(s.givenNames()) + " " + safe(s.familyName())).trim(),
+                                                s.age() == null ? "" : s.age() + " Years",
+                                                s.gender() == null ? "" : s.gender().name(),
+                                                safe(s.className()),
+                                                s.guardian() == null ? ""
+                                                                : (safe(s.guardian().givenNames()) + " "
+                                                                                + safe(s.guardian().familyName()))
+                                                                                .trim(),
+                                                s.guardian() == null ? "" : safe(s.guardian().phone()),
+                                                safe(s.city()),
+                                                safe(s.street()),
+                                                s.status() == null ? "" : s.status().name()))
+                                .toList();
+
+                return build("students", "Students Report", headers, rows, format);
+        }
+
+        private ReportFile exportTeachersBuilder(ReportBuilderDTO report, String format) {
+                List<TeacherDTO> records = teacherReportUseCase.execute(report, 0, EXPORT_ROW_CAP).getContent();
+
+                List<String> headers = List.of("Name", "Gender", "Email", "Phone", "City", "Street", "Status");
+                List<List<String>> rows = records.stream()
+                                .map(t -> List.of(
+                                                ((t.title() == null ? "" : t.title().name() + " ")
+                                                                + safe(t.user() == null ? null : t.user().givenNames())
+                                                                + " "
+                                                                + safe(t.user() == null ? null : t.user().familyName()))
+                                                                .trim(),
+                                                t.gender() == null ? "" : t.gender().name(),
+                                                t.user() == null ? "" : safe(t.user().email()),
+                                                safe(t.phone()),
+                                                safe(t.city()),
+                                                safe(t.street()),
+                                                safe(t.status())))
+                                .toList();
+
+                return build("teachers", "Teachers Report", headers, rows, format);
+        }
+
+        private ReportFile exportClassesBuilder(ReportBuilderDTO report, String format) {
+                List<ClassSessionDTO> records = classReportUseCase.execute(report, 0, EXPORT_ROW_CAP).getContent();
+
+                List<String> headers = List.of("Name", "Grade", "Level", "Section", "Stream", "Students",
+                                "Class Teacher");
+                List<List<String>> rows = records.stream()
+                                .map(c -> List.of(
+                                                safe(c.clazz()),
+                                                safe(c.grade()),
+                                                safe(c.classLevel()),
+                                                safe(c.sectionName()),
+                                                safe(c.streamName()),
+                                                String.valueOf(c.totalStudent()),
+                                                safe(c.teacherName())))
+                                .toList();
+
+                return build("classes", "Classes Report", headers, rows, format);
+        }
+
+        private ReportFile exportSubjectsBuilder(ReportBuilderDTO report, String format) {
+                List<TeacherSubjectDTO> records = subjectReportUseCase.execute(report, 0, EXPORT_ROW_CAP)
+                                .getContent();
+
+                List<String> headers = List.of("Subject", "Class", "Section", "Stream", "Teacher");
+                List<List<String>> rows = records.stream()
+                                .map(s -> List.of(
+                                                safe(s.subjectName()),
+                                                safe(s.className()),
+                                                safe(s.sectionName()),
+                                                safe(s.streamName()),
+                                                safe(s.teacherName())))
+                                .toList();
+
+                return build("subjects", "Subjects Report", headers, rows, format);
+        }
+
+        private ReportFile exportAttendancesBuilder(ReportBuilderDTO report, String format) {
+                List<AttendanceDTO> records = attendanceReportUseCase.execute(report, 0, EXPORT_ROW_CAP)
+                                .getContent();
+
+                List<String> headers = List.of("Student", "Class", "State", "Date", "Reason");
+                List<List<String>> rows = records.stream()
+                                .map(a -> List.of(
+                                                safe(a.student()),
+                                                safe(a.clazz()),
+                                                safe(a.state()),
+                                                formatDate(a.date()),
+                                                safe(a.reason())))
+                                .toList();
+
+                return build("attendances", "Attendance Report", headers, rows, format);
+        }
+
+        private ReportFile exportStudentFeesBuilder(ReportBuilderDTO report, String format) {
+                List<StudentFeeDTO> records = feeReportUseCase.execute(report, 0, EXPORT_ROW_CAP).getContent();
+
+                List<String> headers = List.of("Student", "Class", "Fee", "Term", "Amount", "Amount Paid",
+                                "Outstanding", "Status");
+                List<List<String>> rows = records.stream()
+                                .map(f -> List.of(
+                                                safe(f.student()),
+                                                safe(f.clazz()),
+                                                safe(f.fee()),
+                                                safe(f.term()),
+                                                safe(f.amount()),
+                                                safe(f.amountPaid()),
+                                                safe(f.outstanding()),
+                                                safe(f.status())))
+                                .toList();
+
+                return build("fees", "Fees Report", headers, rows, format);
+        }
+
+        private ReportFile exportPaymentsBuilder(ReportBuilderDTO report, String format) {
+                List<PaymentDTO> records = paymentReportUseCase.execute(report, 0, EXPORT_ROW_CAP).getContent();
+
+                List<String> headers = List.of("Student", "Fee", "Amount", "Paid On", "Payment Method",
+                                "Reference No");
+                List<List<String>> rows = records.stream()
+                                .map(p -> List.of(
+                                                safe(p.student()),
+                                                safe(p.fee()),
+                                                safe(p.amount()),
+                                                formatInstant(p.paidAt()),
+                                                p.paymentMethod() == null ? "" : p.paymentMethod().name(),
+                                                safe(p.referenceNo())))
+                                .toList();
+
+                return build("payments", "Payments Report", headers, rows, format);
+        }
+
+        private ReportFile exportGradesBuilder(ReportBuilderDTO report, String format) {
+                List<AssessmentScoreDTO> records = gradeReportUseCase.execute(report, 0, EXPORT_ROW_CAP)
+                                .getContent();
+
+                List<String> headers = List.of("Student", "Subject", "Assessment", "Term", "Class", "Teacher",
+                                "State", "Score", "Weight", "Weight Score");
+                List<List<String>> rows = records.stream()
+                                .map(g -> List.of(
+                                                safe(g.student()),
+                                                safe(g.subject()),
+                                                safe(g.name()),
+                                                safe(g.term()),
+                                                safe(g.clazz()),
+                                                safe(g.teacher()),
+                                                safe(g.status()),
+                                                safe(g.score()),
+                                                g.weight() == null ? "" : g.weight() + "%",
+                                                g.weightScore() == null ? "" : g.weightScore() + "%"))
+                                .toList();
 
                 return build("grades", "Grades Report", headers, rows, format);
         }

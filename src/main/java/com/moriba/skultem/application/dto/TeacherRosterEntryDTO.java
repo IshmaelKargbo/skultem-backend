@@ -19,5 +19,8 @@ public record TeacherRosterEntryDTO(
         Instant clockedOutAt,
         String clockOutIp,
         boolean clockInByAdmin,
-        boolean clockOutByAdmin) {
+        boolean clockOutByAdmin,
+        // Who marked this status (plain mark, not a real clock event) - null for a self clock-in/
+        // out, or for a mark made before this field existed. Daily Register renders "-" for either.
+        String recordedBy) {
 }

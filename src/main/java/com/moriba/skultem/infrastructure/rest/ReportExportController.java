@@ -101,4 +101,18 @@ public class ReportExportController {
         var meta = res.getMeta();
         return new ApiResponse<>("success", 200, "Report generated successfully", data, meta);
     }
+
+    // Generic export for the Report Builder: same entity+filters shape as /run, but returns a
+    // CSV/PDF file (all matching rows, capped - see ReportExportService.EXPORT_ROW_CAP) instead
+    // of a JSON page. Kept on the same roles as /run since it exports exactly what those roles
+    // can already see on-screen via the builder.
+    @PostMapping("/run/download")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    public ResponseEntity<byte[]> downloadRunReport(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) String academicYearId,
+            @RequestBody RunReportDTO param) {
+        return toResponse(reportExportService.exportBuilderReport(school, param, format, academicYearId));
+    }
 }

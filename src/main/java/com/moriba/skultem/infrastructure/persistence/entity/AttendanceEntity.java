@@ -49,6 +49,8 @@ public class AttendanceEntity {
     @Column(nullable = false)
     private boolean holiday;
 
+    private String recordedByUserId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

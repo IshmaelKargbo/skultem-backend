@@ -66,6 +66,9 @@ public class SchoolEntity {
     @Column(name = "secondary_color")
     private String secondaryColor;
 
+    @Column(name = "attendance_threshold")
+    private Double attendanceThreshold;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

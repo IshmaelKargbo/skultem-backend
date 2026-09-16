@@ -22,6 +22,7 @@ public class TeacherAttendanceMapper {
                 param.getClockOutIp(),
                 param.isClockInByAdmin(),
                 param.isClockOutByAdmin(),
+                param.getRecordedByUserId(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -44,6 +45,7 @@ public class TeacherAttendanceMapper {
                 .clockOutIp(param.getClockOutIp())
                 .clockInByAdmin(param.isClockInByAdmin())
                 .clockOutByAdmin(param.isClockOutByAdmin())
+                .recordedByUserId(param.getRecordedByUserId())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

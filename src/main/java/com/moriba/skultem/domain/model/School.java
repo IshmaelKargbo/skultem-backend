@@ -30,6 +30,7 @@ public class School extends AggregateRoot<String> {
     private String principalSignature;
     private String primaryColor;
     private String secondaryColor;
+    private Double attendanceThreshold;
 
     public enum Status {
         ACTIVE,
@@ -39,11 +40,15 @@ public class School extends AggregateRoot<String> {
 
     private static final String DEFAULT_PRIMARY_COLOR = "#1878c5";
     private static final String DEFAULT_SECONDARY_COLOR = "#0f172a";
+    // Below what percentage a student's attendance is flagged for attention (class "Needs
+    // Attention" badge, Monthly/Term Summary, Inspection Reports). Schools set their own bar via
+    // PUT /api/v1/school - 75 only applies until a school configures something else.
+    private static final double DEFAULT_ATTENDANCE_THRESHOLD = 75.0;
 
     public School(String id, String name, String domain, Address address, Owner owner, Status status,
             List<GradeBand> gradingScale, String logo, String motto, String principalName,
-            String principalSignature, String primaryColor, String secondaryColor, Instant createdAt,
-            Instant updatedAt) {
+            String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -57,20 +62,32 @@ public class School extends AggregateRoot<String> {
         this.principalSignature = principalSignature;
         this.primaryColor = primaryColor != null ? primaryColor : DEFAULT_PRIMARY_COLOR;
         this.secondaryColor = secondaryColor != null ? secondaryColor : DEFAULT_SECONDARY_COLOR;
+        this.attendanceThreshold = validateThreshold(
+                attendanceThreshold != null ? attendanceThreshold : DEFAULT_ATTENDANCE_THRESHOLD);
         touch(updatedAt);
     }
 
     public static School create(String id, String name, String domain, Address address, Owner owner) {
         Instant now = Instant.now();
         return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), null, null, null,
-                null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, now, now);
+                null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD, now, now);
     }
 
-    public void update(String name, String domain, Address address) {
+    public void update(String name, String domain, Address address, Double attendanceThreshold) {
         this.address = address;
         this.name = name;
         this.domain = domain;
+        if (attendanceThreshold != null) {
+            this.attendanceThreshold = validateThreshold(attendanceThreshold);
+        }
         touch(Instant.now());
+    }
+
+    private static double validateThreshold(double attendanceThreshold) {
+        if (attendanceThreshold < 0 || attendanceThreshold > 100) {
+            throw new RuleException("Attendance threshold must be between 0 and 100");
+        }
+        return attendanceThreshold;
     }
 
     public void updateBranding(String logo, String motto, String principalName, String principalSignature,

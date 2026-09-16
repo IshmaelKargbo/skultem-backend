@@ -17,7 +17,9 @@ import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
+import com.moriba.skultem.domain.service.AttendanceRateCalculator;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ComputeClassAttentionUseCase {
 
-    private static final double ATTENDANCE_THRESHOLD = 75.0;
     private static final int ATTENDANCE_WINDOW_DAYS = 30;
     private static final int DEFAULT_PASS_MARK = 50;
 
@@ -41,11 +42,15 @@ public class ComputeClassAttentionUseCase {
     private final EnrollmentRepository enrollmentRepo;
     private final AttendanceRepository attendanceRepo;
     private final AssessmentScoreRepository scoreRepo;
+    private final SchoolRepository schoolRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
     public ClassAttentionDTO execute(String schoolId, String classId, String academicYearId) {
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
+
+        var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
+        double attendanceThreshold = school.getAttendanceThreshold();
 
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
@@ -86,9 +91,9 @@ public class ComputeClassAttentionUseCase {
         for (var enrollment : enrollments) {
             var attendance = attendanceCounts.get(enrollment.getId());
             Double attendanceRate = (attendance != null && attendance[1] > 0)
-                    ? Math.round((attendance[0] / attendance[1]) * 1000.0) / 10.0
+                    ? AttendanceRateCalculator.rate((long) attendance[0], (long) attendance[1])
                     : null;
-            boolean attendanceFlag = attendanceRate != null && attendanceRate < ATTENDANCE_THRESHOLD;
+            boolean attendanceFlag = AttendanceRateCalculator.isBelowThreshold(attendanceRate, attendanceThreshold);
 
             var academic = academicAverages.get(enrollment.getId());
             Double average = (academic != null && academic[1] > 0)

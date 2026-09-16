@@ -1,0 +1,2 @@
+ALTER TABLE schools
+    ADD COLUMN attendance_threshold DOUBLE PRECISION NOT NULL DEFAULT 75.0;

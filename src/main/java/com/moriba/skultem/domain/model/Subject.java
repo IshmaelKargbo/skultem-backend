@@ -28,4 +28,11 @@ public class Subject extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new Subject(id, schoolId, name, code, description, now, now);
     }
+
+    public void update(String name, String code, String description) {
+        this.name = name;
+        this.code = code;
+        this.description = description;
+        touch(Instant.now());
+    }
 }

@@ -14,6 +14,8 @@ public interface StudentRepository {
 
     boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId);
 
+    boolean existsByAdmissionNumberAndSchoolIdAndIdNot(String admissionNumber, String schoolId, String studentId);
+
     Page<Student> findBySchoolId(String schoolId, Pageable pageable);
 
     Page<Student> findByParentAndSchoolId(String parentId, String schoolId, Pageable pageable);

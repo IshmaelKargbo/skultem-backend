@@ -82,6 +82,20 @@ public class Student extends AggregateRoot<String> {
                 city, street, Status.ACTIVE, now, now);
     }
 
+    public void update(String admissionNumber, String givenNames, String familyName, Gender gender,
+            LocalDate dateOfBirth, String nationality, String religion, String city, String street) {
+        this.admissionNumber = admissionNumber;
+        this.givenNames = givenNames;
+        this.familyName = familyName;
+        this.gender = gender;
+        this.dateOfBirth = dateOfBirth;
+        this.nationality = nationality;
+        this.religion = religion;
+        this.city = city;
+        this.street = street;
+        touchNow();
+    }
+
     public void setProfile(String profile) {
         photo = profile;
         touchNow();

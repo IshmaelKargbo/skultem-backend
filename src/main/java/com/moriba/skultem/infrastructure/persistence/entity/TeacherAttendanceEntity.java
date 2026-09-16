@@ -53,6 +53,8 @@ public class TeacherAttendanceEntity {
     private boolean clockInByAdmin;
     private boolean clockOutByAdmin;
 
+    private String recordedByUserId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

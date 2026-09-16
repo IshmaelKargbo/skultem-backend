@@ -117,7 +117,8 @@ public class SchoolController {
     public ApiResponse<SchoolDTO> update(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
-        var res = updateSchoolUseCase.execute(school, param.name(), param.domain(), address);
+        var res = updateSchoolUseCase.execute(school, param.name(), param.domain(), address,
+                param.attendanceThreshold());
         return new ApiResponse<>("success", 200, "School updated successfully", res);
     }
 

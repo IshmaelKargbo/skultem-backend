@@ -11,14 +11,17 @@ import com.moriba.skultem.application.dto.SubjectDTO;
 import com.moriba.skultem.application.usecase.CreateSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetSubjectUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectBySchoolUseCase;
+import com.moriba.skultem.application.usecase.UpdateSubjectUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateSubjectDTO;
+import com.moriba.skultem.infrastructure.rest.dto.EditSubjectDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +34,7 @@ public class SubjectController {
     private final CreateSubjectUseCase createSubjectUseCase;
     private final ListSubjectBySchoolUseCase listSubjectBySchoolUseCase;
     private final GetSubjectUseCase getSubjectUseCase;
+    private final UpdateSubjectUseCase updateSubjectUseCase;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -39,6 +43,16 @@ public class SubjectController {
             @Valid @RequestBody CreateSubjectDTO param) {
         var res = createSubjectUseCase.execute(school, param.name(), param.code(), param.description());
         return new ApiResponse<>("success", 200, "Subject created successfully", res);
+    }
+
+    @PatchMapping("/edit/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<SubjectDTO> edit(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody EditSubjectDTO param) {
+        var res = updateSubjectUseCase.execute(school, id, param.name(), param.code(), param.description());
+        return new ApiResponse<>("success", 200, "Subject edited successfully", res);
     }
 
     @GetMapping

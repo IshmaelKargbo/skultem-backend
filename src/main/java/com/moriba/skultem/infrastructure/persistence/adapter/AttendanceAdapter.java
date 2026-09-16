@@ -78,6 +78,19 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
+    public List<Object[]> attendanceCountsBySessionAndDateRange(String schoolId, String classId, String sectionId,
+            String streamId, String academicYearId, LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsBySessionAndDateRange(schoolId, classId, sectionId, streamId, academicYearId,
+                startDate, endDate);
+    }
+
+    @Override
+    public List<Object[]> attendanceCountsBySchoolAndDateRange(String schoolId, String academicYearId,
+            LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsBySchoolAndDateRange(schoolId, academicYearId, startDate, endDate);
+    }
+
+    @Override
     public Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable)
                 .map(AttendanceMapper::toDomain);
