@@ -2,6 +2,7 @@ package com.moriba.skultem.application.usecase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,12 +43,14 @@ public class ListStudentByParentUseCase {
                 return repo.findByParentAndSchoolId(parent.getId(), schoolId, pageable).map(e -> {
                         var session = e.getSession();
 
-                        var classMaster = classMasterRepo.findBySessionIdAndSchoolId(e.getSession().getId(), schoolId)
-                                        .orElse(null);
-                        String teacher = null;
-                        if (classMaster != null) {
-                                teacher = classMaster.getTeacher().getName();
-                        }
+                        // A session can have more than one active class master (e.g. co-taught classes) -
+                        // show every one of them rather than picking just one.
+                        var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(e.getSession().getId(),
+                                        schoolId);
+                        String teacher = classMasters.isEmpty() ? null
+                                        : classMasters.stream()
+                                                        .map(cm -> cm.getTeacher().getName())
+                                                        .collect(Collectors.joining(", "));
 
                         var enrollment = enrollmentRepo.findByStudentAndAcademicYearAndSchoolId(e.getId(),
                                         e.getSession().getAcademicYear().getId(), schoolId)

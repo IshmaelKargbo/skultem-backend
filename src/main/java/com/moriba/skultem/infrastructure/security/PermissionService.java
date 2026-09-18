@@ -193,15 +193,17 @@ public class PermissionService {
             return false;
         }
 
-        var master = classMasterRepo.findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(sessionId);
-
-        return master.isPresent() && master.get().getTeacher().getId().equals(teacher.get().getId());
+        // A session can have more than one active class master - checking only the most recently
+        // assigned one would wrongly deny a legitimate co-master who just wasn't the last one added.
+        return classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.get().getId(), sessionId,
+                schoolId);
     }
 
-    // "Their own classes" for a Teacher means being that class session's class master - the same
-    // relationship ListClassSessionByTeacherUseCase uses to build a teacher's class list (the
-    // "/class-sessions/me" dropdown Mark Attendance and the Daily Register both feed from), so a
-    // teacher can't view another class's register just by knowing/guessing its classSessionId.
+    // "Their own classes" for a Teacher means being one of that class session's class masters (a
+    // session can have more than one, e.g. co-taught classes) - the same relationship
+    // ListClassSessionByTeacherUseCase uses to build a teacher's class list (the "/class-sessions/me"
+    // dropdown Mark Attendance and the Daily Register both feed from), so a teacher can't view
+    // another class's register just by knowing/guessing its classSessionId.
     public boolean canAccessClassSessionAsTeacher(String schoolId, String classSessionId) {
         if (!hasRole(Role.TEACHER)) {
             return false;
@@ -212,9 +214,8 @@ public class PermissionService {
             return false;
         }
 
-        var master = classMasterRepo.findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(classSessionId);
-
-        return master.isPresent() && master.get().getTeacher().getId().equals(teacher.get().getId());
+        return classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.get().getId(), classSessionId,
+                schoolId);
     }
 
     public boolean canManagePromotionRequest(String schoolId, String requestId) {

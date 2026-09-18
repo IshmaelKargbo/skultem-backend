@@ -30,16 +30,16 @@ public class ListTeacherSubjectBySchoolUseCase {
             "subject.name");
 
     public Page<TeacherSubjectDTO> execute(String school, String academicYearId, int page, int size) {
-        return execute(school, academicYearId, null, null, page, size, null, null);
+        return execute(school, academicYearId, null, null, null, page, size, null, null);
     }
 
     public Page<TeacherSubjectDTO> execute(String school, String academicYearId, String classId, String query,
             int page, int size) {
-        return execute(school, academicYearId, classId, query, page, size, null, null);
+        return execute(school, academicYearId, classId, null, query, page, size, null, null);
     }
 
-    public Page<TeacherSubjectDTO> execute(String school, String academicYearId, String classId, String query,
-            int page, int size, String sortBy, String direction) {
+    public Page<TeacherSubjectDTO> execute(String school, String academicYearId, String classId, String streamId,
+            String query, int page, int size, String sortBy, String direction) {
         Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = Pageable.unpaged(sort);
 
@@ -49,9 +49,11 @@ public class ListTeacherSubjectBySchoolUseCase {
 
         var academicYear = resolveAcademicYearUseCase.execute(school, academicYearId);
 
-        boolean hasFilters = (classId != null && !classId.isBlank()) || (query != null && !query.isBlank());
+        boolean hasFilters = (classId != null && !classId.isBlank()) || (streamId != null && !streamId.isBlank())
+                || (query != null && !query.isBlank());
         var assignments = hasFilters
-                ? repo.search(school, academicYear.getId(), normalize(classId), normalize(query), pageable)
+                ? repo.search(school, academicYear.getId(), normalize(classId), normalize(streamId),
+                        normalize(query), pageable)
                 : repo.findAllBySchoolIdAndAcademicYearId(school, academicYear.getId(), pageable);
 
         return assignments.map(TeacherSubjectMapper::toDTO);

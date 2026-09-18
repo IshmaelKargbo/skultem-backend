@@ -79,8 +79,10 @@ public class CarryForwardClassSessionSetupUseCase {
             return;
         }
 
-        classMasterRepo.findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(previousSession.getId())
-                .ifPresent(previousMaster -> {
+        // A session can have more than one active class master (e.g. co-taught classes) - carry
+        // forward every one of them, not just the most recently assigned.
+        classMasterRepo.findAllActiveBySessionIdAndSchoolId(previousSession.getId(), newSession.getSchoolId())
+                .forEach(previousMaster -> {
                     var id = rg.generate("CLASS_MASTER", "CMR");
                     var master = ClassMaster.create(id, newSession.getSchoolId(), newSession,
                             previousMaster.getTeacher());

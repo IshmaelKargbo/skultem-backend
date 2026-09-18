@@ -54,12 +54,12 @@ public class GetCurrentClassMasterUseCase {
                                         "No active class sessions found for this class");
                 }
 
+                // A session can have more than one active class master (e.g. co-taught classes) - list
+                // every one of them per session, not just the most recently assigned.
                 return sessions.stream()
-                                .map(session -> classMasterRepo
-                                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(
-                                                                session.getId())
-                                                .orElse(null))
-                                .filter(master -> master != null)
+                                .flatMap(session -> classMasterRepo
+                                                .findAllActiveBySessionIdAndSchoolId(session.getId(), schoolId)
+                                                .stream())
                                 .collect(Collectors.toList());
         }
 }

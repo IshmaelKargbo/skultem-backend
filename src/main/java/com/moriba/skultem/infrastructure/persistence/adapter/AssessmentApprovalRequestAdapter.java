@@ -65,4 +65,9 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
+    @Override
+    public Optional<AssessmentApprovalRequest> findByCycle(String cycleId) {
+        return repo.findByCycle_Id(cycleId).map(AssessmentApprovalRequestMapper::toDomain);
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -31,7 +32,7 @@ public class ClassMasterAdapter implements ClassMasterRepository {
     @Override
     public boolean existsByTeacherIdAndClassSessionIdAndSchoolId(String teacherId, String classSessionId,
             String schoolId) {
-        return repo.existsBySession_IdAndTeacher_IdAndSchoolId(classSessionId, teacherId, schoolId);
+        return repo.existsBySession_IdAndTeacher_IdAndSchoolIdAndEndedAtIsNull(classSessionId, teacherId, schoolId);
     }
 
     @Override
@@ -61,9 +62,10 @@ public class ClassMasterAdapter implements ClassMasterRepository {
     }
 
     @Override
-    public Optional<ClassMaster> findBySessionIdAndSchoolId(String sessionId, String schoolId) {
-        return repo.findAllBySession_IdAndSchoolId(sessionId, schoolId)
-                .map(ClassMasterMapper::toDomain);
+    public List<ClassMaster> findAllActiveBySessionIdAndSchoolId(String sessionId, String schoolId) {
+        return repo.findAllBySession_IdAndSchoolIdAndEndedAtIsNull(sessionId, schoolId).stream()
+                .map(ClassMasterMapper::toDomain)
+                .toList();
     }
 
     @Override

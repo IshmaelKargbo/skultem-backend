@@ -59,4 +59,12 @@ public class StudentAssessmentAdapter implements StudentAssessmentRepository {
                 .toList();
     }
 
+    @Override
+    public List<StudentAssessment> findAllBySubjectAndSessionAndTermId(String subjectId, String sessionId,
+            String termId) {
+        return repo.findAllBySubjectAndSessionAndTermId(subjectId, sessionId, termId).stream()
+                .map(StudentAssessmentMapper::toDomain)
+                .toList();
+    }
+
 }

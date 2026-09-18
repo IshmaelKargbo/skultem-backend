@@ -17,6 +17,11 @@ public class AssessmentScore extends AggregateRoot<String> {
     private Integer weightedScore;
     private ClassSubjectAssessmentLifeCycle cycle;
 
+    // Whichever of the subject's (possibly several) assigned teachers most recently entered/
+    // changed this score - null until the first edit. Purely attribution, not an access-control
+    // gate; any teacher assigned to the subject can still edit it.
+    private String gradedByUserId;
+
     public AssessmentScore(
             String id,
             String schoolId,
@@ -24,6 +29,7 @@ public class AssessmentScore extends AggregateRoot<String> {
             ClassSubjectAssessmentLifeCycle cycle,
             Integer weight,
             Integer score,
+            String gradedByUserId,
             Instant createdAt,
             Instant updatedAt) {
         super(id, createdAt);
@@ -33,6 +39,7 @@ public class AssessmentScore extends AggregateRoot<String> {
         this.weight = validateWeight(weight);
         this.score = validateScore(score);
         this.cycle = cycle;
+        this.gradedByUserId = gradedByUserId;
         this.weightedScore = calculateWeightedScore(this.score, this.weight);
         touch(updatedAt);
     }
@@ -52,11 +59,12 @@ public class AssessmentScore extends AggregateRoot<String> {
                 cycle,
                 weight,
                 0,
+                null,
                 now,
                 now);
     }
 
-    public void updateScore(Integer score) {
+    public void updateScore(Integer score, String gradedByUserId) {
         if (!canMark()) {
             throw new RuleException(
                     "You cannot update this score because the assessment is currently "
@@ -64,6 +72,7 @@ public class AssessmentScore extends AggregateRoot<String> {
         }
 
         this.score = validateScore(score);
+        this.gradedByUserId = gradedByUserId;
         this.weightedScore = calculateWeightedScore(this.score, this.weight);
 
         touch(Instant.now());

@@ -67,6 +67,13 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
     }
 
     @Override
+    public Optional<ClassSubjectAssessmentLifeCycle> findBySubjectSessionAssessmentAndTerm(String subjectId,
+            String sessionId, String assessmentId, String termId) {
+        return repo.findBySubjectSessionAssessmentAndTerm(subjectId, sessionId, assessmentId, termId)
+                .map(ClassSubjectAssessmentLifeCycleMapper::toDomain);
+    }
+
+    @Override
     public List<ClassSubjectAssessmentLifeCycle> findAllBySchoolAndTermAndClass(String schoolId, String termId,
             String classId) {
         return repo.findAllBySchoolIdAndTerm_IdAndSubject_Session_Clazz_Id(schoolId, termId, classId)

@@ -27,7 +27,7 @@ public record CreateStudentDTO(
 
         @NotBlank(message = "Enrollment type is required")
         @Pattern(
-            regexp = "NEW|TRANSFER|RE_ENROLLMENT",
+            regexp = "NEW|TRANSFER|RE_ENROLLMENT|EXISTING",
             message = "Enrollment type is invalid"
         )
         String enrollmentType,

@@ -38,7 +38,10 @@ public class Student extends AggregateRoot<String> {
     }
 
     public enum EnrollmentType {
-        NEW, TRANSFER, RE_ENROLLMENT
+        NEW, TRANSFER, RE_ENROLLMENT,
+        // Already attends the school but is only now being entered into the system - not a new
+        // admission and not a transfer, so previous school / last class don't apply.
+        EXISTING
     }
 
     public Student(String id, String schoolId, String photo, String admissionNumber, LocalDate admissionDate,

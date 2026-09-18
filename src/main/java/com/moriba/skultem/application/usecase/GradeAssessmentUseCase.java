@@ -15,6 +15,7 @@ import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 import com.moriba.skultem.domain.vo.Level;
+import com.moriba.skultem.infrastructure.security.PermissionService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +50,12 @@ public class GradeAssessmentUseCase {
             lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(), null);
         }
 
+        // Resolved by the subject + class session, not the specific teacherSubjectId passed in -
+        // a subject can have more than one teacher assigned, and they must all land on the same
+        // shared set of student assessments rather than each only seeing the rows stamped with
+        // whichever teacher's assignment happened to trigger provisioning first.
         List<StudentAssessment> studentAssessments = studentAssessmentRepo
-                .findAllByTeacherSubjectIdTermId(teacherSubjectId, termId);
+                .findAllBySubjectAndSessionAndTermId(ts.getSubject().getId(), ts.getSession().getId(), termId);
 
         if (studentAssessments.isEmpty()) {
             throw new NotFoundException("No student assessments found");
@@ -59,6 +64,7 @@ public class GradeAssessmentUseCase {
         var gradeMap = grades.stream()
                 .collect(Collectors.toMap(a -> a.id(), b -> b.score()));
 
+        String gradedByUserId = PermissionService.getCurrentUser().userId();
         List<AssessmentScore> scoresToUpdate = new ArrayList<>();
 
         for (StudentAssessment sa : studentAssessments) {
@@ -82,7 +88,7 @@ public class GradeAssessmentUseCase {
                                 "Missing grade for score id: " + score.getId());
                     }
 
-                    score.updateScore(newScore);
+                    score.updateScore(newScore, gradedByUserId);
                     scoresToUpdate.add(score);
                 }
             }

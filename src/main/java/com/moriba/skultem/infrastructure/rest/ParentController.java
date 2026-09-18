@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.services.TeacherService;
+import com.moriba.skultem.application.usecase.AddParentEmailUseCase;
 import com.moriba.skultem.application.usecase.ListNotificationByParentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +30,7 @@ import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.usecase.CreateParentUseCase;
 import com.moriba.skultem.application.usecase.ListParentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListStudentByParentUseCase;
+import com.moriba.skultem.infrastructure.rest.dto.AddParentEmailDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateParentDTO;
 
 @RestController
@@ -35,6 +38,7 @@ import com.moriba.skultem.infrastructure.rest.dto.CreateParentDTO;
 @RequiredArgsConstructor
 public class ParentController {
         private final CreateParentUseCase createParentUseCase;
+        private final AddParentEmailUseCase addParentEmailUseCase;
         private final TeacherService teacherSvc;
         private final ListParentBySchoolUseCase listParentBySchoolUseCase;
         private final ListStudentByParentUseCase listStudentByParentUseCase;
@@ -106,6 +110,17 @@ public class ParentController {
                                 "pages", res.getTotalPages());
 
                 return new ApiResponse<>("success", 200, "Parent notifications fetched successfully", list, meta);
+        }
+
+        @PatchMapping("/{id}/email")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<ParentDTO> addEmail(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody AddParentEmailDTO param) {
+                var res = addParentEmailUseCase.execute(school, id, param.email());
+                return new ApiResponse<>("success", 200,
+                                "Email added. The parent now has portal access.", res);
         }
 
         @GetMapping("/{id}")

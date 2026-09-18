@@ -73,6 +73,20 @@ public class User extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // For a User provisioned without an email (e.g. a parent added during enrollment whose
+    // guardian had none) - an admin fills it in later, which is what actually grants portal
+    // access since login is keyed on email. Refuses to overwrite an email that's already set;
+    // changing an existing email is a different operation with different implications (it's also
+    // the account's login) and isn't what this is for.
+    public void updateEmail(String email) {
+        if (this.email != null && !this.email.isBlank()) {
+            throw new RuleException("This account already has an email set");
+        }
+
+        this.email = email;
+        touch(Instant.now());
+    }
+
     public void resetPassword(String password) {
         if (status != Status.RESET_PASSWORD) {
             throw new RuleException("your account must be RESET_PASSWORD state in other to use the feature");

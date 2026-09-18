@@ -80,12 +80,11 @@ public class AssignTeacherToClassUseCase {
                                         .orElseThrow(() -> new NotFoundException("Class session not found"));
                 }
 
-                var activeMaster = repo
-                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(session.getId());
-
-                if (activeMaster.isPresent()) {
-                        throw new RuleException(
-                                        "This class session already has an active class master. End the current one first.");
+                // A session can have more than one active class master (e.g. co-taught classes) - the
+                // only thing that must stay unique is the same teacher being assigned to the same
+                // session twice while their earlier assignment is still active.
+                if (repo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.getId(), session.getId(), schoolId)) {
+                        throw new RuleException("This teacher is already a class master of this session.");
                 }
 
                 String id = rg.generate("CLASS_MASTER", "CMR");

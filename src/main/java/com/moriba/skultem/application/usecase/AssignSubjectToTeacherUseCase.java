@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -133,7 +134,18 @@ public class AssignSubjectToTeacherUseCase {
 
         for (TeacherSubject existing : existingList) {
             if (!incomingIds.contains(existing.getId())) {
-                repo.delete(existing);
+                try {
+                    repo.delete(existing);
+                } catch (DataIntegrityViolationException e) {
+                    // Removing one of a subject's several teachers is now a routine edit (not just
+                    // "the subject was dropped from the curriculum"), so this is no longer a rare
+                    // edge case - assessments/scores/timetable slots reference this exact row and
+                    // block the delete rather than silently orphaning them.
+                    throw new RuleException(
+                            "Cannot remove " + existing.getTeacher().getUser().getName() + " from "
+                                    + existing.getSubject().getName()
+                                    + " - they already have assessment records for this subject");
+                }
             }
         }
 

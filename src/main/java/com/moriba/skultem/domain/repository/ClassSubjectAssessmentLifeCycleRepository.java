@@ -22,4 +22,7 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
 
     Optional<ClassSubjectAssessmentLifeCycle> findByTeacherSubjectAndAssessmentAndTerm(String subectId,
             String assessmentId, String termId);
+
+    Optional<ClassSubjectAssessmentLifeCycle> findBySubjectSessionAssessmentAndTerm(String subjectId,
+            String sessionId, String assessmentId, String termId);
 }

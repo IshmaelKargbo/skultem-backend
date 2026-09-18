@@ -26,6 +26,7 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.ComputeClassAttentionUseCase;
 import com.moriba.skultem.application.usecase.CreateClassUseCase;
 import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
+import com.moriba.skultem.application.usecase.GetClassMasterBySessionUseCase;
 import com.moriba.skultem.application.usecase.GetClassOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetClassSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetClassUseCase;
@@ -64,6 +65,7 @@ public class ClassController {
     private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
     private final ListClassesNeedingAttentionUseCase listClassesNeedingAttentionUseCase;
     private final GetCurrentClassMasterUseCase getCurrentClassMasterUseCase;
+    private final GetClassMasterBySessionUseCase getClassMasterBySessionUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
     private final UpdateClassTerminalUseCase updateClassTerminalUseCase;
@@ -138,6 +140,15 @@ public class ClassController {
             @PathVariable String classId,
             @RequestParam(required = false) String academicYearId) {
         var res = getCurrentClassMasterUseCase.executeDTO(school, classId, academicYearId);
+        return new ApiResponse<>("success", 200, "Class masters fetched successfully", res);
+    }
+
+    @GetMapping("/master/session/{sessionId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    public ApiResponse<List<ClassMasterDTO>> getClassMasterBySession(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String sessionId) {
+        var res = getClassMasterBySessionUseCase.execute(school, sessionId);
         return new ApiResponse<>("success", 200, "Class masters fetched successfully", res);
     }
 

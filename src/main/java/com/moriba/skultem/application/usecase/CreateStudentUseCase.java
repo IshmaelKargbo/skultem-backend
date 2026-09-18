@@ -150,10 +150,15 @@ public class CreateStudentUseCase {
         student.setProfile(photoUrl);
         repo.save(student);
 
-        if (param.parentId().isBlank())
-            sendWelcomeEmail(school, student);
-        else
-            sendLinkEmail(school, student);
+        // No email yet (parent was created without one) - nothing to send to, and no portal
+        // access to grant until an admin adds one later via AddParentEmailUseCase.
+        var parentEmail = student.getParent().getUser().getEmail();
+        if (parentEmail != null && !parentEmail.isBlank()) {
+            if (param.parentId().isBlank())
+                sendWelcomeEmail(school, student);
+            else
+                sendLinkEmail(school, student);
+        }
 
         logActivityUseCase.log(
                 param.schoolId(),

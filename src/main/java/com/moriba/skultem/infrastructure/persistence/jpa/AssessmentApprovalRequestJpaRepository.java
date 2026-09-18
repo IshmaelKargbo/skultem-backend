@@ -143,4 +143,6 @@ public interface AssessmentApprovalRequestJpaRepository
     boolean existsByCycle_IdAndTeacherSubject_Id(String cycleId, String subjectId);
 
     Optional<AssessmentApprovalRequestEntity> findByCycle_IdAndTeacherSubject_Id(String cycleId, String subjectId);
+
+    Optional<AssessmentApprovalRequestEntity> findByCycle_Id(String cycleId);
 }

@@ -2,6 +2,7 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -48,16 +49,18 @@ public class ClassReportUseCase {
                                 pageable);
 
                 return res.map((e) -> {
-                        var classMaster = classMasterRepos
-                                        .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(e.getId());
+                        // A session can have more than one active class master (e.g. co-taught classes) -
+                        // list every one of them rather than picking just the most recently assigned.
+                        var classMasters = classMasterRepos.findAllActiveBySessionIdAndSchoolId(e.getId(),
+                                        request.schoolId());
                         String teacherName = "N/A", teacherId = "";
                         String streamName = "N/A", streamId = "";
 
-                        if (classMaster.isPresent()) {
-                                var teacher = classMaster.get().getTeacher();
-                                var teacherUser = teacher.getUser();
-                                teacherName = teacherUser.getName();
-                                teacherId = teacher.getId();
+                        if (!classMasters.isEmpty()) {
+                                teacherName = classMasters.stream()
+                                                .map(cm -> cm.getTeacher().getUser().getName())
+                                                .collect(Collectors.joining(", "));
+                                teacherId = classMasters.get(0).getTeacher().getId();
                         }
 
                         if (e.getStream() != null) {

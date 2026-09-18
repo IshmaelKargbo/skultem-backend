@@ -140,13 +140,14 @@ public class TeacherController {
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = false) String classId,
+                        @RequestParam(required = false) String streamId,
                         @RequestParam(required = false) String query,
                         @RequestParam(required = false) String sortBy,
                         @RequestParam(required = false) String direction,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
-                var res = listTeacherSubjectBySchoolUseCase.execute(school, academicYearId, classId, query, page - 1,
-                                size, sortBy, direction);
+                var res = listTeacherSubjectBySchoolUseCase.execute(school, academicYearId, classId, streamId, query,
+                                page - 1, size, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

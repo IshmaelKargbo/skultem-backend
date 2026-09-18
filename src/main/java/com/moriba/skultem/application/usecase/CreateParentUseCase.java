@@ -38,16 +38,7 @@ public class CreateParentUseCase {
 
     @AuditLogAnnotation(action = "PARENT_CREATED")
     public ParentDTO execute(ParentRequest param) {
-        var password = generatePassword();
-
-        User user;
-        if (userRepo.existsByEmail(param.email())) {
-            user = userRepo.findByEmail(param.email()).orElseThrow();
-        } else {
-            var passwordHash = passwordEncoder.encode(password);
-            user = User.create(param.givenNames(), param.familyName(), param.email(), passwordHash, password);
-            userRepo.save(user);
-        }
+        User user = resolveOrCreateUser(param);
 
         if (repo.existsByPhoneAndSchool(param.phone(), param.schoolId())) {
             throw new AlreadyExistsException("phone already exist in this school");
@@ -75,16 +66,7 @@ public class CreateParentUseCase {
     }
 
     public Parent create(ParentRequest param) {
-        var password = generatePassword();
-
-        User user;
-        if (userRepo.existsByEmail(param.email())) {
-            user = userRepo.findByEmail(param.email()).orElseThrow();
-        } else {
-            var passwordHash = passwordEncoder.encode(password);
-            user = User.create(param.givenNames(), param.familyName(), param.email(), passwordHash, password);
-            userRepo.save(user);
-        }
+        User user = resolveOrCreateUser(param);
 
         if (repo.existsByPhoneAndSchool(param.phone(), param.schoolId())) {
             throw new AlreadyExistsException("phone already exist in this school");
@@ -109,6 +91,23 @@ public class CreateParentUseCase {
                 domain.getId());
 
         return domain;
+    }
+
+    // Blank/null email is normalized to null - not every parent has one. Only reuse an existing
+    // User by email when an email was actually given; a blank email must never be looked up (it'd
+    // match/merge every other email-less parent into the same User row the first two collide).
+    private User resolveOrCreateUser(ParentRequest param) {
+        String email = (param.email() == null || param.email().isBlank()) ? null : param.email().trim();
+
+        if (email != null && userRepo.existsByEmail(email)) {
+            return userRepo.findByEmail(email).orElseThrow();
+        }
+
+        var password = generatePassword();
+        var passwordHash = passwordEncoder.encode(password);
+        var user = User.create(param.givenNames(), param.familyName(), email, passwordHash, password);
+        userRepo.save(user);
+        return user;
     }
 
     private String generatePassword() {

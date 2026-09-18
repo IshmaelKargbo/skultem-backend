@@ -10,7 +10,10 @@ public record CreateParentDTO(
 
         @NotBlank(message = "Family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName,
 
-        @NotBlank(message = "Email is required") @Email(message = "Invalid email format") @Size(max = 150, message = "Email must not exceed 150 characters") String email,
+        // Not required - some parents don't have an email yet. The parent (and their linked
+        // student's enrollment) can still be created without one; an admin adds it later via
+        // AddParentEmailUseCase, which is what actually grants the parent portal access.
+        @Email(message = "Invalid email format") @Size(max = 150, message = "Email must not exceed 150 characters") String email,
 
         @NotBlank(message = "Phone is required") @Pattern(regexp = "^[0-9+ ]{7,20}$", message = "Phone number must contain only digits, spaces or + and be between 7 and 20 characters") String phone,
 

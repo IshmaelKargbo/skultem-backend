@@ -27,4 +27,9 @@ public interface AssessmentApprovalRequestRepository {
     Optional<AssessmentApprovalRequest> findByIdAndSchoolId(String id, String schoolId);
 
     Optional<AssessmentApprovalRequest> findByCycleAndTeacherSubject(String cycleId, String schoolId);
+
+    // A cycle has at most one live approval request regardless of which of a subject's (possibly
+    // several) teachers submits it - looking this up per-teacherSubjectId would let two co-teachers
+    // each spawn their own request for the same shared cycle.
+    Optional<AssessmentApprovalRequest> findByCycle(String cycleId);
 }

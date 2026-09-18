@@ -42,8 +42,13 @@ public interface TeacherSubjectJpaRepository
 
         List<TeacherSubjectEntity> findByTeacher_IdAndSchoolId(String teacherId, String schoolId);
 
-        Optional<TeacherSubjectEntity> findBySubject_IdAndSession_IdAndSchoolId(String subjectId, String sessionId,
-                        String schoolId);
+        // "First" rather than a plain findBy - a subject can now have more than one teacher
+        // assigned (co-taught classes), so more than one TeacherSubjectEntity can match
+        // (subjectId, sessionId, schoolId). Callers only need any one of them as an anchor (see
+        // ProvisionStudentAssessmentsUseCase); which one doesn't matter since grading itself
+        // resolves by subject+session, not by this specific row.
+        Optional<TeacherSubjectEntity> findFirstBySubject_IdAndSession_IdAndSchoolId(String subjectId,
+                        String sessionId, String schoolId);
 
         Optional<TeacherSubjectEntity> findOneByTeacher_IdAndSchoolId(String teacherId, String schoolId);
 
@@ -53,10 +58,10 @@ public interface TeacherSubjectJpaRepository
         Page<TeacherSubjectEntity> findAllBySession_AcademicYear_IdAndSchoolId(String academicYear, String schoolId,
                         Pageable pageable);
 
-        // query/classId are always real (possibly empty) strings, never null - a null String bound
-        // into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type from
-        // context and it falls back to bytea ("function lower(bytea) does not exist"). See
-        // ListTeacherSubjectBySchoolUseCase.
+        // query/classId/streamId are always real (possibly empty) strings, never null - a null
+        // String bound into a lower(...) call leaves Postgres/the JDBC driver unable to infer its
+        // type from context and it falls back to bytea ("function lower(bytea) does not exist").
+        // See ListTeacherSubjectBySchoolUseCase.
         @Query("""
                                 select ts from TeacherSubjectEntity ts
                                 join ts.session s
@@ -66,6 +71,7 @@ public interface TeacherSubjectJpaRepository
                                 where ts.schoolId = :schoolId
                                 and s.academicYear.id = :academicYearId
                                 and (:classId = '' or s.clazz.id = :classId)
+                                and (:streamId = '' or s.stream.id = :streamId)
                                 and (:query = ''
                                      or lower(u.givenName) like lower(concat('%', :query, '%'))
                                      or lower(u.familyName) like lower(concat('%', :query, '%'))
@@ -75,6 +81,7 @@ public interface TeacherSubjectJpaRepository
                         @Param("schoolId") String schoolId,
                         @Param("academicYearId") String academicYearId,
                         @Param("classId") String classId,
+                        @Param("streamId") String streamId,
                         @Param("query") String query,
                         Pageable pageable);
 

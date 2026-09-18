@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -10,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassMasterEntity;
 
 public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntity, String> {
-        boolean existsBySession_IdAndTeacher_IdAndSchoolId(String sessionId, String teacherId,
+        boolean existsBySession_IdAndTeacher_IdAndSchoolIdAndEndedAtIsNull(String sessionId, String teacherId,
                         String schoolId);
 
         boolean existsBySession_IdAndSchoolId(String sessionId, String schoolId);
@@ -32,7 +33,11 @@ public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntit
 
         Page<ClassMasterEntity> findAllBySession_Id(String sessionId, Pageable pageable);
 
-        Optional<ClassMasterEntity> findAllBySession_IdAndSchoolId(String sessionId, String schoolId);
+        @EntityGraph(attributePaths = {
+                        "teacher",
+                        "teacher.user"
+        })
+        List<ClassMasterEntity> findAllBySession_IdAndSchoolIdAndEndedAtIsNull(String sessionId, String schoolId);
 
         long countBySchoolId(String schoolId);
 }

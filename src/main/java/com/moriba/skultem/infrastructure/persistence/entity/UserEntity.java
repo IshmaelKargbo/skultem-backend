@@ -31,7 +31,9 @@ public class UserEntity {
     @Column(nullable = false)
     private String familyName;
 
-    @Column(nullable = false)
+    // Nullable - a parent created without an email (some don't have one) gets a User row with no
+    // email until an admin adds one later via AddParentEmailUseCase, which is also what grants
+    // them portal access (login is keyed on email, so no email means no way to authenticate yet).
     private String email;
 
     @Column(nullable = false)

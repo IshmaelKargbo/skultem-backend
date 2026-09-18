@@ -35,10 +35,10 @@ public interface TeacherSubjectRepository {
         Page<TeacherSubject> findAllBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
                         Pageable pageable);
 
-        // Matches on teacher/subject name, optionally narrowed to one class - backs the teacher
-        // assignment list's search box and class filter.
-        Page<TeacherSubject> search(String schoolId, String academicYearId, String classId, String query,
-                        Pageable pageable);
+        // Matches on teacher/subject name, optionally narrowed to one class and/or stream - backs
+        // the teacher assignment list's search box, class filter and stream filter.
+        Page<TeacherSubject> search(String schoolId, String academicYearId, String classId, String streamId,
+                        String query, Pageable pageable);
 
         Page<TeacherSubject> findByTeacherId(String teacherId, Pageable pageable);
 

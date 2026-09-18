@@ -2,6 +2,7 @@ package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,16 +37,17 @@ public class GetClassSessionUseCase {
                 var domain = repo.findByIdAndSchoolId(id, school)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
 
-                var classMaster = classMasterRepo
-                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(domain.getId());
+                // A session can have more than one active class master (e.g. co-taught classes) -
+                // list every one of them rather than picking just the most recently assigned.
+                var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(domain.getId(), school);
                 String teacherName = "N/A", teacherId = "";
                 String streamName = "N/A", streamId = "";
 
-                if (classMaster.isPresent()) {
-                        var teacher = classMaster.get().getTeacher();
-                        var teacherUser = teacher.getUser();
-                        teacherName = teacherUser.getName();
-                        teacherId = teacher.getId();
+                if (!classMasters.isEmpty()) {
+                        teacherName = classMasters.stream()
+                                        .map(cm -> cm.getTeacher().getUser().getName())
+                                        .collect(Collectors.joining(", "));
+                        teacherId = classMasters.get(0).getTeacher().getId();
                 }
 
                 if (domain.getStream() != null) {
@@ -77,16 +79,17 @@ public class GetClassSessionUseCase {
                 var domain = repo.findByAcademicYearAndClassAndSchoolId(academicYearId, id, school)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
 
-                var classMaster = classMasterRepo
-                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(domain.getId());
+                // A session can have more than one active class master (e.g. co-taught classes) -
+                // list every one of them rather than picking just the most recently assigned.
+                var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(domain.getId(), school);
                 String teacherName = "N/A", teacherId = "";
                 String streamName = "N/A", streamId = "";
 
-                if (classMaster.isPresent()) {
-                        var teacher = classMaster.get().getTeacher();
-                        var teacherUser = teacher.getUser();
-                        teacherName = teacherUser.getName();
-                        teacherId = teacher.getId();
+                if (!classMasters.isEmpty()) {
+                        teacherName = classMasters.stream()
+                                        .map(cm -> cm.getTeacher().getUser().getName())
+                                        .collect(Collectors.joining(", "));
+                        teacherId = classMasters.get(0).getTeacher().getId();
                 }
 
                 if (domain.getStream() != null) {
@@ -118,16 +121,17 @@ public class GetClassSessionUseCase {
                 var domain = repo.findByClassIdAndStreamIdAndAcademicYearId(clazzId, stream, academicYearId)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
 
-                var classMaster = classMasterRepo
-                                .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(domain.getId());
+                // A session can have more than one active class master (e.g. co-taught classes) -
+                // list every one of them rather than picking just the most recently assigned.
+                var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(domain.getId(), school);
                 String teacherName = "N/A", teacherId = "";
                 String streamName = "N/A", streamId = "";
 
-                if (classMaster.isPresent()) {
-                        var teacher = classMaster.get().getTeacher();
-                        var teacherUser = teacher.getUser();
-                        teacherName = teacherUser.getName();
-                        teacherId = teacher.getId();
+                if (!classMasters.isEmpty()) {
+                        teacherName = classMasters.stream()
+                                        .map(cm -> cm.getTeacher().getUser().getName())
+                                        .collect(Collectors.joining(", "));
+                        teacherId = classMasters.get(0).getTeacher().getId();
                 }
 
                 if (domain.getStream() != null) {

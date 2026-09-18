@@ -17,7 +17,7 @@ public class AssessmentScoreMapper {
         ClassSubjectAssessmentLifeCycle cycle = ClassSubjectAssessmentLifeCycleMapper.toDomain(param.getCycle()); 
         
         return new AssessmentScore(param.getId(), param.getSchoolId(), studentAssessment, cycle, param.getWeight(),
-                param.getScore(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getScore(), param.getGradedByUserId(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static AssessmentScoreEntity toEntity(AssessmentScore param) {
@@ -35,6 +35,7 @@ public class AssessmentScoreMapper {
                 .weight(param.getWeight())
                 .score(param.getScore())
                 .cycle(cycle)
+                .gradedByUserId(param.getGradedByUserId())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

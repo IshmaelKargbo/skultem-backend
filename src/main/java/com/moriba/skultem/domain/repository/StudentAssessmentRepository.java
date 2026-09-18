@@ -20,4 +20,6 @@ public interface StudentAssessmentRepository {
     List<StudentAssessment> findAllByTeacherSubjectId(String teacherId);
 
     List<StudentAssessment> findAllByTeacherSubjectIdTermId(String teacherId, String termId);
+
+    List<StudentAssessment> findAllBySubjectAndSessionAndTermId(String subjectId, String sessionId, String termId);
 }

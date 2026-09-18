@@ -41,6 +41,8 @@ public class AssessmentScoreEntity {
     @Column(nullable = false)
     private Integer score;
 
+    private String gradedByUserId;
+
     private Instant createdAt;
 
     private Instant updatedAt;
