@@ -78,6 +78,12 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
+    public List<Object[]> attendanceCountsSinceForReport(String schoolId, String classId, String academicYearId,
+            LocalDate since) {
+        return repo.attendanceCountsSinceForReport(schoolId, classId, academicYearId, since);
+    }
+
+    @Override
     public List<Object[]> attendanceCountsBySessionAndDateRange(String schoolId, String classId, String sectionId,
             String streamId, String academicYearId, LocalDate startDate, LocalDate endDate) {
         return repo.attendanceCountsBySessionAndDateRange(schoolId, classId, sectionId, streamId, academicYearId,
@@ -94,5 +100,11 @@ public class AttendanceAdapter implements AttendanceRepository {
     public Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable)
                 .map(AttendanceMapper::toDomain);
+    }
+
+    @Override
+    public List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId,
+            String academicYearId, LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, academicYearId, startDate, endDate);
     }
 }

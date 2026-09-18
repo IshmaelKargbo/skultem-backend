@@ -9,9 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.model.Enrollment.Status;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.EnrollmentEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
 
@@ -93,6 +96,25 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
 
         long countByStudent_IdAndClazz_IdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
                         Status status);
+
+        // See EnrollmentRepository#demographicsByFilters.
+        @Query("""
+                            SELECT s.gender, s.religion, COUNT(DISTINCT e.student.id)
+                            FROM EnrollmentEntity e
+                            JOIN e.student s
+                            JOIN e.clazz c
+                            WHERE e.schoolId = :schoolId
+                              AND e.status = com.moriba.skultem.domain.model.Enrollment.Status.ACTIVE
+                              AND (:academicYearId IS NULL OR e.academicYear.id = :academicYearId)
+                              AND (:classId IS NULL OR c.id = :classId)
+                              AND (:level IS NULL OR c.level = :level)
+                            GROUP BY s.gender, s.religion
+                        """)
+        List<Object[]> demographicsByFilters(
+                        @Param("schoolId") String schoolId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("classId") String classId,
+                        @Param("level") Level level);
 
         default Page<EnrollmentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<EnrollmentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

@@ -81,4 +81,9 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
                 .toList();
     }
 
+    @Override
+    public List<Object[]> completionReportRows(String schoolId, String termId, String classId, String subjectId) {
+        return repo.completionReportRows(schoolId, termId, classId, subjectId);
+    }
+
 }

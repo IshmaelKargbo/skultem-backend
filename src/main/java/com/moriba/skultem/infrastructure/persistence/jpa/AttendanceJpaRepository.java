@@ -100,6 +100,29 @@ public interface AttendanceJpaRepository
                         @Param("academicYearId") String academicYearId,
                         @Param("since") LocalDate since);
 
+        // Same as attendanceCountsByClassSince but classId nullable (whole school) - kept separate
+        // so ComputeClassAttentionUseCase's existing contract never changes. Backs the whole-school
+        // variant of Students Requiring Attention.
+        @Query("""
+                            SELECT
+                                e.id,
+                                SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
+                                COUNT(a)
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            WHERE a.schoolId = :schoolId
+                              AND (:classId IS NULL OR e.clazz.id = :classId)
+                              AND e.academicYear.id = :academicYearId
+                              AND a.date >= :since
+                              AND a.holiday = false
+                            GROUP BY e.id
+                        """)
+        List<Object[]> attendanceCountsSinceForReport(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("since") LocalDate since);
+
         // Per-student attendance counts for one class SESSION (class + section + stream) within an
         // explicit date range - backs Monthly/Term Summary and Inspection Reports. Same
         // "late counts as attended, holiday excluded" convention as attendanceCountsByClassSince
@@ -178,6 +201,31 @@ public interface AttendanceJpaRepository
 
         List<AttendanceEntity> findAllByEnrollment_Clazz_IdAndEnrollment_Section_IdAndDateAndSchoolId(String classId,
                         String sectionId, LocalDate date, String schoolId);
+
+        // See AttendanceRepository#attendanceCountsByClassGenderAndDateRange.
+        @Query("""
+                            SELECT
+                                a.date,
+                                s.gender,
+                                SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
+                                COUNT(a)
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            JOIN e.student s
+                            WHERE a.schoolId = :schoolId
+                              AND e.clazz.id = :classId
+                              AND (:academicYearId IS NULL OR e.academicYear.id = :academicYearId)
+                              AND a.date BETWEEN :startDate AND :endDate
+                              AND a.holiday = false
+                            GROUP BY a.date, s.gender
+                            ORDER BY a.date
+                        """)
+        List<Object[]> attendanceCountsByClassGenderAndDateRange(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
         default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<AttendanceEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

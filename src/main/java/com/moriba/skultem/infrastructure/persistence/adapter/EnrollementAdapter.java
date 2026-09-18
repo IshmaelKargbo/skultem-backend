@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.jpa.EnrollmentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.EnrollmentMapper;
 
@@ -191,5 +192,11 @@ public class EnrollementAdapter implements EnrollmentRepository {
             String academicYearId, Pageable pageable) {
         return repo.findAllByClazzIdAndAcademicYearIdAndStreamId(classId, academicYearId, stream, pageable)
                 .map(EnrollmentMapper::toDomain);
+    }
+
+    @Override
+    public List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId,
+            Level level) {
+        return repo.demographicsByFilters(schoolId, academicYearId, classId, level);
     }
 }

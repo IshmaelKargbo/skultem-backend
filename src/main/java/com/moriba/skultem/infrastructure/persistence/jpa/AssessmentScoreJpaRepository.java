@@ -132,6 +132,136 @@ public interface AssessmentScoreJpaRepository
                         @Param("termId") String termId,
                         @Param("excludedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 
+        // See AssessmentScoreRepository#studentSubjectAveragesForReport. classId nullable = whole
+        // school for the term.
+        @Query("""
+                        SELECT sa.enrollment.id, sa.enrollment.student.id, sa.enrollment.student.givenNames,
+                               sa.enrollment.student.familyName, sa.enrollment.clazz.id, sa.enrollment.clazz.name,
+                               sa.teacherSubject.subject.id, sa.teacherSubject.subject.name, AVG(a.score), COUNT(a)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.term.id = :termId
+                          AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND (:subjectId IS NULL OR sa.teacherSubject.subject.id = :subjectId)
+                          AND cy.status IN :statuses
+                        GROUP BY sa.enrollment.id, sa.enrollment.student.id, sa.enrollment.student.givenNames,
+                                 sa.enrollment.student.familyName, sa.enrollment.clazz.id, sa.enrollment.clazz.name,
+                                 sa.teacherSubject.subject.id, sa.teacherSubject.subject.name
+                        """)
+        List<Object[]> studentSubjectAveragesForReport(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("subjectId") String subjectId,
+                        @Param("statuses") List<ClassSubjectAssessmentLifeCycle.Status> statuses);
+
+        // See AssessmentScoreRepository#assessmentCompletionByClassAndTerm. classId nullable =
+        // whole school for the term.
+        @Query("""
+                        SELECT sa.enrollment.id, COUNT(a),
+                               SUM(CASE WHEN cy.status IN :approvedStatuses THEN 1L ELSE 0L END)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.term.id = :termId
+                          AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                        GROUP BY sa.enrollment.id
+                        """)
+        List<Object[]> assessmentCompletionByClassAndTerm(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("approvedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
+
+        // See AssessmentScoreRepository#assessmentTrendByEnrollmentAndTerm.
+        @Query("""
+                        SELECT cy.assessment.id, cy.assessment.name, cy.assessment.position, AVG(a.score)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.enrollment.id = :enrollmentId
+                          AND sa.term.id = :termId
+                          AND cy.status IN :approvedStatuses
+                        GROUP BY cy.assessment.id, cy.assessment.name, cy.assessment.position
+                        ORDER BY cy.assessment.position
+                        """)
+        List<Object[]> assessmentTrendByEnrollmentAndTerm(
+                        @Param("schoolId") String schoolId,
+                        @Param("enrollmentId") String enrollmentId,
+                        @Param("termId") String termId,
+                        @Param("approvedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
+
+        // See AssessmentScoreRepository#assessmentTrendByClassAndTerm. classId nullable = whole
+        // school for the term (used by the attention report's declining-trend signal).
+        @Query("""
+                        SELECT sa.enrollment.id, cy.assessment.position, AVG(a.score)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.term.id = :termId
+                          AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND cy.status IN :approvedStatuses
+                        GROUP BY sa.enrollment.id, cy.assessment.position
+                        ORDER BY sa.enrollment.id, cy.assessment.position
+                        """)
+        List<Object[]> assessmentTrendByClassAndTerm(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("approvedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
+
+        // See AssessmentScoreRepository#assessmentAverageTrendForReport. classId/subjectId
+        // nullable - the class/school-level counterpart to assessmentTrendByEnrollmentAndTerm
+        // (which is per-student), for the Academic Trends section.
+        @Query("""
+                        SELECT cy.assessment.id, cy.assessment.name, cy.assessment.position, AVG(a.score)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.term.id = :termId
+                          AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND (:subjectId IS NULL OR sa.teacherSubject.subject.id = :subjectId)
+                          AND cy.status IN :approvedStatuses
+                        GROUP BY cy.assessment.id, cy.assessment.name, cy.assessment.position
+                        ORDER BY cy.assessment.position
+                        """)
+        List<Object[]> assessmentAverageTrendForReport(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("subjectId") String subjectId,
+                        @Param("approvedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
+
+        // See AssessmentScoreRepository#averageScoresForAttentionReport. Same shape/semantics as
+        // averageScoresByClassAndTerm (used by the pre-existing ComputeClassAttentionUseCase), kept
+        // as a separate method rather than widening that one so its contract for existing callers
+        // never changes. classId nullable = whole school.
+        @Query("""
+                        SELECT
+                            sa.enrollment.id,
+                            AVG(a.score),
+                            COUNT(a)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND sa.term.id = :termId
+                          AND cy.status NOT IN :excludedStatuses
+                        GROUP BY sa.enrollment.id
+                        """)
+        List<Object[]> averageScoresForAttentionReport(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("excludedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
+
         default Page<AssessmentScoreEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<AssessmentScoreEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
                                 schoolId);

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 
 public interface EnrollmentRepository {
         void save(Enrollment domain);
@@ -72,4 +73,12 @@ public interface EnrollmentRepository {
 
         long countByStudentIdAndClassIdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
                         Enrollment.Status status);
+
+        // Row shape: [gender (Gender), religion (String), studentCount (Long)] - one row per
+        // distinct (gender, religion) combination among ACTIVE enrollments matching the given
+        // filters (academicYearId/classId/level all nullable = no filter on that dimension). Backs
+        // the student demographics report; religion is left as raw text here and bucketed into the
+        // school's canonical categories (Muslim/Christian/Other/Not specified) by the use case, not
+        // this query, since it's free text rather than an enum.
+        List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId, Level level);
 }

@@ -36,6 +36,13 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsByClassSince(String schoolId, String classId, String academicYearId,
             LocalDate since);
 
+    // Same as attendanceCountsByClassSince but classId nullable (whole school) - the Students
+    // Requiring Attention report's school-wide variant. Kept separate from
+    // attendanceCountsByClassSince so ComputeClassAttentionUseCase's existing contract is
+    // untouched.
+    List<Object[]> attendanceCountsSinceForReport(String schoolId, String classId, String academicYearId,
+            LocalDate since);
+
     // Per-student attendance counts for one class SESSION (class + section + stream, matching the
     // same section/stream scoping GetClassSessionAttendanceUseCase's roster uses) over an explicit
     // date range - backs Monthly Summary, Term Summary and the matching Inspection Report types.
@@ -53,6 +60,15 @@ public interface AttendanceRepository {
     // (Gender), presentOrLateCount (Long), lateCount (Long), totalRecorded (Long)].
     List<Object[]> attendanceCountsBySchoolAndDateRange(String schoolId, String academicYearId, LocalDate startDate,
             LocalDate endDate);
+
+    // Per-day, per-gender attendance counts for one class over a date range (typically one week) -
+    // backs the Weekly Attendance by Gender report. Row shape: [date (LocalDate), gender (Gender),
+    // presentOrLateCount (Long), totalRecorded (Long)]. Boys/girls enrolled totals are NOT part of
+    // this row shape - the use case sources those from the class roster (EnrollmentRepository), not
+    // from attendance records, so a day nobody marked attendance still reports the correct
+    // denominator instead of silently showing zero enrolled.
+    List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId, String academicYearId,
+            LocalDate startDate, LocalDate endDate);
 
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

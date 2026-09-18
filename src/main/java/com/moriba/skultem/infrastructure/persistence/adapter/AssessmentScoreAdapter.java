@@ -158,4 +158,40 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
             List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
         return repo.averageScoresByClassAndTerm(schoolId, classId, termId, excludedStatuses);
     }
+
+    @Override
+    public List<Object[]> studentSubjectAveragesForReport(String schoolId, String classId, String termId,
+            String subjectId, List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.studentSubjectAveragesForReport(schoolId, classId, termId, subjectId, approvedStatuses);
+    }
+
+    @Override
+    public List<Object[]> assessmentCompletionByClassAndTerm(String schoolId, String classId, String termId,
+            List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.assessmentCompletionByClassAndTerm(schoolId, classId, termId, approvedStatuses);
+    }
+
+    @Override
+    public List<Object[]> assessmentTrendByEnrollmentAndTerm(String schoolId, String enrollmentId, String termId,
+            List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.assessmentTrendByEnrollmentAndTerm(schoolId, enrollmentId, termId, approvedStatuses);
+    }
+
+    @Override
+    public List<Object[]> assessmentTrendByClassAndTerm(String schoolId, String classId, String termId,
+            List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.assessmentTrendByClassAndTerm(schoolId, classId, termId, approvedStatuses);
+    }
+
+    @Override
+    public List<Object[]> assessmentAverageTrendForReport(String schoolId, String classId, String termId,
+            String subjectId, List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.assessmentAverageTrendForReport(schoolId, classId, termId, subjectId, approvedStatuses);
+    }
+
+    @Override
+    public List<Object[]> averageScoresForAttentionReport(String schoolId, String classId, String termId,
+            List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
+        return repo.averageScoresForAttentionReport(schoolId, classId, termId, excludedStatuses);
+    }
 }

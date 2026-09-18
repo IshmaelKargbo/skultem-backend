@@ -25,4 +25,10 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
 
     Optional<ClassSubjectAssessmentLifeCycle> findBySubjectSessionAssessmentAndTerm(String subjectId,
             String sessionId, String assessmentId, String termId);
+
+    // Flat projection (no lazy-loaded domain objects, avoids N+1 across potentially hundreds of
+    // cycles for a whole-school report) backing the Assessment Completion Report. Row shape:
+    // [classId, className, subjectId, subjectName, assessmentId, assessmentName, position,
+    // status]. classId/subjectId nullable.
+    List<Object[]> completionReportRows(String schoolId, String termId, String classId, String subjectId);
 }

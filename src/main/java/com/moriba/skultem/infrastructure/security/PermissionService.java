@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.AccessDeniedException;
+import com.moriba.skultem.domain.repository.AssessmentApprovalRequestRepository;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.PromotionRequestRepository;
@@ -28,6 +29,7 @@ public class PermissionService {
     private final PromotionRequestRepository promotionRequestRepo;
     private final ParentRepository parentRepo;
     private final ReportCardRepository reportCardRepo;
+    private final AssessmentApprovalRequestRepository assessmentApprovalRequestRepo;
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -216,6 +218,33 @@ public class PermissionService {
 
         return classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.get().getId(), classSessionId,
                 schoolId);
+    }
+
+    // Mirrors canManagePromotionRequest: the approve/return endpoints are role-gated to any
+    // TEACHER (since the acting class master isn't a Role, just a ClassMaster relation - see
+    // ClassMaster.java), so this is what actually stops a teacher who isn't this request's
+    // assigned class master from approving/returning someone else's submission.
+    public boolean canReviewAssessmentApproval(String schoolId, String approvalRequestId) {
+        if (isSystemAdmin()) {
+            return true;
+        }
+
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PROPRIETOR")) {
+            return true;
+        }
+
+        if (!hasRole(Role.TEACHER)) {
+            return false;
+        }
+
+        var teacher = teacherRepo.findByUserId(currentUserId());
+        if (teacher.isEmpty()) {
+            return false;
+        }
+
+        var request = assessmentApprovalRequestRepo.findByIdAndSchoolId(approvalRequestId, schoolId);
+
+        return request.isPresent() && request.get().getMaster().getTeacher().getId().equals(teacher.get().getId());
     }
 
     public boolean canManagePromotionRequest(String schoolId, String requestId) {

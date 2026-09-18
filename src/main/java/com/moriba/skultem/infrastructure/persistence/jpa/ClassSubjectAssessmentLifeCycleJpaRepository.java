@@ -44,4 +44,22 @@ public interface ClassSubjectAssessmentLifeCycleJpaRepository
                         @Param("sessionId") String sessionId,
                         @Param("assessmentId") String assessmentId,
                         @Param("termId") String termId);
+
+        // See ClassSubjectAssessmentLifeCycleRepository#completionReportRows.
+        @Query("""
+                        SELECT c.subject.session.clazz.id, c.subject.session.clazz.name,
+                               c.subject.subject.id, c.subject.subject.name,
+                               c.assessment.id, c.assessment.name, c.assessment.position, c.status
+                        FROM ClassSubjectAssessmentLifeCycleEntity c
+                        WHERE c.schoolId = :schoolId
+                          AND c.term.id = :termId
+                          AND (:classId IS NULL OR c.subject.session.clazz.id = :classId)
+                          AND (:subjectId IS NULL OR c.subject.subject.id = :subjectId)
+                        ORDER BY c.subject.session.clazz.name, c.subject.subject.name, c.assessment.position
+                        """)
+        List<Object[]> completionReportRows(
+                        @Param("schoolId") String schoolId,
+                        @Param("termId") String termId,
+                        @Param("classId") String classId,
+                        @Param("subjectId") String subjectId);
 }

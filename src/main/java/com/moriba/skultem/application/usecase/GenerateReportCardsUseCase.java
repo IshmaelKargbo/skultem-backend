@@ -21,6 +21,7 @@ import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.ReportCardMapper;
 import com.moriba.skultem.domain.model.ReportCard;
+import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ReportCardRepository;
@@ -28,7 +29,6 @@ import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.domain.vo.FilterOperator;
-import com.moriba.skultem.domain.vo.GradeBand;
 import com.moriba.skultem.infrastructure.persistence.mapper.JsonMapper;
 
 import jakarta.transaction.Transactional;
@@ -55,10 +55,7 @@ public class GenerateReportCardsUseCase {
                 var clazz = classRepo.findByIdAndSchool(param.classId(), schoolId)
                                 .orElseThrow(() -> new NotFoundException("Class not found"));
 
-                var school = schoolRepo.findById(schoolId).orElse(null);
-                List<GradeBand> gradingScale = school != null && school.getGradingScale() != null
-                                ? school.getGradingScale()
-                                : List.of();
+                School school = schoolRepo.findById(schoolId).orElse(null);
                 int passMark = clazz.getTemplate() != null ? clazz.getTemplate().getPassMark() : 50;
 
                 var roster = listEnrollmentByClassUseCase.execute(schoolId, param.classId(), "",
@@ -108,7 +105,7 @@ public class GenerateReportCardsUseCase {
                                                 return new ReportCardSubjectDTO(e.getKey(),
                                                                 teacherBySubject.get(e.getKey()), subjectScore,
                                                                 100, subjectScore,
-                                                                resolveGrade(gradingScale, subjectScore), assessments);
+                                                                resolveGrade(school, subjectScore), assessments);
                                         })
                                         .toList();
 
@@ -121,7 +118,7 @@ public class GenerateReportCardsUseCase {
                                         ? rankStudentUseCase.execute(student.id(), param.termId(), schoolId)
                                         : 0;
 
-                        String overallGrade = resolveGrade(gradingScale, average);
+                        String overallGrade = resolveGrade(school, average);
                         boolean passed = average >= passMark;
 
                         Double attendancePercentage = param.includeAttendance()
@@ -170,12 +167,12 @@ public class GenerateReportCardsUseCase {
                                 classAverage, generated);
         }
 
-        private String resolveGrade(List<GradeBand> bands, double average) {
-                return bands.stream()
-                                .filter(b -> average >= b.minScore() && average <= b.maxScore())
-                                .map(a -> a.grade())
-                                .findFirst()
-                                .orElse("N/A");
+        private String resolveGrade(School school, double average) {
+                if (school == null) {
+                        return "N/A";
+                }
+                String grade = school.resolveGrade((int) Math.round(average));
+                return grade != null ? grade : "N/A";
         }
 
         private Double computeAttendancePercentage(String enrollmentId, String schoolId, LocalDate start,
