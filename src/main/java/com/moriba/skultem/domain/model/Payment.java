@@ -43,6 +43,14 @@ public class Payment extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    // Used when a student's class is corrected: the money already received stays (same receipt,
+    // method and date) but is applied to the equivalent fee of the new class instead.
+    public void reassign(FeeStructure fee, BigDecimal amount) {
+        this.fee = fee;
+        this.amount = amount;
+        touch(Instant.now());
+    }
+
     public static Payment create(String schoolId, Student student, FeeStructure fee, BigDecimal amount,
             PaymentMethod method, String referenceNo, String externalReference, String note, Instant paidAt) {
         Instant now = Instant.now();

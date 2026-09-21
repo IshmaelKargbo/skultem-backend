@@ -1,7 +1,13 @@
 package com.moriba.skultem.application.usecase;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +20,11 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.ClassSection;
 import com.moriba.skultem.domain.model.Enrollment;
+import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.Payment;
 import com.moriba.skultem.domain.model.Stream;
+import com.moriba.skultem.domain.model.StudentFee;
+import com.moriba.skultem.domain.model.StudentLedgerEntry;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
@@ -31,19 +41,24 @@ import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
+import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Level;
+import com.moriba.skultem.utils.Generate;
+import com.moriba.skultem.utils.MoneyUtil;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 // Corrects a student's class when they were placed in the wrong one at enrollment ("profiling").
 // This is a correction, not a transfer: it is only allowed while nothing has been recorded against
-// the enrollment yet (attendance, behaviour, entered scores, discounts, payments), because all of
-// that hangs off the old class and can't be moved without rewriting history. Everything the old
-// class generated - subject selections, provisioned assessments, fee charges - is undone (fee
-// charges via an ADJUSTMENT credit so the ledger keeps a trail rather than losing rows) and then
-// regenerated for the new class exactly as a fresh enrollment would.
+// the enrollment yet (attendance, behaviour, entered scores, discounts), because all of that hangs
+// off the old class and can't be moved without rewriting history. Everything the old class
+// generated - subject selections, provisioned assessments, fee charges and their ledger entries -
+// is deleted and regenerated for the new class exactly as a fresh enrollment would. Money the
+// student already paid is kept, not refunded: each payment is re-applied to the new class's fees
+// (same receipt, method and date) and its ledger entry updated to match. The school's cashbook
+// (Transaction) is deliberately left alone - the cash was received either way.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -65,7 +80,10 @@ public class ChangeEnrollmentClassUseCase {
     private final StudentFeeRepository studentFeeRepo;
     private final FeeDiscountRepository feeDiscountRepo;
     private final PaymentRepository paymentRepo;
+    private final StudentLedgerEntryRepository ledgerRepo;
     private final CreateStudentLedgerUsercase ledgerUseCase;
+    private final RecomputeStudentLedgerBalancesUseCase recomputeLedgerBalances;
+    private final RecordPaymentUseCase recordPaymentUseCase;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     private final ApplyApplicableFeesToEnrollmentUseCase applyApplicableFeesToEnrollmentUseCase;
     private final LogActivityUseCase logActivityUseCase;
@@ -134,7 +152,26 @@ public class ChangeEnrollmentClassUseCase {
 
         String oldClassName = enrollment.getClazz().getName();
 
-        reverseFeeCharges(schoolId, enrollment);
+        var oldFees = studentFeeRepo.findBySchoolAndEnrollment(schoolId, enrollment.getId(), Pageable.unpaged())
+                .getContent().stream().map(StudentFee::getFee).toList();
+        Set<String> oldFeeIds = oldFees.stream().map(FeeStructure::getId).collect(Collectors.toSet());
+
+        // Oldest first, so the earliest money is the first to be matched to the new fees.
+        List<Payment> paidOnOldFees = paymentRepo
+                .findByStudentAndAcademicYear(student.getId(), activeYear.getId(), Pageable.unpaged()).getContent()
+                .stream()
+                .filter(payment -> oldFeeIds.contains(payment.getFee().getId()))
+                .sorted(Comparator.comparing(Payment::getPaidAt))
+                .toList();
+
+        // The old charges are deleted outright (not offset by a credit, which would read as paid).
+        var ledgerEntries = ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(student.getId(),
+                schoolId);
+        ledgerRepo.deleteAll(ledgerEntries.stream()
+                .filter(entry -> entry.getTransactionType() == TransactionType.FEE_ASSINMENT
+                        && entry.getReferenceId() != null && oldFeeIds.contains(entry.getReferenceId()))
+                .toList());
+
         assessmentScoreRepo.deleteAllByEnrollmentIdAndSchoolId(enrollment.getId(), schoolId);
         studentAssessmentRepo.deleteAllByEnrollmentIdAndSchoolId(enrollment.getId(), schoolId);
         studentFeeRepo.deleteAllByEnrollmentAndSchool(enrollment.getId(), schoolId);
@@ -154,6 +191,9 @@ public class ChangeEnrollmentClassUseCase {
             log.warn("Could not apply fee structures for student {}: {}", student.getId(), e.getMessage());
         }
 
+        carryPaymentsOver(schoolId, enrollment, paidOnOldFees, ledgerEntries);
+        recomputeLedgerBalances.recomputeForStudent(student.getId(), schoolId);
+
         boolean requiresSubjectSelection = classSubjectRepo
                 .findAllByClassIdAndSchoolId(clazz.getId(), schoolId, Pageable.unpaged()).getContent().stream()
                 .anyMatch(cs -> cs.getGroup() != null);
@@ -161,7 +201,8 @@ public class ChangeEnrollmentClassUseCase {
         logActivityUseCase.log(schoolId, ActivityType.STUDENT, "Student class corrected",
                 student.getGivenNames() + " " + student.getFamilyName() + " - " + oldClassName + " to "
                         + clazz.getName(),
-                "from=" + oldClassName + ";to=" + clazz.getName(), student.getId());
+                "from=" + oldClassName + ";to=" + clazz.getName() + ";paymentsMoved=" + paidOnOldFees.size(),
+                student.getId());
 
         return new ChangeClassResult(enrollment.getId(), requiresSubjectSelection);
     }
@@ -182,36 +223,100 @@ public class ChangeEnrollmentClassUseCase {
         if (feeDiscountRepo.findBySchoolAndEnrollment(schoolId, enrollmentId, Pageable.ofSize(1)).hasContent()) {
             throw new RuleException("A fee discount has already been applied to this student");
         }
-
-        BigDecimal paid = paymentRepo.sumPaymentsByStudentThisYear(enrollment.getStudent().getId(),
-                enrollment.getAcademicYear().getId());
-        if (paid != null && paid.signum() > 0) {
-            throw new RuleException(
-                    "This student has already made payments this year, so their class can no longer be corrected");
-        }
     }
 
-    // Credits back exactly what ApplyApplicableFeesToEnrollmentUseCase debited, so the balance
-    // returns to where it was before the wrong class's fees were charged.
-    private void reverseFeeCharges(String schoolId, Enrollment enrollment) {
+    // Re-applies the money already paid to the new class's fees: matching category and term first,
+    // then anything left over to the remaining fees in term order. A payment that doesn't fit one
+    // fee is split (extra rows share its receipt number, which the model already allows). If the
+    // new class's fees can't absorb everything paid, the whole change is refused rather than
+    // silently losing part of what the parent paid.
+    private void carryPaymentsOver(String schoolId, Enrollment enrollment, List<Payment> payments,
+            List<StudentLedgerEntry> ledgerEntries) {
+        if (payments.isEmpty()) {
+            return;
+        }
+
         var student = enrollment.getStudent();
-        studentFeeRepo.findBySchoolAndEnrollment(schoolId, enrollment.getId(), Pageable.unpaged()).getContent()
-                .forEach(studentFee -> {
-                    var fee = studentFee.getFee();
-                    ledgerUseCase.createEntry(
-                            schoolId,
-                            enrollment.getAcademicYear().getId(),
-                            student.getId(),
-                            fee.getTerm().getId(),
-                            TransactionType.ADJUSTMENT,
-                            Direction.CREDIT,
-                            fee.getAmount(),
-                            fee.getId(),
-                            "Reversal of " + fee.getCategory().getName() + " (" + fee.getTerm().getName()
-                                    + ") - class corrected for " + student.getGivenNames() + " "
-                                    + student.getFamilyName(),
-                            Instant.now());
-                });
+        String yearId = enrollment.getAcademicYear().getId();
+
+        List<FeeStructure> newFees = studentFeeRepo
+                .findBySchoolAndEnrollment(schoolId, enrollment.getId(), Pageable.unpaged()).getContent().stream()
+                .map(StudentFee::getFee)
+                .sorted(Comparator.comparingInt((FeeStructure fee) -> fee.getTerm().getTermNumber())
+                        .thenComparing(fee -> fee.getCategory().getName()))
+                .toList();
+
+        Map<String, BigDecimal> room = new HashMap<>();
+        newFees.forEach(fee -> room.put(fee.getId(), fee.getAmount()));
+
+        Map<String, StudentLedgerEntry> ledgerByPayment = ledgerEntries.stream()
+                .filter(entry -> entry.getTransactionType() == TransactionType.PAYMENT
+                        && entry.getReferenceId() != null)
+                .collect(Collectors.toMap(StudentLedgerEntry::getReferenceId, entry -> entry, (a, b) -> a));
+
+        Map<String, FeeStructure> feesPaidInto = new LinkedHashMap<>();
+
+        for (Payment payment : payments) {
+            BigDecimal left = payment.getAmount();
+            boolean firstPortion = true;
+
+            for (FeeStructure fee : bestMatchFirst(newFees, payment.getFee())) {
+                if (left.signum() <= 0) {
+                    break;
+                }
+                BigDecimal available = room.get(fee.getId());
+                if (available.signum() <= 0) {
+                    continue;
+                }
+
+                BigDecimal portion = left.min(available);
+                room.put(fee.getId(), available.subtract(portion));
+                left = left.subtract(portion);
+                feesPaidInto.put(fee.getId(), fee);
+
+                String description = Generate.generateLedgerDescription(TransactionType.PAYMENT,
+                        fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),
+                        student.getFamilyName(), student.getAdmissionNumber(), portion);
+
+                if (firstPortion) {
+                    firstPortion = false;
+                    payment.reassign(fee, portion);
+                    paymentRepo.save(payment);
+
+                    var entry = ledgerByPayment.get(payment.getId());
+                    if (entry != null) {
+                        entry.reassignPayment(fee.getTerm().getId(), portion, description);
+                        ledgerRepo.saveAll(List.of(entry));
+                    }
+                } else {
+                    var extra = Payment.create(schoolId, student, fee, portion, payment.getMethod(),
+                            payment.getReferenceNo(), payment.getExternalReference(), payment.getNote(),
+                            payment.getPaidAt());
+                    paymentRepo.save(extra);
+                    ledgerUseCase.createEntry(schoolId, yearId, student.getId(), fee.getTerm().getId(),
+                            TransactionType.PAYMENT, Direction.CREDIT, portion, extra.getId(), description,
+                            payment.getPaidAt());
+                }
+            }
+
+            if (left.signum() > 0) {
+                throw new RuleException("This student has paid " + MoneyUtil.format(left)
+                        + " more than the fees of the new class cover. Set up the new class's fees first, then "
+                        + "change the class again.");
+            }
+        }
+
+        // A fee that is now fully paid issues its supplies (uniform etc.), same as paying it directly;
+        // anything already issued for the old fee is skipped by processSupply itself.
+        feesPaidInto.values().forEach(fee -> recordPaymentUseCase.processSupply(fee, student));
+    }
+
+    private List<FeeStructure> bestMatchFirst(List<FeeStructure> fees, FeeStructure paidFee) {
+        return fees.stream().sorted(Comparator.comparingInt(fee -> {
+            boolean sameCategory = fee.getCategory().getId().equals(paidFee.getCategory().getId());
+            boolean sameTerm = fee.getTerm().getId().equals(paidFee.getTerm().getId());
+            return sameCategory && sameTerm ? 0 : sameCategory ? 1 : 2;
+        })).toList();
     }
 
     public record ChangeClassResult(String enrollmentId, boolean requiresSubjectSelection) {

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -38,9 +39,12 @@ import com.moriba.skultem.domain.model.ClassSection;
 import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.model.Payment;
+import com.moriba.skultem.domain.model.Payment.PaymentMethod;
 import com.moriba.skultem.domain.model.Section;
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.model.StudentFee;
+import com.moriba.skultem.domain.model.StudentLedgerEntry;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
@@ -57,6 +61,7 @@ import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
+import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 import com.moriba.skultem.domain.vo.Level;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,7 +102,13 @@ class ChangeEnrollmentClassUseCaseTest {
     @Mock
     private PaymentRepository paymentRepo;
     @Mock
+    private StudentLedgerEntryRepository ledgerRepo;
+    @Mock
     private CreateStudentLedgerUsercase ledgerUseCase;
+    @Mock
+    private RecomputeStudentLedgerBalancesUseCase recomputeLedgerBalances;
+    @Mock
+    private RecordPaymentUseCase recordPaymentUseCase;
     @Mock
     private ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     @Mock
@@ -137,7 +148,10 @@ class ChangeEnrollmentClassUseCaseTest {
         lenient().when(assessmentScoreRepo.findAllByEnrollmentIdAndSchoolId(ENROLLMENT, SCHOOL)).thenReturn(List.of());
         lenient().when(feeDiscountRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
                 .thenReturn(Page.empty());
-        lenient().when(paymentRepo.sumPaymentsByStudentThisYear(anyString(), eq(YEAR))).thenReturn(BigDecimal.ZERO);
+        lenient().when(paymentRepo.findByStudentAndAcademicYear(any(), eq(YEAR), any(Pageable.class)))
+                .thenReturn(Page.empty());
+        lenient().when(ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(any(), eq(SCHOOL)))
+                .thenReturn(List.of());
         lenient().when(studentFeeRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
                 .thenReturn(Page.empty());
         lenient().when(enrollmentSubjectRepo.findAllByEnrollmentIdAndSchoolId(ENROLLMENT, SCHOOL))
@@ -150,22 +164,54 @@ class ChangeEnrollmentClassUseCaseTest {
         verify(enrollmentRepo, never()).save(any());
         verify(studentFeeRepo, never()).deleteAllByEnrollmentAndSchool(anyString(), anyString());
         verify(studentAssessmentRepo, never()).deleteAllByEnrollmentIdAndSchoolId(anyString(), anyString());
+        verify(ledgerRepo, never()).deleteAll(any());
         verify(ledgerUseCase, never()).createEntry(any(), any(), any(), any(), any(), any(), any(), any(), any(),
                 any());
     }
 
+    private FeeStructure fee(String id, String categoryId, String termId, String amount) {
+        var fee = mock(FeeStructure.class, RETURNS_DEEP_STUBS);
+        lenient().when(fee.getId()).thenReturn(id);
+        lenient().when(fee.getAmount()).thenReturn(new BigDecimal(amount));
+        lenient().when(fee.getCategory().getId()).thenReturn(categoryId);
+        lenient().when(fee.getCategory().getName()).thenReturn(categoryId);
+        lenient().when(fee.getTerm().getId()).thenReturn(termId);
+        lenient().when(fee.getTerm().getName()).thenReturn(termId);
+        lenient().when(fee.getTerm().getTermNumber()).thenReturn(1);
+        return fee;
+    }
+
+    private Page<StudentFee> feesOf(FeeStructure... fees) {
+        return new PageImpl<>(java.util.Arrays.stream(fees)
+                .map(fee -> StudentFee.create(SCHOOL, enrollment, enrollment.getStudent(), fee, null)).toList());
+    }
+
+    private Payment paymentOn(FeeStructure fee, String amount) {
+        return Payment.create(SCHOOL, enrollment.getStudent(), fee, new BigDecimal(amount), PaymentMethod.CASH,
+                "RCT-1", null, "note", Instant.parse("2026-01-10T09:00:00Z"));
+    }
+
+    private StudentLedgerEntry paymentLedgerEntry(Payment payment, String amount) {
+        return StudentLedgerEntry.create("led-pay", SCHOOL, YEAR, enrollment.getStudent().getId(), "term-old",
+                TransactionType.PAYMENT, Direction.CREDIT, new BigDecimal(amount), payment.getId(), "old text",
+                payment.getPaidAt(), BigDecimal.ZERO);
+    }
+
     @Test
     void movesTheStudentAndRebuildsWhatTheOldClassGenerated() {
-        var fee = mock(FeeStructure.class, RETURNS_DEEP_STUBS);
-        when(fee.getId()).thenReturn("fee-1");
-        when(fee.getAmount()).thenReturn(new BigDecimal("500"));
-        when(fee.getTerm().getId()).thenReturn("term-1");
-        when(fee.getTerm().getName()).thenReturn("Term 1");
-        when(fee.getCategory().getName()).thenReturn("Tuition");
-        var studentFee = mock(StudentFee.class);
-        when(studentFee.getFee()).thenReturn(fee);
+        var oldFee = fee("fee-old", "tuition", "term-1", "500");
+        var newFee = fee("fee-new", "tuition", "term-1", "800");
         when(studentFeeRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(studentFee)));
+                .thenReturn(feesOf(oldFee));
+
+        var oldCharge = mock(StudentLedgerEntry.class);
+        when(oldCharge.getTransactionType()).thenReturn(TransactionType.FEE_ASSINMENT);
+        when(oldCharge.getReferenceId()).thenReturn("fee-old");
+        var unrelated = mock(StudentLedgerEntry.class);
+        when(unrelated.getTransactionType()).thenReturn(TransactionType.FEE_ASSINMENT);
+        when(unrelated.getReferenceId()).thenReturn("some-other-fee");
+        when(ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(any(), eq(SCHOOL)))
+                .thenReturn(List.of(oldCharge, unrelated));
 
         var result = useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null);
 
@@ -174,19 +220,91 @@ class ChangeEnrollmentClassUseCaseTest {
         assertThat(result.enrollmentId()).isEqualTo(ENROLLMENT);
         assertThat(result.requiresSubjectSelection()).isFalse();
 
-        // Old charges are credited back before anything is deleted, and the new class is provisioned
-        // only after the move has been saved.
-        var order = inOrder(ledgerUseCase, assessmentScoreRepo, studentAssessmentRepo, studentFeeRepo,
-                enrollmentRepo, provisionStudentAssessmentsUseCase, applyApplicableFeesToEnrollmentUseCase);
-        order.verify(ledgerUseCase).createEntry(eq(SCHOOL), eq(YEAR), any(), eq("term-1"),
-                eq(TransactionType.ADJUSTMENT), eq(Direction.CREDIT), eq(new BigDecimal("500")), eq("fee-1"),
-                anyString(), any());
+        // Only the old class's own charge is deleted (no offsetting credit that would read as paid),
+        // and that happens before the new class is provisioned and its fees charged.
+        var order = inOrder(ledgerRepo, assessmentScoreRepo, studentAssessmentRepo, studentFeeRepo, enrollmentRepo,
+                provisionStudentAssessmentsUseCase, applyApplicableFeesToEnrollmentUseCase, recomputeLedgerBalances);
+        order.verify(ledgerRepo).deleteAll(List.of(oldCharge));
         order.verify(assessmentScoreRepo).deleteAllByEnrollmentIdAndSchoolId(ENROLLMENT, SCHOOL);
         order.verify(studentAssessmentRepo).deleteAllByEnrollmentIdAndSchoolId(ENROLLMENT, SCHOOL);
         order.verify(studentFeeRepo).deleteAllByEnrollmentAndSchool(ENROLLMENT, SCHOOL);
         order.verify(enrollmentRepo).save(enrollment);
         order.verify(provisionStudentAssessmentsUseCase).execute(enrollment);
         order.verify(applyApplicableFeesToEnrollmentUseCase).execute(enrollment);
+        order.verify(recomputeLedgerBalances).recomputeForStudent(any(), eq(SCHOOL));
+        verify(ledgerUseCase, never()).createEntry(any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any());
+    }
+
+    @Test
+    void carriesAPaymentOverToTheMatchingFeeOfTheNewClass() {
+        var oldFee = fee("fee-old", "tuition", "term-1", "500");
+        var newTuition = fee("fee-new-tuition", "tuition", "term-1", "800");
+        var newOther = fee("fee-new-other", "sports", "term-1", "100");
+        when(studentFeeRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
+                .thenReturn(feesOf(oldFee), feesOf(newOther, newTuition));
+
+        var payment = paymentOn(oldFee, "500");
+        when(paymentRepo.findByStudentAndAcademicYear(any(), eq(YEAR), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(payment)));
+        var ledgerEntry = paymentLedgerEntry(payment, "500");
+        when(ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(any(), eq(SCHOOL)))
+                .thenReturn(List.of(ledgerEntry));
+
+        useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null);
+
+        // Same category wins over the other fee that happens to come first in the list.
+        assertThat(payment.getFee().getId()).isEqualTo("fee-new-tuition");
+        assertThat(payment.getAmount()).isEqualByComparingTo("500");
+        assertThat(payment.getReferenceNo()).isEqualTo("RCT-1");
+        assertThat(ledgerEntry.getTermId()).isEqualTo("term-1");
+        assertThat(ledgerEntry.getAmount()).isEqualByComparingTo("500");
+        verify(paymentRepo).save(payment);
+        verify(ledgerRepo).saveAll(List.of(ledgerEntry));
+        verify(recordPaymentUseCase).processSupply(newTuition, enrollment.getStudent());
+        verify(ledgerUseCase, never()).createEntry(any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any());
+    }
+
+    @Test
+    void splitsAPaymentAcrossFeesWhenItDoesNotFitOne() {
+        var oldFee = fee("fee-old", "tuition", "term-1", "500");
+        var newTuition = fee("fee-new-tuition", "tuition", "term-1", "300");
+        var newOther = fee("fee-new-other", "sports", "term-1", "400");
+        when(studentFeeRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
+                .thenReturn(feesOf(oldFee), feesOf(newTuition, newOther));
+
+        var payment = paymentOn(oldFee, "500");
+        when(paymentRepo.findByStudentAndAcademicYear(any(), eq(YEAR), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(payment)));
+
+        useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null);
+
+        assertThat(payment.getFee().getId()).isEqualTo("fee-new-tuition");
+        assertThat(payment.getAmount()).isEqualByComparingTo("300");
+
+        var saved = org.mockito.ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepo, org.mockito.Mockito.times(2)).save(saved.capture());
+        var extra = saved.getAllValues().get(1);
+        assertThat(extra.getFee().getId()).isEqualTo("fee-new-other");
+        assertThat(extra.getAmount()).isEqualByComparingTo("200");
+        assertThat(extra.getReferenceNo()).isEqualTo("RCT-1");
+        verify(ledgerUseCase).createEntry(eq(SCHOOL), eq(YEAR), any(), eq("term-1"), eq(TransactionType.PAYMENT),
+                eq(Direction.CREDIT), eq(new BigDecimal("200")), eq(extra.getId()), anyString(),
+                eq(payment.getPaidAt()));
+    }
+
+    @Test
+    void refusesWhenTheNewClassFeesCannotAbsorbWhatWasPaid() {
+        var oldFee = fee("fee-old", "tuition", "term-1", "500");
+        var newTuition = fee("fee-new-tuition", "tuition", "term-1", "300");
+        when(studentFeeRepo.findBySchoolAndEnrollment(eq(SCHOOL), eq(ENROLLMENT), any(Pageable.class)))
+                .thenReturn(feesOf(oldFee), feesOf(newTuition));
+        when(paymentRepo.findByStudentAndAcademicYear(any(), eq(YEAR), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(paymentOn(oldFee, "500"))));
+
+        assertThatThrownBy(() -> useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null))
+                .isInstanceOf(RuleException.class).hasMessageContaining("more than the fees");
     }
 
     @Test
@@ -220,15 +338,6 @@ class ChangeEnrollmentClassUseCaseTest {
         useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null);
 
         verify(enrollmentRepo).save(enrollment);
-    }
-
-    @Test
-    void refusesWhenThePaymentsHaveBeenMadeThisYear() {
-        when(paymentRepo.sumPaymentsByStudentThisYear(anyString(), eq(YEAR))).thenReturn(new BigDecimal("100"));
-
-        assertThatThrownBy(() -> useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, NEW_SECTION, null))
-                .isInstanceOf(RuleException.class).hasMessageContaining("payments");
-        assertNothingWasChanged();
     }
 
     @Test

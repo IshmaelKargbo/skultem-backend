@@ -50,6 +50,13 @@ public class StudentLedgerEntry extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public void reassignPayment(String termId, BigDecimal amount, String description) {
+        this.termId = termId;
+        this.amount = amount;
+        this.description = description;
+        touch(Instant.now());
+    }
+
     public static StudentLedgerEntry create(String id, String schoolId, String academicYearId, String studentId,
             String termId, TransactionType transactionType, Direction direction, BigDecimal amount, String referenceId,
             String description, Instant paidAt, BigDecimal balance) {

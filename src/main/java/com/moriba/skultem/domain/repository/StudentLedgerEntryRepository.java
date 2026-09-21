@@ -14,6 +14,8 @@ public interface StudentLedgerEntryRepository {
 
         void saveAll(List<StudentLedgerEntry> domains);
 
+        void deleteAll(List<StudentLedgerEntry> domains);
+
         /**
          * Every ledger entry for one student, oldest first (tie-broken by creation order) - the exact
          * order their running balance was meant to accumulate in. Used to recompute

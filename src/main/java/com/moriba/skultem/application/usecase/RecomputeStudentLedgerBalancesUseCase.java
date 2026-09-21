@@ -43,19 +43,11 @@ public class RecomputeStudentLedgerBalancesUseCase {
         int entriesUpdated = 0;
 
         for (var student : students) {
-            var entries = ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(student.getId(),
-                    schoolId);
+            int corrected = recomputeForStudent(student.getId(), schoolId);
 
-            if (entries.isEmpty()) {
-                continue;
-            }
-
-            List<StudentLedgerEntry> changed = recomputeBalances(entries);
-
-            if (!changed.isEmpty()) {
-                ledgerRepo.saveAll(changed);
+            if (corrected > 0) {
                 studentsAffected++;
-                entriesUpdated += changed.size();
+                entriesUpdated += corrected;
             }
         }
 
@@ -68,6 +60,24 @@ public class RecomputeStudentLedgerBalancesUseCase {
                 null);
 
         return new Result(students.size(), studentsAffected, entriesUpdated);
+    }
+
+    // Also used on its own after a student's ledger is edited (e.g. their class was corrected and
+    // fee entries were removed), since every later entry's stored balance depends on the ones before.
+    public int recomputeForStudent(String studentId, String schoolId) {
+        var entries = ledgerRepo.findAllByStudentIdAndSchoolIdOrderByPaidAtAscCreatedAtAsc(studentId, schoolId);
+
+        if (entries.isEmpty()) {
+            return 0;
+        }
+
+        List<StudentLedgerEntry> changed = recomputeBalances(entries);
+
+        if (!changed.isEmpty()) {
+            ledgerRepo.saveAll(changed);
+        }
+
+        return changed.size();
     }
 
     private List<StudentLedgerEntry> recomputeBalances(List<StudentLedgerEntry> entriesOldestFirst) {

@@ -28,6 +28,11 @@ public class StudentLedgerEntryAdapter implements StudentLedgerEntryRepository {
     }
 
     @Override
+    public void deleteAll(List<StudentLedgerEntry> domains) {
+        repo.deleteAllById(domains.stream().map(StudentLedgerEntry::getId).toList());
+    }
+
+    @Override
     public void saveAll(List<StudentLedgerEntry> domains) {
         var entities = domains.stream().map(StudentLedgerEntryMapper::toEntity).toList();
         repo.saveAll(entities);
