@@ -34,8 +34,9 @@ public interface FeeStructureRepository {
 
     Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable);
 
-    Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
-            Boolean oldStudentsOnly, Gender gender, Pageable pageable);
+    /** The school's fee structures for one academic year, narrowed by whichever other filters are non-null. */
+    Page<FeeStructure> search(String schoolId, String academicYearId, String termId, String classId,
+            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Pageable pageable);
 
     Page<FeeStructure> findBySchoolAndAcademic(String schoolId, String academicYearId, Pageable pageable);
 

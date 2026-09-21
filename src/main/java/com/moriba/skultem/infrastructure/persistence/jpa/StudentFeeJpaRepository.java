@@ -32,6 +32,11 @@ public interface StudentFeeJpaRepository
 
     Optional<StudentFeeEntity> findByIdAndSchoolId(String id, String schoolId);
 
+    // A student's fees for one academic year - a fee structure belongs to a year, so this is the fees
+    // charged for that year only.
+    Page<StudentFeeEntity> findAllByStudent_IdAndFee_AcademicYear_IdAndSchoolId(String studentId,
+            String academicYearId, String schoolId, Pageable pageable);
+
     Page<StudentFeeEntity> findAllByStudent_IdAndSchoolId(String studentId, String schoolId, Pageable pageable);
 
     Page<StudentFeeEntity> findAllByEnrollment_IdAndStudent_IdAndSchoolId(String enrollmentId, String studentId,

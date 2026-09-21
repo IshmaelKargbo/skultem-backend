@@ -37,6 +37,11 @@ public class ClassAdapter implements ClassRepository {
     }
 
     @Override
+    public int maxLevelOrderBySchool(String school) {
+        return repo.maxLevelOrderBySchoolId(school);
+    }
+
+    @Override
     public Page<Clazz> findBySchool(String school, Pageable pageable) {
        return repo.findAllBySchoolIdAndStatusOrderByLevelOrderAsc(school, Status.ACTIVE, pageable).map(ClassMapper::toDomain);
     }

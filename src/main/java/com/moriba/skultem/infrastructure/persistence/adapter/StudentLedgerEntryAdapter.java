@@ -75,6 +75,36 @@ public class StudentLedgerEntryAdapter implements StudentLedgerEntryRepository {
     }
 
     @Override
+    public Page<StudentLedgerEntry> findSchoolEntries(String academicYearId, String schoolId, Pageable pageable) {
+        return repo.findSchoolEntries(academicYearId, schoolId, pageable).map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
+    public Page<StudentLedgerEntry> searchSchoolEntries(String academicYearId, String schoolId, String search,
+            String classId, StudentLedgerEntry.TransactionType type, String termId, Pageable pageable) {
+        return repo.searchSchoolEntries(academicYearId, schoolId, search, classId, type, termId, pageable)
+                .map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
+    public Page<StudentLedgerEntry> searchPlatformEntries(String academicYearId, String schoolId, String search,
+            String classId, StudentLedgerEntry.TransactionType type, String termId, Pageable pageable) {
+        return repo.searchPlatformEntries(academicYearId, schoolId, search, classId, type, termId, pageable)
+                .map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
+    public Page<StudentLedgerEntry> findPlatformEntries(String academicYearId, String schoolId,
+            Pageable pageable) {
+        return repo.findPlatformEntries(academicYearId, schoolId, pageable).map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
+    public Page<StudentLedgerEntry> runSchoolReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        return repo.runSchoolReport(schoolId, filters, pageable).map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
     public Page<StudentLedgerEntry> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable).map(StudentLedgerEntryMapper::toDomain);
     }

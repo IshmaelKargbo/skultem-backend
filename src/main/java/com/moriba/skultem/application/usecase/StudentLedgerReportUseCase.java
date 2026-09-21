@@ -13,6 +13,7 @@ import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+/** Totals for the school's own student ledger - the platform fee is left out (see PlatformFeeReportUseCase). */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class StudentLedgerReportUseCase {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 List<StudentLedgerEntry> entries = repo
-                                .findAllByAcademicYearAndSchool(academicYear.getId(), schoolId, Pageable.unpaged())
+                                .findSchoolEntries(academicYear.getId(), schoolId, Pageable.unpaged())
                                 .getContent();
 
                 BigDecimal totalDebit = entries.stream()

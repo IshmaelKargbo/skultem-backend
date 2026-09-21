@@ -39,6 +39,12 @@ public class PaymentAdapter implements PaymentRepository {
     }
 
     @Override
+    public Page<Payment> findByStudentAndAcademicYear(String studentId, String academicYearId, Pageable pageable) {
+        return repo.findAllByStudent_IdAndFee_AcademicYear_Id(studentId, academicYearId, pageable)
+                .map(PaymentMapper::toDomain);
+    }
+
+    @Override
     public List<Payment> findAllByReferenceNoAndSchoolId(String referenceNo, String schoolId) {
         return repo.findAllByReferenceNoAndSchoolIdOrderByCreatedAtAsc(referenceNo, schoolId).stream()
                 .map(PaymentMapper::toDomain)

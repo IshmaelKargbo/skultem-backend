@@ -17,6 +17,9 @@ public interface PaymentRepository {
 
     Page<Payment> findByStudent(String studentId, Pageable pageable);
 
+    /** A student's payments towards the fees of one academic year only. */
+    Page<Payment> findByStudentAndAcademicYear(String studentId, String academicYearId, Pageable pageable);
+
     List<Payment> findAllByReferenceNoAndSchoolId(String referenceNo, String schoolId);
 
     Page<Payment> findAllByAcademicYearAndSchoolId(String academicYearId, String schoolId, Pageable pageable);
@@ -24,6 +27,7 @@ public interface PaymentRepository {
     BigDecimal sumPaymentsByStudentAndFee(String studentId, String feeId);
 
     BigDecimal sumPaymentsByFeeAndSchool(String feeId, String schoolId);
+
 
     BigDecimal sumPaymentsByStudentThisYear(String studentId, String academicYearId);
 

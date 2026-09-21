@@ -53,7 +53,14 @@ public class RefreshTokenUseCase {
         // ACTIVE only, same as LoginUseCase - a role deactivated after this session was issued
         // (see SetUserAccessUseCase/RemoveRoleUseCase, which already kill the session outright)
         // must not keep getting silently re-granted every time the access token is refreshed.
-        var schoolUsers = schoolUserRepo.findAllByUser_IdAndSchoolId(userId, session.getSchoolId()).stream()
+        // A session with no school is a SYSTEM_ADMIN one (see SystemAdminLoginUseCase) - a
+        // school-scoped lookup can't match a null school_id, so look up that membership directly.
+        var memberships = session.getSchoolId() == null
+                ? schoolUserRepo.findAllByUser_Id(userId).stream()
+                        .filter(su -> su.getRole() == Role.SYSTEM_ADMIN && su.getSchoolId() == null)
+                        .toList()
+                : schoolUserRepo.findAllByUser_IdAndSchoolId(userId, session.getSchoolId());
+        var schoolUsers = memberships.stream()
                 .filter(su -> su.getStatus() == SchoolUser.Status.ACTIVE)
                 .toList();
 

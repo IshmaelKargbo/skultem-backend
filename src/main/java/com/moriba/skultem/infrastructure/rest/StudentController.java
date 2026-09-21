@@ -151,10 +151,11 @@ public class StudentController {
         public ApiResponse<List<StudentFeeDTO>> listStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-                var res = listSubjectFeesByStudentUseCase.execute(school, studentId, page - 1, size);
+                var res = listSubjectFeesByStudentUseCase.execute(school, studentId, academicYearId, page - 1, size);
                 var list = res.getContent();
                 var meta = MetaMapper.toMeta(res);
 

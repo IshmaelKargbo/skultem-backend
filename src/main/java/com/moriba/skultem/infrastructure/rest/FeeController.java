@@ -55,7 +55,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.moriba.skultem.application.dto.FeeDiscountReportDTO;
+import com.moriba.skultem.application.dto.PlatformFeeReportDTO;
+import com.moriba.skultem.application.dto.StudentLedgerDTO;
 import com.moriba.skultem.application.dto.StudentLedgerReportDTO;
+import com.moriba.skultem.application.usecase.ListPlatformFeeEntriesUseCase;
+import com.moriba.skultem.application.usecase.PlatformFeeReportUseCase;
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.services.FeeService;
 import com.moriba.skultem.application.usecase.CountStudentFeesUseCase;
@@ -86,6 +90,8 @@ public class FeeController {
         private final CreateFeeDiscountUseCase createFeeDiscountUseCase;
         private final CountStudentByFeeUseCase countStudentByFeeUseCase;
         private final StudentLedgerReportUseCase studentLedgerReportUseCase;
+        private final PlatformFeeReportUseCase platformFeeReportUseCase;
+        private final ListPlatformFeeEntriesUseCase listPlatformFeeEntriesUseCase;
         private final AssignFeeToStudentUseCase assignFeeToStudentUseCase;
         private final RecomputeStudentLedgerBalancesUseCase recomputeStudentLedgerBalancesUseCase;
         private final UpdateFeeCategoryUseCase updateFeeCategoryUseCase;
@@ -192,6 +198,7 @@ public class FeeController {
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page,
+                        @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = false) String termId,
                         @RequestParam(required = false) String classId,
                         // NEW or OLD - which side of the newStudentsOnly/oldStudentsOnly split to
@@ -209,8 +216,8 @@ public class FeeController {
                 Boolean oldStudentsOnly = "OLD".equalsIgnoreCase(studentType) ? Boolean.TRUE : null;
                 Gender genderFilter = gender != null && !gender.isBlank() ? Gender.valueOf(gender.toUpperCase()) : null;
 
-                var res = listFeeStructureBySchoolUseCase.execute(school, page - 1, size, termId, classId,
-                                newStudentsOnly, oldStudentsOnly, genderFilter, sortBy, direction);
+                var res = listFeeStructureBySchoolUseCase.execute(school, academicYearId, page - 1, size, termId,
+                                classId, newStudentsOnly, oldStudentsOnly, genderFilter, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -307,10 +314,16 @@ public class FeeController {
         public ApiResponse<StudentLedgerPagedDTO> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
+                        @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String classId,
+                        @RequestParam(required = false) String type,
+                        @RequestParam(required = false) String termId,
+                        @RequestParam(required = false, defaultValue = "desc") String sort,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-                var res = listStudentLedgerBySchoolUseCase.execute(school, academicYearId, page - 1, size);
+                var res = listStudentLedgerBySchoolUseCase.execute(school, academicYearId, page - 1, size, search,
+                                classId, type, termId, "asc".equalsIgnoreCase(sort));
                 Map<String, Object> meta = Map.of(
                                 "page", res.page() + 1,
                                 "size", res.size(),
@@ -343,6 +356,43 @@ public class FeeController {
                 var res = studentLedgerReportUseCase.calculateReport(school, academicYearId);
                 return new ApiResponse<>("success", 200, "Student ledger report successfully",
                                 res);
+        }
+
+        // The platform fee (Skultem's, collected by the school on its behalf) - kept off the student
+        // ledger above so the two are never mistaken for each other.
+        @GetMapping("/platform/report")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<PlatformFeeReportDTO> platformFeeReport(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String academicYearId) {
+
+                var res = platformFeeReportUseCase.execute(school, academicYearId);
+                return new ApiResponse<>("success", 200, "Platform fee report fetched successfully", res);
+        }
+
+        @GetMapping("/platform/entries")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<List<StudentLedgerDTO>> platformFeeEntries(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String academicYearId,
+                        @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String classId,
+                        @RequestParam(required = false) String type,
+                        @RequestParam(required = false) String termId,
+                        @RequestParam(required = false, defaultValue = "desc") String sort,
+                        @RequestParam(required = true, defaultValue = "10") Integer size,
+                        @RequestParam(required = true, defaultValue = "1") Integer page) {
+
+                var res = listPlatformFeeEntriesUseCase.execute(school, academicYearId, page - 1, size, search,
+                                classId, type, termId, "asc".equalsIgnoreCase(sort));
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+
+                return new ApiResponse<>("success", 200, "Platform fee entries fetched successfully",
+                                res.getContent(), meta);
         }
 
         @GetMapping("/category")

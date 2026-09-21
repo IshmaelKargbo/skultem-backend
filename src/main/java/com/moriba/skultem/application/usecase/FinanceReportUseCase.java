@@ -1,5 +1,8 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.data.domain.Sort;
+import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.model.AcademicYear;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -208,16 +211,32 @@ public class FinanceReportUseCase {
                 return "Partial";
         }
 
-        public Page<PaymentDTO> paymentHistory(String schoolId, String studentId, int page, int size) {
+        /**
+         * A student's payments for one academic year - the one asked for, or the school's active year when
+         * none is given - newest first, not every payment they've ever made. A school with no active year has
+         * no payments to show (an empty page, not an error); a year that was asked for but doesn't exist is.
+         */
+        public Page<PaymentDTO> paymentHistory(String schoolId, String studentId, String academicYearId, int page,
+                        int size) {
                 studentRepo.findByIdAndSchoolId(studentId, schoolId)
                                 .orElseThrow(() -> new RuleException("Student not found"));
 
                 Pageable pageable = size > 0
-                                ? PageRequest.of(page, size)
+                                ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
                                 : Pageable.unpaged();
 
+                AcademicYear academicYear;
+                try {
+                        academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
+                } catch (NotFoundException e) {
+                        if (academicYearId != null && !academicYearId.isBlank()) {
+                                throw e;
+                        }
+                        return Page.empty(pageable);
+                }
+
                 return paymentRepo
-                                .findByStudent(studentId, pageable)
+                                .findByStudentAndAcademicYear(studentId, academicYear.getId(), pageable)
                                 .map(PaymentMapper::toDTO);
         }
 }

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,7 @@ import com.moriba.skultem.infrastructure.rest.dto.SavePayslipSettingDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@RequiresModule(FeatureModule.PAYROLL)
 @RestController
 @RequestMapping("/api/v1/payslip-setting")
 @RequiredArgsConstructor

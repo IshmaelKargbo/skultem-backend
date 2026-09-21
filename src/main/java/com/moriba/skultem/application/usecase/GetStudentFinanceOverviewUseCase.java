@@ -33,6 +33,7 @@ public class GetStudentFinanceOverviewUseCase {
         List<PaymentDTO> recentPayments = financeReportUseCase.paymentHistory(
                 schoolId,
                 studentId,
+                academicYearId,
                 0,
                 recentPaymentSize).getContent();
 

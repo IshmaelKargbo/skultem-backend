@@ -99,6 +99,7 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
     @Query("""
                 SELECT f FROM FeeStructureEntity f
                 WHERE f.schoolId = :schoolId
+                AND f.academicYear.id = :academicYearId
                 AND (:termId IS NULL OR f.term.id = :termId)
                 AND (:classId IS NULL OR f.clazz.id = :classId)
                 AND (:newStudentsOnly IS NULL OR f.newStudentsOnly = :newStudentsOnly)
@@ -107,6 +108,7 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             """)
     Page<FeeStructureEntity> search(
             @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
             @Param("termId") String termId,
             @Param("classId") String classId,
             @Param("newStudentsOnly") Boolean newStudentsOnly,

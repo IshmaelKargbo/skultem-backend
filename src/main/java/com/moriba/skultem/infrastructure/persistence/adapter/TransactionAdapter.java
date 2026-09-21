@@ -34,6 +34,16 @@ public class TransactionAdapter implements TransactionRepository {
     }
 
     @Override
+    public Page<Transaction> searchTransactions(String schoolId, String academicYearId,
+            Transaction.TransactionType type,
+            Transaction.Direction direction, Transaction.ReferenceType referenceType, java.time.Instant from,
+            java.time.Instant toExclusive, Pageable pageable) {
+        return repo.searchTransactions(schoolId, academicYearId, type, direction, referenceType, from, toExclusive,
+                pageable)
+                .map(TransactionMapper::toDomain);
+    }
+
+    @Override
     public Page<Transaction> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable).map(TransactionMapper::toDomain);
     }

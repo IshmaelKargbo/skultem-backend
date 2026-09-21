@@ -8,6 +8,8 @@ import io.mailtrap.model.request.emails.MailtrapMail;
 
 import jakarta.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,8 @@ import java.util.Map;
 
 @Service
 public class MailService {
+
+        private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
         private MailtrapClient client;
 
@@ -113,6 +117,15 @@ public class MailService {
                         client.send(mail);
 
                 } catch (Exception e) {
+
+                        // Dev mode sends to the Mailtrap sandbox, where a template that can't be
+                        // rendered/delivered shouldn't abort the flow that triggered the email
+                        // (onboarding, user creation, ...) - just log it. Production still fails loudly.
+                        if ("dev".equalsIgnoreCase(mode)) {
+                                log.warn("Template email to {} (template {}) failed in dev mode: {}",
+                                                to, templateUuid, e.getMessage());
+                                return;
+                        }
 
                         throw new RuntimeException(
                                         "Template email failed",

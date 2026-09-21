@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.FeeStructureDTO;
+import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.FeeStructureMapper;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.vo.Gender;
@@ -20,20 +21,38 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListFeeStructureBySchoolUseCase {
     private final FeeStructureRepository repo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // f.<field>" (see FeeStructureJpaRepository.search), so an unchecked client value would let
     // someone probe/sort by arbitrary entity fields.
     private static final Set<String> SORTABLE_FIELDS = Set.of("amount", "dueDate", "createdAt");
 
-    public Page<FeeStructureDTO> execute(String schoolId, int page, int size, String termId, String classId,
-            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, String sortBy, String direction) {
+    /**
+     * The fee structures of one academic year - the one asked for, or the school's active year when none is
+     * given - not every structure the school has ever set up. A school with no active year has none to show
+     * (an empty page, not an error); a year that was asked for but doesn't exist is.
+     */
+    public Page<FeeStructureDTO> execute(String schoolId, String academicYearId, int page, int size, String termId,
+            String classId, Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, String sortBy,
+            String direction) {
         Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = Pageable.unpaged(sort);
         if (size > 0) {
             pageable = PageRequest.of(page, size, sort);
         }
-        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
+
+        String yearId;
+        try {
+            yearId = resolveAcademicYearUseCase.execute(schoolId, academicYearId).getId();
+        } catch (NotFoundException e) {
+            if (academicYearId != null && !academicYearId.isBlank()) {
+                throw e;
+            }
+            return Page.empty(pageable);
+        }
+
+        return repo.search(schoolId, yearId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
                 .map(FeeStructureMapper::toDTO);
     }
 

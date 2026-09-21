@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 // cash sale to a student or a walk-in buyer, independent of the fee-entitled Supply flow at
 // /materials/supply. Nested under /materials since a sale always references a material, matching
 // how /materials/supply and /materials/category are organized.
+@RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
 @RequestMapping("/api/v1/materials/sales")
 @RequiredArgsConstructor

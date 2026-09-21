@@ -21,6 +21,10 @@ public interface PaymentJpaRepository
 
     Page<PaymentEntity> findAllByStudent_Id(String studentId, Pageable pageable);
 
+    // A student's payments towards fees of one academic year (a fee structure belongs to a year).
+    Page<PaymentEntity> findAllByStudent_IdAndFee_AcademicYear_Id(String studentId, String academicYearId,
+            Pageable pageable);
+
     List<PaymentEntity> findAllByReferenceNoAndSchoolIdOrderByCreatedAtAsc(String referenceNo, String schoolId);
 
     Page<PaymentEntity> findAllByFee_AcademicYear_IdAndSchoolIdOrderByCreatedAtDesc(

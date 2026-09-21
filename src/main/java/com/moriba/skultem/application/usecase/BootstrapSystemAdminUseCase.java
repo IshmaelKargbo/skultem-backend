@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,11 +35,10 @@ import lombok.RequiredArgsConstructor;
  * accounts are created the ordinary way (an existing SYSTEM_ADMIN using CreateUserUseCase, which
  * permits it - see there) rather than through this endpoint again.
  * <p>
- * {@code domain} is optional. {@code school_users.school_id} is NOT NULL at the DB level, so the
- * new SchoolUser row still needs some school to point at, but which one doesn't matter - see
- * PermissionService.isSystemAdmin(), which grants full access off the role alone and never
- * consults the anchor school. Callers who don't care can omit domain and let this pick any
- * existing school; only pass one to anchor onto a specific school on purpose.
+ * {@code domain} is optional. A SYSTEM_ADMIN isn't tied to any school - see
+ * PermissionService.isSystemAdmin(), which grants full access off the role alone - so no school
+ * needs to exist yet and the SchoolUser row is created with a null school_id. Only pass a domain
+ * to anchor the account onto a specific school on purpose.
  * <p>
  * Deliberately not {@code @AuditLogAnnotation} - that aspect logs every argument verbatim
  * (see AuditAspect.generateDetails), which would put the bootstrap token and the new admin's
@@ -71,7 +69,7 @@ public class BootstrapSystemAdminUseCase {
             throw new RuleException("A system admin already exists - use an existing admin account to create more");
         }
 
-        var school = resolveAnchorSchool(domain);
+        String schoolId = resolveAnchorSchoolId(domain);
 
         User user;
         if (userRepo.existsByEmail(email)) {
@@ -91,29 +89,32 @@ public class BootstrapSystemAdminUseCase {
             userRepo.save(user);
         }
 
-        var schoolUser = SchoolUser.create(school.getId(), user, Role.SYSTEM_ADMIN);
+        var schoolUser = SchoolUser.create(schoolId, user, Role.SYSTEM_ADMIN);
         schoolUserRepo.save(schoolUser);
 
-        logActivityUseCase.log(
-                school.getId(),
-                ActivityType.USER,
-                "System admin bootstrapped",
-                user.getGivenNames() + " " + user.getFamilyName(),
-                null,
-                user.getId());
+        // activities.school_id is NOT NULL, so there's nothing to attach the entry to when
+        // the admin isn't anchored to a school.
+        if (schoolId != null) {
+            logActivityUseCase.log(
+                    schoolId,
+                    ActivityType.USER,
+                    "System admin bootstrapped",
+                    user.getGivenNames() + " " + user.getFamilyName(),
+                    null,
+                    user.getId());
+        }
 
         return UserMapper.toDTO(user, List.of(Role.SYSTEM_ADMIN));
     }
 
-    private School resolveAnchorSchool(String domain) {
-        if (domain != null && !domain.isBlank()) {
-            return schoolRepo.findByDomain(domain)
-                    .orElseThrow(() -> new NotFoundException("School not found"));
+    private String resolveAnchorSchoolId(String domain) {
+        if (domain == null || domain.isBlank()) {
+            return null;
         }
 
-        return schoolRepo.findAll(PageRequest.of(0, 1)).stream().findFirst()
-                .orElseThrow(() -> new RuleException(
-                        "No school exists yet - create one first (POST /api/v1/school), or pass domain to anchor onto a specific one"));
+        return schoolRepo.findByDomain(domain)
+                .map(School::getId)
+                .orElseThrow(() -> new NotFoundException("School not found"));
     }
 
     private boolean constantTimeEquals(String a, String b) {

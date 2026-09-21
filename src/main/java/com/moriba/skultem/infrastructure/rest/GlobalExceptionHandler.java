@@ -18,6 +18,7 @@ import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.FileUploadException;
+import com.moriba.skultem.application.error.ModuleNotInstalledException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.infrastructure.rest.dto.ApiErrorResponse;
@@ -55,6 +56,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.UNAUTHORIZED, "ACCESS_DENIED", ex);
+    }
+
+    // 403, not 401 like AccessDeniedException above: the caller is signed in and allowed by role, the
+    // school just hasn't installed this feature - the frontend must not treat it as an expired session.
+    @ExceptionHandler(ModuleNotInstalledException.class)
+    public ResponseEntity<ApiErrorResponse> handleModuleNotInstalled(ModuleNotInstalledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                new ApiErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        "MODULE_NOT_INSTALLED",
+                        ex.getMessage(),
+                        LocalDateTime.now(),
+                        Map.of("module", ex.getModule().key())));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

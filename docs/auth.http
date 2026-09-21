@@ -24,11 +24,11 @@ POST http://localhost:8080/api/v1/system/bootstrap
 Content-Type: application/json
 
 {
-  "token": "<SYSTEM_ADMIN_BOOTSTRAP_TOKEN value>",
-  "email": "admin@your-domain",
-  "password": "...",
-  "givenNames": "...",
-  "familyName": "..."
+  "token": "0d9c32a5c3daf5744d4dadacd8f9b3d23160d9b2c18425c1ec47c6994312367b",
+  "email": "ishmaelkargbo5@outlook.com",
+  "password": "Isho@2024",
+  "givenNames": "Ishmael",
+  "familyName": "Kargbo"
 }
 
 
@@ -39,7 +39,7 @@ POST https://api.skultem.com/api/v1/system/bootstrap
 Content-Type: application/json
 
 {
-  "token": "6fK89mP4xQ4vL7sN3cR1yT1wH2jD0gB8zA2eU9iX4qW7",
+  "token": "0d9c32a5c3daf5744d4dadacd8f9b3d23160d9b2c18425c1ec47c6994312367b",
   "email": "ishmaelkargbo5@outlook.com",
   "password": "Isho@2024",
   "givenNames": "Ishmael",

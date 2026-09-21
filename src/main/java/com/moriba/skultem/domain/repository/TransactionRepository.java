@@ -18,4 +18,9 @@ public interface TransactionRepository {
                         Pageable pageable);
 
         Page<Transaction> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+
+        /** The school's transactions for one academic year, narrowed by type, direction, reference type and a date range (each ignored when null). */
+        Page<Transaction> searchTransactions(String schoolId, String academicYearId, Transaction.TransactionType type,
+                        Transaction.Direction direction, Transaction.ReferenceType referenceType,
+                        java.time.Instant from, java.time.Instant toExclusive, Pageable pageable);
 }
