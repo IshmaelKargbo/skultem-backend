@@ -18,6 +18,9 @@ import lombok.Getter;
 @Getter
 public class PlatformFeeSetting extends AggregateRoot<String> {
 
+    /** What every newly-created school is charged per student until a SYSTEM_ADMIN changes it. */
+    public static final BigDecimal DEFAULT_AMOUNT = new BigDecimal("150.00");
+
     private BigDecimal amount;
 
     public PlatformFeeSetting(String id, BigDecimal amount, Instant createdAt, Instant updatedAt) {

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -31,6 +33,7 @@ import com.moriba.skultem.infrastructure.rest.dto.MarkTeacherAttendanceDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@RequiresModule(FeatureModule.STAFF_HR)
 @RestController
 @RequestMapping("/api/v1/teacher-attendance")
 @RequiredArgsConstructor

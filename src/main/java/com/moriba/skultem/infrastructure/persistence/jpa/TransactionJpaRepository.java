@@ -21,6 +21,40 @@ public interface TransactionJpaRepository
         Page<TransactionEntity> findAllByAcademicYearIdAndSchoolId(String acadmicYearId, String schoolId,
                         Pageable pageable);
 
+        /**
+         * The school's transactions narrowed by any of: type, direction (money in/out), what they
+         * relate to, and a date range - each ignored when null. {@code from} is inclusive and
+         * {@code toExclusive} exclusive, so a whole last day is included by passing the next midnight.
+         */
+        default Page<TransactionEntity> searchTransactions(String schoolId, String academicYearId,
+                        com.moriba.skultem.domain.model.Transaction.TransactionType type,
+                        com.moriba.skultem.domain.model.Transaction.Direction direction,
+                        com.moriba.skultem.domain.model.Transaction.ReferenceType referenceType,
+                        java.time.Instant from, java.time.Instant toExclusive, Pageable pageable) {
+                // Always one academic year - never every year's transactions at once.
+                Specification<TransactionEntity> spec = (root, query, cb) -> cb.and(
+                                cb.equal(root.get("schoolId"), schoolId),
+                                cb.equal(root.get("academicYear").get("id"), academicYearId));
+
+                if (type != null) {
+                        spec = spec.and((root, query, cb) -> cb.equal(root.get("transactionType"), type));
+                }
+                if (direction != null) {
+                        spec = spec.and((root, query, cb) -> cb.equal(root.get("direction"), direction));
+                }
+                if (referenceType != null) {
+                        spec = spec.and((root, query, cb) -> cb.equal(root.get("referenceType"), referenceType));
+                }
+                if (from != null) {
+                        spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+                }
+                if (toExclusive != null) {
+                        spec = spec.and((root, query, cb) -> cb.lessThan(root.get("createdAt"), toExclusive));
+                }
+
+                return findAll(spec, pageable);
+        }
+
         default Page<TransactionEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
                 Specification<TransactionEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
                                 schoolId);

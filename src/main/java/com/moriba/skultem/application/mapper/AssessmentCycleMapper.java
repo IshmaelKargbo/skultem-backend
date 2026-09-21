@@ -6,6 +6,11 @@ import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 
 public class AssessmentCycleMapper {
     public static AssessmentCycleDTO toDTO(ClassSubjectAssessmentLifeCycle param) {
+        return toDTO(param, null);
+    }
+
+    /** {@code returnReason}: the approver's note if this cycle was sent back - see AssessmentCycleDTO. */
+    public static AssessmentCycleDTO toDTO(ClassSubjectAssessmentLifeCycle param, String returnReason) {
         if (param == null) {
             return null;
         }
@@ -13,7 +18,7 @@ public class AssessmentCycleMapper {
         var assessment = param.getAssessment();
 
         return new AssessmentCycleDTO(assessment.getId(), assessment.getName(), assessment.getWeight(),
-                assessment.getPosition(), param.getStatus().name());
+                assessment.getPosition(), param.getStatus().name(), returnReason);
     }
 
     public static AssessmentCycleDTO toDTO(Assessment assessment, String status) {
@@ -22,6 +27,6 @@ public class AssessmentCycleMapper {
         }
 
         return new AssessmentCycleDTO(assessment.getId(), assessment.getName(), assessment.getWeight(),
-                assessment.getPosition(), status);
+                assessment.getPosition(), status, null);
     }
 }

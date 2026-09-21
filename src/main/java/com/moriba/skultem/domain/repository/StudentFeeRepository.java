@@ -26,6 +26,10 @@ public interface StudentFeeRepository {
 
         Page<StudentFee> findAllBySchoolAndStudent(String schoolId, String student, Pageable pageable);
 
+        /** The student's fees for one academic year only (a fee structure belongs to a year). */
+        Page<StudentFee> findAllBySchoolAndStudentAndAcademicYear(String schoolId, String student,
+                        String academicYearId, Pageable pageable);
+
         Page<StudentFee> findBySchoolAndEnrollment(String schoolId, String enrollmentId, Pageable pageable);
 
         Page<StudentFee> findBySchoolAndEnrollmentAndFee(String schoolId, String enrollmentId, String feeId,

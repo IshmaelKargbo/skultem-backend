@@ -41,6 +41,8 @@ public class CreateSchoolUseCase {
     private final MailService mailService;
     private final LogActivityUseCase logActivityUseCase;
     private final EnsurePlatformFeeSettingUseCase ensurePlatformFeeSettingUseCase;
+    private final ProvisionAcademicCalendarForNewSchoolUseCase provisionAcademicCalendarUseCase;
+    private final ProvisionStarterModulesForNewSchoolUseCase provisionStarterModulesUseCase;
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
     private static final int PASSWORD_LENGTH = 8;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -58,12 +60,32 @@ public class CreateSchoolUseCase {
         var school = School.create(id, name, cleanDomain, address, owner);
         repo.save(school);
 
-        // Best-effort - a new school with no platform fee copied yet just gets caught by the
-        // startup sweep instead (see BackfillPlatformFeesUseCase); it shouldn't block signup.
+        // Best-effort - a new school missing its platform fee just gets caught by the startup
+        // sweep instead (see BackfillPlatformFeesUseCase); it shouldn't block signup. Starts at the
+        // default amount (150) with its "Platform Fee" category, so every student the school
+        // admits is charged from its first term on - a SYSTEM_ADMIN can change the amount later.
         try {
-            ensurePlatformFeeSettingUseCase.execute(school.getId());
+            ensurePlatformFeeSettingUseCase.provisionForNewSchool(school.getId());
         } catch (Exception e) {
             log.warn("Could not set a default platform fee for new school {}: {}", school.getId(), e.getMessage());
+        }
+
+        // A new school starts with just the starter modules (see FeatureModule) and installs the rest
+        // as it needs them. Best-effort like the rest: a missed one can be installed from the
+        // Modules page.
+        try {
+            provisionStarterModulesUseCase.execute(school.getId(), null);
+        } catch (Exception e) {
+            log.warn("Could not install the starter modules for new school {}: {}", school.getId(), e.getMessage());
+        }
+
+        // After the platform fee on purpose: activating the current term seeds that fee's
+        // structure, which needs the setting above to exist. Also best-effort - a school without
+        // the ministry calendar just sets its year/terms up by hand, as before.
+        try {
+            provisionAcademicCalendarUseCase.execute(school.getId());
+        } catch (Exception e) {
+            log.warn("Could not set the academic calendar for new school {}: {}", school.getId(), e.getMessage());
         }
 
         logActivityUseCase.log(

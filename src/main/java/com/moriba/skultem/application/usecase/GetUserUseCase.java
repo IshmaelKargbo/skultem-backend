@@ -26,7 +26,15 @@ public class GetUserUseCase {
     public UserDTO execute(String schoolId, String id) {
         var record = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        var memberships = schoolUserRepo.findAllByUser_IdAndSchoolId(id, schoolId);
+        // A session with no school is a SYSTEM_ADMIN one (see SystemAdminLoginUseCase) - the
+        // school-scoped lookup does "school_id = NULL", which never matches, so this returned no
+        // roles at all and the portal showed such an admin nothing but the dashboard. Same
+        // handling as RefreshTokenUseCase.
+        var memberships = schoolId == null
+                ? schoolUserRepo.findAllByUser_Id(id).stream()
+                        .filter(su -> su.getRole() == Role.SYSTEM_ADMIN && su.getSchoolId() == null)
+                        .toList()
+                : schoolUserRepo.findAllByUser_IdAndSchoolId(id, schoolId);
         List<Role> roles = memberships.stream().map(e -> e.getRole()).toList();
         String schoolStatus = memberships.isEmpty() ? null
                 : memberships.stream().anyMatch(m -> m.getStatus() == SchoolUser.Status.ACTIVE) ? "ACTIVE"

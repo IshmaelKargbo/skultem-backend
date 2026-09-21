@@ -36,7 +36,7 @@ public class CreateClassUseCase {
     public ClassDTO execute(
             String school,
             String name,
-            int levelOrder,
+            Integer levelOrder,
             List<String> sectionIds,
             List<String> streamIds,
             String assessmentTemplateId,
@@ -46,10 +46,13 @@ public class CreateClassUseCase {
         if (classRepo.existsByNameAndSchool(name, school)) {
             throw new AlreadyExistsException("Class with session '" + name + "' already exists in this school.");
         }
-        if (classRepo.existsByLevelOrderAndSchool(levelOrder, school)) {
+        // The order is only a position in lists now - not something a user has to pick - so it
+        // defaults to after the school's last class. Only an explicitly requested one can clash.
+        if (levelOrder != null && classRepo.existsByLevelOrderAndSchool(levelOrder, school)) {
             throw new AlreadyExistsException(
                     "Class with level order '" + levelOrder + "' already exists in this school.");
         }
+        int order = levelOrder != null ? levelOrder : classRepo.maxLevelOrderBySchool(school) + 1;
 
         // Fetch active academic year
         AcademicYear academicYear = academicYearRepo.findActiveBySchool(school)
@@ -64,7 +67,7 @@ public class CreateClassUseCase {
                     .orElseThrow(() -> new NotFoundException("Assessment template not found"));
         }
 
-        Clazz clazz = Clazz.create(classId, school, template, name, levelEnum, levelOrder);
+        Clazz clazz = Clazz.create(classId, school, template, name, levelEnum, order);
         classRepo.save(clazz);
 
         // Fetch Sections once

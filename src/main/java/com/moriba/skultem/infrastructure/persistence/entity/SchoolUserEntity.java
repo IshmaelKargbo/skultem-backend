@@ -29,7 +29,7 @@ public class SchoolUserEntity {
     @Id
     private String id;
 
-    @Column(nullable = false)
+    // Null only for SYSTEM_ADMIN, which is platform-wide rather than tied to a school.
     private String schoolId;
 
     @ManyToOne(fetch = FetchType.LAZY)

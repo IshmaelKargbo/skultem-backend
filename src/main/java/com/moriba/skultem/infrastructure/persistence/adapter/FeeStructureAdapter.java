@@ -86,9 +86,10 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     }
 
     @Override
-    public Page<FeeStructure> search(String schoolId, String termId, String classId, Boolean newStudentsOnly,
-            Boolean oldStudentsOnly, Gender gender, Pageable pageable) {
-        return repo.search(schoolId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
+    public Page<FeeStructure> search(String schoolId, String academicYearId, String termId, String classId,
+            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Pageable pageable) {
+        return repo.search(schoolId, academicYearId, termId, classId, newStudentsOnly, oldStudentsOnly, gender,
+                pageable)
                 .map(FeeStructureMapper::toDomain);
     }
 

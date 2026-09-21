@@ -11,7 +11,9 @@ public record CreateClassDTO(
 
                 @NotBlank(message = "Level is required") String level,
 
-                @NotNull(message = "Level order is required") Integer levelOrder,
+                // Optional - the class's position in lists. Left out, it goes after the school's last class
+                // (see CreateClassUseCase); the UI no longer asks for it.
+                Integer levelOrder,
 
                 @NotNull(message = "Sections are required") @NotEmpty(message = "At least one section is required") List<@NotBlank(message = "Section session cannot be blank") String> sections,
                 List<String> streams,

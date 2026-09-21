@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +26,7 @@ import com.moriba.skultem.infrastructure.rest.dto.ComposeBroadcastDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@RequiresModule(FeatureModule.COMMUNICATION)
 @RestController
 @RequestMapping("/api/v1/broadcast")
 @RequiredArgsConstructor

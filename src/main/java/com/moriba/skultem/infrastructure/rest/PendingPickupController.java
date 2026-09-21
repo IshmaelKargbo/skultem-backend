@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 // Combines fee-entitled Supply and unfulfilled MaterialSale records into one "who still needs to
 // collect something" list - see GetPendingPickupsUseCase for why this reads both instead of
 // merging them. Nested under /materials since both underlying concepts are.
+@RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
 @RequestMapping("/api/v1/materials/pending-pickups")
 @RequiredArgsConstructor

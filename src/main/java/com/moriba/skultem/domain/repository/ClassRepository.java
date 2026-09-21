@@ -17,6 +17,10 @@ public interface ClassRepository {
 
     boolean existsByLevelOrderAndSchool(int levelOrder, String school);
 
+    // Highest level order in the school across every class, including soft-deleted ones (so a new
+    // class never lands on a deleted class's slot); 0 when the school has none yet.
+    int maxLevelOrderBySchool(String school);
+
     Optional<Clazz> findBySchoolAndLevelAndTerminal(String school, Level level);
 
     int countBySchoolAndLevel(String school, Level level);

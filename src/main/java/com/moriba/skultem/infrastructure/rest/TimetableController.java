@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import com.moriba.skultem.application.dto.PeriodDTO;
 import com.moriba.skultem.application.dto.RoomDTO;
 import com.moriba.skultem.application.dto.TimetableDTO;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@RequiresModule(FeatureModule.TIMETABLE)
 @RestController
 @RequestMapping("/api/v1/timetable")
 @RequiredArgsConstructor

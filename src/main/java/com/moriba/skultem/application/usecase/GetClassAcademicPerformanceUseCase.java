@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -245,9 +247,21 @@ public class GetClassAcademicPerformanceUseCase {
         }
         int studentsNeedingSupport = studentsAssessed - (int) passingStudents;
 
+        // The pass mark(s) in play: the one class's, or those of the classes in the report. A single value
+        // when they all agree; none when whole-school classes use different templates.
+        Set<String> classesInScope = classId != null && !classId.isBlank()
+                ? Set.of(classId)
+                : !rosterTotalByClass.isEmpty() ? rosterTotalByClass.keySet() : passMarkByClass.keySet();
+        Set<Integer> passMarksInScope = new HashSet<>();
+        for (String scopedClassId : classesInScope) {
+            passMarksInScope.add(passMarkByClass.getOrDefault(scopedClassId, DEFAULT_PASS_MARK));
+        }
+        Integer overviewPassMark = passMarksInScope.size() == 1 ? passMarksInScope.iterator().next() : null;
+
         var overview = new AcademicOverviewDTO(totalStudents, studentsAssessed, totalAssessments,
                 completedAssessments, AcademicPerformanceCalculator.round1Dp(classAverage),
-                AcademicPerformanceCalculator.passRate(passingStudents, studentsAssessed), studentsNeedingSupport);
+                AcademicPerformanceCalculator.passRate(passingStudents, studentsAssessed), studentsNeedingSupport,
+                overviewPassMark);
 
         return new AcademicReportDTO(overview, classPerformance, subjects, pagedStudents, safePage, safeSize,
                 studentsTotal);

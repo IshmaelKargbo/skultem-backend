@@ -57,6 +57,13 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     }
 
     @Override
+    public Page<StudentFee> findAllBySchoolAndStudentAndAcademicYear(String schoolId, String student,
+            String academicYearId, Pageable pageable) {
+        return repo.findAllByStudent_IdAndFee_AcademicYear_IdAndSchoolId(student, academicYearId, schoolId, pageable)
+                .map(StudentFeeMapper::toDomain);
+    }
+
+    @Override
     public Page<StudentFee> findBySchoolAndEnrollment(String schoolId, String enrollmentId, Pageable pageable) {
         return repo.findAllByEnrollment_IdAndSchoolId(enrollmentId, schoolId, pageable).map(StudentFeeMapper::toDomain);
     }

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,6 +36,7 @@ import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+@RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
 @RequestMapping("/api/v1/materials")
 @RequiredArgsConstructor
