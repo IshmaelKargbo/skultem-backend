@@ -161,10 +161,12 @@ public class ReportExportService {
                 return build("behaviour", "Behaviour Report", headers, rows, format);
         }
 
+        // The fee structures of one academic year - the one asked for, or the school's active year - the same
+        // scope as the Fee Structures page this exports.
         public ReportFile exportFees(String schoolId, String format, String classId, LocalDate startDate,
-                        LocalDate endDate) {
-                var page = listFeeStructureBySchoolUseCase.execute(schoolId, 0, 0, null, null, null, null, null, null,
-                                null);
+                        LocalDate endDate, String academicYearId) {
+                var page = listFeeStructureBySchoolUseCase.execute(schoolId, academicYearId, 0, 0, null, null, null,
+                                null, null, null, null);
                 List<FeeStructureDTO> records = page.getContent();
 
                 List<String> headers = List.of("Class", "Term", "Category", "Amount", "Due Date", "Installment",

@@ -66,9 +66,11 @@ public class ReportExportController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
             @RequestParam(required = false) String classId,
+            @RequestParam(required = false) String academicYearId,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
-        return toResponse(reportExportService.exportFees(school, format, classId, startDate, endDate));
+        return toResponse(reportExportService.exportFees(school, format, classId, startDate, endDate,
+                academicYearId));
     }
 
     @GetMapping("/grades")
