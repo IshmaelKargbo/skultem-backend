@@ -32,7 +32,12 @@ public interface TeacherRepository {
 
     long countAllBySchool(String schoolid);
 
-    Page<Teacher> search(String value, String schoolId, Pageable pageable);
+    default Page<Teacher> search(String value, String schoolId, Pageable pageable) {
+        return search(value, null, schoolId, pageable);
+    }
+
+    // gender is the Gender enum's name; null/blank means "any".
+    Page<Teacher> search(String value, String gender, String schoolId, Pageable pageable);
 
     Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

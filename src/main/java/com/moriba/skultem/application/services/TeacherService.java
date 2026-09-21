@@ -43,12 +43,17 @@ public class TeacherService {
 
     public Page<TeacherDTO> search(String search, int page, int size, String schoolId, String sortBy,
             String direction) {
+        return search(search, null, page, size, schoolId, sortBy, direction);
+    }
+
+    public Page<TeacherDTO> search(String search, String gender, int page, int size, String schoolId, String sortBy,
+            String direction) {
         Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = (size > 0)
                 ? PageRequest.of(page, size, sort)
                 : Pageable.unpaged(sort);
 
-        return repo.search(search, schoolId, pageable)
+        return repo.search(search, gender, schoolId, pageable)
                 .map(TeacherMapper::toDTO);
     }
 

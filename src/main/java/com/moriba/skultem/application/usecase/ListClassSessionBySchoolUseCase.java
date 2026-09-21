@@ -44,6 +44,11 @@ public class ListClassSessionBySchoolUseCase {
 
     public Page<ClassSessionDTO> execute(String school, String academicYearId, int page, int size, String sectionId,
             String streamId, String query) {
+        return execute(school, academicYearId, page, size, sectionId, streamId, null, query);
+    }
+
+    public Page<ClassSessionDTO> execute(String school, String academicYearId, int page, int size, String sectionId,
+            String streamId, String level, String query) {
         var academicYear = (academicYearId != null && !academicYearId.isBlank())
                 ? academicYearRepo.findByIdAndSchoolId(academicYearId, school)
                         .orElseThrow(() -> new NotFoundException("Academic year not found"))
@@ -56,10 +61,10 @@ public class ListClassSessionBySchoolUseCase {
         }
 
         boolean hasFilters = (sectionId != null && !sectionId.isBlank()) || (streamId != null && !streamId.isBlank())
-                || (query != null && !query.isBlank());
+                || (level != null && !level.isBlank()) || (query != null && !query.isBlank());
         var sessions = hasFilters
                 ? repo.search(school, academicYear.getId(), normalize(sectionId), normalize(streamId),
-                        normalize(query), pageable)
+                        normalize(level).toUpperCase(), normalize(query), pageable)
                 : repo.findBySchoolIdAndAcademicYearId(school, academicYear.getId(), pageable);
 
         return sessions.map((e) -> toDto(school, academicYear.getId(), e));

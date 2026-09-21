@@ -86,6 +86,7 @@ public interface ClassSessionJpaRepository
                 and cs.academicYear.id = :academicYearId
                 and (:sectionId = '' or cs.section.id = :sectionId)
                 and (:streamId = '' or st.id = :streamId)
+                and (:level = '' or cast(cs.clazz.level as string) = :level)
                 and (:query = ''
                      or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
                      or lower(cs.section.name) like lower(concat('%', :query, '%'))
@@ -96,6 +97,7 @@ public interface ClassSessionJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("sectionId") String sectionId,
             @Param("streamId") String streamId,
+            @Param("level") String level,
             @Param("query") String query,
             Pageable pageable);
 

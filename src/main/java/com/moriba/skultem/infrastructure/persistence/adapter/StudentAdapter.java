@@ -57,8 +57,8 @@ public class StudentAdapter implements StudentRepository {
 
     @Override
     public Page<Student> search(String value, String schoolId, String academicYearId, String classId,
-            Pageable pageable) {
-        return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, pageable)
+            String gender, Pageable pageable) {
+        return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, gender, pageable)
                 .map(StudentMapper::toDomain);
     }
 }

@@ -105,6 +105,7 @@ public class TeacherController {
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page,
                         @RequestParam(required = false) String search,
+                        @RequestParam(required = false) String gender,
                         @RequestParam(required = false) String sortBy,
                         @RequestParam(required = false) String direction) {
 
@@ -112,7 +113,7 @@ public class TeacherController {
                         search = null;
                 }
 
-                var res = teacherSvc.search(search, page - 1, size, school, sortBy, direction);
+                var res = teacherSvc.search(search, gender, page - 1, size, school, sortBy, direction);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,

@@ -111,6 +111,7 @@ public class StudentController {
                         @RequestParam(required = false) String search,
                         @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = false) String classId,
+                        @RequestParam(required = false) Gender gender,
                         @RequestParam(required = false) String sortBy,
                         @RequestParam(required = false) String direction,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
@@ -119,7 +120,7 @@ public class StudentController {
                         search = null;
                 }
 
-                var res = studentSvc.search(search, page, size, school, academicYearId, classId, sortBy, direction);
+                var res = studentSvc.search(search, page, size, school, academicYearId, classId, sortBy, direction, gender);
                 var list = res.getContent();
                 var meta = MetaMapper.toMeta(res);
 

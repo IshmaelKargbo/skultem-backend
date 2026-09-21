@@ -74,8 +74,9 @@ public class TeacherAdapter implements TeacherRepository {
     }
 
     @Override
-    public Page<Teacher> search(String value, String schoolId, Pageable pageable) {
-        return repo.search(schoolId, value, pageable).map(TeacherMapper::toDomain);
+    public Page<Teacher> search(String value, String gender, String schoolId, Pageable pageable) {
+        var normalizedGender = (gender == null || gender.isBlank()) ? "" : gender.trim().toUpperCase();
+        return repo.search(schoolId, value, normalizedGender, pageable).map(TeacherMapper::toDomain);
     }
 
     @Override

@@ -109,8 +109,8 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> search(String schoolId, String academicYearId, String sectionId, String streamId,
-            String query, Pageable pageable) {
-        return repo.search(schoolId, academicYearId, sectionId, streamId, query, pageable)
+            String level, String query, Pageable pageable) {
+        return repo.search(schoolId, academicYearId, sectionId, streamId, level, query, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
 

@@ -15,6 +15,7 @@ import com.moriba.skultem.application.usecase.ResolveAcademicYearUseCase;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
+import com.moriba.skultem.domain.vo.Gender;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,11 +35,11 @@ public class StudentService {
             "createdAt");
 
     public Page<StudentDTO> search(String value, int page, int size, String schoolId, String academicYearId) {
-        return search(value, page, size, schoolId, academicYearId, null, null, null);
+        return search(value, page, size, schoolId, academicYearId, null, null, null, null);
     }
 
     public Page<StudentDTO> search(String value, int page, int size, String schoolId, String academicYearId,
-            String classId, String sortBy, String direction) {
+            String classId, String sortBy, String direction, Gender gender) {
         Pageable pageable = PageableMapper.toPage(page, size, resolveSort(sortBy, direction));
 
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
@@ -47,7 +48,8 @@ public class StudentService {
         // so the enrollment lookup below (just for display: class name, etc.) is always guaranteed to
         // find one and never needs the "fall back to their last known enrollment" trick that
         // ListStudentBySchoolUseCase still needs for its broader, unscoped listing.
-        return studentRepo.search(value, schoolId, academicYear.getId(), normalize(classId), pageable)
+        return studentRepo.search(value, schoolId, academicYear.getId(), normalize(classId),
+                gender == null ? "" : gender.name(), pageable)
                 .map(student -> {
                     Enrollment enrollment = enrollmentRepo
                             .findByStudentAndAcademicYearAndSchoolId(student.getId(), academicYear.getId(), schoolId)

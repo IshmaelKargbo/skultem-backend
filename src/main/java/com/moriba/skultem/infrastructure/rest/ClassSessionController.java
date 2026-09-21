@@ -65,11 +65,12 @@ public class ClassSessionController {
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = false) String sectionId,
             @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String level,
             @RequestParam(required = false) String query,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
         var res = listClassSessionBySchoolUseCase.execute(school, academicYearId, page - 1, size, sectionId, streamId,
-                query);
+                level, query);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

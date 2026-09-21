@@ -26,7 +26,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
         // ListStudentBySchoolUseCase), and a fixed order here would either dominate or conflict
         // with it. classId is always a real (possibly empty) string, never null - see the note on
         // AssessmentApprovalRequestJpaRepository for why a null bound into a comparison like this
-        // is asking for trouble.
+        // is asking for trouble. gender follows the same rule: the enum's name, or '' for "any".
         @Query("""
                             SELECT s
                             FROM StudentEntity s
@@ -39,6 +39,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                                       AND e.academicYear.id = :academicYearId
                                       AND (:classId = '' OR e.clazz.id = :classId)
                               )
+                              AND (:gender = '' OR CAST(s.gender AS string) = :gender)
                               AND (
                                     :search IS NULL
                                  OR :search = ''
@@ -49,7 +50,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                         """)
         Page<StudentEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
                         @Param("academicYearId") String academicYearId, @Param("excludedStatus") Status excludedStatus,
-                        @Param("classId") String classId, Pageable pageable);
+                        @Param("classId") String classId, @Param("gender") String gender, Pageable pageable);
 
         Page<StudentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 

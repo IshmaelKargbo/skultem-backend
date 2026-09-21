@@ -29,7 +29,8 @@ public interface TeacherJpaRepository
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 
     // No ORDER BY here - the caller's Pageable carries the Sort (see TeacherService.search), and a
-    // fixed order here would either dominate or conflict with it.
+    // fixed order here would either dominate or conflict with it. gender is always a real (possibly
+    // empty) string, never null: the enum's name, or '' for "any" (same rule as StudentJpaRepository).
     @Query("""
                 SELECT t
                 FROM TeacherEntity t
@@ -43,9 +44,10 @@ public interface TeacherJpaRepository
                      OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
                      OR LOWER(t.phone) LIKE LOWER(CONCAT('%', :search, '%'))
                   )
+                  AND (:gender = '' OR CAST(t.gender AS string) = :gender)
             """)
     Page<TeacherEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
-            Pageable pageable);
+            @Param("gender") String gender, Pageable pageable);
 
     long countBySchoolId(String schoolId);
 
