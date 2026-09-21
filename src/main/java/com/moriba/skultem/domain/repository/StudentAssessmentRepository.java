@@ -15,6 +15,8 @@ public interface StudentAssessmentRepository {
     boolean existsByEnrollmentIdAndTermIdAndSubjectIdAndSchoolId(String enrollmentId, String termId, String subjectId,
             String schoolId);
 
+    void deleteAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
+
     void deleteByEnrollmentIdAndSubjectIdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 
     List<StudentAssessment> findAllByTeacherSubjectId(String teacherId);

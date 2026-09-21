@@ -20,6 +20,11 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     private final AssessmentScoreJpaRepository repo;
 
     @Override
+    public void deleteAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
+        repo.deleteAllByEnrollmentAndSchool(enrollmentId, schoolId);
+    }
+
+    @Override
     public void save(AssessmentScore domain) {
         var entity = AssessmentScoreMapper.toEntity(domain);
         repo.save(entity);

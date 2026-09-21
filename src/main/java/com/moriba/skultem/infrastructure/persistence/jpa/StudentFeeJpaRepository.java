@@ -9,7 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.StudentFeeEntity;
@@ -19,6 +21,11 @@ public interface StudentFeeJpaRepository
         extends JpaRepository<StudentFeeEntity, String>, JpaSpecificationExecutor<StudentFeeEntity> {
     boolean existsByEnrollment_IdAndFee_IdAndStudent_IdAndSchoolId(String enrollmentId, String feeId,
             String studentId, String schoolId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM StudentFeeEntity f WHERE f.enrollment.id = :enrollmentId AND f.schoolId = :schoolId")
+    void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,
+            @Param("schoolId") String schoolId);
 
     @Query("""
                 SELECT COALESCE(SUM(f.fee.amount), 0)

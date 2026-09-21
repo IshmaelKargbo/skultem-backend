@@ -13,6 +13,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.BehaviourEntity;
 
 public interface BehaviourJpaRepository extends JpaRepository<BehaviourEntity, String> {
 
+  boolean existsByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
+
   @Query("""
           SELECT b.kind AS kind, COUNT(b) AS count
           FROM BehaviourEntity b

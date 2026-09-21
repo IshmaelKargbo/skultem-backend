@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.EnrollmentDTO;
 import com.moriba.skultem.application.dto.StudentDTO;
+import com.moriba.skultem.application.usecase.ChangeEnrollmentClassUseCase;
 import com.moriba.skultem.application.usecase.EnrollmentStudentsUseCase;
 import com.moriba.skultem.application.usecase.EnrollmentStudentsUseCase.EnrollData;
 import com.moriba.skultem.application.usecase.GetEnrollmentByStudentAndClassUseCase;
@@ -23,6 +25,7 @@ import com.moriba.skultem.application.usecase.ListStudentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.SelectClassSubjectsUseCase;
 import com.moriba.skultem.application.usecase.SelectClassSubjectsUseCase.ClassSubjectSelection;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.ChangeEnrollmentClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateEnrollmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SelectedSubjectsDTO;
 
@@ -39,6 +42,7 @@ public class EnrollmentController {
     private final ListStudentBySchoolUseCase listStudentBySchoolUseCase;
     private final ListEnrollmentByClassUseCase listEnrollmentByClassUseCase;
     private final GetEnrollmentByStudentAndClassUseCase enrollmentByStudentAndClassUseCase;
+    private final ChangeEnrollmentClassUseCase changeEnrollmentClassUseCase;
 
     @PostMapping("/class")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -96,6 +100,17 @@ public class EnrollmentController {
                 "pages", res.getTotalPages());
 
         return new ApiResponse<>("success", 200, "Students fetched by class successfully", list, meta);
+    }
+
+    @PatchMapping("/{enrollmentId}/class")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ChangeEnrollmentClassUseCase.ChangeClassResult> changeClass(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String enrollmentId,
+            @Valid @RequestBody ChangeEnrollmentClassDTO param) {
+        var res = changeEnrollmentClassUseCase.execute(school, enrollmentId, param.classId(), param.sectionId(),
+                param.streamId());
+        return new ApiResponse<>("success", 200, "Student class changed successfully", res);
     }
 
     @PostMapping("/class/{enrollmentId}")

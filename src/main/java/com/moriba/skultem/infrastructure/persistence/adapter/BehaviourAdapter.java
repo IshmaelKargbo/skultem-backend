@@ -21,6 +21,11 @@ public class BehaviourAdapter implements BehaviourRepository {
     private final BehaviourJpaRepository repo;
 
     @Override
+    public boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
+        return repo.existsByEnrollment_IdAndSchoolId(enrollmentId, schoolId);
+    }
+
+    @Override
     public void save(Behaviour domain) {
         var entity = BehaviourMapper.toEntity(domain);
         repo.save(entity);

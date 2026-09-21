@@ -3,6 +3,7 @@ package com.moriba.skultem.infrastructure.persistence.jpa;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +14,10 @@ public interface StudentAssessmentJpaRepository extends JpaRepository<StudentAss
 
     boolean existsByEnrollment_IdAndTerm_IdAndTeacherSubject_Subject_IdAndSchoolId(String enrollmentId, String termId,
             String subjectId, String schoolId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM StudentAssessmentEntity a WHERE a.enrollment.id = :enrollmentId AND a.schoolId = :schoolId")
+    void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId, @Param("schoolId") String schoolId);
 
     void deleteByEnrollment_IdAndTeacherSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 

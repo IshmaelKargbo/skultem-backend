@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,16 @@ public interface AssessmentScoreJpaRepository
                 extends JpaRepository<AssessmentScoreEntity, String>, JpaSpecificationExecutor<AssessmentScoreEntity> {
         List<AssessmentScoreEntity> findAllByStudentAssessment_IdOrderByCycle_Assessment_PositionAsc(
                         String assessmentId);
+
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
+        @Query("""
+                        DELETE FROM AssessmentScoreEntity s
+                        WHERE s.studentAssessment.id IN (
+                            SELECT a.id FROM StudentAssessmentEntity a
+                            WHERE a.enrollment.id = :enrollmentId AND a.schoolId = :schoolId)
+                        """)
+        void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,
+                        @Param("schoolId") String schoolId);
 
         List<AssessmentScoreEntity> findAllByStudentAssessment_IdAndCycle_IdOrderByCycle_Assessment_PositionAsc(
                         String studentAssessmentId, String assessmentId);

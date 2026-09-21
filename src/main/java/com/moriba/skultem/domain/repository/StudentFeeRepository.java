@@ -15,6 +15,8 @@ public interface StudentFeeRepository {
 
         void saveAll(List<StudentFee> records);
 
+        void deleteAllByEnrollmentAndSchool(String enrollmentId, String schoolId);
+
         Optional<StudentFee> findByIdAndSchoolId(String id);
 
         BigDecimal sumTotalFeeByStudent(String studentId, String schoolId);

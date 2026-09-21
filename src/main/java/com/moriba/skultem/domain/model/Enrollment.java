@@ -39,6 +39,13 @@ public class Enrollment extends AggregateRoot<String> {
         return new Enrollment(id, schoolId, student, clazz, section, academicYear, stream, Status.ACTIVE, now, now);
     }
 
+    public void changePlacement(Clazz clazz, Section section, Stream stream) {
+        this.clazz = clazz;
+        this.section = section;
+        this.stream = stream;
+        touch(Instant.now());
+    }
+
     public void promote() {
         this.status = Status.PROMOTED;
         touch(Instant.now());

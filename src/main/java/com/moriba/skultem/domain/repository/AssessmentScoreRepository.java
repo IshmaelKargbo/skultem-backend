@@ -26,6 +26,8 @@ public interface AssessmentScoreRepository {
 
     List<AssessmentScore> findAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
 
+    void deleteAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
+
     boolean existsGradeActivityByClassIdAndSchoolId(String classId, String schoolId);
 
     boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);

@@ -24,6 +24,11 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     private final StudentFeeJpaRepository repo;
 
     @Override
+    public void deleteAllByEnrollmentAndSchool(String enrollmentId, String schoolId) {
+        repo.deleteAllByEnrollmentAndSchool(enrollmentId, schoolId);
+    }
+
+    @Override
     public void save(StudentFee domain) {
         var entity = StudentFeeMapper.toEntity(domain);
         repo.save(entity);
