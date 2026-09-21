@@ -12,6 +12,7 @@ import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.model.ClassSection;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -91,8 +92,13 @@ public class ChangeEnrollmentClassUseCase {
 
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
-        var section = sectionRepo.findByIdAndClassIdAndSchoolId(sectionId, clazz.getId(), schoolId)
-                .orElseThrow(() -> new NotFoundException("Section not found")).getSection();
+        // sectionId is the Section's own id (what a class session exposes), not the ClassSection
+        // link's id that findByIdAndClassIdAndSchoolId expects - so match within the class's sections.
+        var section = sectionRepo.findByClassIdAndSchoolId(clazz.getId(), schoolId).stream()
+                .map(ClassSection::getSection)
+                .filter(candidate -> candidate.getId().equals(sectionId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Section not found"));
 
         Stream stream = null;
         if (clazz.getLevel() == Level.SSS) {

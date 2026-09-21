@@ -29,6 +29,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.application.error.AlreadyExistsException;
+import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.AssessmentScore;
@@ -127,8 +128,9 @@ class ChangeEnrollmentClassUseCaseTest {
         lenient().when(enrollmentRepo.findByIdAndSchoolId(ENROLLMENT, SCHOOL)).thenReturn(Optional.of(enrollment));
         lenient().when(academicYearRepo.findActiveBySchool(SCHOOL)).thenReturn(Optional.of(year));
         lenient().when(classRepo.findByIdAndSchool(NEW_CLASS, SCHOOL)).thenReturn(Optional.of(newClass));
-        lenient().when(sectionRepo.findByIdAndClassIdAndSchoolId(NEW_SECTION, NEW_CLASS, SCHOOL))
-                .thenReturn(Optional.of(ClassSection.create("cs-1", SCHOOL, newClass, newSection)));
+        // The link row's id ("cs-1") deliberately differs from the Section id the caller sends.
+        lenient().when(sectionRepo.findByClassIdAndSchoolId(NEW_CLASS, SCHOOL))
+                .thenReturn(List.of(ClassSection.create("cs-1", SCHOOL, newClass, newSection)));
         lenient().when(attendanceRepo.findByEnrollmentAndSchoolId(eq(ENROLLMENT), eq(SCHOOL), any(Pageable.class)))
                 .thenReturn(Page.empty());
         lenient().when(behaviourRepo.existsByEnrollmentIdAndSchoolId(ENROLLMENT, SCHOOL)).thenReturn(false);
@@ -233,8 +235,8 @@ class ChangeEnrollmentClassUseCaseTest {
     void refusesWhenTheStudentIsAlreadyInThatClassAndSection() {
         var sameClass = Clazz.create("class-1", SCHOOL, null, "Class 1", Level.PRIMARY, 1);
         when(classRepo.findByIdAndSchool("class-1", SCHOOL)).thenReturn(Optional.of(sameClass));
-        when(sectionRepo.findByIdAndClassIdAndSchoolId("section-a", "class-1", SCHOOL)).thenReturn(Optional
-                .of(ClassSection.create("cs-0", SCHOOL, sameClass, enrollment.getSection())));
+        when(sectionRepo.findByClassIdAndSchoolId("class-1", SCHOOL))
+                .thenReturn(List.of(ClassSection.create("cs-0", SCHOOL, sameClass, enrollment.getSection())));
 
         assertThatThrownBy(() -> useCase.execute(SCHOOL, ENROLLMENT, "class-1", "section-a", null))
                 .isInstanceOf(RuleException.class).hasMessageContaining("already in this class");
@@ -266,11 +268,18 @@ class ChangeEnrollmentClassUseCaseTest {
     void requiresAStreamForAnSssClass() {
         var sss = Clazz.create("class-sss", SCHOOL, null, "SSS 1", Level.SSS, 10);
         when(classRepo.findByIdAndSchool("class-sss", SCHOOL)).thenReturn(Optional.of(sss));
-        when(sectionRepo.findByIdAndClassIdAndSchoolId(NEW_SECTION, "class-sss", SCHOOL)).thenReturn(Optional
-                .of(ClassSection.create("cs-2", SCHOOL, sss, Section.create(NEW_SECTION, SCHOOL, "B", null))));
+        when(sectionRepo.findByClassIdAndSchoolId("class-sss", SCHOOL)).thenReturn(List.of(
+                ClassSection.create("cs-2", SCHOOL, sss, Section.create(NEW_SECTION, SCHOOL, "B", null))));
 
         assertThatThrownBy(() -> useCase.execute(SCHOOL, ENROLLMENT, "class-sss", NEW_SECTION, null))
                 .isInstanceOf(RuleException.class).hasMessageContaining("Stream is required");
+        assertNothingWasChanged();
+    }
+
+    @Test
+    void refusesASectionThatDoesNotBelongToTheTargetClass() {
+        assertThatThrownBy(() -> useCase.execute(SCHOOL, ENROLLMENT, NEW_CLASS, "section-from-another-class", null))
+                .isInstanceOf(NotFoundException.class).hasMessageContaining("Section");
         assertNothingWasChanged();
     }
 }
