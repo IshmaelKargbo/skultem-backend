@@ -18,7 +18,7 @@ public interface HouseJpaRepository extends JpaRepository<HouseEntity, String> {
   Page<HouseEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
   @Query("""
-      SELECT h FROM HouseEntity h
+      SELECT DISTINCT h FROM HouseEntity h
       LEFT JOIN h.houseMasters m
       LEFT JOIN m.user u
       WHERE h.schoolId = :schoolId
