@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment;
+import com.moriba.skultem.domain.model.Payment.PaymentMethod;
 import com.moriba.skultem.domain.vo.Filter;
 
 public interface PaymentRepository {
@@ -38,4 +39,21 @@ public interface PaymentRepository {
     List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId);
 
     Page<Payment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+
+    /** Same as sumPaymentsBySchool, but the platform fee is excluded. */
+    BigDecimal sumSchoolPaymentsBySchool(String schoolId);
+
+    /** Paid-so-far per (student, fee) pair for the school's own fees - row shape [studentId, feeId, totalPaid]. */
+    List<Object[]> sumSchoolPaymentsGroupedByStudentAndFee(String schoolId, String academicYearId, String termId);
+
+    /** School-fee payments in [start, end), grouped by method - row shape [method, totalAmount, count]. */
+    List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end);
+
+    /** The school's own payments (platform fee excluded), narrowed by whichever of these are given. */
+    Page<Payment> searchSchoolPayments(String schoolId, Instant from, Instant to, String academicYearId,
+            String termId, String classId, String sectionId, String streamId, String studentId,
+            PaymentMethod method, String recordedByUserId, Pageable pageable);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

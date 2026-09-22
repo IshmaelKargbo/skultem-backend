@@ -291,7 +291,7 @@ public class ChangeEnrollmentClassUseCase {
                 } else {
                     var extra = Payment.create(schoolId, student, fee, portion, payment.getMethod(),
                             payment.getReferenceNo(), payment.getExternalReference(), payment.getNote(),
-                            payment.getPaidAt());
+                            payment.getPaidAt(), payment.getRecordedByUserId());
                     paymentRepo.save(extra);
                     ledgerUseCase.createEntry(schoolId, yearId, student.getId(), fee.getTerm().getId(),
                             TransactionType.PAYMENT, Direction.CREDIT, portion, extra.getId(), description,

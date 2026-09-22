@@ -26,4 +26,7 @@ public interface EnrollmentSubjectRepository {
     void delete(EnrollmentSubject domain);
 
     void deleteByEnrollmentIdAndSubjectIdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

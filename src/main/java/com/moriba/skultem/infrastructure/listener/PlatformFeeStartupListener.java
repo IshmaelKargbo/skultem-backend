@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.moriba.skultem.application.usecase.BackfillPlatformFeesUseCase;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 // school/student that's missing the fee itself. See BackfillPlatformFeesUseCase for the actual
 // work; this class is just the "on start" trigger for it.
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 public class PlatformFeeStartupListener implements ApplicationRunner {
 

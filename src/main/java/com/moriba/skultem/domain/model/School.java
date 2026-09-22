@@ -31,11 +31,26 @@ public class School extends AggregateRoot<String> {
     private String primaryColor;
     private String secondaryColor;
     private Double attendanceThreshold;
+    private GenderComposition genderComposition;
+    // System-admin-only marker for a school still being set up/tried out, not yet live. Purely a
+    // flag by itself - it doesn't change any behavior on its own, but it gates
+    // WipeTestSchoolDataUseCase (only a school flagged this way can have its roster/activity data
+    // wiped) so that a wipe can never be pointed at a real, live school by mistake.
+    private boolean testSchool;
 
     public enum Status {
         ACTIVE,
         INACTIVE,
         DELETED
+    }
+
+    // Whether the school only enrolls one gender, or both - lets reporting/demographics (and any
+    // gender-specific fee/uniform rule) know up front rather than inferring it from the roster.
+    // MIXED is the default: it's the common case and the one that needs no special handling.
+    public enum GenderComposition {
+        BOYS,
+        GIRLS,
+        MIXED
     }
 
     private static final String DEFAULT_PRIMARY_COLOR = "#1878c5";
@@ -48,7 +63,7 @@ public class School extends AggregateRoot<String> {
     public School(String id, String name, String domain, Address address, Owner owner, Status status,
             List<GradeBand> gradingScale, String logo, String motto, String principalName,
             String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
-            Instant createdAt, Instant updatedAt) {
+            GenderComposition genderComposition, boolean testSchool, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -64,21 +79,33 @@ public class School extends AggregateRoot<String> {
         this.secondaryColor = secondaryColor != null ? secondaryColor : DEFAULT_SECONDARY_COLOR;
         this.attendanceThreshold = validateThreshold(
                 attendanceThreshold != null ? attendanceThreshold : DEFAULT_ATTENDANCE_THRESHOLD);
+        this.genderComposition = genderComposition != null ? genderComposition : GenderComposition.MIXED;
+        this.testSchool = testSchool;
         touch(updatedAt);
     }
 
     public static School create(String id, String name, String domain, Address address, Owner owner) {
         Instant now = Instant.now();
         return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), null, null, null,
-                null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD, now, now);
+                null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD,
+                GenderComposition.MIXED, false, now, now);
     }
 
-    public void update(String name, String domain, Address address, Double attendanceThreshold) {
+    public void markAsTest(boolean testSchool) {
+        this.testSchool = testSchool;
+        touch(Instant.now());
+    }
+
+    public void update(String name, String domain, Address address, Double attendanceThreshold,
+            GenderComposition genderComposition) {
         this.address = address;
         this.name = name;
         this.domain = domain;
         if (attendanceThreshold != null) {
             this.attendanceThreshold = validateThreshold(attendanceThreshold);
+        }
+        if (genderComposition != null) {
+            this.genderComposition = genderComposition;
         }
         touch(Instant.now());
     }

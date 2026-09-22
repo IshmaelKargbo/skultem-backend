@@ -103,4 +103,15 @@ public class StudentFeeAdapter implements StudentFeeRepository {
                 .map(StudentFeeMapper::toDomain);
     }
 
+    @Override
+    public List<StudentFee> findSchoolFeeRows(String schoolId, String academicYearId, String termId) {
+        return repo.findSchoolFeeRows(schoolId, academicYearId, termId == null ? "" : termId).stream()
+                .map(StudentFeeMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

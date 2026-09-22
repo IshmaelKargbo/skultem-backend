@@ -57,6 +57,8 @@ public class PaymentEntity {
     @Column(nullable = false)
     private Instant paidAt;
 
+    private String recordedByUserId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

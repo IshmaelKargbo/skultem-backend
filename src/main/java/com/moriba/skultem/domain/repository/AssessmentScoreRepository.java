@@ -91,4 +91,7 @@ public interface AssessmentScoreRepository {
     // nullable, for the whole-school variant of Students Requiring Attention.
     List<Object[]> averageScoresForAttentionReport(String schoolId, String classId, String termId,
             List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

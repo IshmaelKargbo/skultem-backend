@@ -199,4 +199,9 @@ public class EnrollementAdapter implements EnrollmentRepository {
             Level level) {
         return repo.demographicsByFilters(schoolId, academicYearId, classId, level);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

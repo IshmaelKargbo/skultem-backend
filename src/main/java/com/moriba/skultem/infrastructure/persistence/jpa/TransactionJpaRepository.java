@@ -8,7 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import com.moriba.skultem.domain.model.Transaction.ReferenceType;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.TransactionEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
@@ -65,4 +69,11 @@ public interface TransactionJpaRepository
 
                 return findAll(spec, pageable);
         }
+
+        // Wipes a test school's STUDENT transactions only (see WipeTestSchoolDataUseCase) - expense,
+        // payroll and material-sale history for the school isn't roster/activity data and stays put.
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
+        @Query("DELETE FROM TransactionEntity e WHERE e.schoolId = :schoolId AND e.referenceType = :referenceType")
+        void deleteAllBySchoolIdAndReferenceType(@Param("schoolId") String schoolId,
+                        @Param("referenceType") ReferenceType referenceType);
 }

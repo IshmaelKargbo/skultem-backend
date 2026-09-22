@@ -20,6 +20,9 @@ public record UpdateSchoolDTO(
 
         @NotBlank(message = "City is required") String city,
 
-        @DecimalMin(value = "0", message = "Attendance threshold cannot be less than 0") @DecimalMax(value = "100", message = "Attendance threshold cannot be greater than 100") Double attendanceThreshold
+        @DecimalMin(value = "0", message = "Attendance threshold cannot be less than 0") @DecimalMax(value = "100", message = "Attendance threshold cannot be greater than 100") Double attendanceThreshold,
+
+        // BOYS/GIRLS/MIXED - null keeps whatever the school already has (see School#update).
+        String genderComposition
 ) {
 }

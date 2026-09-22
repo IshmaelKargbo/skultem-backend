@@ -19,6 +19,10 @@ public class Payment extends AggregateRoot<String> {
     private String note;
     private BigDecimal amount;
     private Instant paidAt;
+    // Who recorded this payment (the acting user at the time) - null for a payment recorded before
+    // this was introduced. See RecordPaymentUseCase, which sets it from the authenticated principal,
+    // same pattern as Attendance/TeacherAttendance's recordedByUserId.
+    private String recordedByUserId;
 
     public enum PaymentMethod {
         CASH,
@@ -28,8 +32,8 @@ public class Payment extends AggregateRoot<String> {
 
     public Payment(String id, String schoolId, Student student, FeeStructure fee, BigDecimal amount,
             PaymentMethod method,
-            String referenceNo, String externalReference, String note, Instant paidAt, Instant createdAt,
-            Instant updatedAt) {
+            String referenceNo, String externalReference, String note, Instant paidAt, String recordedByUserId,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.student = student;
@@ -40,6 +44,7 @@ public class Payment extends AggregateRoot<String> {
         this.note = note;
         this.amount = amount;
         this.paidAt = paidAt;
+        this.recordedByUserId = recordedByUserId;
         touch(updatedAt);
     }
 
@@ -52,10 +57,11 @@ public class Payment extends AggregateRoot<String> {
     }
 
     public static Payment create(String schoolId, Student student, FeeStructure fee, BigDecimal amount,
-            PaymentMethod method, String referenceNo, String externalReference, String note, Instant paidAt) {
+            PaymentMethod method, String referenceNo, String externalReference, String note, Instant paidAt,
+            String recordedByUserId) {
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         return new Payment(id, schoolId, student, fee, amount, method, referenceNo, externalReference, note, paidAt,
-                now, now);
+                recordedByUserId, now, now);
     }
 }

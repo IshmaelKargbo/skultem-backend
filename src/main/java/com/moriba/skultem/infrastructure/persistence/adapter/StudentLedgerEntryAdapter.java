@@ -113,4 +113,9 @@ public class StudentLedgerEntryAdapter implements StudentLedgerEntryRepository {
     public Page<StudentLedgerEntry> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runReport(schoolId, filters, pageable).map(StudentLedgerEntryMapper::toDomain);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

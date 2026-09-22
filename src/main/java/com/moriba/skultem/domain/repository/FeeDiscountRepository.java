@@ -20,4 +20,7 @@ public interface FeeDiscountRepository {
     Page<FeeDiscount> findAllBySchool(String schoolId, Pageable pageable);
 
     List<FeeDiscount> findBySchoolAndStudentIdAndFeeId(String schoolId, String studentId, String feeId);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

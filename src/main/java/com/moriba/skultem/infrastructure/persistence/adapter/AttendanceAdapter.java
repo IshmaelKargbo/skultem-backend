@@ -107,4 +107,9 @@ public class AttendanceAdapter implements AttendanceRepository {
             String academicYearId, LocalDate startDate, LocalDate endDate) {
         return repo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, academicYearId, startDate, endDate);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

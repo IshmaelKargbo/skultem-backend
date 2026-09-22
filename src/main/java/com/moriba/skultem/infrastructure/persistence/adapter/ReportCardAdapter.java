@@ -67,4 +67,9 @@ public class ReportCardAdapter implements ReportCardRepository {
     public long sumDownloadsBySchoolId(String schoolId) {
         return repo.sumDownloadCount(schoolId);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

@@ -188,7 +188,7 @@ class ChangeEnrollmentClassUseCaseTest {
 
     private Payment paymentOn(FeeStructure fee, String amount) {
         return Payment.create(SCHOOL, enrollment.getStudent(), fee, new BigDecimal(amount), PaymentMethod.CASH,
-                "RCT-1", null, "note", Instant.parse("2026-01-10T09:00:00Z"));
+                "RCT-1", null, "note", Instant.parse("2026-01-10T09:00:00Z"), "user-1");
     }
 
     private StudentLedgerEntry paymentLedgerEntry(Payment payment, String amount) {

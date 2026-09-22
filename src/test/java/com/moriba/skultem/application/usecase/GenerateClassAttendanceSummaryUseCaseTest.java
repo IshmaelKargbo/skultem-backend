@@ -47,7 +47,8 @@ class GenerateClassAttendanceSummaryUseCaseTest {
         var school = School.create(SCHOOL_ID, "Test School", "test.skultem.com",
                 new Address("Western Area", "Freetown", "Freetown", "Freetown", "1 Main St"),
                 new Owner("Jane", "Doe", "jane@example.com", "+23276000000"));
-        school.update(school.getName(), school.getDomain(), school.getAddress(), threshold);
+        school.update(school.getName(), school.getDomain(), school.getAddress(), threshold,
+                School.GenderComposition.MIXED);
         return school;
     }
 

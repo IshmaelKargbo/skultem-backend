@@ -117,7 +117,8 @@ public class CreateSchoolUseCase {
         return new SchoolDTO(school.getId(), school.getName(), school.getDomain(), school.getAddress(),
                 school.getOwner(), school.getStatus(), school.getGradingScale(), school.getLogo(), school.getMotto(),
                 school.getPrincipalName(), school.getPrincipalSignature(), school.getPrimaryColor(),
-                school.getSecondaryColor(), school.getAttendanceThreshold(), school.getCreatedAt(),
+                school.getSecondaryColor(), school.getAttendanceThreshold(), school.getGenderComposition(),
+                school.isTestSchool(), school.getCreatedAt(),
                 school.getUpdatedAt());
     }
 

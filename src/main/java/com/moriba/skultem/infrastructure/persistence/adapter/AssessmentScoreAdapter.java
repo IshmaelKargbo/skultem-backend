@@ -199,4 +199,9 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
             List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
         return repo.averageScoresForAttentionReport(schoolId, classId, termId, excludedStatuses);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

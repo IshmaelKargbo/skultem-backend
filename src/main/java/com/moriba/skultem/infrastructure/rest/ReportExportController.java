@@ -73,6 +73,36 @@ public class ReportExportController {
                 academicYearId));
     }
 
+    @GetMapping("/fee-balances")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ResponseEntity<byte[]> exportStudentFeeBalances(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) String classSessionId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String feeCategoryId) {
+        return toResponse(reportExportService.exportStudentFeeBalances(school, format, academicYearId, termId,
+                classSessionId, status, feeCategoryId));
+    }
+
+    @GetMapping("/fee-payment-history")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    public ResponseEntity<byte[]> exportFeePaymentHistory(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false, name = "from") LocalDate startDate,
+            @RequestParam(required = false, name = "to") LocalDate endDate,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) String classSessionId,
+            @RequestParam(required = false) String studentId,
+            @RequestParam(required = false) String method) {
+        return toResponse(reportExportService.exportSchoolPaymentHistory(school, format, startDate, endDate,
+                academicYearId, termId, classSessionId, studentId, method));
+    }
+
     @GetMapping("/grades")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ResponseEntity<byte[]> exportGrades(

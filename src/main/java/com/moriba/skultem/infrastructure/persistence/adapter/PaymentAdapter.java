@@ -86,4 +86,33 @@ public class PaymentAdapter implements PaymentRepository {
         return repo.runReport(schoolId, filters, pageable)
                 .map(PaymentMapper::toDomain);
     }
+
+    @Override
+    public BigDecimal sumSchoolPaymentsBySchool(String schoolId) {
+        return repo.sumSchoolPaymentsBySchool(schoolId);
+    }
+
+    @Override
+    public List<Object[]> sumSchoolPaymentsGroupedByStudentAndFee(String schoolId, String academicYearId,
+            String termId) {
+        return repo.sumSchoolPaymentsGroupedByStudentAndFee(schoolId, academicYearId, termId == null ? "" : termId);
+    }
+
+    @Override
+    public List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end) {
+        return repo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end);
+    }
+
+    @Override
+    public Page<Payment> searchSchoolPayments(String schoolId, Instant from, Instant to, String academicYearId,
+            String termId, String classId, String sectionId, String streamId, String studentId,
+            Payment.PaymentMethod method, String recordedByUserId, Pageable pageable) {
+        return repo.searchSchoolPayments(schoolId, from, to, academicYearId, termId, classId, sectionId, streamId,
+                studentId, method, recordedByUserId, pageable).map(PaymentMapper::toDomain);
+    }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

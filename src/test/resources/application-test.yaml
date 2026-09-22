@@ -1,6 +1,13 @@
+debug: false
+logging:
+  level:
+    root: INFO
+    com.moriba.skultem: INFO
+    org.hibernate.SQL: WARN
+    org.springframework: INFO
 spring:
   datasource:
-    url: jdbc:h2:mem:skultem;DB_CLOSE_DELAY=-1
+    url: "jdbc:h2:mem:skultem;DB_CLOSE_DELAY=-1;NON_KEYWORDS=YEAR,VALUE,WORKING,DAY;INIT=CREATE DOMAIN IF NOT EXISTS JSONB AS JSON"
     driver-class-name: org.h2.Driver
     username: sa
     password:

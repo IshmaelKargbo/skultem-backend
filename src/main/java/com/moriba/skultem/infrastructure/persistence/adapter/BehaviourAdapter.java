@@ -50,4 +50,8 @@ public class BehaviourAdapter implements BehaviourRepository {
         return repo.countByKindForClassOrAll(academicYearId, schoolId, classId);
     }
 
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

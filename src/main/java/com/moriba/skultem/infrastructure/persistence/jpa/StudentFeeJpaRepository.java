@@ -67,4 +67,34 @@ public interface StudentFeeJpaRepository
 
         return findAll(spec, pageable);
     }
+
+    // Every charge a school made to its students for one academic year (optionally narrowed to one
+    // term) - the platform fee (fee.system = true) is deliberately excluded, since it isn't the
+    // school's own fee revenue. Backs the Fees Reporting dashboard/term-summary/student-balances/
+    // outstanding reports: fetch-joined so mapping every row in Java (amount, discount, class,
+    // student) never triggers a lazy-load per row.
+    @Query("""
+                select f from StudentFeeEntity f
+                join fetch f.fee fs
+                join fetch fs.category
+                join fetch fs.term
+                join fetch f.enrollment e
+                join fetch e.clazz
+                join fetch e.section
+                left join fetch e.stream
+                join fetch f.student
+                left join fetch f.discount
+                where f.schoolId = :schoolId
+                and fs.academicYear.id = :academicYearId
+                and fs.system = false
+                and (:termId = '' or fs.term.id = :termId)
+            """)
+    List<StudentFeeEntity> findSchoolFeeRows(@Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId, @Param("termId") String termId);
+
+    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
+    // config/setup tables are untouched, only this school's own rows here.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM StudentFeeEntity e WHERE e.schoolId = :schoolId")
+    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

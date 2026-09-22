@@ -118,7 +118,7 @@ public class SchoolController {
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(school, param.name(), param.domain(), address,
-                param.attendanceThreshold());
+                param.attendanceThreshold(), param.genderComposition());
         return new ApiResponse<>("success", 200, "School updated successfully", res);
     }
 

@@ -57,4 +57,9 @@ public class SupplyAdapter implements SupplyRepository {
         return repo.findAllBySchoolIdAndStatusInOrderByCreatedAtDesc(schoolId,
                 List.of(Status.PENDING, Status.PARTIAL), pageable).map(SupplyMapper::toDomain);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

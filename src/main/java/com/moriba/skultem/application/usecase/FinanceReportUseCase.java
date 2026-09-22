@@ -41,8 +41,11 @@ public class FinanceReportUseCase {
         private final StudentRepository studentRepo;
         private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
+        // School fee revenue only - the platform/Skultem fee is charged and collected through the
+        // same Payment table (see FeeStructure#system) but isn't the school's own money, so it's
+        // excluded here exactly as it already is from the student ledger (StudentLedgerReportUseCase).
         public BigDecimal totalCollected(String schoolId) {
-                return Optional.ofNullable(paymentRepo.sumPaymentsBySchool(schoolId))
+                return Optional.ofNullable(paymentRepo.sumSchoolPaymentsBySchool(schoolId))
                                 .orElse(BigDecimal.ZERO);
         }
 

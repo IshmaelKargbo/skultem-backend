@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
 
 import com.moriba.skultem.infrastructure.persistence.entity.ReportCardEntity;
 
@@ -45,4 +46,10 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
             """)
     Page<ReportCardEntity> search(@Param("schoolId") String schoolId, @Param("classId") String classId,
             @Param("termId") String termId, @Param("search") String search, Pageable pageable);
+
+    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
+    // config/setup tables are untouched, only this school's own rows here.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM ReportCardEntity e WHERE e.schoolId = :schoolId")
+    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

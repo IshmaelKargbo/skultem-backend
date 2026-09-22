@@ -62,6 +62,9 @@ public class RecordPaymentUseCase {
                                 param.schoolId())
                                 .orElseThrow(() -> new RuleException("Student not found"));
 
+                String recordedByUserId = com.moriba.skultem.infrastructure.security.PermissionService
+                                .getCurrentUser().userId();
+
                 String receiptNo = referenceGeneratorUsecase.generateTimeSeriesForSchool("PAYMENT_RECEIPT", "RCT",
                                 param.schoolId());
 
@@ -119,7 +122,8 @@ public class RecordPaymentUseCase {
                                         receiptNo,
                                         param.referenceNo(),
                                         param.note(),
-                                        Instant.now());
+                                        Instant.now(),
+                                        recordedByUserId);
 
                         paymentRepo.save(payment);
 

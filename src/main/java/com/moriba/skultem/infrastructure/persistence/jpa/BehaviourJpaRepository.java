@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
 
 import com.moriba.skultem.domain.vo.KindCount;
 import com.moriba.skultem.infrastructure.persistence.entity.BehaviourEntity;
@@ -33,4 +34,10 @@ public interface BehaviourJpaRepository extends JpaRepository<BehaviourEntity, S
 
   Page<BehaviourEntity> findAllByEnrollment_AcademicYear_IdAndEnrollment_Clazz_IdAndSchoolIdOrderByCreatedAtAsc(
       String academicYearId, String classId, String schoolId, Pageable pageable);
+
+    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
+    // config/setup tables are untouched, only this school's own rows here.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM BehaviourEntity e WHERE e.schoolId = :schoolId")
+    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

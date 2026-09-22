@@ -93,10 +93,6 @@ public class ClassController {
         return new ApiResponse<>("success", 200, "Next class set successfully", res);
     }
 
-    // Registered ahead of GetMapping("/{id}") is unnecessary here - Spring MVC always prefers a
-    // literal path segment over a variable one, but the explicit segment ("attention-summary" -
-    // not just "attention", which would collide with GetMapping("/{id}/attention")'s pattern under
-    // a different base) makes that not even a close call.
     @GetMapping("/attention-summary")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ClassAttentionSummaryDTO> attentionSummary(
@@ -228,7 +224,7 @@ public class ClassController {
     }
 
     @PutMapping("/{id}/template")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ClassDTO> updateTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

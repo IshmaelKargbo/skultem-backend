@@ -61,4 +61,9 @@ public class StudentAdapter implements StudentRepository {
         return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, gender, pageable)
                 .map(StudentMapper::toDomain);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

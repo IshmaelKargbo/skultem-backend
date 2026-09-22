@@ -67,4 +67,6 @@ public interface StudentLedgerEntryRepository {
         /** {@link #runReport} for the school's own fees only - the platform fee's entries left out. */
         Page<StudentLedgerEntry> runSchoolReport(String schoolId, List<Filter> filters, Pageable pageable);
 
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

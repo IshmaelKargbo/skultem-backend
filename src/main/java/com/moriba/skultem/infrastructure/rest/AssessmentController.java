@@ -124,11 +124,6 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessments list fetch successfully", res);
     }
 
-    // School-wide - unlike listAssessmentApprovals below (scoped to one teacher's class), this is
-    // the admin approval view's default list, so an admin sees what's pending across the whole
-    // school without first having to know which teacher/class to check. Admin-only (not TEACHER,
-    // unlike the per-teacher endpoints below) - a plain teacher has no business seeing every other
-    // teacher's submissions.
     @GetMapping("/approval")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listAllAssessmentApprovals(
@@ -180,9 +175,6 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessment approval request fetch successfully", list, meta);
     }
 
-    // A distinct path (not /approval/{id}) since that shape is already taken by
-    // listAssessmentApprovals above (list-by-class-master) - same path variable count would
-    // otherwise collide. Powers the standalone approval-detail page.
     @GetMapping("/approval/request/{approvalRequestId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentApprovalRequestDTO> getAssessmentApprovalRequest(

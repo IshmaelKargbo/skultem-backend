@@ -29,8 +29,12 @@ import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.usecase.AttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.ClassReportUseCase;
+import com.moriba.skultem.application.dto.FeePaymentRowDTO;
+import com.moriba.skultem.application.dto.StudentFeeBalanceDTO;
 import com.moriba.skultem.application.usecase.ExpenseReportUseCase;
 import com.moriba.skultem.application.usecase.FeeReportUseCase;
+import com.moriba.skultem.application.usecase.GetPaymentHistoryReportUseCase;
+import com.moriba.skultem.application.usecase.GetStudentFeeBalancesUseCase;
 import com.moriba.skultem.application.usecase.GradeReportUseCase;
 import com.moriba.skultem.application.usecase.LeaderBoardReportUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
@@ -74,6 +78,8 @@ public class ReportExportService {
         private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
         private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
         private final StudentLedgerEntryReportUseCase studentLedgerEntryReportUseCase;
+        private final GetStudentFeeBalancesUseCase getStudentFeeBalancesUseCase;
+        private final GetPaymentHistoryReportUseCase getPaymentHistoryReportUseCase;
 
         public ReportFile exportPayments(String schoolId, String format, String classId, LocalDate startDate,
                         LocalDate endDate) {
@@ -95,6 +101,64 @@ public class ReportExportService {
                                 .toList();
 
                 return build("payments", "Payments Report", headers, rows, format);
+        }
+
+        // The Student Balances report's rows, unpaginated - school fees only (platform fee excluded,
+        // see GetStudentFeeBalancesUseCase). Same filters the on-screen report supports.
+        public ReportFile exportStudentFeeBalances(String schoolId, String format, String academicYearId,
+                        String termId, String classSessionId, String status, String feeCategoryId) {
+                Page<StudentFeeBalanceDTO> page = getStudentFeeBalancesUseCase.execute(schoolId, academicYearId,
+                                termId, classSessionId, status, feeCategoryId, null, null,
+                                GetStudentFeeBalancesUseCase.SortBy.BALANCE, false, 0, 0);
+                List<StudentFeeBalanceDTO> records = page.getContent();
+
+                List<String> headers = List.of("Student", "Admission No", "Class", "Expected", "Paid", "Balance",
+                                "Status");
+                List<List<String>> rows = records.stream()
+                                .map(r -> List.of(
+                                                safe(r.studentName()),
+                                                safe(r.admissionNumber()),
+                                                safe(r.className()),
+                                                safe(r.expected()),
+                                                safe(r.paid()),
+                                                safe(r.balance()),
+                                                safe(r.status())))
+                                .toList();
+
+                return build("student-fee-balances", "Student Fee Balances Report", headers, rows, format);
+        }
+
+        // The Payment History report's transactions, unpaginated - school fees only (platform fee
+        // excluded, see GetPaymentHistoryReportUseCase).
+        public ReportFile exportSchoolPaymentHistory(String schoolId, String format, LocalDate startDate,
+                        LocalDate endDate, String academicYearId, String termId, String classSessionId,
+                        String studentId, String method) {
+                var zone = ZoneId.systemDefault();
+                Instant from = startDate != null ? startDate.atStartOfDay(zone).toInstant() : null;
+                Instant to = endDate != null ? endDate.plusDays(1).atStartOfDay(zone).toInstant() : null;
+                var parsedMethod = (method != null && !method.isBlank())
+                                ? com.moriba.skultem.domain.model.Payment.PaymentMethod.valueOf(method)
+                                : null;
+
+                Page<FeePaymentRowDTO> page = getPaymentHistoryReportUseCase.execute(schoolId, from, to,
+                                academicYearId, termId, classSessionId, studentId, parsedMethod, null, 0, 0);
+                List<FeePaymentRowDTO> records = page.getContent();
+
+                List<String> headers = List.of("Date", "Receipt", "Student", "Class", "Fee Type", "Amount", "Method",
+                                "Recorded By");
+                List<List<String>> rows = records.stream()
+                                .map(r -> List.of(
+                                                formatInstant(r.paidAt()),
+                                                safe(r.receiptNo()),
+                                                safe(r.studentName()),
+                                                safe(r.className()),
+                                                safe(r.feeCategoryName()),
+                                                safe(r.amount()),
+                                                safe(r.method()),
+                                                safe(r.recordedBy())))
+                                .toList();
+
+                return build("fee-payment-history", "Payment History Report", headers, rows, format);
         }
 
         // BETWEEN/GREATER_THAN/LESS_THAN on the given field, whichever of startDate/endDate were

@@ -72,4 +72,8 @@ public class StudentAssessmentAdapter implements StudentAssessmentRepository {
                 .toList();
     }
 
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

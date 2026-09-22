@@ -24,4 +24,7 @@ public interface StudentAssessmentRepository {
     List<StudentAssessment> findAllByTeacherSubjectIdTermId(String teacherId, String termId);
 
     List<StudentAssessment> findAllBySubjectAndSessionAndTermId(String subjectId, String sessionId, String termId);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

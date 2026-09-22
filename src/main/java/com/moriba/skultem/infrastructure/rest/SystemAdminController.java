@@ -11,9 +11,11 @@ import com.moriba.skultem.application.dto.UserWithSchoolsDTO;
 import com.moriba.skultem.application.usecase.BootstrapSystemAdminUseCase;
 import com.moriba.skultem.application.usecase.SearchUsersAcrossSchoolsUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolStatusUseCase;
+import com.moriba.skultem.application.usecase.SetSchoolTestFlagUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolUserStatusUseCase;
 import com.moriba.skultem.application.usecase.SystemAdminStatsUseCase;
 import com.moriba.skultem.application.usecase.UpdateSchoolUseCase;
+import com.moriba.skultem.application.usecase.WipeTestSchoolDataUseCase;
 import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
@@ -44,6 +46,8 @@ public class SystemAdminController {
     private final SearchUsersAcrossSchoolsUseCase searchUsersAcrossSchoolsUseCase;
     private final UpdateSchoolUseCase updateSchoolUseCase;
     private final SetSchoolUserStatusUseCase setSchoolUserStatusUseCase;
+    private final SetSchoolTestFlagUseCase setSchoolTestFlagUseCase;
+    private final WipeTestSchoolDataUseCase wipeTestSchoolDataUseCase;
 
     @GetMapping("/stats")
     @PreAuthorize("@permissionService.isSystemAdmin()")
@@ -60,6 +64,21 @@ public class SystemAdminController {
         return new ApiResponse<SchoolDTO>("success", 200, "School status updated successfully", res);
     }
 
+    @PutMapping("/school/{id}/test")
+    @PreAuthorize("@permissionService.isSystemAdmin()")
+    public ApiResponse<SchoolDTO> updateSchoolTestFlag(@PathVariable("id") String schoolId,
+            @RequestParam("testSchool") boolean testSchool) {
+        var res = setSchoolTestFlagUseCase.execute(schoolId, testSchool);
+        return new ApiResponse<>("success", 200, "School test environment flag updated successfully", res);
+    }
+
+    @PostMapping("/school/{id}/move-to-production")
+    @PreAuthorize("@permissionService.isSystemAdmin()")
+    public ApiResponse<SchoolDTO> moveSchoolToProduction(@PathVariable("id") String schoolId) {
+        var res = wipeTestSchoolDataUseCase.execute(schoolId);
+        return new ApiResponse<>("success", 200, "Test school data cleared and school moved to production", res);
+    }
+
     // Unlike SchoolController#update (which edits whichever school the caller is a member of, via
     // activeSchoolId), this edits an arbitrary school by id - the system-admin schools table isn't
     // scoped to any one tenant.
@@ -69,7 +88,7 @@ public class SystemAdminController {
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(schoolId, param.name(), param.domain(), address,
-                param.attendanceThreshold());
+                param.attendanceThreshold(), param.genderComposition());
         return new ApiResponse<SchoolDTO>("success", 200, "School updated successfully", res);
     }
 

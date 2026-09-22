@@ -283,4 +283,10 @@ public interface AssessmentScoreJpaRepository
 
                 return findAll(spec, pageable);
         }
+
+    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
+    // config/setup tables are untouched, only this school's own rows here.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM AssessmentScoreEntity e WHERE e.schoolId = :schoolId")
+    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

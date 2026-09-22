@@ -81,4 +81,7 @@ public interface EnrollmentRepository {
         // school's canonical categories (Muslim/Christian/Other/Not specified) by the use case, not
         // this query, since it's free text rather than an enum.
         List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId, Level level);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

@@ -59,4 +59,8 @@ public class StudentParentAdapter implements StudentParentRepository {
                 .toList();
     }
 
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

@@ -5,6 +5,7 @@ import java.time.Instant;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.moriba.skultem.domain.model.School.GenderComposition;
 import com.moriba.skultem.domain.model.School.Status;
 
 import jakarta.persistence.Column;
@@ -68,6 +69,13 @@ public class SchoolEntity {
 
     @Column(name = "attendance_threshold")
     private Double attendanceThreshold;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender_composition", nullable = false)
+    private GenderComposition genderComposition;
+
+    @Column(name = "is_test_school", nullable = false)
+    private boolean testSchool;
 
     private Instant createdAt;
     private Instant updatedAt;

@@ -71,4 +71,7 @@ public interface AttendanceRepository {
             LocalDate startDate, LocalDate endDate);
 
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

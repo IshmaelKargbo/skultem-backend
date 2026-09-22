@@ -19,4 +19,7 @@ public interface BehaviourRepository {
 
     Page<Behaviour> findAllAcademicYearAndClassIdAndSchoolId(String academicYearId, String classId, String schoolId,
             Pageable pageable);
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }

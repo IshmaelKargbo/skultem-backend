@@ -54,4 +54,9 @@ public class FeeDiscountAdapter implements FeeDiscountRepository {
     public Page<FeeDiscount> findAllBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolId(schoolId, pageable).map(FeeDiscountMapper::toDomain);
     }
+
+    @Override
+    public void deleteAllBySchoolId(String schoolId) {
+        repo.deleteAllBySchoolId(schoolId);
+    }
 }

@@ -24,4 +24,7 @@ public interface StudentRepository {
             Pageable pageable);
 
     long countAll();
+
+    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
+    void deleteAllBySchoolId(String schoolId);
 }
