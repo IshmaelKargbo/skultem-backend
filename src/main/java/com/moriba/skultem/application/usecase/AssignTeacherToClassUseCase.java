@@ -80,9 +80,6 @@ public class AssignTeacherToClassUseCase {
                                         .orElseThrow(() -> new NotFoundException("Class session not found"));
                 }
 
-                // A session can have more than one active class master (e.g. co-taught classes) - the
-                // only thing that must stay unique is the same teacher being assigned to the same
-                // session twice while their earlier assignment is still active.
                 if (repo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.getId(), session.getId(), schoolId)) {
                         throw new RuleException("This teacher is already a class master of this session.");
                 }
