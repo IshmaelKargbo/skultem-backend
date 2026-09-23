@@ -1,6 +1,8 @@
 package com.moriba.skultem.infrastructure.security;
 
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,14 @@ public class PermissionService {
     private final ParentRepository parentRepo;
     private final ReportCardRepository reportCardRepo;
     private final AssessmentApprovalRequestRepository assessmentApprovalRequestRepo;
+
+    // SUPER_ADMIN is a staff member with the whole school portal - everything the management and
+    // finance roles can do, without being the owner/proprietor. Any gate naming one of these roles
+    // lets a SUPER_ADMIN through too, so the hundreds of role lists on the controllers don't each
+    // need it added. Teacher- and parent-only gates stay closed: those are about the caller being
+    // that teacher or parent, not about seniority.
+    private static final Set<Role> SUPER_ADMIN_COVERS = EnumSet.of(Role.ADMIN, Role.OWNER, Role.PROPRIETOR,
+            Role.ACCOUNTANT);
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -65,7 +75,7 @@ public class PermissionService {
         if (isSystemAdmin()) {
             return true;
         }
-        return currentRole() == role;
+        return currentRole() == role || (currentRole() == Role.SUPER_ADMIN && SUPER_ADMIN_COVERS.contains(role));
     }
 
     public boolean hasAnyRole(Role... roles) {
@@ -76,7 +86,7 @@ public class PermissionService {
         Role current = currentRole();
 
         for (Role r : roles) {
-            if (r == current) {
+            if (r == current || (current == Role.SUPER_ADMIN && SUPER_ADMIN_COVERS.contains(r))) {
                 return true;
             }
         }
@@ -84,20 +94,38 @@ public class PermissionService {
     }
 
     public boolean hasSchoolRole(String schoolId, Role role) {
-        if (isSystemAdmin()) {
-            return true;
-        }
-        return schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), role).isPresent();
+        return hasAnySchoolRole(schoolId, role.name());
     }
 
     public boolean hasAnySchoolRole(String schoolId, String... roles) {
         if (isSystemAdmin()) {
             return true;
         }
-        return Arrays.stream(roles)
-                .map(Role::valueOf)
-                .anyMatch(
-                        role -> schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), role).isPresent());
+        var requested = Arrays.stream(roles).map(Role::valueOf).toList();
+        if (requested.stream().anyMatch(
+                role -> schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), role).isPresent())) {
+            return true;
+        }
+        return requested.stream().anyMatch(SUPER_ADMIN_COVERS::contains)
+                && schoolUserRepo.findBySchoolAndUserAndRole(schoolId, currentUserId(), Role.SUPER_ADMIN).isPresent();
+    }
+
+    // Owner-level: the owner, a proprietor or a SUPER_ADMIN - not a plain ADMIN.
+    public boolean isSchoolLeadership(String schoolId) {
+        return hasAnySchoolRole(schoolId, "OWNER", "PROPRIETOR");
+    }
+
+    // Handing out or taking away SUPER_ADMIN is owner-level - otherwise any ADMIN could promote
+    // themselves past the very limit the role exists to lift.
+    public boolean canGrantRole(String schoolId, String role) {
+        return !Role.SUPER_ADMIN.name().equals(role) || isSchoolLeadership(schoolId);
+    }
+
+    // Likewise a plain ADMIN can't deactivate, reset the password of or otherwise act on a
+    // SUPER_ADMIN's account.
+    public boolean canManageUser(String schoolId, String userId) {
+        return schoolUserRepo.findBySchoolAndUserAndRole(schoolId, userId, Role.SUPER_ADMIN).isEmpty()
+                || isSchoolLeadership(schoolId);
     }
 
     public boolean canAccessSchool(String schoolId) {
@@ -124,6 +152,7 @@ public class PermissionService {
         Role role = currentRole();
 
         return role == Role.ADMIN ||
+                role == Role.SUPER_ADMIN ||
                 role == Role.ACCOUNTANT ||
                 role == Role.TEACHER;
     }
@@ -145,6 +174,7 @@ public class PermissionService {
         Role role = currentRole();
 
         if (role == Role.ADMIN ||
+                role == Role.SUPER_ADMIN ||
                 role == Role.ACCOUNTANT) {
             return true;
         }

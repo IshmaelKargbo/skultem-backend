@@ -3,12 +3,14 @@ package com.moriba.skultem.infrastructure.rest;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.PlaygroundSummaryDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.dto.SystemAdminStatsDTO;
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.dto.UserSchoolMembershipDTO;
 import com.moriba.skultem.application.dto.UserWithSchoolsDTO;
 import com.moriba.skultem.application.usecase.BootstrapSystemAdminUseCase;
+import com.moriba.skultem.application.usecase.GetPlaygroundSummaryUseCase;
 import com.moriba.skultem.application.usecase.SearchUsersAcrossSchoolsUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolStatusUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolTestFlagUseCase;
@@ -20,6 +22,7 @@ import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.BootstrapSystemAdminDTO;
+import com.moriba.skultem.infrastructure.rest.dto.GoLiveDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateSchoolDTO;
 
 import jakarta.validation.Valid;
@@ -48,6 +51,7 @@ public class SystemAdminController {
     private final SetSchoolUserStatusUseCase setSchoolUserStatusUseCase;
     private final SetSchoolTestFlagUseCase setSchoolTestFlagUseCase;
     private final WipeTestSchoolDataUseCase wipeTestSchoolDataUseCase;
+    private final GetPlaygroundSummaryUseCase getPlaygroundSummaryUseCase;
 
     @GetMapping("/stats")
     @PreAuthorize("@permissionService.isSystemAdmin()")
@@ -72,10 +76,19 @@ public class SystemAdminController {
         return new ApiResponse<>("success", 200, "School test environment flag updated successfully", res);
     }
 
+    @GetMapping("/school/{id}/playground")
+    @PreAuthorize("@permissionService.isSystemAdmin()")
+    public ApiResponse<PlaygroundSummaryDTO> playgroundSummary(@PathVariable("id") String schoolId) {
+        var res = getPlaygroundSummaryUseCase.execute(schoolId);
+        return new ApiResponse<>("success", 200, "Playground summary fetched successfully", res);
+    }
+
+    // Same go-live as PlaygroundController#goLive, for a system admin doing it on the school's behalf.
     @PostMapping("/school/{id}/move-to-production")
     @PreAuthorize("@permissionService.isSystemAdmin()")
-    public ApiResponse<SchoolDTO> moveSchoolToProduction(@PathVariable("id") String schoolId) {
-        var res = wipeTestSchoolDataUseCase.execute(schoolId);
+    public ApiResponse<SchoolDTO> moveSchoolToProduction(@PathVariable("id") String schoolId,
+            @Valid @RequestBody GoLiveDTO param) {
+        var res = wipeTestSchoolDataUseCase.execute(schoolId, param.categories(), param.confirmation());
         return new ApiResponse<>("success", 200, "Test school data cleared and school moved to production", res);
     }
 

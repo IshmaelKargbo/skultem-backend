@@ -110,9 +110,4 @@ public class PaymentAdapter implements PaymentRepository {
         return repo.searchSchoolPayments(schoolId, from, to, academicYearId, termId, classId, sectionId, streamId,
                 studentId, method, recordedByUserId, pageable).map(PaymentMapper::toDomain);
     }
-
-    @Override
-    public void deleteAllBySchoolId(String schoolId) {
-        repo.deleteAllBySchoolId(schoolId);
-    }
 }

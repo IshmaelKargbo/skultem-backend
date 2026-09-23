@@ -66,9 +66,4 @@ public class ParentAdapter implements ParentRepository {
         return repo.runReport(schoolId, filters, pageable)
                 .map(ParentMapper::toDomain);
     }
-
-    @Override
-    public void deleteAllBySchoolId(String schoolId) {
-        repo.deleteAllBySchoolId(schoolId);
-    }
 }

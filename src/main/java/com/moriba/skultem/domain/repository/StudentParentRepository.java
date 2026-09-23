@@ -22,7 +22,4 @@ public interface StudentParentRepository {
     List<StudentParent> findAllByStudentAndSchool(String studentId, String schoolId);
 
     Page<StudentParent> findAllBySchoolId(String schoolId, Pageable pageable);
-
-    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
-    void deleteAllBySchoolId(String schoolId);
 }

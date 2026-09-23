@@ -46,7 +46,4 @@ public interface StudentFeeRepository {
 
         /** Every school fee charged for one academic year (optionally one term) - platform fee excluded. */
         List<StudentFee> findSchoolFeeRows(String schoolId, String academicYearId, String termId);
-
-    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
-    void deleteAllBySchoolId(String schoolId);
 }

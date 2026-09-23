@@ -7,9 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.infrastructure.persistence.entity.EnrollmentSubjectEntity;
 
@@ -27,10 +24,4 @@ public interface EnrollmentSubjectJpaRepository
         List<EnrollmentSubjectEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
 
         void deleteByEnrollment_IdAndSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
-
-    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
-    // config/setup tables are untouched, only this school's own rows here.
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("DELETE FROM EnrollmentSubjectEntity e WHERE e.schoolId = :schoolId")
-    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

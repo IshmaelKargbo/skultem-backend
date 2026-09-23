@@ -53,7 +53,4 @@ public interface PaymentRepository {
     Page<Payment> searchSchoolPayments(String schoolId, Instant from, Instant to, String academicYearId,
             String termId, String classId, String sectionId, String streamId, String studentId,
             PaymentMethod method, String recordedByUserId, Pageable pageable);
-
-    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
-    void deleteAllBySchoolId(String schoolId);
 }

@@ -23,10 +23,4 @@ public interface TransactionRepository {
         Page<Transaction> searchTransactions(String schoolId, String academicYearId, Transaction.TransactionType type,
                         Transaction.Direction direction, Transaction.ReferenceType referenceType,
                         java.time.Instant from, java.time.Instant toExclusive, Pageable pageable);
-
-        /**
-         * Wipes a test school's STUDENT transactions only - see WipeTestSchoolDataUseCase. Expense,
-         * payroll and material-sale transactions aren't roster/activity data and are left alone.
-         */
-        void deleteAllBySchoolIdAndReferenceType(String schoolId, Transaction.ReferenceType referenceType);
 }

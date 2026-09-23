@@ -53,9 +53,4 @@ public class TransactionAdapter implements TransactionRepository {
         return repo.findTopBySchoolIdOrderByCreatedAtDesc(schoolId).map(TransactionMapper::toDomain);
     }
 
-    @Override
-    public void deleteAllBySchoolIdAndReferenceType(String schoolId, Transaction.ReferenceType referenceType) {
-        repo.deleteAllBySchoolIdAndReferenceType(schoolId, referenceType);
-    }
-
 }

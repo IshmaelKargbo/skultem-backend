@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class GetAudienceSizeUseCase {
-    private static final Set<Role> STAFF_ROLES = Set.of(Role.ADMIN, Role.ACCOUNTANT, Role.PROPRIETOR, Role.OWNER);
+    private static final Set<Role> STAFF_ROLES = Set.of(Role.ADMIN, Role.SUPER_ADMIN, Role.ACCOUNTANT, Role.PROPRIETOR, Role.OWNER);
 
     private final StudentRepository studentRepo;
     private final ParentRepository parentRepo;

@@ -109,9 +109,4 @@ public class StudentFeeAdapter implements StudentFeeRepository {
                 .map(StudentFeeMapper::toDomain)
                 .toList();
     }
-
-    @Override
-    public void deleteAllBySchoolId(String schoolId) {
-        repo.deleteAllBySchoolId(schoolId);
-    }
 }

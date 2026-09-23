@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.Modifying;
 
 import com.moriba.skultem.domain.model.FeeCategoryRevenue;
 import com.moriba.skultem.domain.model.Payment.PaymentMethod;
@@ -192,10 +191,4 @@ public interface PaymentJpaRepository
 
         return findAll(spec, pageable);
     }
-
-    // Wipes a test school's roster/activity data (see WipeTestSchoolDataUseCase) -
-    // config/setup tables are untouched, only this school's own rows here.
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("DELETE FROM PaymentEntity e WHERE e.schoolId = :schoolId")
-    void deleteAllBySchoolId(@Param("schoolId") String schoolId);
 }

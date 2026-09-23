@@ -58,9 +58,4 @@ public class StudentParentAdapter implements StudentParentRepository {
                 .map(StudentParentMapper::toDomain)
                 .toList();
     }
-
-    @Override
-    public void deleteAllBySchoolId(String schoolId) {
-        repo.deleteAllBySchoolId(schoolId);
-    }
 }

@@ -28,7 +28,4 @@ public interface ReportCardRepository {
     long countBySchoolIdAndPassed(String schoolId, boolean passed);
 
     long sumDownloadsBySchoolId(String schoolId);
-
-    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
-    void deleteAllBySchoolId(String schoolId);
 }

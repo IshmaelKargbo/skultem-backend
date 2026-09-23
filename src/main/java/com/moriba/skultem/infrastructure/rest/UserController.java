@@ -61,7 +61,7 @@ public class UserController {
     private final RemoveRoleUseCase removeRoleUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canGrantRole(#school, #param.role())")
     public ApiResponse<UserDTO> create(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateUserDTO param) {
         boolean includeInPayroll = param.includeInPayroll() != null && param.includeInPayroll();
@@ -73,7 +73,7 @@ public class UserController {
     }
 
     @PostMapping("/assign")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canGrantRole(#school, #param.role())")
     public ApiResponse<UserDTO> assignRole(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody AssignRoleDTO param) {
         var res = svc.assignRole(school, param.userId(), param.role());
@@ -99,7 +99,7 @@ public class UserController {
     // chat, in person) - they're forced through /reset-password on next login.
     // See AdminResetPasswordUseCase.
     @PostMapping("/{id}/reset-password")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<AdminResetPasswordResultDTO> adminResetPassword(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String actingUserId,
@@ -131,7 +131,7 @@ public class UserController {
     // target holds at this school together and signs out any session they're currently using.
     // Blocked from deactivating your own account or a SYSTEM_ADMIN. See SetUserAccessUseCase.
     @PatchMapping("/{id}/access")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<UserDTO> setAccess(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String actingUserId,
@@ -145,7 +145,7 @@ public class UserController {
     // Revoke one specific role from a user at this school (e.g. they keep Teacher but no longer
     // need Accountant) - the removal counterpart to /assign. See RemoveRoleUseCase.
     @DeleteMapping("/{id}/role")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canGrantRole(#school, #role) and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<UserDTO> removeRole(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String actingUserId,

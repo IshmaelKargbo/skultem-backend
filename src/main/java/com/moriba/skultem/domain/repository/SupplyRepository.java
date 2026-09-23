@@ -24,7 +24,4 @@ public interface SupplyRepository {
     // PENDING or PARTIAL - a student is still owed some or all of it. Backs the "Pending Pickups"
     // view, which combines these with unfulfilled MaterialSales - see GetPendingPickupsUseCase.
     Page<Supply> findUncollectedBySchool(String schoolId, Pageable pageable);
-
-    /** Wipes every row for this school - see WipeTestSchoolDataUseCase. */
-    void deleteAllBySchoolId(String schoolId);
 }

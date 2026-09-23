@@ -71,9 +71,4 @@ public class StudentAssessmentAdapter implements StudentAssessmentRepository {
                 .map(StudentAssessmentMapper::toDomain)
                 .toList();
     }
-
-    @Override
-    public void deleteAllBySchoolId(String schoolId) {
-        repo.deleteAllBySchoolId(schoolId);
-    }
 }
