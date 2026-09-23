@@ -40,8 +40,10 @@ public class GradeAssessmentUseCase {
                 .findByIdAndSchoolId(teacherSubjectId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Teacher subject not found"));
 
-        var clazz = ts.getSession().getClazz();
-        lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel());
+        var session = ts.getSession();
+        var clazz = session.getClazz();
+
+        lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(), session.getStream().getId());
 
         List<StudentAssessment> studentAssessments = studentAssessmentRepo
                 .findAllBySubjectAndSessionAndTermId(ts.getSubject().getId(), ts.getSession().getId(), termId);
@@ -86,11 +88,18 @@ public class GradeAssessmentUseCase {
         assessmentScoreRepo.saveAll(scoresToUpdate);
     }
 
-    private void lockSubject(String schoolId, String subjectId, String classId, Level level) {
-        var subject = classSubjectRepo.findByClassIdAndSubjectId(classId, subjectId, schoolId)
-                .orElseThrow(() -> new NotFoundException("Class subject not found"));
-        subject.lock();
-        classSubjectRepo.save(subject);
+    private void lockSubject(String schoolId, String subjectId, String classId, Level level, String streamId) {
+        if (streamId == null) {
+            var subject = classSubjectRepo.findByClassIdAndSubjectId(classId, subjectId, schoolId)
+                    .orElseThrow(() -> new NotFoundException("Class subject not found"));
+            subject.lock();
+            classSubjectRepo.save(subject);
+        } else {
+            var subject = classSubjectRepo.findByClassIdAndSubjectIdAndStramId(classId, subjectId, streamId)
+                    .orElseThrow(() -> new NotFoundException("Class subject not found"));
+            subject.lock();
+            classSubjectRepo.save(subject);
+        }
     }
 
     public record Grade(String id, Integer score) {

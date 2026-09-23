@@ -86,4 +86,11 @@ public class ClassSubjectAdapter implements ClassSubjectRepository {
         return repo.findAllByClazzIdAndStreamIdAndSchoolId(classId, streamId, schoolId, pageble)
                 .map(ClassSubjectMapper::toDomain);
     }
+
+    @Override
+    public Optional<ClassSubject> findByClassIdAndSubjectIdAndStramId(String classId, String subjectId,
+            String streamId) {
+        return repo.findByClazzIdAndSubjectIdAndStreamId(classId, subjectId, streamId)
+                .map(ClassSubjectMapper::toDomain);
+    }
 }

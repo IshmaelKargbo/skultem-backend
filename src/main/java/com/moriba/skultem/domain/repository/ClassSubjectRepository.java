@@ -14,6 +14,8 @@ public interface ClassSubjectRepository {
 
     Optional<ClassSubject> findByClassIdAndSubjectId(String classId, String subjectId, String schoolId);
 
+    Optional<ClassSubject> findByClassIdAndSubjectIdAndStramId(String classId, String subjectId, String streamId);
+
     boolean existsByClassAndSubject(String classId, String subjectId);
 
     boolean existsByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
@@ -28,8 +30,6 @@ public interface ClassSubjectRepository {
 
     Page<ClassSubject> findBySchool(String school, Pageable pageable);
 
-    // Matches on class/subject/stream name, optionally narrowed to one class and/or mandatory
-    // flag - backs the class subjects list's search box and filters.
     Page<ClassSubject> search(String school, String classId, Boolean mandatory, String query, Pageable pageable);
 
     void delete(ClassSubject domain);

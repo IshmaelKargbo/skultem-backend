@@ -19,6 +19,9 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
     Optional<ClassSubjectEntity> findByClazz_IdAndSubject_IdAndSchoolId(String classId, String subjectId,
             String schoolId);
 
+    Optional<ClassSubjectEntity> findByClazzIdAndSubjectIdAndStreamId(String classId, String subjectId,
+            String streamId);
+
     @Modifying
     @Query("""
                 update ClassSubjectEntity cs
@@ -37,10 +40,6 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
 
     Page<ClassSubjectEntity> findAllByClazz_Id(String classId, Pageable pageable);
 
-    // classId/query are always real (possibly empty) strings, never null - a null String bound
-    // into a lower(...) call leaves Postgres/the JDBC driver unable to infer its type from context
-    // and it falls back to bytea ("function lower(bytea) does not exist"). See
-    // ListClassSubjectBySchoolUseCase.
     @Query("""
                 select cs from ClassSubjectEntity cs
                 left join cs.stream st
