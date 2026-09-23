@@ -16,7 +16,6 @@ import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
-import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
@@ -35,7 +34,6 @@ public class AssignSubjectToTeacherUseCase {
     private final ClassSessionRepository sessionRepo;
     private final AcademicYearRepository academicYearRepo;
     private final ClassSubjectRepository classSubjectRepo;
-    private final StreamSubjectRepository streamSubjectRepo;
     private final SubjectRepository subjectRepo;
     private final TeacherSubjectRepository repo;
     private final EnrollmentRepository enrollmentRepo;
@@ -66,24 +64,16 @@ public class AssignSubjectToTeacherUseCase {
                 .getContent();
 
         Map<String, TeacherSubject> existingById = existingList.stream()
-                .collect(Collectors.toMap(TeacherSubject::getId, ts -> ts));
+                .collect(Collectors.toMap(a -> a.getId(), ts -> ts));
 
         Set<String> incomingIds = new HashSet<>();
 
         for (SubjectAssignment assignment : assignments) {
 
-            boolean subjectValid;
-            if (session.getStream() == null) {
-                subjectValid = classSubjectRepo.existsByClassIdAndSubjectIdAndSchoolId(
-                        session.getClazz().getId(),
-                        assignment.subjectId(),
-                        schoolId);
-            } else {
-                subjectValid = streamSubjectRepo.existsByStreamIdAndSubjectIdAndSchoolId(
-                        session.getStream().getId(),
-                        assignment.subjectId(),
-                        schoolId);
-            }
+            boolean subjectValid = classSubjectRepo.existsByClassIdAndSubjectIdAndSchoolId(
+                    session.getClazz().getId(),
+                    assignment.subjectId(),
+                    schoolId);
 
             if (!subjectValid) {
                 var id = assignment.subjectId();
