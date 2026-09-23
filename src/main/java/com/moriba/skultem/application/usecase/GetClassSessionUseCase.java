@@ -121,8 +121,6 @@ public class GetClassSessionUseCase {
                 var domain = repo.findByClassIdAndStreamIdAndAcademicYearId(clazzId, stream, academicYearId)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
 
-                // A session can have more than one active class master (e.g. co-taught classes) -
-                // list every one of them rather than picking just the most recently assigned.
                 var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(domain.getId(), school);
                 String teacherName = "N/A", teacherId = "";
                 String streamName = "N/A", streamId = "";
@@ -156,12 +154,6 @@ public class GetClassSessionUseCase {
                                 streamId, sectionName, sectionId, classLevel, grade, feeDetail, false);
         }
 
-        // A class with streams (e.g. SSS2 split into Science/Art) shares one Clazz across every
-        // stream, so counting "students in this class" by classId alone - as this used to do -
-        // double counts every other stream's students into this session's total. Match the
-        // section+stream this specific session actually is, the same way
-        // ListClassSessionBySchoolUseCase's admin-facing list already does; a class with no
-        // streams instead matches on class+section with no stream, since streamId is blank/null.
         private List<Enrollment> resolveEnrollments(String schoolId, String classId, String sectionId,
                         String streamId, String academicYearId) {
                 if (streamId != null && !streamId.isBlank()) {

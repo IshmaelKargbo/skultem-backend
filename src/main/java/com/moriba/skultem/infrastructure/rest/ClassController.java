@@ -21,6 +21,7 @@ import com.moriba.skultem.application.dto.ClassMasterDTO;
 import com.moriba.skultem.application.dto.ClassOverviewDTO;
 import com.moriba.skultem.application.dto.ClassSectionDTO;
 import com.moriba.skultem.application.dto.ClassStreamDTO;
+import com.moriba.skultem.application.dto.ClassStreamOverviewDTO;
 import com.moriba.skultem.application.dto.ClassSubjectResponse;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.ComputeClassAttentionUseCase;
@@ -190,6 +191,17 @@ public class ClassController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
         var res = getClassOverviewUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
+    }
+
+    @GetMapping("/{id}/sss/overview")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    public ApiResponse<ClassStreamOverviewDTO> sssOverview(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String streamId) {
+        var res = getClassOverviewUseCase.execute(school, academicYearId, id, streamId);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
     }
 
