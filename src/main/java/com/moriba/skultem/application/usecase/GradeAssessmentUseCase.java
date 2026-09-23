@@ -11,7 +11,6 @@ import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.model.StudentAssessment;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
-import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 import com.moriba.skultem.domain.vo.Level;
@@ -28,7 +27,6 @@ public class GradeAssessmentUseCase {
     private final TeacherSubjectRepository teacherSubjectRepo;
     private final AssessmentScoreRepository assessmentScoreRepo;
     private final ClassSubjectRepository classSubjectRepo;
-    private final StreamSubjectRepository streamSubjectRepo;
     private final StudentAssessmentRepository studentAssessmentRepo;
 
     public void execute(
@@ -43,17 +41,8 @@ public class GradeAssessmentUseCase {
                 .orElseThrow(() -> new NotFoundException("Teacher subject not found"));
 
         var clazz = ts.getSession().getClazz();
-        if (clazz.getLevel().equals(Level.SSS)) {
-            lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(),
-                    ts.getSession().getStream().getId());
-        } else {
-            lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(), null);
-        }
+        lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel());
 
-        // Resolved by the subject + class session, not the specific teacherSubjectId passed in -
-        // a subject can have more than one teacher assigned, and they must all land on the same
-        // shared set of student assessments rather than each only seeing the rows stamped with
-        // whichever teacher's assignment happened to trigger provisioning first.
         List<StudentAssessment> studentAssessments = studentAssessmentRepo
                 .findAllBySubjectAndSessionAndTermId(ts.getSubject().getId(), ts.getSession().getId(), termId);
 
@@ -97,18 +86,11 @@ public class GradeAssessmentUseCase {
         assessmentScoreRepo.saveAll(scoresToUpdate);
     }
 
-    private void lockSubject(String schoolId, String subjectId, String classId, Level level, String streamId) {
-        if (level.equals(Level.SSS)) {
-            var subject = streamSubjectRepo.findByStreamIdAndSubjectIdAndSchoolId(streamId, subjectId, schoolId)
-                    .orElseThrow(() -> new NotFoundException("Stream subject not found"));
-            subject.lock();
-            streamSubjectRepo.save(subject);
-        } else {
-            var subject = classSubjectRepo.findByClassIdAndSubjectId(classId, subjectId, schoolId)
-                    .orElseThrow(() -> new NotFoundException("Class subject not found"));
-            subject.lock();
-            classSubjectRepo.save(subject);
-        }
+    private void lockSubject(String schoolId, String subjectId, String classId, Level level) {
+        var subject = classSubjectRepo.findByClassIdAndSubjectId(classId, subjectId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Class subject not found"));
+        subject.lock();
+        classSubjectRepo.save(subject);
     }
 
     public record Grade(String id, Integer score) {

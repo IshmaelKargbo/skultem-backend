@@ -42,17 +42,11 @@ public class SubmitAssessmentForApprovalUseCase {
                                 .findByIdAndSchoolId(teacherSubjectId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Teacher subject not found"));
 
-                // A session can have more than one active class master - any one of them can review
-                // and approve, so route to whichever was assigned most recently rather than requiring
-                // exactly one to exist.
                 var classMaster = classMasterRepo
                                 .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(
                                                 teacherSubject.getSession().getId())
                                 .orElseThrow(() -> new NotFoundException("Class master not found"));
 
-                // Resolved by subject + session, not the specific teacherSubjectId - a subject can
-                // have more than one teacher assigned, sharing one cycle/gradebook rather than each
-                // teacher's assignment spawning its own.
                 var cycle = assessmentLifeCycleRepo
                                 .findBySubjectSessionAssessmentAndTerm(
                                                 teacherSubject.getSubject().getId(),
@@ -86,8 +80,6 @@ public class SubmitAssessmentForApprovalUseCase {
                         });
                 }
 
-                // By cycle alone - a cycle has at most one live approval request regardless of which
-                // of the subject's teachers submits it, so two co-teachers can't each spawn their own.
                 var assessmentRes = approvalRepo.findByCycle(cycle.getId());
                 AssessmentApprovalRequest approvalRequest;
 
