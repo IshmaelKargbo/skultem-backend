@@ -79,7 +79,7 @@ public class UpdateSectionBrandingUseCase {
         String path = "schools/" + schoolId + "/sections/" + sectionId + "/" + label + "-"
                 + System.currentTimeMillis() + extension;
         try {
-            return storageService.uploadFile(file, path);
+            return storageService.uploadBranding(file, path);
         } catch (Exception e) {
             throw new RuleException("Failed to upload " + label.replace('-', ' ') + ": " + e.getMessage());
         }

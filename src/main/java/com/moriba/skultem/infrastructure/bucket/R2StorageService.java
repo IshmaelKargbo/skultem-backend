@@ -206,6 +206,48 @@ public class R2StorageService {
         return publicUrl + "/" + path;
     }
 
+    // Logo / signature uploads: shrunk to MAX_EMBED_DIMENSION first (see shrinkForEmbedding) so what
+    // lands in R2 is small - the logo is drawn ~160px wide on reports and cards, and a 400KB original
+    // made every page that shows it, and every PDF, slow. A file that can't be shrunk (SVG, icon,
+    // already small) is stored as-is.
+    public String uploadBranding(MultipartFile file, String path) throws IOException {
+        String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+        byte[] original = file.getBytes();
+        byte[] shrunk = shrinkForEmbedding(original, contentType);
+
+        String url;
+        String storedType;
+        byte[] stored;
+        if (shrunk == null) {
+            url = uploadFile(file, path);
+            storedType = contentType;
+            stored = original;
+        } else {
+            String pngPath = path.replaceAll("\\.[A-Za-z0-9]+$", "") + ".png";
+            try {
+                client.putObject(
+                        PutObjectRequest.builder().bucket(bucket).key(pngPath).contentType("image/png").build(),
+                        RequestBody.fromBytes(shrunk));
+            } catch (S3Exception ex) {
+                throw new StorageException(
+                        "Upload failed with status " + ex.statusCode(),
+                        ex.awsErrorDetails() != null ? ex.awsErrorDetails().errorMessage() : ex.getMessage(),
+                        ex);
+            }
+            url = publicUrl + "/" + pngPath;
+            storedType = "image/png";
+            stored = shrunk;
+        }
+
+        // The bytes are already in hand - prime the embed cache so the first PDF / print of this
+        // logo doesn't have to download it straight back from R2 (slow, and can fail on a poor link).
+        if (dataUriCache.size() >= MAX_CACHED_DATA_URIS) {
+            dataUriCache.clear();
+        }
+        dataUriCache.put(url, "data:" + storedType + ";base64," + Base64.getEncoder().encodeToString(stored));
+        return url;
+    }
+
     private String extensionFor(String contentType, String originalFilename) {
         String name = originalFilename != null ? originalFilename : "";
         int dot = name.lastIndexOf('.');
@@ -220,10 +262,49 @@ public class R2StorageService {
     // or principal signature - the fetch this method does is server-to-server
     // and isn't subject to that restriction at all, so the frontend embeds the
     // result directly as a same-origin data: URI instead of loading the R2 URL.
+    //
+    // Two things keep this fast: results are cached in memory by URL (an upload always gets a new
+    // timestamped URL, so a cached entry can never go stale), and large images are shrunk to
+    // MAX_EMBED_DIMENSION first - a 400KB logo drawn 160px wide on a report doesn't need to cross
+    // the network (or sit in the browser's cache) at full size.
+    private static final int MAX_EMBED_DIMENSION = 640;
+    private static final int MAX_CACHED_DATA_URIS = 64;
+    private final java.util.Map<String, String> dataUriCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.util.concurrent.CompletableFuture<String>> dataUriInflight = new java.util.concurrent.ConcurrentHashMap<>();
+
     public String downloadAsDataUri(String url) {
         if (url == null || url.isBlank() || !url.startsWith(publicUrl + "/")) {
             return null;
         }
+        String cached = dataUriCache.get(url);
+        if (cached != null) {
+            return cached;
+        }
+
+        // Single-flight: the background warm-up and the request that actually needs the image share
+        // one download instead of each pulling the same bytes from R2.
+        var mine = new java.util.concurrent.CompletableFuture<String>();
+        var running = dataUriInflight.putIfAbsent(url, mine);
+        if (running != null) {
+            return running.join();
+        }
+        try {
+            String dataUri = fetchAsDataUri(url);
+            if (dataUriCache.size() >= MAX_CACHED_DATA_URIS) {
+                dataUriCache.clear();
+            }
+            dataUriCache.put(url, dataUri);
+            mine.complete(dataUri);
+            return dataUri;
+        } catch (RuntimeException e) {
+            mine.completeExceptionally(e);
+            throw e;
+        } finally {
+            dataUriInflight.remove(url);
+        }
+    }
+
+    private String fetchAsDataUri(String url) {
         String key = url.substring((publicUrl + "/").length());
 
         try (ResponseInputStream<GetObjectResponse> object = client.getObject(
@@ -232,6 +313,12 @@ public class R2StorageService {
             String contentType = object.response().contentType() != null
                     ? object.response().contentType()
                     : "application/octet-stream";
+
+            var shrunk = shrinkForEmbedding(bytes, contentType);
+            if (shrunk != null) {
+                bytes = shrunk;
+                contentType = "image/png";
+            }
             return "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(bytes);
         } catch (S3Exception ex) {
             throw new StorageException(
@@ -240,6 +327,43 @@ public class R2StorageService {
                     ex);
         } catch (IOException ex) {
             throw new StorageException("Unexpected download failure", ex.getMessage(), ex);
+        }
+    }
+
+    // Scales a raster image down to MAX_EMBED_DIMENSION on its longest side, re-encoded as PNG so a
+    // transparent logo keeps its transparency. Null when there's nothing to do - already small,
+    // or a format ImageIO can't read (SVG, icons, WebP) - and the original bytes are used as-is.
+    private static byte[] shrinkForEmbedding(byte[] bytes, String contentType) {
+        if (contentType == null || !(contentType.contains("png") || contentType.contains("jpeg")
+                || contentType.contains("jpg"))) {
+            return null;
+        }
+        try {
+            BufferedImage source = ImageIO.read(new ByteArrayInputStream(bytes));
+            if (source == null || Math.max(source.getWidth(), source.getHeight()) <= MAX_EMBED_DIMENSION) {
+                return null;
+            }
+
+            double scale = (double) MAX_EMBED_DIMENSION / Math.max(source.getWidth(), source.getHeight());
+            int width = Math.max(1, (int) Math.round(source.getWidth() * scale));
+            int height = Math.max(1, (int) Math.round(source.getHeight() * scale));
+
+            BufferedImage target = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = target.createGraphics();
+            try {
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g.drawImage(source, 0, 0, width, height, null);
+            } finally {
+                g.dispose();
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ImageIO.write(target, "png", out);
+            byte[] resized = out.toByteArray();
+            return resized.length < bytes.length ? resized : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 }

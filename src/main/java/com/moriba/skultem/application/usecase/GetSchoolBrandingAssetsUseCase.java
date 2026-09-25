@@ -48,16 +48,32 @@ public class GetSchoolBrandingAssetsUseCase {
                 : brandingResolver.forLevel(school, target.level());
 
         if (!inline) {
+            // The plain URLs come back at once; warm the embed cache in the background so the
+            // data: URI a PDF export asks for next is already there instead of an R2 round trip.
+            CompletableFuture.runAsync(() -> {
+                storageService.downloadAsDataUri(branding.logo());
+                storageService.downloadAsDataUri(branding.principalSignature());
+            }).exceptionally(e -> null);
             return new SchoolBrandingAssetsDTO(branding.logo(), branding.principalSignature(),
                     branding.principalName(), branding.address(), branding.ownPrincipal(), branding.ownAddress());
         }
 
-        CompletableFuture<String> logo = CompletableFuture.supplyAsync(
-                () -> storageService.downloadAsDataUri(branding.logo()));
-        CompletableFuture<String> signature = CompletableFuture.supplyAsync(
-                () -> storageService.downloadAsDataUri(branding.principalSignature()));
+        // A slow or failing R2 must not take the whole call down (or hang it): each image is given a
+        // little while, and comes back null if it isn't ready - the caller then keeps the plain URL.
+        // The download itself carries on in the background and lands in the embed cache, so the
+        // next request for it is instant.
+        CompletableFuture<String> logo = embed(branding.logo());
+        CompletableFuture<String> signature = embed(branding.principalSignature());
 
         return new SchoolBrandingAssetsDTO(logo.join(), signature.join(), branding.principalName(),
                 branding.address(), branding.ownPrincipal(), branding.ownAddress());
+    }
+
+    private static final long EMBED_WAIT_SECONDS = 25;
+
+    private CompletableFuture<String> embed(String url) {
+        return CompletableFuture.supplyAsync(() -> storageService.downloadAsDataUri(url))
+                .completeOnTimeout(null, EMBED_WAIT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+                .exceptionally(e -> null);
     }
 }

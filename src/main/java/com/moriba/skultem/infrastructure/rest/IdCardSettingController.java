@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,7 @@ public class IdCardSettingController {
     private final GetIdCardSettingUseCase getIdCardSettingUseCase;
     private final SaveIdCardSettingUseCase saveIdCardSettingUseCase;
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<IdCardSettingDTO> get(

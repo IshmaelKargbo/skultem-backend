@@ -53,7 +53,7 @@ public class UpdateSchoolBrandingUseCase {
         String extension = resolveExtension(file.getOriginalFilename());
         String path = "schools/" + schoolId + "/" + label + "-" + System.currentTimeMillis() + extension;
         try {
-            return storageService.uploadFile(file, path);
+            return storageService.uploadBranding(file, path);
         } catch (Exception e) {
             throw new RuleException("Failed to upload " + label.replace('-', ' ') + ": " + e.getMessage());
         }

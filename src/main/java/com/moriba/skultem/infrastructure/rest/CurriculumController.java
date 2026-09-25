@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import com.moriba.skultem.application.dto.BulkSchemeOfWorkResultDTO;
@@ -92,6 +93,7 @@ public class CurriculumController {
         return new ApiResponse<>("success", 200, "Scheme of work fetched successfully", res.getContent(), meta);
     }
 
+    @SectionNeutral
     @GetMapping("/scheme/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SchemeOfWorkDTO>> searchMySchemaOfWork(
@@ -243,6 +245,7 @@ public class CurriculumController {
         return new ApiResponse<>("success", 200, "Lesson note updated successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/lesson/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<LessonDTO>> searchMyLessons(
@@ -258,6 +261,7 @@ public class CurriculumController {
     // Self-service - a teacher's own coverage, for the "My Progress" card on their own
     // /curriculums page (Spring matches this literal "/me" segment ahead of the
     // /teacher-progress/{teacherId} path variable below regardless of declaration order).
+    @SectionNeutral
     @GetMapping("/teacher-progress/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<TeacherProgressDetailDTO> getMyTeacherProgress(

@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassAttendanceSummaryDTO;
 import com.moriba.skultem.application.dto.ClassAttendanceSummaryRowDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.services.SectionScopeService;
+import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
+import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.service.AttendanceRateCalculator;
@@ -33,6 +37,8 @@ public class GenerateClassAttendanceSummaryUseCase {
     private final TermRepository termRepo;
     private final AttendanceRepository attendanceRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final ClassRepository classRepo;
+    private final SectionScopeService sectionScopeService;
 
     public ClassAttendanceSummaryDTO execute(String schoolId, String academicYearId, String termId) {
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
@@ -53,6 +59,12 @@ public class GenerateClassAttendanceSummaryUseCase {
         var rows = attendanceRepo.attendanceCountsBySchoolAndDateRange(schoolId, academicYear.getId(), startDate,
                 endDate);
 
+        // A section-limited caller compares only the classes of their own section(s).
+        var scope = sectionScopeService.currentOrAll();
+        java.util.Set<String> visibleClasses = scope.wholeSchool() ? null
+                : classRepo.findBySchool(schoolId, scope.levels(), Pageable.unpaged()).getContent().stream()
+                        .map(Clazz::getId).collect(java.util.stream.Collectors.toSet());
+
         double threshold = school.getAttendanceThreshold();
 
         // Group per-student rows into one accumulator per class session, preserving the query's
@@ -60,6 +72,9 @@ public class GenerateClassAttendanceSummaryUseCase {
         Map<String, ClassAccumulator> groups = new LinkedHashMap<>();
         for (Object[] row : rows) {
             String classId = (String) row[0];
+            if (visibleClasses != null && !visibleClasses.contains(classId)) {
+                continue;
+            }
             String className = (String) row[1];
             String sectionId = (String) row[2];
             String sectionName = (String) row[3];

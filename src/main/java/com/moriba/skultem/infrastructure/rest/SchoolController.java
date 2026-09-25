@@ -100,10 +100,13 @@ public class SchoolController {
         return new ApiResponse<List<SchoolDTO>>("success", 200, "Schools fetched successfully", list, meta);
     }
 
-    // Read by anything that lists or picks levels (class forms, filters) - so every staff role.
+    // Read by anything that lists or picks levels (class forms, filters) - so every staff role - and by
+    // parents, whose child's report card / receipt prints the child's section's logo and principal
+    // (the page has to know the school is section-based to ask for it). Read-only: levels, section
+    // names and their branding, all of which already appear on those documents.
     @SectionNeutral
     @GetMapping("/structure")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolStructureDTO> structure(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getSchoolStructureUseCase.execute(school);

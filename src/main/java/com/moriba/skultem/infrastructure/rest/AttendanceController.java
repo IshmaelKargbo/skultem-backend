@@ -189,6 +189,7 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Term attendance summary fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/summary/class")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ClassAttendanceSummaryDTO> getClassSummary(

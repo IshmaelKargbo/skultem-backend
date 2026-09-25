@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +50,7 @@ public class HolidayController {
         return new ApiResponse<>("success", 200, "Holiday created successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<HolidayDTO> get(
@@ -58,6 +60,7 @@ public class HolidayController {
         return new ApiResponse<>("success", 200, "Holiday fetched successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<HolidayDTO>> list(

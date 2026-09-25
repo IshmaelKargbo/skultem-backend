@@ -41,6 +41,11 @@ class GenerateClassAttendanceSummaryUseCaseTest {
     @Mock
     private ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
+    @Mock
+    private com.moriba.skultem.domain.repository.ClassRepository classRepo;
+    @Mock
+    private com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
+
     private GenerateClassAttendanceSummaryUseCase useCase;
 
     private School schoolWithThreshold(double threshold) {
@@ -61,8 +66,10 @@ class GenerateClassAttendanceSummaryUseCaseTest {
 
     @Test
     void groupsRowsIntoOneEntryPerClassSessionKeepingScienceAndArtSeparate() {
+        org.mockito.Mockito.lenient().when(sectionScopeService.currentOrAll())
+                .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
@@ -110,8 +117,10 @@ class GenerateClassAttendanceSummaryUseCaseTest {
 
     @Test
     void aSpecificTermUsesTheTermsOwnDateRangeAndNameInsteadOfTheWholeYear() {
+        org.mockito.Mockito.lenient().when(sectionScopeService.currentOrAll())
+                .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
