@@ -47,7 +47,6 @@ import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.bucket.R2StorageService;
 import com.moriba.skultem.infrastructure.mail.MailService;
 
@@ -242,7 +241,7 @@ public class CreateStudentUseCase {
     }
 
     private Subject resolveOptionalSubject(Enrollment enrollment, String optionId) {
-        if (enrollment.getClazz().getLevel() == Level.SSS) {
+        if (enrollment.getClazz().getLevel().isStreamed()) {
             if (enrollment.getStream() == null) {
                 throw new RuleException("Stream is required for SSS class");
             }
@@ -259,7 +258,7 @@ public class CreateStudentUseCase {
     }
 
     private ClassSubjectResponse getSubjectCurriculum(Enrollment enrollment) {
-        if (enrollment.getClazz().getLevel() == Level.SSS) {
+        if (enrollment.getClazz().getLevel().isStreamed()) {
             if (enrollment.getStream() == null) {
                 throw new RuleException("Stream is required for SSS class");
             }

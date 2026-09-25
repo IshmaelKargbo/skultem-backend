@@ -18,6 +18,8 @@ import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBu
 public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>, JpaSpecificationExecutor<ParentEntity>  {
     boolean existsByPhoneAndSchoolId(String phone, String schoolId);
 
+    Optional<ParentEntity> findFirstByPhoneAndSchoolId(String phone, String schoolId);
+
     Optional<ParentEntity> findByUser_IdAndSchoolId(String userId, String schoolId);
 
     Optional<ParentEntity> findByIdAndSchoolId(String id, String schoolId);
@@ -40,6 +42,35 @@ public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>
                 )
             """)
     Page<ParentEntity> search(@Param("schoolId") String schoolId, @Param("query") String query, Pageable pageable);
+
+    boolean existsByPhoneAndSchoolIdAndIdNot(String phone, String schoolId, String id);
+
+    // query is always a real (possibly empty) string, never null - see ListSubjectGroupBySchoolUseCase.
+    @Query("""
+                select p from ParentEntity p
+                join p.user u
+                where p.schoolId = :schoolId
+                and (:query = ''
+                    or lower(u.givenName) like lower(concat('%', :query, '%'))
+                    or lower(u.familyName) like lower(concat('%', :query, '%'))
+                    or lower(u.email) like lower(concat('%', :query, '%'))
+                    or lower(p.phone) like lower(concat('%', :query, '%')))
+                and (:wholeSchool = true
+                    or not exists (select 1 from StudentEntity s where s.parent = p)
+                    or exists (select 1 from EnrollmentEntity e where e.student.parent = p and e.clazz.level in :levels))
+            """)
+    Page<ParentEntity> searchInLevels(@Param("schoolId") String schoolId, @Param("query") String query,
+            @Param("wholeSchool") boolean wholeSchool,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
+
+    @Query("""
+                select count(p) > 0 from ParentEntity p
+                where p.id = :parentId and p.schoolId = :schoolId
+                and (not exists (select 1 from StudentEntity s where s.parent = p)
+                    or exists (select 1 from EnrollmentEntity e where e.student.parent = p and e.clazz.level in :levels))
+            """)
+    boolean visibleInLevels(@Param("parentId") String parentId, @Param("schoolId") String schoolId,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 
     default Page<ParentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         Specification<ParentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

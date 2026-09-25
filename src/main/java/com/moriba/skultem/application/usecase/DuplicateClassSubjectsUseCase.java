@@ -20,7 +20,6 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -138,7 +137,7 @@ public class DuplicateClassSubjectsUseCase {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(SubjectGroup::getId, g -> g, (a, b) -> a));
 
-        if (sourceGroups.isEmpty() || targetClazz.getLevel() == Level.PRIMARY) {
+        if (sourceGroups.isEmpty() || targetClazz.getLevel().isAllSubjectsCore()) {
             return Map.of();
         }
 

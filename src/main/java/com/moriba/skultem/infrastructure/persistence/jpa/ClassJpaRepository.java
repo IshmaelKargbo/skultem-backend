@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.Collection;
+
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +25,11 @@ public interface ClassJpaRepository extends JpaRepository<ClassEntity, String> {
     Optional<ClassEntity> findBySchoolIdAndLevelAndTerminalTrue(String schoolId, Level level);
 
     int countBySchoolIdAndLevel(String schoolId, Level level);
+
+    int countBySchoolIdAndLevelAndStatus(String schoolId, Level level, Status status);
+
+    Page<ClassEntity> findAllBySchoolIdAndStatusAndLevelInOrderByLevelOrderAsc(String schoolId, Status status,
+            Collection<Level> levels, Pageable pageable);
 
     Optional<ClassEntity> findBySchoolIdAndLevelOrder(String schoolId, int levelOrder);
     

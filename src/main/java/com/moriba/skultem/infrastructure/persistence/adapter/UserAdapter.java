@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -38,6 +39,11 @@ public class UserAdapter implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) {
         return repo.findByEmail(email).map(UserMapper::toDomain);
+    }
+
+    @Override
+    public List<String> findIdsByPhoneInSchool(String schoolId, String phoneDigitsSuffix) {
+        return repo.findIdsByPhoneSuffixInSchool(schoolId, phoneDigitsSuffix, phoneDigitsSuffix.length());
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
@@ -59,6 +61,7 @@ public class NoticeController {
         return new ApiResponse<>("success", 200, "Notice posted successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<NoticeDTO> get(
@@ -68,6 +71,7 @@ public class NoticeController {
         return new ApiResponse<>("success", 200, "Notice fetched successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<NoticeDTO>> list(

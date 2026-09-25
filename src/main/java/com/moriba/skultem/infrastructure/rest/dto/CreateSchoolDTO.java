@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.rest.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -28,6 +29,10 @@ public record CreateSchoolDTO(
 
         @NotBlank(message = "Owner family session is required") @Size(min = 2, max = 100, message = "Family session must be between 2 and 100 characters") String familyName,
 
-        @NotBlank(message = "Owner password is required") @Size(min = 8, max = 100, message = "Password must be at least 8 characters") @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).*$", message = "Password must contain at least one uppercase letter, one lowercase letter, and one number") String password
+        @NotBlank(message = "Owner password is required") @Size(min = 8, max = 100, message = "Password must be at least 8 characters") @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).*$", message = "Password must contain at least one uppercase letter, one lowercase letter, and one number") String password,
+
+        // Optional so older clients keep working - a school created without one offers Primary, JSS
+        // and SSS under one management, which is what every school was before structures existed.
+        @Valid SchoolStructureRequestDTO structure
 ) {
 }

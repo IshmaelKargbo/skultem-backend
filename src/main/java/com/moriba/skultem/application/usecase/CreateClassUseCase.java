@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.ClassDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.ClassMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.*;
@@ -31,6 +32,7 @@ public class CreateClassUseCase {
     private final SectionRepository sectionRepo;
     private final AssessmentTemplateRepository assessmentTemplateRepo;
     private final LogActivityUseCase logActivityUseCase;
+    private final SchoolLevelRepository schoolLevelRepo;
 
     @AuditLogAnnotation(action = "CLASS_CREATED")
     public ClassDTO execute(
@@ -60,6 +62,13 @@ public class CreateClassUseCase {
 
         // Create Class
         Level levelEnum = Level.valueOf(level.toUpperCase());
+        // Only levels the school has said it offers (Settings > School Structure).
+        boolean offered = schoolLevelRepo.findBySchoolId(school).stream()
+                .anyMatch(l -> l.getLevel() == levelEnum);
+        if (!offered) {
+            throw new RuleException(levelEnum.getLabel()
+                    + " isn't one of this school's levels. Add it under Settings > School Structure first.");
+        }
         String classId = UUID.randomUUID().toString();
         AssessmentTemplate template = null;
         if (assessmentTemplateId != null && !assessmentTemplateId.isBlank()) {
@@ -78,7 +87,7 @@ public class CreateClassUseCase {
 
         // Fetch Streams once (for SSS)
         List<Stream> streams = Collections.emptyList();
-        if (levelEnum == Level.SSS && streamIds != null && !streamIds.isEmpty()) {
+        if (levelEnum.isStreamed() && streamIds != null && !streamIds.isEmpty()) {
             streams = streamIds.stream()
                     .map(id -> streamRepo.findByIdAndSchoolId(id, school)
                             .orElseThrow(() -> new NotFoundException("Stream not found: " + id)))
@@ -107,7 +116,7 @@ public class CreateClassUseCase {
         List<ClassSession> sessionsToSave = new ArrayList<>();
         for (Section section : sections) {
 
-            if (levelEnum == Level.SSS) {
+            if (levelEnum.isStreamed()) {
                 for (Stream stream : streams) {
                     if (!sessionRepo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
                             classId, academicYear.getId(), section.getId(), stream.getId(), school)) {

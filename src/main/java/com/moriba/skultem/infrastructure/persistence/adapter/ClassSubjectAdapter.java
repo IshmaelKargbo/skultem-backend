@@ -52,8 +52,8 @@ public class ClassSubjectAdapter implements ClassSubjectRepository {
 
     @Override
     public Page<ClassSubject> search(String school, String classId, Boolean mandatory, String query,
-            Pageable pageable) {
-        return repo.search(school, classId, mandatory, query, pageable).map(ClassSubjectMapper::toDomain);
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.search(school, classId, mandatory, query, levels, pageable).map(ClassSubjectMapper::toDomain);
     }
 
     @Override

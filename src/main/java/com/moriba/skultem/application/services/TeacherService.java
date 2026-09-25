@@ -20,6 +20,7 @@ import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Title;
 
+import com.moriba.skultem.application.services.SectionScopeService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class TeacherService {
 
     private final TeacherRepository repo;
+    private final SectionScopeService sectionScopeService;
     private final ClassMasterRepository classMasterRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final EditTeacherUseCase teacherUseCase;
@@ -53,8 +55,12 @@ public class TeacherService {
                 ? PageRequest.of(page, size, sort)
                 : Pageable.unpaged(sort);
 
-        return repo.search(search, gender, schoolId, pageable)
-                .map(TeacherMapper::toDTO);
+        // A section-limited admin sees only the teachers working in their own section(s).
+        var scope = sectionScopeService.currentOrAll();
+        var found = scope.wholeSchool()
+                ? repo.search(search, gender, schoolId, pageable)
+                : repo.searchInSections(search, gender, schoolId, scope.sectionIds(), pageable);
+        return found.map(TeacherMapper::toDTO);
     }
 
     private Sort resolveSort(String sortBy, String direction) {

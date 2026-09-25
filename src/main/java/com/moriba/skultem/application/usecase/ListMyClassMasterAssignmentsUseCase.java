@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class ListMyClassMasterAssignmentsUseCase {
+
+    private final SectionScopeService sectionScopeService;
 
     private final TeacherRepository teacherRepo;
     private final ClassMasterRepository classMasterRepo;
@@ -62,7 +66,9 @@ public class ListMyClassMasterAssignmentsUseCase {
                 .findByAcademicYearIdAndSchoolId(activeYear.getId(), schoolId).stream()
                 .collect(Collectors.toMap(r -> r.getSession().getId(), r -> r, keepLatest));
 
+        var scope = sectionScopeService.currentOrAll();
         return assignments.stream()
+                .filter(m -> scope.allows(m.getSession().getClazz().getLevel()))
                 .sorted(Comparator.comparing(m -> m.getSession().getName()))
                 .map(master -> {
                     var session = master.getSession();

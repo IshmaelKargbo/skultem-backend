@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ public class ListClassSessionBySchoolUseCase {
     private final ClassMasterRepository classMasterRepos;
     private final EnrollmentRepository enrollmentRepo;
     private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public Page<ClassSessionDTO> execute(String school, int page, int size) {
         return execute(school, null, page, size);
@@ -64,8 +67,9 @@ public class ListClassSessionBySchoolUseCase {
                 || (level != null && !level.isBlank()) || (query != null && !query.isBlank());
         var sessions = hasFilters
                 ? repo.search(school, academicYear.getId(), normalize(sectionId), normalize(streamId),
-                        normalize(level).toUpperCase(), normalize(query), pageable)
-                : repo.findBySchoolIdAndAcademicYearId(school, academicYear.getId(), pageable);
+                        normalize(level).toUpperCase(), normalize(query), sectionScopeService.levels(), pageable)
+                : repo.findBySchoolIdAndAcademicYearId(school, academicYear.getId(), sectionScopeService.levels(),
+                        pageable);
 
         return sessions.map((e) -> toDto(school, academicYear.getId(), e));
     }

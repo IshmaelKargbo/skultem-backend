@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,9 @@ public class StreamController {
     private final ListStreamBySchoolUseCase listStreamBySchoolUseCase;
     private final GetStreamUseCase getStreamUseCase;
 
+    // A Stream (Science/Arts/Commercial) is just a school-wide label with no level of its own - see
+    // Stream - so it's section-neutral like the reads below, not scoped.
+    @SectionNeutral
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<StreamDTO> create(
@@ -40,6 +45,7 @@ public class StreamController {
         return new ApiResponse<>("success", 200, "Stream created successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<StreamDTO>> list(
@@ -58,6 +64,7 @@ public class StreamController {
         return new ApiResponse<>("success", 200, "Streams fetched successfully", list, meta);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<StreamDTO> get(

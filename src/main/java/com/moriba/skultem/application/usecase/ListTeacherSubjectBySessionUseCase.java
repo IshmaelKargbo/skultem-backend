@@ -13,7 +13,6 @@ import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,7 @@ public class ListTeacherSubjectBySessionUseCase {
 
                 LinkedHashMap<String, String> subjectsById = new LinkedHashMap<>();
 
-                if (clazz.getLevel().equals(Level.SSS) && session.getStream() != null) {
+                if (clazz.getLevel().isStreamed() && session.getStream() != null) {
                         classSubjectRepo.findAllByClassIdAndStreamIdAndSchoolId(clazz.getId(),
                                         session.getStream().getId(), schoolId, Pageable.unpaged())
                                         .forEach(s -> subjectsById.put(

@@ -31,6 +31,10 @@ public class LoginUseCase {
 
         private static final int MAX_SESSIONS = 3;
 
+        // Sierra Leone subscriber numbers are 8 digits; matching on the last 8 makes "076 123 456",
+        // "76123456" and "+232 76 123456" the same number however it was typed or stored.
+        private static final int PHONE_MATCH_DIGITS = 8;
+
         private final UserRepository userRepository;
         private final SchoolRepository schoolRepository;
         private final SchoolUserRepository schoolUserRepository;
@@ -42,7 +46,7 @@ public class LoginUseCase {
         @AuditLogAnnotation(action = "LOGIN_ATTEMPT")
         public LoginResponse execute(
                         String domain,
-                        String email,
+                        String identifier,
                         String password,
                         String ipAddress,
                         String device,
@@ -54,8 +58,7 @@ public class LoginUseCase {
                 var school = schoolRepository.findByDomain(domain)
                                 .orElseThrow(() -> new NotFoundException("School not found"));
 
-                var user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new AccessDeniedException("Invalid email"));
+                var user = resolveUser(identifier, school.getId());
 
                 if (!passwordEncoder.matches(password, user.getPassword())) {
                         throw new AccessDeniedException("Invalid password");
@@ -126,9 +129,39 @@ public class LoginUseCase {
                 String refreshToken = jwtUtil.generateRefreshToken(sessionId);
 
                 auditUseCase.log("LOGIN_SUCCESS", user.getId(), school.getId(), AuditLog.Status.SUCCESS,
-                                "User logged in: " + user.getEmail());
+                                "User logged in: " + (user.getEmail() != null ? user.getEmail() : identifier.trim()));
 
                 return new LoginResponse(accessToken, refreshToken);
+        }
+
+        // Anything with an @ is an email; otherwise it's a phone number, looked up among this
+        // school's guardians and staff (phones are stored on those records, not on the User).
+        private User resolveUser(String identifier, String schoolId) {
+                String value = identifier == null ? "" : identifier.trim();
+
+                if (value.contains("@")) {
+                        return userRepository.findByEmail(value)
+                                        .orElseThrow(() -> new AccessDeniedException("Invalid email"));
+                }
+
+                String digits = value.replaceAll("[^0-9]", "");
+                if (digits.length() < PHONE_MATCH_DIGITS) {
+                        throw new AccessDeniedException("Enter your full phone number, or your email address.");
+                }
+
+                var ids = userRepository.findIdsByPhoneInSchool(schoolId,
+                                digits.substring(digits.length() - PHONE_MATCH_DIGITS));
+
+                if (ids.isEmpty()) {
+                        throw new AccessDeniedException("No account at this school uses that phone number.");
+                }
+                if (ids.size() > 1) {
+                        throw new AccessDeniedException(
+                                        "More than one account uses that phone number - sign in with your email instead.");
+                }
+
+                return userRepository.findById(ids.get(0))
+                                .orElseThrow(() -> new AccessDeniedException("Invalid phone number"));
         }
 
         private void deactivateOldestSession(List<UserSession> sessions) {

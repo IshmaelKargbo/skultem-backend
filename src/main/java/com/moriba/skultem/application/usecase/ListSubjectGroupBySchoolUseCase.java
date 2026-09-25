@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.util.Set;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListSubjectGroupBySchoolUseCase {
     private final SubjectGroupRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // g.<field>", so an unchecked client value would let someone probe/sort by arbitrary entity
@@ -42,10 +45,9 @@ public class ListSubjectGroupBySchoolUseCase {
             pageable = PageRequest.of(page, size, sort);
         }
 
-        boolean hasFilters = (classId != null && !classId.isBlank()) || (query != null && !query.isBlank());
-        var groups = hasFilters
-                ? repo.search(schoolId, normalize(classId), normalize(query), pageable)
-                : repo.findBySchool(schoolId, pageable);
+        // A section-limited caller only gets subject groups of their own section's classes.
+        var groups = repo.search(schoolId, normalize(classId), normalize(query), sectionScopeService.levels(),
+                pageable);
 
         return groups.map(SubjectGroupMapper::toDTO);
     }

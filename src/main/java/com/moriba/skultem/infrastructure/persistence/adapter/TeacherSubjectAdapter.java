@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -91,8 +95,8 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
 
     @Override
     public Page<TeacherSubject> search(String schoolId, String academicYearId, String classId, String streamId,
-            String query, Pageable pageable) {
-        return repo.search(schoolId, academicYearId, classId, streamId, query, pageable)
+            String query, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.search(schoolId, academicYearId, classId, streamId, query, levels, pageable)
                 .map(TeacherSubjectMapper::toDomain);
     }
 
@@ -119,8 +123,9 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
     }
 
     @Override
-    public Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(TeacherSubjectMapper::toDomain);
     }
 

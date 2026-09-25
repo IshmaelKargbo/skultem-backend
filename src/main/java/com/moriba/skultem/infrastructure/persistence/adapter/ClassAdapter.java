@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.Collection;
+
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -42,6 +44,12 @@ public class ClassAdapter implements ClassRepository {
     }
 
     @Override
+    public Page<Clazz> findBySchool(String school, Collection<Level> levels, Pageable pageable) {
+        return repo.findAllBySchoolIdAndStatusAndLevelInOrderByLevelOrderAsc(school, Status.ACTIVE, levels, pageable)
+                .map(ClassMapper::toDomain);
+    }
+
+    @Override
     public Page<Clazz> findBySchool(String school, Pageable pageable) {
        return repo.findAllBySchoolIdAndStatusOrderByLevelOrderAsc(school, Status.ACTIVE, pageable).map(ClassMapper::toDomain);
     }
@@ -55,6 +63,11 @@ public class ClassAdapter implements ClassRepository {
     @Override
     public int countBySchoolAndLevel(String school, Level level) {
         return repo.countBySchoolIdAndLevel(school, level);
+    }
+
+    @Override
+    public int countActiveBySchoolAndLevel(String school, Level level) {
+        return repo.countBySchoolIdAndLevelAndStatus(school, level, Clazz.Status.ACTIVE);
     }
 
     @Override

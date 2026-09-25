@@ -1,5 +1,11 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
+
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +47,7 @@ public interface ClassSessionJpaRepository
                 SELECT cs FROM ClassSessionEntity cs
                 WHERE cs.schoolId = :schoolId
                 AND cs.academicYear.id = :academicYearId
+                AND cs.clazz.level IN :levels
                 AND NOT EXISTS (
                     SELECT cm FROM ClassMasterEntity cm
                     WHERE cm.session.id = cs.id
@@ -50,6 +57,7 @@ public interface ClassSessionJpaRepository
     Page<ClassSessionEntity> findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(
             @Param("schoolId") String schoolId,
             @Param("academicYearId") String academicYearId,
+            @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
     Page<ClassSessionEntity> findAllBySchoolIdOrderByClazz_LevelOrderAsc(String schoolId, Pageable pageable);
@@ -87,6 +95,7 @@ public interface ClassSessionJpaRepository
                 and (:sectionId = '' or cs.section.id = :sectionId)
                 and (:streamId = '' or st.id = :streamId)
                 and (:level = '' or cast(cs.clazz.level as string) = :level)
+                and cs.clazz.level in :levels
                 and (:query = ''
                      or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
                      or lower(cs.section.name) like lower(concat('%', :query, '%'))
@@ -99,14 +108,23 @@ public interface ClassSessionJpaRepository
             @Param("streamId") String streamId,
             @Param("level") String level,
             @Param("query") String query,
+            @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
-    default Page<ClassSessionEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+    Page<ClassSessionEntity> findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAsc(
+            String schoolId, String academicYearId, Collection<Level> levels, Pageable pageable);
+
+    default Page<ClassSessionEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
         Specification<ClassSessionEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
         if (filters != null && !filters.isEmpty()) {
             spec = spec.and(FilterSpecificationBuilder.build(filters));
         }
+
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        spec = spec.and((root, query, cb) -> PathResolver.<ClassSessionEntity, Level>getPath(root, "clazz.level")
+                .in(levels));
 
         return findAll(spec, pageable);
     }

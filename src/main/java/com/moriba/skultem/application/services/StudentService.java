@@ -27,6 +27,7 @@ public class StudentService {
     private final EnrollmentRepository enrollmentRepo;
     private final GetFeeDetailUsecase getFeeDetailUsecase;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // s.<field>", so an unchecked client value would let someone probe/sort by arbitrary entity
@@ -49,7 +50,7 @@ public class StudentService {
         // find one and never needs the "fall back to their last known enrollment" trick that
         // ListStudentBySchoolUseCase still needs for its broader, unscoped listing.
         return studentRepo.search(value, schoolId, academicYear.getId(), normalize(classId),
-                gender == null ? "" : gender.name(), pageable)
+                gender == null ? "" : gender.name(), sectionScopeService.levels(), pageable)
                 .map(student -> {
                     Enrollment enrollment = enrollmentRepo
                             .findByStudentAndAcademicYearAndSchoolId(student.getId(), academicYear.getId(), schoolId)

@@ -4,5 +4,8 @@ import java.time.Instant;
 
 public record ParentDTO(String id, String schoolId, String phone, String name, String givenNames, String familyName,
         String email, String street, String city, String status, FeeDetail feeDetail, Integer students,
-        Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt,
+        // The guardian's login account - lets an admin hand them a password (see
+        // AdminResetPasswordUseCase) when they have no email to receive one.
+        String userId) {
 }

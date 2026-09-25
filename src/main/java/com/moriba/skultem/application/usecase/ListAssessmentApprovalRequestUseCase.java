@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class ListAssessmentApprovalRequestUseCase {
+
+        private final SectionScopeService sectionScopeService;
 
         private final AssessmentApprovalRequestRepository requestRepo;
         private final AcademicYearRepository academicYearRepo;
@@ -68,7 +72,7 @@ public class ListAssessmentApprovalRequestUseCase {
                 Pageable pageable = createPageable(page, size);
 
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllBySchool(schoolId,
-                                academicYear.getId(), parsedStatus, normalizeQuery(query), pageable);
+                                academicYear.getId(), parsedStatus, normalizeQuery(query), sectionScopeService.levels(), pageable);
 
                 return requests.map(this::toDTO);
         }
@@ -78,11 +82,11 @@ public class ListAssessmentApprovalRequestUseCase {
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
                 long pending = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.PENDING_REVIEW);
+                                AssessmentApprovalRequest.Status.PENDING_REVIEW, sectionScopeService.levels());
                 long approved = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.APPROVED);
+                                AssessmentApprovalRequest.Status.APPROVED, sectionScopeService.levels());
                 long returned = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.RETURNED);
+                                AssessmentApprovalRequest.Status.RETURNED, sectionScopeService.levels());
 
                 return new AssessmentApprovalSummaryDTO(pending, approved, returned);
         }
@@ -105,11 +109,11 @@ public class ListAssessmentApprovalRequestUseCase {
 
         private AssessmentApprovalSummaryDTO summarize(String masterId, String academicYearId) {
                 long pending = requestRepo.countByClassMasterSchoolIdAndStatus(masterId, academicYearId,
-                                AssessmentApprovalRequest.Status.PENDING_REVIEW);
+                                AssessmentApprovalRequest.Status.PENDING_REVIEW, sectionScopeService.levels());
                 long approved = requestRepo.countByClassMasterSchoolIdAndStatus(masterId, academicYearId,
-                                AssessmentApprovalRequest.Status.APPROVED);
+                                AssessmentApprovalRequest.Status.APPROVED, sectionScopeService.levels());
                 long returned = requestRepo.countByClassMasterSchoolIdAndStatus(masterId, academicYearId,
-                                AssessmentApprovalRequest.Status.RETURNED);
+                                AssessmentApprovalRequest.Status.RETURNED, sectionScopeService.levels());
 
                 return new AssessmentApprovalSummaryDTO(pending, approved, returned);
         }
@@ -130,7 +134,7 @@ public class ListAssessmentApprovalRequestUseCase {
                 Pageable pageable = createPageable(page, size);
 
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllByClassMasterSchoolId(masterId,
-                                academicYearId, parsedStatus, normalizeQuery(query), pageable);
+                                academicYearId, parsedStatus, normalizeQuery(query), sectionScopeService.levels(), pageable);
 
                 return requests.map(this::toDTO);
         }

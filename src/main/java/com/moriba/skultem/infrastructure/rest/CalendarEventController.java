@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +53,7 @@ public class CalendarEventController {
         return new ApiResponse<>("success", 200, "Entry added successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<CalendarEventDTO> get(
@@ -60,6 +63,7 @@ public class CalendarEventController {
         return new ApiResponse<>("success", 200, "Entry fetched successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<CalendarEventDTO>> list(

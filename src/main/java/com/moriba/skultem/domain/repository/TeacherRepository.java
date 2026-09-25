@@ -39,5 +39,10 @@ public interface TeacherRepository {
     // gender is the Gender enum's name; null/blank means "any".
     Page<Teacher> search(String value, String gender, String schoolId, Pageable pageable);
 
+    // Only teachers limited (under the TEACHER role) to at least one of these management sections -
+    // what a section-limited admin sees; whole-school teachers aren't in any section, so they're out.
+    Page<Teacher> searchInSections(String value, String gender, String schoolId, java.util.Collection<String> sectionIds,
+            Pageable pageable);
+
     Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

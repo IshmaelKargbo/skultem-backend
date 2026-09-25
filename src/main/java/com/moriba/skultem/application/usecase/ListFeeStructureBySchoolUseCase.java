@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -20,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class ListFeeStructureBySchoolUseCase {
+
+    private final SectionScopeService sectionScopeService;
     private final FeeStructureRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
@@ -52,7 +56,8 @@ public class ListFeeStructureBySchoolUseCase {
             return Page.empty(pageable);
         }
 
-        return repo.search(schoolId, yearId, termId, classId, newStudentsOnly, oldStudentsOnly, gender, pageable)
+        return repo.search(schoolId, yearId, termId, classId, newStudentsOnly, oldStudentsOnly, gender,
+                sectionScopeService.levels(), pageable)
                 .map(FeeStructureMapper::toDTO);
     }
 

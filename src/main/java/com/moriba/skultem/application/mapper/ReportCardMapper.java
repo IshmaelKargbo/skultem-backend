@@ -6,6 +6,7 @@ import com.moriba.skultem.application.dto.ReportCardSubjectDTO;
 import com.moriba.skultem.application.dto.ReportCardSummaryDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.domain.model.ReportCard;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.mapper.JsonMapper;
 
 public class ReportCardMapper {
@@ -16,7 +17,8 @@ public class ReportCardMapper {
                 param.isPassed(), param.getDownloadCount(), param.getGeneratedAt());
     }
 
-    public static ReportCardDTO toDTO(ReportCard param, SchoolDTO school, ReportCardSettingDTO settings) {
+    public static ReportCardDTO toDTO(ReportCard param, SchoolDTO school, ReportCardSettingDTO settings,
+            Level level) {
         var subjects = JsonMapper.fromJsonList(param.getSubjects(), ReportCardSubjectDTO.class);
 
         return new ReportCardDTO(param.getId(), param.getStudentId(), param.getStudentName(),
@@ -24,6 +26,6 @@ public class ReportCardMapper {
                 param.getClassSize(), param.getTermId(), param.getTermName(), param.getAcademicYearName(),
                 param.getAverage(), param.getPosition(), param.getOverallGrade(), param.isPassed(),
                 param.getAttendancePercentage(), param.getRemark(), subjects, param.getGeneratedAt(),
-                param.getDownloadCount(), school, settings);
+                param.getDownloadCount(), school, settings, level);
     }
 }

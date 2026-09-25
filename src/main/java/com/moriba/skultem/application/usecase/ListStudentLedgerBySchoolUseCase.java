@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -23,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class ListStudentLedgerBySchoolUseCase {
+
+    private final SectionScopeService sectionScopeService;
 
     private final StudentLedgerEntryRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
@@ -57,7 +61,7 @@ public class ListStudentLedgerBySchoolUseCase {
         // enrollment in the *active* year specifically, which broke the whole page for any school
         // with more than one year of ledger history.
         Page<StudentLedgerEntry> ledgerPage = repo.searchSchoolEntries(academicYear.getId(), schoolId, search,
-                classId, entryType, termId, pageable);
+                classId, entryType, termId, sectionScopeService.restrictedLevels(), pageable);
 
         BigDecimal totalDebit = BigDecimal.ZERO;
         BigDecimal totalCredit = BigDecimal.ZERO;

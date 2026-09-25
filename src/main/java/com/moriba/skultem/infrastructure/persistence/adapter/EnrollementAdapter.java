@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.Collection;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +62,13 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
+    public List<Enrollment> findAllByStudentAndSchoolIdAndStatus(String studentId, String schoolId,
+            Enrollment.Status status) {
+        return repo.findAllByStudent_IdAndSchoolIdAndStatus(studentId, schoolId, status).stream()
+                .map(EnrollmentMapper::toDomain).toList();
+    }
+
+    @Override
     public long countAll() {
         return repo.count();
     }
@@ -92,19 +101,20 @@ public class EnrollementAdapter implements EnrollmentRepository {
     @Override
     public Page<Enrollment> findAllByClassAndAcademicAndSchoolId(String classId, String academicYearId, String schoolId,
             Pageable pageable) {
-        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolId(classId, academicYearId, schoolId, pageable)
+        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolIdAndStatusNot(classId, academicYearId, schoolId,
+                Enrollment.Status.LEFT, pageable)
                 .map(EnrollmentMapper::toDomain);
     }
 
     @Override
     public List<Enrollment> findAllByAcademicSchoolId(String academicYearId, String schoolId) {
-        return repo.findAllByAcademicYear_IdAndSchoolId(academicYearId, schoolId).stream()
+        return repo.findAllByAcademicYear_IdAndSchoolIdAndStatusNot(academicYearId, schoolId, Enrollment.Status.LEFT).stream()
                 .map(EnrollmentMapper::toDomain).toList();
     }
 
     @Override
     public Page<Enrollment> findAllByClassAndSchoolId(String classId, String schoolId, Pageable pageable) {
-        return repo.findAllByClazz_IdAndSchoolId(classId, schoolId, pageable).map(EnrollmentMapper::toDomain);
+        return repo.findAllByClazz_IdAndSchoolIdAndStatusNot(classId, schoolId, Enrollment.Status.LEFT, pageable).map(EnrollmentMapper::toDomain);
     }
 
     @Override
@@ -122,7 +132,7 @@ public class EnrollementAdapter implements EnrollmentRepository {
     public List<Enrollment> findAllByStreamIdAndAcademicYearIdAndSchoolId(String stream, String academicYearId,
             String schoolId) {
         return repo
-                .findAllByStream_IdAndAcademicYear_IdAndSchoolId(stream, academicYearId, schoolId)
+                .findAllByStream_IdAndAcademicYear_IdAndSchoolIdAndStatusNot(stream, academicYearId, schoolId, Enrollment.Status.LEFT)
                 .stream()
                 .map(EnrollmentMapper::toDomain).toList();
     }
@@ -155,8 +165,19 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
+    public long countByAcademicSchoolId(String academicYearId, String schoolId, Collection<Level> levels) {
+        return repo.countByAcademicYearAndSchoolIdAndLevels(academicYearId, schoolId, levels);
+    }
+
+    @Override
     public long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date) {
         return repo.countBySchoolIdAndAcademicYear_IdAndCreatedAtBefore(schoolId, academicYearId, date);
+    }
+
+    @Override
+    public long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date,
+            Collection<Level> levels) {
+        return repo.countBySchoolIdAndAcademicYearAndCreatedBeforeAndLevels(schoolId, academicYearId, date, levels);
     }
 
     @Override
@@ -169,8 +190,9 @@ public class EnrollementAdapter implements EnrollmentRepository {
     }
 
     @Override
-    public Page<Enrollment> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<Enrollment> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(EnrollmentMapper::toDomain);
     }
 
@@ -190,13 +212,14 @@ public class EnrollementAdapter implements EnrollmentRepository {
     @Override
     public Page<Enrollment> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String stream,
             String academicYearId, Pageable pageable) {
-        return repo.findAllByClazzIdAndAcademicYearIdAndStreamId(classId, academicYearId, stream, pageable)
+        return repo.findAllByClazzIdAndAcademicYearIdAndStreamIdAndStatusNot(classId, academicYearId, stream,
+                Enrollment.Status.LEFT, pageable)
                 .map(EnrollmentMapper::toDomain);
     }
 
     @Override
     public List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId,
-            Level level) {
-        return repo.demographicsByFilters(schoolId, academicYearId, classId, level);
+            Level level, Collection<Level> levels) {
+        return repo.demographicsByFilters(schoolId, academicYearId, classId, level, levels);
     }
 }

@@ -33,8 +33,15 @@ public class Student extends AggregateRoot<String> {
     private House house;
     private Status status;
 
+    // Why/when a WITHDRAWN or EXPELLED student left - null for everyone else.
+    private String exitReason;
+    private LocalDate exitDate;
+    private String exitNote;
+
     public enum Status {
-        ACTIVE, GRADUATED, TRANSFERRED, SUSPENDED, DELETED
+        ACTIVE, GRADUATED, TRANSFERRED, SUSPENDED, DELETED,
+        // Left the school before finishing - see leaveSchool. Kept on file (they can still owe fees).
+        WITHDRAWN, EXPELLED
     }
 
     public enum EnrollmentType {
@@ -112,6 +119,34 @@ public class Student extends AggregateRoot<String> {
     public void softDelete() {
         this.status = Status.DELETED;
         touchNow();
+    }
+
+    public boolean hasLeft() {
+        return status == Status.WITHDRAWN || status == Status.EXPELLED;
+    }
+
+    // type is WITHDRAWN (enrollment stopped) or EXPELLED.
+    public void leaveSchool(Status type, String reason, LocalDate date, String note) {
+        this.status = type;
+        this.exitReason = reason;
+        this.exitDate = date;
+        this.exitNote = note;
+        touchNow();
+    }
+
+    public void reinstate() {
+        this.status = Status.ACTIVE;
+        this.exitReason = null;
+        this.exitDate = null;
+        this.exitNote = null;
+        touchNow();
+    }
+
+    // For the persistence mapper, which rebuilds the aggregate through the constructor.
+    public void restoreExit(String reason, LocalDate date, String note) {
+        this.exitReason = reason;
+        this.exitDate = date;
+        this.exitNote = note;
     }
 
     public void graduate() {

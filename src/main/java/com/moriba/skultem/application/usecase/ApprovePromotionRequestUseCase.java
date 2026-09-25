@@ -26,7 +26,6 @@ import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.PromotionRequestRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -125,7 +124,7 @@ public class ApprovePromotionRequestUseCase {
             Stream destinationStream = item.getOutcome() == PromotionRequestItem.Outcome.PROMOTE
                     && item.getTargetStream() != null ? item.getTargetStream() : stream;
 
-            if (destinationClazz.getLevel() == Level.SSS && destinationStream == null) {
+            if (destinationClazz.getLevel().isStreamed() && destinationStream == null) {
                 throw new RuleException(
                         student.getName() + " has no stream selected for " + destinationClazz.getName()
                                 + ". Return this request so the class master can pick one.");

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.stream.Collectors;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,8 +31,9 @@ public class SubjectAssignmentController {
     private final AssignSubjectsToStreamUseCase assignStreamSubjectsUseCase;
     private final DuplicateClassSubjectsUseCase duplicateClassSubjectsUseCase;
 
+    @SectionScoped
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -42,8 +45,9 @@ public class SubjectAssignmentController {
         return new ApiResponse<>("success", 200, "Subjects assigned to class successfully", null);
     }
 
+    @SectionScoped
     @PostMapping("/stream/{streamId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.stream(#school, #streamId)")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String streamId,
@@ -55,8 +59,9 @@ public class SubjectAssignmentController {
         return new ApiResponse<>("success", 200, "Subjects assigned to stream successfully", null);
     }
 
+    @SectionScoped
     @PostMapping("/class/{classId}/duplicate")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId) and @sectionScope.classes(#school, #param.targetClassIds())")
     public ApiResponse<Object> duplicateToClasses(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,

@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +56,11 @@ public interface StudentLedgerEntryRepository {
          */
         Page<StudentLedgerEntry> searchSchoolEntries(String academicYearId, String schoolId, String search,
                         String classId, StudentLedgerEntry.TransactionType type, String termId, Pageable pageable);
+
+        /** Section-limited variant - only students enrolled that year at these levels (null = no filter). */
+        Page<StudentLedgerEntry> searchSchoolEntries(String academicYearId, String schoolId, String search,
+                        String classId, StudentLedgerEntry.TransactionType type, String termId,
+                        Collection<Level> levels, Pageable pageable);
 
         /** {@link #searchSchoolEntries} for the platform fee's entries instead of the school's own. */
         Page<StudentLedgerEntry> searchPlatformEntries(String academicYearId, String schoolId, String search,

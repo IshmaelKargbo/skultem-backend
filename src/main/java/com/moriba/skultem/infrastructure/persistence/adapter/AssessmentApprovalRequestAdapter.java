@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -26,27 +30,28 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId,
-            AssessmentApprovalRequest.Status status, String query, Pageable pageable) {
-        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, query, pageable)
+            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable) {
+        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, query, levels, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
     @Override
     public long countByClassMasterSchoolIdAndStatus(String masterId, String academicYearId,
-            AssessmentApprovalRequest.Status status) {
-        return repo.countForClassMasterByTeacherIdAndStatus(masterId, academicYearId, status);
+            AssessmentApprovalRequest.Status status, Collection<Level> levels) {
+        return repo.countForClassMasterByTeacherIdAndStatus(masterId, academicYearId, status, levels);
     }
 
     @Override
     public Page<AssessmentApprovalRequest> findAllBySchool(String schoolId, String academicYearId,
-            AssessmentApprovalRequest.Status status, String query, Pageable pageable) {
-        return repo.findAllBySchool(schoolId, academicYearId, status, query, pageable)
+            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable) {
+        return repo.findAllBySchool(schoolId, academicYearId, status, query, levels, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
     @Override
-    public long countBySchoolAndStatus(String schoolId, String academicYearId, AssessmentApprovalRequest.Status status) {
-        return repo.countBySchoolAndStatus(schoolId, academicYearId, status);
+    public long countBySchoolAndStatus(String schoolId, String academicYearId, AssessmentApprovalRequest.Status status,
+            Collection<Level> levels) {
+        return repo.countBySchoolAndStatus(schoolId, academicYearId, status, levels);
     }
 
     @Override

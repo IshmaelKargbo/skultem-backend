@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -88,6 +92,14 @@ public class StudentLedgerEntryAdapter implements StudentLedgerEntryRepository {
     public Page<StudentLedgerEntry> searchSchoolEntries(String academicYearId, String schoolId, String search,
             String classId, StudentLedgerEntry.TransactionType type, String termId, Pageable pageable) {
         return repo.searchSchoolEntries(academicYearId, schoolId, search, classId, type, termId, pageable)
+                .map(StudentLedgerEntryMapper::toDomain);
+    }
+
+    @Override
+    public Page<StudentLedgerEntry> searchSchoolEntries(String academicYearId, String schoolId, String search,
+            String classId, StudentLedgerEntry.TransactionType type, String termId, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.searchSchoolEntries(academicYearId, schoolId, search, classId, type, termId, levels, pageable)
                 .map(StudentLedgerEntryMapper::toDomain);
     }
 

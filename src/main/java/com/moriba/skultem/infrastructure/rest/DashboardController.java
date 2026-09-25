@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +36,7 @@ public class DashboardController {
     private final DashboardEnrollmentTrendUseCase dashboardEnrollmentTrendUseCase;
     private final GetRecentActivitiesUseCase getRecentActivitiesUseCase;
 
+    @SectionScoped
     @GetMapping("/admin/report")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<DashboardDTO> report(
@@ -43,6 +46,7 @@ public class DashboardController {
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 
+    @SectionScoped
     @GetMapping("/admin/weekly-attendance")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<WeeklyAttendanceDTO>> weeklyAttendance(
@@ -51,6 +55,7 @@ public class DashboardController {
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 
+    @SectionScoped
     @GetMapping("/admin/revenue")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<RevenueBreakdownDTO>> revenue(
@@ -59,6 +64,7 @@ public class DashboardController {
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 
+    @SectionScoped
     @GetMapping("/admin/student-enrollment")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<MonthlyEnrollmentDTO>> studentEnrollment(

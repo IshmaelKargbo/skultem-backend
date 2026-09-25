@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +32,7 @@ public class ListStudentByParentUseCase {
         private final EnrollmentRepository enrollmentRepo;
         private final ParentRepository parentRepo;
         private final ClassMasterRepository classMasterRepo;
+        private final SectionScopeService sectionScopeService;
 
         public Page<StudentDTO> execute(String schoolId, String parentId, int page, int size) {
                 Pageable pageable = Pageable.unpaged();
@@ -64,7 +67,8 @@ public class ListStudentByParentUseCase {
                                         session.getAcademicYear().getId(), null,
                                         null));
 
-                        var classSize = enrollmentRepo.runReport(schoolId, filters, Pageable.unpaged()).getSize();
+                        var classSize = enrollmentRepo.runReport(schoolId, filters, sectionScopeService.levels(), Pageable.unpaged())
+                        .getSize();
 
                         return StudentMapper.toDTO(e, enrollment, teacher, classSize, session.getId());
                 });

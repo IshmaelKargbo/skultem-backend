@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
@@ -30,6 +32,7 @@ public class LeaveRequestController {
 
     private final LeaveService leaveService;
 
+    @SectionNeutral
     @PostMapping("/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
     public ApiResponse<LeaveRequestDTO> createForMe(
@@ -41,6 +44,7 @@ public class LeaveRequestController {
         return new ApiResponse<>("success", 200, "Leave request submitted successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
     public ApiResponse<List<LeaveRequestDTO>> listMine(

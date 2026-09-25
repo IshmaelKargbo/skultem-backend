@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -27,6 +29,7 @@ public class FeeReportUseCase {
 
         private final StudentFeeRepository repo;
         private final PaymentRepository paymentRepo;
+        private final SectionScopeService sectionScopeService;
 
         public Page<StudentFeeDTO> execute(ReportBuilderDTO request, int page, int size) {
 
@@ -45,6 +48,7 @@ public class FeeReportUseCase {
                 Page<StudentFee> res = repo.runReport(
                                 request.schoolId(),
                                 dbFilters,
+                                sectionScopeService.levels(),
                                 Pageable.unpaged());
 
                 List<StudentFeeDTO> mapped = res.stream()

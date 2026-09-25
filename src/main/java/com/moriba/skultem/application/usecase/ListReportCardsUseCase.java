@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,12 +17,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListReportCardsUseCase {
     private final ReportCardRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     public Page<ReportCardSummaryDTO> execute(String schoolId, String classId, String termId, String search,
             int page, int size) {
         Pageable pageable = size > 0 ? PageRequest.of(Math.max(page - 1, 0), size) : Pageable.unpaged();
 
-        return repo.search(schoolId, blankToNull(classId), blankToNull(termId), blankToNull(search), pageable)
+        return repo.search(schoolId, blankToNull(classId), blankToNull(termId), blankToNull(search),
+                sectionScopeService.levels(), pageable)
                 .map(ReportCardMapper::toSummaryDTO);
     }
 

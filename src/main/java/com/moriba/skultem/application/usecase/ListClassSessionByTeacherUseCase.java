@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -22,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListClassSessionByTeacherUseCase {
 
+    private final SectionScopeService sectionScopeService;
+
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final TeacherRepository teacherRepo;
     private final GetFeeDetailUsecase getFeeDetailUsecase;
@@ -38,9 +42,12 @@ public class ListClassSessionByTeacherUseCase {
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, school)
                         .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
+        var scope = sectionScopeService.currentOrAll();
         return classMasterRepos.findByTeacherAndAcademicYear(teacher.getId(), academicYear.getId(), pageable)
                 .getContent()
                 .stream()
+                // A teacher limited to management sections only sees their classes inside them.
+                .filter(e -> scope.allows(e.getSession().getClazz().getLevel()))
                 .map((e) -> {
                     String teacherName = "N/A", teacherId = "";
                     String streamName = "N/A", streamId = "";

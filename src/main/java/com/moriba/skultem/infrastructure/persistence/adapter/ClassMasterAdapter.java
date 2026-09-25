@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +47,12 @@ public class ClassMasterAdapter implements ClassMasterRepository {
     @Override
     public long countAll() {
         return repo.count();
+    }
+
+    @Override
+    public long countDistinctTeachersInLevels(String schoolId, String academicYearId,
+            Collection<Level> levels) {
+        return repo.countDistinctTeachersInLevels(schoolId, academicYearId, levels);
     }
 
     @Override

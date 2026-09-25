@@ -43,7 +43,6 @@ import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentLedgerEntryRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.utils.Generate;
 import com.moriba.skultem.utils.MoneyUtil;
 
@@ -119,7 +118,7 @@ public class ChangeEnrollmentClassUseCase {
                 .orElseThrow(() -> new NotFoundException("Section not found"));
 
         Stream stream = null;
-        if (clazz.getLevel() == Level.SSS) {
+        if (clazz.getLevel().isStreamed()) {
             if (streamId == null || streamId.isBlank()) {
                 throw new RuleException("Stream is required for SSS class");
             }

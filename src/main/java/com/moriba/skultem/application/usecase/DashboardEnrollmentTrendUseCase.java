@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.time.Instant;
 import java.time.Month;
 import java.time.ZoneId;
@@ -23,6 +25,7 @@ public class DashboardEnrollmentTrendUseCase {
 
         private final EnrollmentRepository enrollmentRepo;
         private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+        private final SectionScopeService sectionScopeService;
 
         public List<MonthlyEnrollmentDTO> monthlyEnrollmentTrend(String schoolId, String academicYearId) {
                 AcademicYear academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
@@ -32,8 +35,11 @@ public class DashboardEnrollmentTrendUseCase {
                 Instant start = academicYear.getStartDate().atStartOfDay(zone).toInstant();
                 Instant end = academicYear.getEndDate().atTime(23, 59, 59).atZone(zone).toInstant();
 
+                var scope = sectionScopeService.currentOrAll();
                 var enrollments = enrollmentRepo.findBySchoolIdAndAcademicYearAndCreatedAtBetween(
-                                schoolId, academicYear.getId(), start, end);
+                                schoolId, academicYear.getId(), start, end).stream()
+                                .filter(e -> scope.allows(e.getClazz().getLevel()))
+                                .toList();
 
                 Map<Month, Long> monthlyCounts = new LinkedHashMap<>();
                 ZonedDateTime startZdt = start.atZone(zone);

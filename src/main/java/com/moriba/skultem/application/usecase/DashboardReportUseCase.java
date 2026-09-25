@@ -1,5 +1,9 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.domain.repository.ClassMasterRepository;
+
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -30,12 +34,20 @@ public class DashboardReportUseCase {
         private final TeacherRepository teacherRepo;
         private final TermRepository termRepo;
         private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+        private final ClassMasterRepository classMasterRepo;
+        private final SectionScopeService sectionScopeService;
 
         public DashboardDTO getDashboardSummary(String schoolId, String academicYearId) {
                 AcademicYear academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 StudentCalucation studentCount = calucationStudentCount(schoolId, academicYear.getId());
-                long totalTeachers = teacherRepo.countAllBySchool(schoolId);
+                var scope = sectionScopeService.currentOrAll();
+                // A section-limited admin sees only the teachers actively class-mastering a session
+                // in their sections - whole-school staff headcount stays off-limits, same as the
+                // staff directory and payroll.
+                long totalTeachers = scope.wholeSchool()
+                        ? teacherRepo.countAllBySchool(schoolId)
+                        : classMasterRepo.countDistinctTeachersInLevels(schoolId, academicYear.getId(), scope.levels());
 
                 String activeYearStr = academicYear.getName();
 
@@ -77,11 +89,12 @@ public class DashboardReportUseCase {
                                 .withHour(23).withMinute(59).withSecond(59)
                                 .toInstant();
 
+                var levels = sectionScopeService.levels();
                 BigDecimal monthlyRevenue = paymentRepo.sumPaymentsBySchoolAndDateRange(schoolId, startOfMonth,
-                                endOfMonth);
+                                endOfMonth, levels);
 
                 BigDecimal prevMonthRevenue = paymentRepo.sumPaymentsBySchoolAndDateRange(
-                                schoolId, prevMonthStart, prevMonthEnd);
+                                schoolId, prevMonthStart, prevMonthEnd, levels);
 
                 BigDecimal revenueGrowthPercent = BigDecimal.ZERO;
                 if (prevMonthRevenue.compareTo(BigDecimal.ZERO) > 0) {
@@ -94,7 +107,8 @@ public class DashboardReportUseCase {
         }
 
         StudentCalucation calucationStudentCount(String schoolId, String academicYearId) {
-                long totalStudents = enrollmentRepo.countByAcademicSchoolId(academicYearId, schoolId);
+                var levels = sectionScopeService.levels();
+                long totalStudents = enrollmentRepo.countByAcademicSchoolId(academicYearId, schoolId, levels);
                 ZoneId zone = ZoneId.systemDefault();
 
                 Instant lastMonth = LocalDate.now()
@@ -106,7 +120,8 @@ public class DashboardReportUseCase {
                 long lastMonthStudents = enrollmentRepo.countBySchoolIdAndAcademicYearAndCreatedBefore(
                                 schoolId,
                                 academicYearId,
-                                lastMonth);
+                                lastMonth,
+                                levels);
 
                 long studentGrowth = totalStudents - lastMonthStudents;
 

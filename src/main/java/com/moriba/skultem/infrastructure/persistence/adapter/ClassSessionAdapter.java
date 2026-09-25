@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -102,6 +106,13 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
+            Collection<Level> levels, Pageable pageable) {
+        return repo.findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAsc(schoolId,
+                academicYearId, levels, pageable).map(ClassSessionMapper::toDomain);
+    }
+
+    @Override
+    public Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
             Pageable pageable) {
         return repo.findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable)
                 .map(ClassSessionMapper::toDomain);
@@ -109,8 +120,8 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> search(String schoolId, String academicYearId, String sectionId, String streamId,
-            String level, String query, Pageable pageable) {
-        return repo.search(schoolId, academicYearId, sectionId, streamId, level, query, pageable)
+            String level, String query, Collection<Level> levels, Pageable pageable) {
+        return repo.search(schoolId, academicYearId, sectionId, streamId, level, query, levels, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
 
@@ -132,13 +143,15 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
-            Pageable pageable) {
-                return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable).map(ClassSessionMapper::toDomain);
+            Collection<Level> levels, Pageable pageable) {
+                return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId,
+                        levels, pageable).map(ClassSessionMapper::toDomain);
     }
 
     @Override
-    public Page<ClassSession> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<ClassSession> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
 

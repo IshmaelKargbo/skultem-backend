@@ -23,7 +23,6 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.PromotionRequestRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
-import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.rest.dto.PromotionItemInputDTO;
 
 import jakarta.transaction.Transactional;
@@ -99,7 +98,7 @@ public class SubmitPromotionRequestUseCase {
         // has one. Promoting into an SSS next class means placing each promoted student into a
         // stream for the first time, which the class master must choose per student.
         boolean promotionNeedsStream = stream == null && clazz.getNextClass() != null
-                && clazz.getNextClass().getLevel() == Level.SSS;
+                && clazz.getNextClass().getLevel().isStreamed();
 
         boolean hasPromote = false;
         List<PromotionRequestItem> items = new ArrayList<>();

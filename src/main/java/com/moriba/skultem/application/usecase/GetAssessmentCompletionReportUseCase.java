@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,6 +40,7 @@ public class GetAssessmentCompletionReportUseCase {
     private final ClassRepository classRepo;
     private final TermRepository termRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public AssessmentCompletionReportDTO execute(String schoolId, String classId, String subjectId,
             String academicYearId, String termId, Level level, int page, int size) {
@@ -46,16 +49,20 @@ public class GetAssessmentCompletionReportUseCase {
 
         var rows = cycleRepo.completionReportRows(schoolId, term.getId(), classId, subjectId);
 
+        // Only the caller's own management-section classes go in - out-of-scope rows are dropped
+        // below regardless of whether an explicit level filter was also requested.
         Map<String, Level> levelByClass = new HashMap<>();
-        if (level != null) {
-            for (var clazz : classRepo.findBySchool(schoolId, Pageable.unpaged()).getContent()) {
-                levelByClass.put(clazz.getId(), clazz.getLevel());
-            }
+        for (var clazz : classRepo.findBySchool(schoolId, sectionScopeService.levels(), Pageable.unpaged())
+                .getContent()) {
+            levelByClass.put(clazz.getId(), clazz.getLevel());
         }
 
         List<AssessmentCompletionRowDTO> result = new ArrayList<>();
         for (Object[] row : rows) {
             String rowClassId = (String) row[0];
+            if (!levelByClass.containsKey(rowClassId)) {
+                continue;
+            }
             if (level != null && !level.equals(levelByClass.get(rowClassId))) {
                 continue;
             }

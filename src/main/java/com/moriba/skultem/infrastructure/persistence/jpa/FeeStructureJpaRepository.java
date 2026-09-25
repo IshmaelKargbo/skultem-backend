@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -98,8 +102,10 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
     // us; a query can't have both a literal ORDER BY and an injected Pageable sort.
     @Query("""
                 SELECT f FROM FeeStructureEntity f
+                LEFT JOIN f.clazz fc
                 WHERE f.schoolId = :schoolId
                 AND f.academicYear.id = :academicYearId
+                AND (fc IS NULL OR fc.level IN :levels)
                 AND (:termId IS NULL OR f.term.id = :termId)
                 AND (:classId IS NULL OR f.clazz.id = :classId)
                 AND (:newStudentsOnly IS NULL OR f.newStudentsOnly = :newStudentsOnly)
@@ -114,5 +120,6 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             @Param("newStudentsOnly") Boolean newStudentsOnly,
             @Param("oldStudentsOnly") Boolean oldStudentsOnly,
             @Param("gender") Gender gender,
+            @Param("levels") Collection<Level> levels,
             Pageable pageable);
 }

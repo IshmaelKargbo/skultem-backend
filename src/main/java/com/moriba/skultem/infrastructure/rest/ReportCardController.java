@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
@@ -49,8 +51,9 @@ public class ReportCardController {
     private final UpdateReportCardRemarkUseCase updateReportCardRemarkUseCase;
     private final TrackReportCardDownloadUseCase trackReportCardDownloadUseCase;
 
+    @SectionScoped
     @PostMapping("/generate")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<GenerateReportCardsResultDTO> generate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -61,6 +64,7 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report cards generated successfully", res);
     }
 
+    @SectionScoped
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ReportCardSummaryDTO>> list(
@@ -84,8 +88,9 @@ public class ReportCardController {
     // A parent sees their own child's report cards this way; #studentId is otherwise unscoped to
     // the caller, so isParentOfStudent is what actually stops one family from browsing another's
     // by guessing/enumerating a studentId.
+    @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<ReportCardSummaryDTO>> byStudent(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId) {
@@ -101,8 +106,9 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report card stats fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -110,8 +116,9 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report card fetched successfully", res);
     }
 
+    @SectionScoped
     @PatchMapping("/{id}/remark")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> updateRemark(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -120,8 +127,9 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report card remark updated successfully", res);
     }
 
+    @SectionScoped
     @PostMapping("/{id}/download")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<Void> trackDownload(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +67,7 @@ public class AcademicYearController {
         return new ApiResponse<>("success", 200, "Academic year created successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AcademicYearDTO>> list(
@@ -115,6 +118,7 @@ public class AcademicYearController {
         return new ApiResponse<>("success", 200, "Next academic year assigned successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.canAccessSchool(#school)")
     public ApiResponse<AcademicYearDTO> get(
@@ -143,6 +147,7 @@ public class AcademicYearController {
         return new ApiResponse<>("success", 200, "Academic year deleted successfully", null);
     }
 
+    @SectionNeutral
     @GetMapping("/terms")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(

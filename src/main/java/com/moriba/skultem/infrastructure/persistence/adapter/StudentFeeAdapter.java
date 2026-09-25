@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -98,8 +102,9 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     }
 
     @Override
-    public Page<StudentFee> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<StudentFee> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(StudentFeeMapper::toDomain);
     }
 

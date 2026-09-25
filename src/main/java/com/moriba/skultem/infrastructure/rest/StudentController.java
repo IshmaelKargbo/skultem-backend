@@ -1,5 +1,8 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +24,10 @@ import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.dto.StudentFinanceOverviewDTO;
 import com.moriba.skultem.application.dto.StudentRecord;
+import java.io.IOException;
+import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.usecase.BulkImportStudentsUseCase;
+import com.moriba.skultem.application.dto.BulkStudentImportResultDTO;
 import com.moriba.skultem.application.services.StudentService;
 import com.moriba.skultem.application.usecase.ActiveCycleUseCase;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase;
@@ -30,6 +37,12 @@ import com.moriba.skultem.domain.vo.Family;
 import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetStudentUseCase;
+import com.moriba.skultem.application.usecase.DeleteStudentPermanentlyUseCase;
+import com.moriba.skultem.application.usecase.EndStudentEnrollmentUseCase;
+import com.moriba.skultem.application.usecase.ReinstateStudentUseCase;
+import com.moriba.skultem.domain.model.Student;
+import com.moriba.skultem.infrastructure.rest.dto.DeleteStudentDTO;
+import com.moriba.skultem.infrastructure.rest.dto.EndStudentEnrollmentDTO;
 import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
 import com.moriba.skultem.application.usecase.RankStudentUseCase;
 import com.moriba.skultem.application.usecase.ReprocessStudentPhotosUseCase;
@@ -56,9 +69,15 @@ public class StudentController {
         private final UpdateStudentPhotoUseCase updateStudentPhotoUseCase;
         private final ReprocessStudentPhotosUseCase reprocessStudentPhotosUseCase;
         private final UpdateStudentUseCase updateStudentUseCase;
+        private final BulkImportStudentsUseCase bulkImportStudentsUseCase;
+        private final EndStudentEnrollmentUseCase endStudentEnrollmentUseCase;
+        private final ReinstateStudentUseCase reinstateStudentUseCase;
+        private final DeleteStudentPermanentlyUseCase deleteStudentPermanentlyUseCase;
 
+        @Idempotent(operation = "student.enroll")
+        @SectionScoped
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #param.classId())")
         public ApiResponse<StudentDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestPart("data") CreateStudentDTO param,
@@ -68,8 +87,34 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student created successfully", res);
         }
 
-        @PatchMapping("/edit/{id}")
+        // Section-limited admins can import, but only into their own section's classes - enforced
+        // row by row in BulkImportStudentsUseCase, since the classes come from the file.
+        @SectionScoped
+        @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        public ApiResponse<BulkStudentImportResultDTO> bulkImport(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestPart("file") MultipartFile file,
+                        @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
+                if (file.isEmpty()) {
+                        throw new RuleException("Choose a CSV file to upload.");
+                }
+                try {
+                        var res = bulkImportStudentsUseCase.execute(school, file.getInputStream(), dryRun);
+                        String message = dryRun
+                                        ? res.ready() + " student(s) ready to import"
+                                                        + (res.failed() > 0 ? ", " + res.failed() + " row(s) need fixing" : "")
+                                        : "Imported " + res.created() + " student(s)"
+                                                        + (res.failed() > 0 ? ", " + res.failed() + " failed" : "");
+                        return new ApiResponse<>("success", 200, message, res);
+                } catch (IOException e) {
+                        throw new RuleException("Could not read the uploaded file.");
+                }
+        }
+
+        @SectionScoped
+        @PatchMapping("/edit/{id}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> edit(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -81,8 +126,55 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student edited successfully", res);
         }
 
+        @SectionScoped
+        @PostMapping("/{id}/withdraw")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        public ApiResponse<StudentDTO> withdraw(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody EndStudentEnrollmentDTO param) {
+                var res = endStudentEnrollmentUseCase.execute(school, id, Student.Status.WITHDRAWN, param.reason(),
+                                param.exitDate(), param.note());
+                return new ApiResponse<>("success", 200, "Student withdrawn - their enrollment has been stopped", res);
+        }
+
+        @SectionScoped
+        @PostMapping("/{id}/expel")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        public ApiResponse<StudentDTO> expel(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody EndStudentEnrollmentDTO param) {
+                var res = endStudentEnrollmentUseCase.execute(school, id, Student.Status.EXPELLED, param.reason(),
+                                param.exitDate(), param.note());
+                return new ApiResponse<>("success", 200, "Student expelled", res);
+        }
+
+        @SectionScoped
+        @PostMapping("/{id}/reinstate")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        public ApiResponse<StudentDTO> reinstate(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id) {
+                var res = reinstateStudentUseCase.execute(school, id);
+                return new ApiResponse<>("success", 200, "Student reinstated", res);
+        }
+
+        // Owner-level only: this can't be undone. The admission number in the body is the confirmation.
+        @SectionScoped
+        @PostMapping("/{id}/delete-permanently")
+        @PreAuthorize("@permissionService.isSchoolLeadership(#school) and @sectionScope.student(#school, #id)")
+        public ApiResponse<DeleteStudentPermanentlyUseCase.Result> deletePermanently(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody DeleteStudentDTO param) {
+                var res = deleteStudentPermanentlyUseCase.execute(school, id, param.confirmation());
+                return new ApiResponse<>("success", 200, res.studentName() + " was permanently deleted", res);
+        }
+
+        @SectionScoped
         @PatchMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> updatePhoto(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -91,10 +183,6 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student photo updated successfully", res);
         }
 
-        // Maintenance operation - re-hosts every existing student photo in the school through the
-        // same downscale pipeline a fresh upload goes through (see R2StorageService.uploadPhoto),
-        // and clears any photo that's now a dead link. Fixes students enrolled before that pipeline
-        // existed, or imported directly, without needing every one of them re-uploaded by hand.
         @PostMapping("/photos/reprocess")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<ReprocessStudentPhotosUseCase.Summary> reprocessPhotos(
@@ -103,6 +191,7 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student photos reprocessed successfully", res);
         }
 
+        @SectionScoped
         @GetMapping
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
         public ApiResponse<List<StudentDTO>> listBySchool(
@@ -127,8 +216,9 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Students fetched successfully", list, meta);
         }
 
+        @SectionScoped
         @GetMapping("/rank/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<Object> rankStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String studentId,
@@ -137,8 +227,9 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student rank fetched successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/cycle/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #sessionId)")
         public ApiResponse<ActiveCycleDTO> activeCycle(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(name = "sessionId") String sessionId,
@@ -147,8 +238,9 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Active cycle fetch successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/fee/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<List<StudentFeeDTO>> listStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId,
@@ -163,8 +255,9 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student fees fetched successfully", list, meta);
         }
 
+        @SectionScoped
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.canAccessSchool(#school)")
+        @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
                         @RequestParam(required = false) String academicYearId) {
@@ -172,8 +265,9 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student fetched successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/{id}/finance-overview")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentFinanceOverviewDTO> financeOverview(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,

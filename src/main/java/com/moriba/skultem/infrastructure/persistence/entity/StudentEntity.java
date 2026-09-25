@@ -92,6 +92,15 @@ public class StudentEntity {
     @Column(nullable = false)
     private Status status;
 
+    @Column(name = "exit_reason")
+    private String exitReason;
+
+    @Column(name = "exit_date")
+    private LocalDate exitDate;
+
+    @Column(name = "exit_note", columnDefinition = "text")
+    private String exitNote;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

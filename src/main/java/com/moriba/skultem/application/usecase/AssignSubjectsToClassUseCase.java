@@ -28,7 +28,6 @@ import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -147,7 +146,7 @@ public class AssignSubjectsToClassUseCase {
                                 () -> new RuleException("Subject group not found: " + assignment.subjectGroupId()));
             }
 
-            boolean core = clazz.getLevel() == Level.PRIMARY
+            boolean core = clazz.getLevel().isAllSubjectsCore()
                     ? true
                     : assignment.core();
 

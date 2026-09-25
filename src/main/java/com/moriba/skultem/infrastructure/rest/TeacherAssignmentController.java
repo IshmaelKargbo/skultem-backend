@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,8 +30,9 @@ public class TeacherAssignmentController {
     private final AssignTeacherToClassUseCase assignTeacherToClassUseCase;
     private final AssignSubjectToTeacherUseCase assignSubjectToTeacherUseCase;
 
+    @SectionScoped
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -38,8 +41,9 @@ public class TeacherAssignmentController {
         return new ApiResponse<>("success", 200, "Teacher assigned to class successfully", null);
     }
 
+    @SectionScoped
     @PostMapping("/subject/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,

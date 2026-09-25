@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -28,4 +32,6 @@ public interface ClassMasterRepository {
     Page<ClassMaster> findBySchool(String schoolId, Pageable pageable);
 
     long countAll();
+
+    long countDistinctTeachersInLevels(String schoolId, String academicYearId, Collection<Level> levels);
 }

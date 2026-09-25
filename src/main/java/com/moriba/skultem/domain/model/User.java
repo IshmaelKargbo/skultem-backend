@@ -87,6 +87,17 @@ public class User extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // Replaces an email that is already set - unlike updateEmail this changes what the person logs in
+    // with, so callers must be sure the account isn't shared (see EditParentUseCase).
+    public void changeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new RuleException("Email can't be empty");
+        }
+
+        this.email = email;
+        touch(Instant.now());
+    }
+
     public void resetPassword(String password) {
         if (status != Status.RESET_PASSWORD) {
             throw new RuleException("your account must be RESET_PASSWORD state in other to use the feature");

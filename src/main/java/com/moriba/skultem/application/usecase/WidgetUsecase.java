@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,6 +41,7 @@ public class WidgetUsecase {
     private final ParentReportUseCase parentReportUseCase;
     private final TeacherReportUseCase teacherReportUseCase;
     private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public WidgetResponse<?> runAnalytics(String schoolId, Widget request, int page, int size) {
         return runAnalytics(schoolId, request, page, size, null);
@@ -141,9 +144,20 @@ public class WidgetUsecase {
         return new TableData("table", request.title(), headers, rows);
     }
 
+    // Same whole-school-only set as the report builder (ReportExportService) - staff/HR and
+    // aggregate financial data with no reliable per-level path.
+    private static final java.util.Set<String> WHOLE_SCHOOL_ONLY_ENTITIES =
+            java.util.Set.of("teachers", "expenses", "transactions", "parents");
+
     private List<?> loadRecords(String schoolId, Widget request, int page, int size) {
+        String entity = request.entity().toLowerCase();
+        if (WHOLE_SCHOOL_ONLY_ENTITIES.contains(entity) && !sectionScopeService.currentOrAll().wholeSchool()) {
+            throw new com.moriba.skultem.application.error.OutsideManagementScopeException(
+                    "This widget isn't available to staff limited to management sections.");
+        }
+
         var dto = new ReportBuilderDTO(schoolId, request.entity(), request.filters());
-        return switch (request.entity().toLowerCase()) {
+        return switch (entity) {
             case "attendances" -> attendanceReportUseCase.execute(dto, page, size).getContent();
             case "students" -> studentReportUseCase.execute(dto, page, size).getContent();
             case "fees" -> feeReportUseCase.execute(dto, page, size).getContent();

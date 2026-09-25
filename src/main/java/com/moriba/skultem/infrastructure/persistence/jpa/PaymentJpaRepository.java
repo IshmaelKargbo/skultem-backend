@@ -1,5 +1,11 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
+
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -73,6 +79,19 @@ public interface PaymentJpaRepository
             """)
     BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end);
 
+    // Scoped counterpart for the Dashboard's revenue tile: a class fee follows its class's
+    // level; a fee with no class (school-wide) still counts for every caller, whole-school or not.
+    @Query("""
+            select coalesce(sum(p.amount), 0)
+            from PaymentEntity p
+            left join p.fee.clazz c
+            where p.schoolId = :schoolId
+            and p.createdAt between :start and :end
+            and (c is null or c.level in :levels)
+            """)
+    BigDecimal sumPaymentsBySchoolAndDateRangeForLevels(@Param("schoolId") String schoolId,
+            @Param("start") Instant start, @Param("end") Instant end, @Param("levels") Collection<Level> levels);
+
     @Query("""
             SELECT new com.moriba.skultem.domain.model.FeeCategoryRevenue(
                 f.category.name,
@@ -85,12 +104,32 @@ public interface PaymentJpaRepository
             """)
     List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId);
 
-    default Page<PaymentEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+    @Query("""
+            SELECT new com.moriba.skultem.domain.model.FeeCategoryRevenue(
+                f.category.name,
+                SUM(p.amount)
+            )
+            FROM PaymentEntity p
+            JOIN p.fee f
+            LEFT JOIN f.clazz c
+            WHERE p.schoolId = :schoolId
+            AND (c IS NULL OR c.level IN :levels)
+            GROUP BY f.category.name
+            """)
+    List<FeeCategoryRevenue> sumRevenueByCategoryForLevels(@Param("schoolId") String schoolId,
+            @Param("levels") Collection<Level> levels);
+
+    default Page<PaymentEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
         Specification<PaymentEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
         if (filters != null && !filters.isEmpty()) {
             spec = spec.and(FilterSpecificationBuilder.build(filters));
         }
+
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        spec = spec.and((root, query, cb) -> PathResolver.<PaymentEntity, Level>getPath(root, "fee.clazz.level")
+                .in(levels));
 
         return findAll(spec, pageable);
     }
@@ -191,4 +230,19 @@ public interface PaymentJpaRepository
 
         return findAll(spec, pageable);
     }
+
+    // A section-limited caller's view: only payments by students enrolled that year at these levels.
+    @Query("""
+                SELECT p FROM PaymentEntity p
+                WHERE p.fee.academicYear.id = :academicYearId
+                  AND p.schoolId = :schoolId
+                  AND p.student.id IN (
+                        SELECT e.student.id FROM EnrollmentEntity e
+                        WHERE e.schoolId = :schoolId
+                          AND e.academicYear.id = :academicYearId
+                          AND e.clazz.level IN :levels)
+                ORDER BY p.createdAt DESC
+            """)
+    Page<PaymentEntity> findAllInYearForLevels(@Param("academicYearId") String academicYearId,
+            @Param("schoolId") String schoolId, @Param("levels") Collection<Level> levels, Pageable pageable);
 }

@@ -37,6 +37,9 @@ public class School extends AggregateRoot<String> {
     // WipeTestSchoolDataUseCase (only a school flagged this way can have its roster/activity data
     // wiped) so that a wipe can never be pointed at a real, live school by mistake.
     private boolean testSchool;
+    // How the school is managed: one scope across all its levels, or school-defined management
+    // sections (see ManagementSection / SchoolLevel). Not to be confused with Section (class "A").
+    private ManagementModel managementModel;
 
     public enum Status {
         ACTIVE,
@@ -47,6 +50,11 @@ public class School extends AggregateRoot<String> {
     // Whether the school only enrolls one gender, or both - lets reporting/demographics (and any
     // gender-specific fee/uniform rule) know up front rather than inferring it from the roster.
     // MIXED is the default: it's the common case and the one that needs no special handling.
+    public enum ManagementModel {
+        UNIFIED,
+        SECTION_BASED
+    }
+
     public enum GenderComposition {
         BOYS,
         GIRLS,
@@ -63,7 +71,8 @@ public class School extends AggregateRoot<String> {
     public School(String id, String name, String domain, Address address, Owner owner, Status status,
             List<GradeBand> gradingScale, String logo, String motto, String principalName,
             String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
-            GenderComposition genderComposition, boolean testSchool, Instant createdAt, Instant updatedAt) {
+            GenderComposition genderComposition, boolean testSchool, ManagementModel managementModel,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -81,6 +90,7 @@ public class School extends AggregateRoot<String> {
                 attendanceThreshold != null ? attendanceThreshold : DEFAULT_ATTENDANCE_THRESHOLD);
         this.genderComposition = genderComposition != null ? genderComposition : GenderComposition.MIXED;
         this.testSchool = testSchool;
+        this.managementModel = managementModel != null ? managementModel : ManagementModel.UNIFIED;
         touch(updatedAt);
     }
 
@@ -88,7 +98,12 @@ public class School extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), null, null, null,
                 null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD,
-                GenderComposition.MIXED, false, now, now);
+                GenderComposition.MIXED, false, ManagementModel.UNIFIED, now, now);
+    }
+
+    public void setManagementModel(ManagementModel managementModel) {
+        this.managementModel = managementModel;
+        touch(Instant.now());
     }
 
     public void markAsTest(boolean testSchool) {

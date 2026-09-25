@@ -32,8 +32,9 @@ public class SubjectGroupAdapter implements SubjectGroupRepository {
     }
 
     @Override
-    public Page<SubjectGroup> search(String schoolId, String classId, String query, Pageable pageable) {
-        return repo.search(schoolId, classId, query, pageable).map(SubjectGroupMapper::toDomain);
+    public Page<SubjectGroup> search(String schoolId, String classId, String query,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.search(schoolId, classId, query, levels, pageable).map(SubjectGroupMapper::toDomain);
     }
 
     @Override

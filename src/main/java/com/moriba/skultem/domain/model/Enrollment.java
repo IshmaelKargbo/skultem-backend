@@ -46,6 +46,17 @@ public class Enrollment extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // The student withdrew or was expelled - out of rosters, attendance and grading; reactivate() undoes it.
+    public void leave() {
+        this.status = Status.LEFT;
+        touch(Instant.now());
+    }
+
+    public void reactivate() {
+        this.status = Status.ACTIVE;
+        touch(Instant.now());
+    }
+
     public void promote() {
         this.status = Status.PROMOTED;
         touch(Instant.now());

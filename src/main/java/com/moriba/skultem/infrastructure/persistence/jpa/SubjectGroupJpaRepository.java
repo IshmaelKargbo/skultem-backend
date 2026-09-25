@@ -23,12 +23,14 @@ public interface SubjectGroupJpaRepository extends JpaRepository<SubjectGroupEnt
                 select g from SubjectGroupEntity g
                 where g.schoolId = :schoolId
                 and (:classId = '' or g.clazz.id = :classId)
+                and g.clazz.level in :levels
                 and (:query = '' or lower(g.name) like lower(concat('%', :query, '%')))
             """)
     Page<SubjectGroupEntity> search(
             @Param("schoolId") String schoolId,
             @Param("classId") String classId,
             @Param("query") String query,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
 
     Page<SubjectGroupEntity> findAllByStream_IdAndSchoolIdOrderByClazz_LevelOrderAsc(String streamId, String schoolId, Pageable pageable);

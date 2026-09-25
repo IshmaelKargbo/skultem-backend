@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 import java.util.Map;
 
@@ -35,8 +37,9 @@ public class ClassSubjectController {
     private final ListClassSubjectByClassUseCase listClassSubjectByClassUseCase;
     private final GetClassSessionUseCase getClassSessionUseCase;
 
+    @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<Object> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateClassSessionDTO param) {
@@ -45,8 +48,9 @@ public class ClassSubjectController {
         return new ApiResponse<>("success", 200, "Class session created successfully", null);
     }
 
+    @SectionScoped
     @GetMapping("/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSubjectDTO>> listByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String classId,
@@ -64,8 +68,9 @@ public class ClassSubjectController {
         return new ApiResponse<>("success", 200, "Class subjects fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping()
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSubjectDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "1") Integer page,
@@ -87,8 +92,9 @@ public class ClassSubjectController {
         return new ApiResponse<>("success", 200, "Class subjects fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping("/one/{id}")
-    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.classSession(#school, #id)")
     public ApiResponse<ClassSessionDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

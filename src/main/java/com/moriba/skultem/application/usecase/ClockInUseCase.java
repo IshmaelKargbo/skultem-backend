@@ -10,7 +10,7 @@ import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.TeacherAttendance;
-import com.moriba.skultem.domain.repository.AttendanceLocationSettingRepository;
+import com.moriba.skultem.application.services.ClockInLocationService;
 import com.moriba.skultem.domain.repository.TeacherAttendanceRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.shared.SchoolTimeZone;
@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class ClockInUseCase {
     private final TeacherAttendanceRepository attendanceRepo;
     private final TeacherRepository teacherRepo;
-    private final AttendanceLocationSettingRepository locationRepo;
+    private final ClockInLocationService clockInLocationService;
     private final HttpServletRequest request;
     private final LogActivityUseCase logActivityUseCase;
 
@@ -44,23 +44,11 @@ public class ClockInUseCase {
                 .orElseThrow(() -> new NotFoundException(
                         "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
 
-        var settings = locationRepo.findBySchoolId(schoolId)
-                .orElseThrow(() -> new BadRequestException(
-                        "Clock-in location has not been set up yet - contact your school admin"));
-
         String ip = getClientIp();
 
-        if (settings.hasIpRestriction() && !settings.isIpAllowed(ip)) {
-            throw new BadRequestException("Clock-in must be done from the school's network.");
-        }
-
-        double distance = settings.distanceMetersTo(latitude, longitude);
-
-        if (!settings.isWithinRange(latitude, longitude, accuracyMeters)) {
-            throw new BadRequestException(String.format(
-                    "You're about %.0fm from the school - you need to be within %dm to clock in.",
-                    distance, settings.getRadiusMeters()));
-        }
+        var match = clockInLocationService.check(schoolId, teacher, latitude, longitude, accuracyMeters, ip,
+                ClockInLocationService.Action.CLOCK_IN);
+        double distance = match.distanceMeters();
 
         var today = LocalDate.now(SchoolTimeZone.ZONE);
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId, today);

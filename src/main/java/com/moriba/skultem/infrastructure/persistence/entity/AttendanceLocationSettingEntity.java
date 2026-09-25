@@ -21,8 +21,11 @@ public class AttendanceLocationSettingEntity {
     @Id
     private String id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String schoolId;
+
+    // null = the school-wide location.
+    private String managementSectionId;
 
     @Column(nullable = false)
     private double latitude;

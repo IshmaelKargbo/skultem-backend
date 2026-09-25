@@ -43,7 +43,9 @@ public class GradeAssessmentUseCase {
         var session = ts.getSession();
         var clazz = session.getClazz();
 
-        lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(), session.getStream().getId());
+        // Only streamed classes (SSS) have a stream - everyone else grades with none.
+        String streamId = session.getStream() != null ? session.getStream().getId() : null;
+        lockSubject(schoolId, ts.getSubject().getId(), clazz.getId(), clazz.getLevel(), streamId);
 
         List<StudentAssessment> studentAssessments = studentAssessmentRepo
                 .findAllBySubjectAndSessionAndTermId(ts.getSubject().getId(), ts.getSession().getId(), termId);

@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -40,7 +44,9 @@ public interface AssessmentScoreRepository {
     boolean existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(String classId, String subjectId,
             String academicYearId, String schoolId);
 
-    Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+    // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+    Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable);
 
     Integer getStudentRank(String schoolId, String classId, String termId, String studentId);
 
@@ -83,12 +89,14 @@ public interface AssessmentScoreRepository {
     // Class/school-level (not per-student) chronological average per assessment position - the
     // Academic Trends section. Row shape: [assessmentId, assessmentName, position, averageScore
     // (Double)], ordered by position. classId/subjectId nullable.
+    // levels: always applied (full catalog for whole-school callers) - see SectionScope.
     List<Object[]> assessmentAverageTrendForReport(String schoolId, String classId, String termId,
-            String subjectId, List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
+            String subjectId, Collection<Level> levels,
+            List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
 
     // Same shape/semantics as averageScoresByClassAndTerm (deliberately kept separate so that
     // existing method's contract for ComputeClassAttentionUseCase never changes) but with classId
     // nullable, for the whole-school variant of Students Requiring Attention.
     List<Object[]> averageScoresForAttentionReport(String schoolId, String classId, String termId,
-            List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
+            Collection<Level> levels, List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 }

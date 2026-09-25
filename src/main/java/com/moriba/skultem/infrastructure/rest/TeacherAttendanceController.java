@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.time.LocalDate;
@@ -48,6 +50,7 @@ public class TeacherAttendanceController {
     // Self-service - overrides the class-level admin-only restriction for just these three.
     // Any staff role can clock themselves in/out, not just teachers - actually succeeding still
     // requires a Teacher (staff/payroll) record though, see ClockInUseCase.
+    @SectionNeutral
     @PostMapping("/clock-in")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockInResponseDTO> clockIn(
@@ -59,6 +62,7 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, message, res);
     }
 
+    @SectionNeutral
     @PostMapping("/clock-out")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockOutResponseDTO> clockOut(
@@ -70,6 +74,7 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, message, res);
     }
 
+    @SectionNeutral
     @GetMapping("/me/today")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<MyAttendanceTodayDTO> myToday(
@@ -123,6 +128,7 @@ public class TeacherAttendanceController {
     // Self-service - overrides the class-level admin-only restriction, same as /me/today. Scoped
     // to the signed-in user's own teacher record (see TeacherAttendanceService#myHistory) rather
     // than an admin-supplied teacherId, so a teacher can't pull another staff member's history.
+    @SectionNeutral
     @GetMapping("/me/history")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<TeacherAttendanceDayDTO>> myHistory(

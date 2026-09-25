@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import ua_parser.Client;
 import ua_parser.Parser;
 
+@SectionNeutral
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -49,7 +52,7 @@ public class AuthController {
 
         LoginResponse res = loginUseCase.execute(
                 param.domain(),
-                param.email(),
+                param.identifier(),
                 param.password(),
                 device.ipAddress(),
                 device.device(),

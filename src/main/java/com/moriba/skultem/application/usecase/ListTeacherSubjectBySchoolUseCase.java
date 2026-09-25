@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.TeacherSubjectDTO;
 import com.moriba.skultem.application.mapper.TeacherSubjectMapper;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,6 +23,7 @@ public class ListTeacherSubjectBySchoolUseCase {
 
     private final TeacherSubjectRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // ts.<field>"/"order by t.<field>", so an unchecked client value would let someone probe/sort
@@ -49,12 +51,9 @@ public class ListTeacherSubjectBySchoolUseCase {
 
         var academicYear = resolveAcademicYearUseCase.execute(school, academicYearId);
 
-        boolean hasFilters = (classId != null && !classId.isBlank()) || (streamId != null && !streamId.isBlank())
-                || (query != null && !query.isBlank());
-        var assignments = hasFilters
-                ? repo.search(school, academicYear.getId(), normalize(classId), normalize(streamId),
-                        normalize(query), pageable)
-                : repo.findAllBySchoolIdAndAcademicYearId(school, academicYear.getId(), pageable);
+        // A section-limited caller only gets assignments in their own section's classes.
+        var assignments = repo.search(school, academicYear.getId(), normalize(classId), normalize(streamId),
+                normalize(query), sectionScopeService.levels(), pageable);
 
         return assignments.map(TeacherSubjectMapper::toDTO);
     }

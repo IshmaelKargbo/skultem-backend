@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +53,9 @@ public class AcademicReportController {
     private final GenerateWeeklyGenderAttendanceReportUseCase generateWeeklyGenderAttendanceReportUseCase;
     private final GenerateStudentDemographicsReportUseCase generateStudentDemographicsReportUseCase;
 
+    @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<AcademicReportDTO> getAcademicReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -73,8 +76,9 @@ public class AcademicReportController {
         return new ApiResponse<>("success", 200, "Academic report fetched successfully", res, meta);
     }
 
+    @SectionScoped
     @GetMapping("/student/{enrollmentId}/trend")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.enrollment(#school, #enrollmentId)")
     public ApiResponse<StudentPerformanceTrendDTO> getStudentPerformanceTrend(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String enrollmentId,
@@ -83,8 +87,9 @@ public class AcademicReportController {
         return new ApiResponse<>("success", 200, "Student performance trend fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/trend")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<AcademicTrendDTO> getAcademicTrend(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -95,8 +100,9 @@ public class AcademicReportController {
         return new ApiResponse<>("success", 200, "Academic trend fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/completion")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<AssessmentCompletionRowDTO>> getAssessmentCompletion(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -118,8 +124,9 @@ public class AcademicReportController {
                 meta);
     }
 
+    @SectionScoped
     @GetMapping("/attention")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<ClassAcademicAttentionDTO> getStudentsRequiringAttention(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -139,8 +146,9 @@ public class AcademicReportController {
         return new ApiResponse<>("success", 200, "Students requiring attention fetched successfully", res, meta);
     }
 
+    @SectionScoped
     @GetMapping("/class/{classId}/attendance/weekly-gender")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<WeeklyGenderAttendanceDTO> getWeeklyGenderAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -152,8 +160,9 @@ public class AcademicReportController {
         return new ApiResponse<>("success", 200, "Weekly gender attendance fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/demographics")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ")")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<StudentDemographicsDTO> getStudentDemographics(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,

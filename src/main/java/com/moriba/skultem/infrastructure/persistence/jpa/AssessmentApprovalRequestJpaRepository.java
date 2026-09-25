@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -31,6 +35,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN ClassMasterEntity cm ON cm.session = s
                 WHERE cm.teacher.id = :teacherId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND cm.endedAt IS NULL
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
@@ -49,6 +54,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN ClassMasterEntity cm ON cm.session = s
                 WHERE cm.teacher.id = :teacherId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND cm.endedAt IS NULL
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
@@ -61,6 +67,7 @@ public interface AssessmentApprovalRequestJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("status") AssessmentApprovalRequest.Status status,
             @Param("query") String query,
+            @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
     @Query("""
@@ -72,13 +79,15 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN ClassMasterEntity cm ON cm.session = s
                 WHERE cm.teacher.id = :teacherId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND cm.endedAt IS NULL
                   AND aar.status = :status
             """)
     long countForClassMasterByTeacherIdAndStatus(
             @Param("teacherId") String teacherId,
             @Param("academicYearId") String academicYearId,
-            @Param("status") AssessmentApprovalRequest.Status status);
+            @Param("status") AssessmentApprovalRequest.Status status,
+            @Param("levels") Collection<Level> levels);
 
     // School-wide, unlike the teacher-scoped query above - backs the admin approval view's
     // default "everything pending across the school" list, so an admin isn't forced to already
@@ -94,6 +103,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN t.user u
                 WHERE aar.schoolId = :schoolId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -110,6 +120,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN t.user u
                 WHERE aar.schoolId = :schoolId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -121,6 +132,7 @@ public interface AssessmentApprovalRequestJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("status") AssessmentApprovalRequest.Status status,
             @Param("query") String query,
+            @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
     @Query("""
@@ -131,12 +143,14 @@ public interface AssessmentApprovalRequestJpaRepository
                 JOIN s.academicYear ac
                 WHERE aar.schoolId = :schoolId
                   AND ac.id = :academicYearId
+                  AND s.clazz.level IN :levels
                   AND aar.status = :status
             """)
     long countBySchoolAndStatus(
             @Param("schoolId") String schoolId,
             @Param("academicYearId") String academicYearId,
-            @Param("status") AssessmentApprovalRequest.Status status);
+            @Param("status") AssessmentApprovalRequest.Status status,
+            @Param("levels") Collection<Level> levels);
 
     Optional<AssessmentApprovalRequestEntity> findByIdAndSchoolId(String id, String schoolId);
 

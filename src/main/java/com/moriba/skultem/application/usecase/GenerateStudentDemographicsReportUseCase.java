@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +32,15 @@ public class GenerateStudentDemographicsReportUseCase {
 
     private final EnrollmentRepository enrollmentRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public StudentDemographicsDTO execute(String schoolId, String academicYearId, String classId, Level level) {
         // A missing academicYearId resolves to the school's active year (never "every year at
         // once") - the same convention every other academic report on this feature follows, so a
         // student who has one enrollment per year isn't double-counted across their whole history.
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
-        var rows = enrollmentRepo.demographicsByFilters(schoolId, academicYear.getId(), classId, level);
+        var rows = enrollmentRepo.demographicsByFilters(schoolId, academicYear.getId(), classId, level,
+                sectionScopeService.levels());
 
         int boys = 0;
         int girls = 0;

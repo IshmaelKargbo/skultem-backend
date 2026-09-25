@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +46,9 @@ public interface StudentFeeRepository {
         Page<StudentFee> findBySchoolAndEnrollmentAndStudent(String schoolId, String academicYearId, String classId,
                         Pageable pageable);
 
-        Page<StudentFee> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        Page<StudentFee> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                Pageable pageable);
 
         /** Every school fee charged for one academic year (optionally one term) - platform fee excluded. */
         List<StudentFee> findSchoolFeeRows(String schoolId, String academicYearId, String termId);

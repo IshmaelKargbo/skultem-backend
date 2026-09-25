@@ -17,7 +17,6 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +57,7 @@ public class AssignTeacherToClassUseCase {
 
                 ClassSession session;
 
-                if (Level.SSS.equals(clazz.getLevel())) {
+                if (clazz.getLevel().isStreamed()) {
 
                         if (streamId == null) {
                                 throw new RuleException("Stream is required for SSS classes");

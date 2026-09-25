@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -17,9 +19,11 @@ import lombok.RequiredArgsConstructor;
 public class DashboardRevenueBreakdownUseCase {
 
     private final PaymentRepository paymentRepo;
+    private final SectionScopeService sectionScopeService;
 
     public List<RevenueBreakdownDTO> getRevenueBreakdown(String schoolId) {
-        List<FeeCategoryRevenue> categorySums = paymentRepo.sumRevenueByCategory(schoolId);
+        List<FeeCategoryRevenue> categorySums = paymentRepo.sumRevenueByCategory(schoolId,
+                sectionScopeService.levels());
 
         BigDecimal totalCollected = categorySums.stream()
                 .map(FeeCategoryRevenue::getAmount)

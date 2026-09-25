@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class GetAcademicTrendUseCase {
     private final AssessmentScoreRepository scoreRepo;
     private final TermRepository termRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public AcademicTrendDTO execute(String schoolId, String classId, String subjectId, String academicYearId,
             String termId) {
@@ -34,7 +37,7 @@ public class GetAcademicTrendUseCase {
         var term = resolveTerm(schoolId, academicYear.getId(), termId);
 
         var rows = scoreRepo.assessmentAverageTrendForReport(schoolId, classId, term.getId(), subjectId,
-                GetClassAcademicPerformanceUseCase.APPROVED_STATUSES);
+                sectionScopeService.levels(), GetClassAcademicPerformanceUseCase.APPROVED_STATUSES);
 
         List<PerformanceTrendPointDTO> points = rows.stream()
                 .map(row -> new PerformanceTrendPointDTO(

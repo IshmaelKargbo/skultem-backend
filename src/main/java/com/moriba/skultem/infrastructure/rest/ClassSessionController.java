@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +42,9 @@ public class ClassSessionController {
     private final GetClassSessionUseCase getClassSessionUseCase;
     private final CreateClassSessionsForAcademicYearUseCase createClassSessionsForAcademicYearUseCase;
 
+    @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<ClassSessionDTO> create(
         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
         @Valid @RequestBody CreateClassSessionDTO param) {
@@ -58,6 +61,7 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, created + " class session(s) created", Map.of("created", created));
     }
 
+    @SectionScoped
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> list(
@@ -81,6 +85,7 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class sessions fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping("/me")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listMe(
@@ -91,6 +96,7 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class sessions fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping({"/unassign", "/unassigned"})
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listUnassign(
@@ -108,8 +114,9 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class sessions fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.classSession(#school, #id)")
     public ApiResponse<ClassSessionDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -117,8 +124,9 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/class/{id}")
-    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.clazz(#school, #id)")
     public ApiResponse<ClassSessionDTO> getByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -127,8 +135,9 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/{classId}/stream/{streamId}")
-    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<ClassSessionDTO> getByClassAndStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,

@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -35,8 +39,10 @@ public interface FeeStructureRepository {
     Page<FeeStructure> findAllBySchool(String schoolId, Pageable pageable);
 
     /** The school's fee structures for one academic year, narrowed by whichever other filters are non-null. */
+    // levels: class fees at these levels plus school-wide fees with no class (see SectionScope).
     Page<FeeStructure> search(String schoolId, String academicYearId, String termId, String classId,
-            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Pageable pageable);
+            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Collection<Level> levels,
+            Pageable pageable);
 
     Page<FeeStructure> findBySchoolAndAcademic(String schoolId, String academicYearId, Pageable pageable);
 

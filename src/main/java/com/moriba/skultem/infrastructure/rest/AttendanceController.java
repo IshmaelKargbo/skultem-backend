@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -96,8 +98,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Attendance deleted successfully", null);
     }
 
+    @SectionScoped
     @PostMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<AttendanceDTO>> markClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -108,8 +111,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Class attendance marked successfully", res);
     }
 
+    @SectionScoped
     @DeleteMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<Void> deleteClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -118,8 +122,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Class attendance deleted successfully", null);
     }
 
+    @SectionScoped
     @GetMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<ClassSessionAttendanceDTO> getClassSessionSheet(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -128,8 +133,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Class attendance sheet fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/session/report/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<AttendanceHistoryDTO>> getClassSessionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -147,9 +153,11 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Class attendance sheet fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping("/register/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') "
-            + "or @permissionService.canAccessClassSessionAsTeacher(#school, #classSessionId)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') "
+            + "or @permissionService.canAccessClassSessionAsTeacher(#school, #classSessionId)) "
+            + "and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<ClassSessionAttendanceDTO> getDailyRegister(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -158,8 +166,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Daily attendance register fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/summary/monthly")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<StudentAttendanceSummaryDTO>> getMonthlySummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String classSessionId,
@@ -169,8 +178,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Monthly attendance summary fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/summary/term")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<TermAttendanceSummaryDTO> getTermSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String classSessionId,
@@ -189,8 +199,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Class attendance summary fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/inspection-report")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<InspectionReportDTO> getInspectionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) InspectionReportType reportType,

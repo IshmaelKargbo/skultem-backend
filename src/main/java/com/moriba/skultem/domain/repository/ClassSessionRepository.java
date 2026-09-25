@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -28,17 +32,21 @@ public interface ClassSessionRepository {
                         String classId, String academicYearId, String sectionId, String schoolId);
 
         Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
-                        Pageable pageable);
+                        Collection<Level> levels, Pageable pageable);
 
         Page<ClassSession> findBySchoolId(String schoolId, Pageable pageable);
 
         Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId, Pageable pageable);
 
+        // Only sessions whose class is at one of these levels (see SectionScope).
+        Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
+                        Collection<Level> levels, Pageable pageable);
+
         // Matches on class/section/stream name, optionally narrowed to one section, stream and/or
         // class level (the Level enum's name, '' for any) - backs the classes list's search box and
         // filters.
         Page<ClassSession> search(String schoolId, String academicYearId, String sectionId, String streamId,
-                        String level, String query, Pageable pageable);
+                        String level, String query, Collection<Level> levels, Pageable pageable);
 
         Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
                         String schoolId);
@@ -58,5 +66,7 @@ public interface ClassSessionRepository {
 
         long countAll();
 
-        Page<ClassSession> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        Page<ClassSession> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                Pageable pageable);
 }

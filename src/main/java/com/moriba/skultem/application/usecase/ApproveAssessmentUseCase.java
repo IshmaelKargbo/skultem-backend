@@ -93,10 +93,9 @@ public class ApproveAssessmentUseCase {
                 .filter(user -> seenUserIds.add(user.getId()))
                 .toList();
 
-        if (users.isEmpty()) {
-            throw new NotFoundException("no parent relation found");
-        }
-
+        // No linked parent account just means nobody to notify - it must never block the approval
+        // itself (the grades are already approved above), or one unlinked student would make the
+        // whole class impossible to approve.
         return users;
     }
 }

@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +19,7 @@ import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.infrastructure.persistence.entity.AssessmentScoreEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
 
 public interface AssessmentScoreJpaRepository
                 extends JpaRepository<AssessmentScoreEntity, String>, JpaSpecificationExecutor<AssessmentScoreEntity> {
@@ -238,6 +243,7 @@ public interface AssessmentScoreJpaRepository
                           AND sa.term.id = :termId
                           AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
                           AND (:subjectId IS NULL OR sa.teacherSubject.subject.id = :subjectId)
+                          AND sa.enrollment.clazz.level IN :levels
                           AND cy.status IN :approvedStatuses
                         GROUP BY cy.assessment.id, cy.assessment.name, cy.assessment.position
                         ORDER BY cy.assessment.position
@@ -247,6 +253,7 @@ public interface AssessmentScoreJpaRepository
                         @Param("classId") String classId,
                         @Param("termId") String termId,
                         @Param("subjectId") String subjectId,
+                        @Param("levels") Collection<Level> levels,
                         @Param("approvedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses);
 
         // See AssessmentScoreRepository#averageScoresForAttentionReport. Same shape/semantics as
@@ -263,6 +270,7 @@ public interface AssessmentScoreJpaRepository
                         JOIN a.cycle cy
                         WHERE a.schoolId = :schoolId
                           AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND sa.enrollment.clazz.level IN :levels
                           AND sa.term.id = :termId
                           AND cy.status NOT IN :excludedStatuses
                         GROUP BY sa.enrollment.id
@@ -271,15 +279,22 @@ public interface AssessmentScoreJpaRepository
                         @Param("schoolId") String schoolId,
                         @Param("classId") String classId,
                         @Param("termId") String termId,
+                        @Param("levels") Collection<Level> levels,
                         @Param("excludedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 
-        default Page<AssessmentScoreEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        default Page<AssessmentScoreEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                        Pageable pageable) {
                 Specification<AssessmentScoreEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
                                 schoolId);
 
                 if (filters != null && !filters.isEmpty()) {
                         spec = spec.and(FilterSpecificationBuilder.build(filters));
                 }
+
+                // levels: always applied (full catalog for whole-school callers) - see SectionScope. Covers
+                // grades/leaderboard/breakdown, which all run through this same query.
+                spec = spec.and((root, query, cb) -> PathResolver.<AssessmentScoreEntity, Level>getPath(root,
+                        "studentAssessment.enrollment.clazz.level").in(levels));
 
                 return findAll(spec, pageable);
         }

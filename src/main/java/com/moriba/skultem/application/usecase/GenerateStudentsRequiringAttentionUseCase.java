@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -61,6 +63,7 @@ public class GenerateStudentsRequiringAttentionUseCase {
     private final AssessmentScoreRepository scoreRepo;
     private final SchoolRepository schoolRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public ClassAcademicAttentionDTO execute(String schoolId, String classId, String academicYearId, String termId,
             Level level, int page, int size) {
@@ -74,9 +77,13 @@ public class GenerateStudentsRequiringAttentionUseCase {
                     .orElseThrow(() -> new NotFoundException("Class not found"));
         }
 
+        // Only the caller's own management-section classes go into this map (whole catalog for a
+        // whole-school caller) - everything downstream keys off it, so this one restriction is what
+        // keeps a section-limited admin's "whole school" view actually limited to their sections.
         Map<String, Integer> passMarkByClass = new HashMap<>();
         Map<String, Level> levelByClass = new HashMap<>();
-        for (var clazz : classRepo.findBySchool(schoolId, Pageable.unpaged()).getContent()) {
+        for (var clazz : classRepo.findBySchool(schoolId, sectionScopeService.levels(), Pageable.unpaged())
+                .getContent()) {
             passMarkByClass.put(clazz.getId(),
                     clazz.getTemplate() != null ? clazz.getTemplate().getPassMark() : DEFAULT_PASS_MARK);
             levelByClass.put(clazz.getId(), clazz.getLevel());
@@ -91,6 +98,9 @@ public class GenerateStudentsRequiringAttentionUseCase {
                         Pageable.unpaged()).getContent()
                 : enrollmentRepo.findAllByAcademicSchoolId(academicYear.getId(), schoolId);
 
+        // In scope regardless of the level filter above - out-of-scope classes were never added to
+        // levelByClass, so containsKey doubles as the section-scope check.
+        enrollments = enrollments.stream().filter(e -> levelByClass.containsKey(e.getClazz().getId())).toList();
         if (level != null) {
             enrollments = enrollments.stream()
                     .filter(e -> level.equals(levelByClass.get(e.getClazz().getId())))
@@ -113,7 +123,7 @@ public class GenerateStudentsRequiringAttentionUseCase {
 
         if (activeTerm != null) {
             for (Object[] row : scoreRepo.averageScoresForAttentionReport(schoolId, classId, activeTerm.getId(),
-                    ACADEMIC_HEURISTIC_EXCLUDED)) {
+                    sectionScopeService.levels(), ACADEMIC_HEURISTIC_EXCLUDED)) {
                 academicAverages.put((String) row[0], new double[] {
                         ((Number) row[1]).doubleValue(),
                         ((Number) row[2]).doubleValue()

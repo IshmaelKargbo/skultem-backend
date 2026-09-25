@@ -10,7 +10,6 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSectionRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.ClassStreamRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +41,7 @@ public class CreateClassSessionsForAcademicYearUseCase {
                 continue;
             }
 
-            if (clazz.getLevel() == Level.SSS) {
+            if (clazz.getLevel().isStreamed()) {
                 var streams = streamRepo.findAllByClassIdAndSchoolId(clazz.getId(), schoolId);
 
                 for (var section : sections) {

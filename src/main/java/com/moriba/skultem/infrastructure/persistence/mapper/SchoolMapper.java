@@ -20,7 +20,7 @@ public class SchoolMapper {
         return new School(param.getId(), param.getName(), param.getDomain(), address, owner,
                 param.getStatus(), gradingScale, param.getLogo(), param.getMotto(), param.getPrincipalName(),
                 param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
-                param.getAttendanceThreshold(), param.getGenderComposition(), param.isTestSchool(),
+                param.getAttendanceThreshold(), param.getGenderComposition(), param.isTestSchool(), param.getManagementModel(),
                 param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -46,6 +46,7 @@ public class SchoolMapper {
                 .attendanceThreshold(args.getAttendanceThreshold())
                 .genderComposition(args.getGenderComposition())
                 .testSchool(args.isTestSchool())
+                .managementModel(args.getManagementModel())
                 .createdAt(args.getCreatedAt())
                 .updatedAt(args.getUpdatedAt())
                 .build();

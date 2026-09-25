@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +53,8 @@ public class ReportCardAdapter implements ReportCardRepository {
 
     @Override
     public Page<ReportCard> search(String schoolId, String classId, String termId, String search,
-            Pageable pageable) {
-        return repo.search(schoolId, classId, termId, search, pageable).map(ReportCardMapper::toDomain);
+            Collection<Level> levels, Pageable pageable) {
+        return repo.search(schoolId, classId, termId, search, levels, pageable).map(ReportCardMapper::toDomain);
     }
 
     @Override

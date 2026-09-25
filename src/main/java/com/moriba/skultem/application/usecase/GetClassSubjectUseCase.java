@@ -22,7 +22,6 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassStreamRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.StreamSubjectRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,7 @@ public class GetClassSubjectUseCase {
                 var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Class not found"));
 
-                if (clazz.getLevel().equals(Level.SSS)) {
+                if (clazz.getLevel().isStreamed()) {
                         if (streamId == null || streamId.isBlank()) {
                                 throw new RuleException("Stream is required for SSS class");
                         }

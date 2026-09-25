@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class DashboardWeeklyAttendanceReportUseCase {
 
     private final AttendanceRepository attendanceRepo;
+    private final SectionScopeService sectionScopeService;
 
     public List<WeeklyAttendanceDTO> weeklyAttendance(String schoolId) {
 
@@ -29,7 +32,8 @@ public class DashboardWeeklyAttendanceReportUseCase {
         var rows = attendanceRepo.weeklyAttendance(
                 schoolId,
                 startOfWeek,
-                endOfWeek);
+                endOfWeek,
+                sectionScopeService.levels());
 
         return rows.stream().map(r -> {
 

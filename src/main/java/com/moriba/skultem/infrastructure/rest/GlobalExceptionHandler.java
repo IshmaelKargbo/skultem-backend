@@ -20,6 +20,7 @@ import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.FileUploadException;
 import com.moriba.skultem.application.error.ModuleNotInstalledException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.OutsideManagementScopeException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.infrastructure.rest.dto.ApiErrorResponse;
 
@@ -60,6 +61,25 @@ public class GlobalExceptionHandler {
 
     // 403, not 401 like AccessDeniedException above: the caller is signed in and allowed by role, the
     // school just hasn't installed this feature - the frontend must not treat it as an expired session.
+    @ExceptionHandler(OutsideManagementScopeException.class)
+    public ResponseEntity<ApiErrorResponse> handleOutsideScope(OutsideManagementScopeException ex) {
+        return build(HttpStatus.FORBIDDEN, "OUTSIDE_MANAGEMENT_SCOPE", ex);
+    }
+
+    // A @PreAuthorize rule that said no. Without this it fell through to the catch-all below and came
+    // back as a 500 (logged as an unhandled error) - it's a plain 403, not a server fault. Deliberately
+    // not a 401: the frontend treats 401 as an expired session and logs the user out.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                new ApiErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        "FORBIDDEN",
+                        "You don't have permission to do this.",
+                        LocalDateTime.now(),
+                        null));
+    }
+
     @ExceptionHandler(ModuleNotInstalledException.class)
     public ResponseEntity<ApiErrorResponse> handleModuleNotInstalled(ModuleNotInstalledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(

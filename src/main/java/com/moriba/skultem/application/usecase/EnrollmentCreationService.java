@@ -11,7 +11,6 @@ import com.moriba.skultem.domain.model.Section;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +27,7 @@ public class EnrollmentCreationService {
             Section section,
             AcademicYear academicYear,
             Stream stream) {
-        if (clazz.getLevel() == Level.SSS) {
+        if (clazz.getLevel().isStreamed()) {
             if (stream == null) {
                 throw new RuleException("Stream is required for SSS class");
             }

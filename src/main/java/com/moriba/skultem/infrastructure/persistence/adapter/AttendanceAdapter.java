@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -72,6 +76,12 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
+    public List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end,
+            Collection<Level> levels) {
+        return repo.weeklyAttendanceForLevels(schoolId, start, end, levels);
+    }
+
+    @Override
     public List<Object[]> attendanceCountsByClassSince(String schoolId, String classId, String academicYearId,
             LocalDate since) {
         return repo.attendanceCountsByClassSince(schoolId, classId, academicYearId, since);
@@ -97,8 +107,9 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
-    public Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<Attendance> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(AttendanceMapper::toDomain);
     }
 

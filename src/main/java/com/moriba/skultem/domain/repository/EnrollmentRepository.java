@@ -1,5 +1,7 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.Collection;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +15,9 @@ import com.moriba.skultem.domain.vo.Level;
 
 public interface EnrollmentRepository {
         void save(Enrollment domain);
+
+        // e.g. a student's ACTIVE enrollments (to end them) or LEFT ones (to reinstate them).
+        List<Enrollment> findAllByStudentAndSchoolIdAndStatus(String studentId, String schoolId, Enrollment.Status status);
 
         Optional<Enrollment> findById(String id);
 
@@ -67,9 +72,16 @@ public interface EnrollmentRepository {
 
         long countByAcademicSchoolId(String academicYearId, String schoolId);
 
+        // Scoped counterpart - levels always applied (full catalog for whole-school callers).
+        long countByAcademicSchoolId(String academicYearId, String schoolId, Collection<Level> levels);
+
         long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date);
 
-        Page<Enrollment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+        long countBySchoolIdAndAcademicYearAndCreatedBefore(String schoolId, String academicYearId, Instant date,
+                        Collection<Level> levels);
+
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+    Page<Enrollment> runReport(String schoolId, List<Filter> filters, Collection<Level> levels, Pageable pageable);
 
         long countByStudentIdAndClassIdAndSchoolIdAndStatus(String studentId, String classId, String schoolId,
                         Enrollment.Status status);
@@ -80,5 +92,7 @@ public interface EnrollmentRepository {
         // the student demographics report; religion is left as raw text here and bucketed into the
         // school's canonical categories (Muslim/Christian/Other/Not specified) by the use case, not
         // this query, since it's free text rather than an enum.
-        List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId, Level level);
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId, Level level,
+                        Collection<Level> levels);
 }

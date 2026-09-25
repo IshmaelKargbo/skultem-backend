@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ public class GetClassAcademicPerformanceUseCase {
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
     private final SchoolRepository schoolRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public AcademicReportDTO execute(String schoolId, String classId, String academicYearId, String termId,
             String subjectId, Level level, int page, int size) {
@@ -93,9 +96,13 @@ public class GetClassAcademicPerformanceUseCase {
         // classId -> passMark / level, built once from the whole school's (small) class list -
         // lets pass/fail be evaluated per-student against THEIR class's own configured pass mark,
         // even in whole-school mode where different classes may use different templates.
+        // Only the caller's own management-section classes go into this map (whole catalog for a
+        // whole-school caller) - every downstream filter below keys off it, so this one restriction
+        // is what keeps a section-limited admin's report from including other sections' data.
         Map<String, Integer> passMarkByClass = new HashMap<>();
         Map<String, Level> levelByClass = new HashMap<>();
-        for (var clazz : classRepo.findBySchool(schoolId, Pageable.unpaged()).getContent()) {
+        for (var clazz : classRepo.findBySchool(schoolId, sectionScopeService.levels(), Pageable.unpaged())
+                .getContent()) {
             passMarkByClass.put(clazz.getId(),
                     clazz.getTemplate() != null ? clazz.getTemplate().getPassMark() : DEFAULT_PASS_MARK);
             levelByClass.put(clazz.getId(), clazz.getLevel());
@@ -106,6 +113,8 @@ public class GetClassAcademicPerformanceUseCase {
                         Pageable.unpaged()).getContent()
                 : enrollmentRepo.findAllByAcademicSchoolId(academicYear.getId(), schoolId);
 
+        // In scope regardless of the level filter above - see the note on levelByClass.
+        roster = roster.stream().filter(e -> levelByClass.containsKey(e.getClazz().getId())).toList();
         if (level != null) {
             roster = roster.stream().filter(e -> level.equals(levelByClass.get(e.getClazz().getId()))).toList();
         }
@@ -136,6 +145,11 @@ public class GetClassAcademicPerformanceUseCase {
             String subName = (String) row[7];
             double avg = ((Number) row[8]).doubleValue();
 
+            // Out-of-scope classes were never added to levelByClass - excluded unconditionally,
+            // on top of whatever explicit level filter the caller also asked for.
+            if (!levelByClass.containsKey(rowClassId)) {
+                continue;
+            }
             if (level != null && !level.equals(levelByClass.get(rowClassId))) {
                 continue;
             }
@@ -218,10 +232,10 @@ public class GetClassAcademicPerformanceUseCase {
         }
 
         var completionRows = cycleRepo.completionReportRows(schoolId, term.getId(), classId, subjectId);
-        List<Object[]> filteredCompletionRows = level == null ? completionRows
-                : completionRows.stream()
-                        .filter(row -> level.equals(levelByClass.get((String) row[0])))
-                        .toList();
+        List<Object[]> filteredCompletionRows = completionRows.stream()
+                .filter(row -> levelByClass.containsKey((String) row[0]))
+                .filter(row -> level == null || level.equals(levelByClass.get((String) row[0])))
+                .toList();
         int totalAssessments = filteredCompletionRows.size();
         int completedAssessments = (int) filteredCompletionRows.stream()
                 .filter(row -> APPROVED_STATUSES.contains(row[7]))

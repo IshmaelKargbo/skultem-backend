@@ -1,5 +1,11 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
+
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -58,12 +64,17 @@ public interface StudentFeeJpaRepository
     Page<StudentFeeEntity> findAllByFee_IdAndEnrollment_IdAndSchoolId(String feeId, String enrollmentId,
             String schoolId, Pageable pageable);
 
-    default Page<StudentFeeEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+    default Page<StudentFeeEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
         Specification<StudentFeeEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
         if (filters != null && !filters.isEmpty()) {
             spec = spec.and(FilterSpecificationBuilder.build(filters));
         }
+
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        spec = spec.and((root, query, cb) -> PathResolver.<StudentFeeEntity, Level>getPath(root, "enrollment.clazz.level")
+                .in(levels));
 
         return findAll(spec, pageable);
     }

@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -39,10 +43,12 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
             where r.schoolId = :schoolId
             and (:classId is null or r.classId = :classId)
             and (:termId is null or r.termId = :termId)
+            and r.classId in (select c.id from ClassEntity c where c.schoolId = :schoolId and c.level in :levels)
             and (:search is null or lower(r.studentName) like lower(concat('%', cast(:search as string), '%'))
                 or lower(r.admissionNumber) like lower(concat('%', cast(:search as string), '%')))
             order by case when r.position = 0 then 999999 else r.position end asc, r.studentName asc
             """)
     Page<ReportCardEntity> search(@Param("schoolId") String schoolId, @Param("classId") String classId,
-            @Param("termId") String termId, @Param("search") String search, Pageable pageable);
+            @Param("termId") String termId, @Param("search") String search,
+            @Param("levels") Collection<Level> levels, Pageable pageable);
 }

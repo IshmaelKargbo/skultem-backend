@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +34,9 @@ public interface AttendanceRepository {
     Page<Attendance> findByEnrollmentAndSchoolId(String enrollmentId, String schoolId, Pageable pageable);
 
     List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end);
+
+    List<Object[]> weeklyAttendance(String schoolId, LocalDate start, LocalDate end,
+            Collection<Level> levels);
 
     // Row shape: [enrollmentId (String), presentCount (Long), totalCount (Long)] - see
     // ComputeClassAttentionUseCase.
@@ -70,5 +77,7 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId, String academicYearId,
             LocalDate startDate, LocalDate endDate);
 
-    Page<Attendance> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+    // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+    Page<Attendance> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable);
 }

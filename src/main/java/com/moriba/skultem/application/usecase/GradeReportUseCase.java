@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class GradeReportUseCase {
 
     private final AssessmentScoreRepository repo;
+    private final SectionScopeService sectionScopeService;
     private final ResolveScoreGradeUseCase resolveScoreGradeUseCase;
 
     public Page<AssessmentScoreDTO> execute(ReportBuilderDTO request, int page, int size) {
@@ -34,6 +37,7 @@ public class GradeReportUseCase {
         Page<AssessmentScore> res = repo.runReport(
                 request.schoolId(),
                 filters,
+                sectionScopeService.levels(),
                 pageable);
 
         return res.map(e -> {

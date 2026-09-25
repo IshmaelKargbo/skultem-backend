@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +25,9 @@ public interface ReportCardRepository {
     // Card tab on the student profile (all terms/years in one place, not just the current term).
     List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId);
 
-    Page<ReportCard> search(String schoolId, String classId, String termId, String search, Pageable pageable);
+    // levels: only cards for classes at these levels (see SectionScope).
+    Page<ReportCard> search(String schoolId, String classId, String termId, String search, Collection<Level> levels,
+            Pageable pageable);
 
     long countBySchoolId(String schoolId);
 

@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import com.moriba.skultem.application.dto.OwnerDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.domain.model.School;
+import com.moriba.skultem.domain.model.School.ManagementModel;
 import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.SchoolRepository;
@@ -18,6 +20,7 @@ import com.moriba.skultem.domain.repository.SchoolUserRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.Address;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.domain.vo.Owner;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.mail.MailService;
@@ -43,11 +46,18 @@ public class CreateSchoolUseCase {
     private final EnsurePlatformFeeSettingUseCase ensurePlatformFeeSettingUseCase;
     private final ProvisionAcademicCalendarForNewSchoolUseCase provisionAcademicCalendarUseCase;
     private final ProvisionStarterModulesForNewSchoolUseCase provisionStarterModulesUseCase;
+    private final UpdateSchoolStructureUseCase updateSchoolStructureUseCase;
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
     private static final int PASSWORD_LENGTH = 8;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public SchoolDTO execute(String name, String domain, Address address, OwnerDTO ownerDto) {
+    // A school created without a structure offers Primary, JSS and SSS under one management - what
+    // every school was before structures existed - so older clients keep working unchanged.
+    private static final List<Level> DEFAULT_LEVELS = List.of(Level.PRIMARY, Level.JSS, Level.SSS);
+
+    public SchoolDTO execute(String name, String domain, Address address, OwnerDTO ownerDto,
+            ManagementModel managementModel, List<Level> levels,
+            List<UpdateSchoolStructureUseCase.SectionInput> sections) {
         var cleanDomain = Generate.generateSubdomain(domain);
 
         if (repo.existsByDomain(cleanDomain)) {
@@ -59,6 +69,15 @@ public class CreateSchoolUseCase {
         var owner = new Owner(ownerDto.givenNames(), ownerDto.familyName(), ownerDto.email(), ownerDto.phone());
         var school = School.create(id, name, cleanDomain, address, owner);
         repo.save(school);
+
+        // Not best-effort like the provisioning below: an invalid structure fails (and rolls back)
+        // the whole signup, rather than leaving a school with no levels.
+        if (managementModel == null) {
+            updateSchoolStructureUseCase.execute(school.getId(), ManagementModel.UNIFIED, DEFAULT_LEVELS, List.of());
+        } else {
+            updateSchoolStructureUseCase.execute(school.getId(), managementModel, levels, sections);
+        }
+        school = repo.findById(school.getId()).orElseThrow();
 
         // Best-effort - a new school missing its platform fee just gets caught by the startup
         // sweep instead (see BackfillPlatformFeesUseCase); it shouldn't block signup. Starts at the
@@ -118,7 +137,7 @@ public class CreateSchoolUseCase {
                 school.getOwner(), school.getStatus(), school.getGradingScale(), school.getLogo(), school.getMotto(),
                 school.getPrincipalName(), school.getPrincipalSignature(), school.getPrimaryColor(),
                 school.getSecondaryColor(), school.getAttendanceThreshold(), school.getGenderComposition(),
-                school.isTestSchool(), school.getCreatedAt(),
+                school.isTestSchool(), school.getManagementModel(), school.getCreatedAt(),
                 school.getUpdatedAt());
     }
 

@@ -1,4 +1,12 @@
 package com.moriba.skultem.infrastructure.rest;
+import org.springframework.web.bind.annotation.PutMapping;
+
+import com.moriba.skultem.application.dto.StaffScopeDTO;
+import com.moriba.skultem.application.services.SectionScopeService;
+import com.moriba.skultem.application.usecase.AssignStaffManagementSectionsUseCase;
+import com.moriba.skultem.application.usecase.ListStaffManagementSectionsUseCase;
+import com.moriba.skultem.infrastructure.rest.dto.AssignStaffSectionsDTO;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import java.util.List;
 import java.util.Map;
@@ -59,6 +67,9 @@ public class UserController {
     private final UpdateUserPhotoUseCase updateUserPhotoUseCase;
     private final SetUserAccessUseCase setUserAccessUseCase;
     private final RemoveRoleUseCase removeRoleUseCase;
+    private final AssignStaffManagementSectionsUseCase assignStaffManagementSectionsUseCase;
+    private final ListStaffManagementSectionsUseCase listStaffManagementSectionsUseCase;
+    private final SectionScopeService sectionScopeService;
 
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canGrantRole(#school, #param.role())")
@@ -80,6 +91,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "User asign successfully", res);
     }
 
+    @SectionNeutral
     @PostMapping("/reset-password")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<UserDTO> resetPassword(
@@ -155,6 +167,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Role removed successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/notifications")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'TEACHER', 'PARENT', 'PROPRIETOR')")
     public ApiResponse<Object> notifications(
@@ -206,7 +219,41 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Photo updated successfully", res);
     }
 
+    // The caller's own management-section scope - what the frontend uses to decide what to show.
+    @GetMapping("/me/scope")
+    @SectionNeutral
+    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    public ApiResponse<StaffScopeDTO.Current> myScope(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var scope = sectionScopeService.current();
+        var res = new StaffScopeDTO.Current(scope.wholeSchool(),
+                scope.wholeSchool() ? List.of() : List.copyOf(scope.levels()), scope.sectionIds(), scope.sectionNames());
+        return new ApiResponse<>("success", 200, "Scope fetched successfully", res);
+    }
+
+    // Which staff are limited to which management sections (anyone not listed is whole-school).
+    @GetMapping("/management-sections")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<List<StaffScopeDTO>> listManagementSections(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = listStaffManagementSectionsUseCase.execute(school);
+        return new ApiResponse<>("success", 200, "Management access fetched successfully", res);
+    }
+
+    // Owner-level only, like editing the structure itself: otherwise an admin could widen their own
+    // (or a colleague's) access past the limit the owner set.
+    @PutMapping("/{id}/management-sections")
+    @PreAuthorize("@permissionService.isSchoolLeadership(#school)")
+    public ApiResponse<StaffScopeDTO> assignManagementSections(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody AssignStaffSectionsDTO param) {
+        var res = assignStaffManagementSectionsUseCase.execute(school, id, param.role(), param.sectionIds());
+        return new ApiResponse<>("success", 200, "Management access updated successfully", res);
+    }
+
     @GetMapping("/me")
+    @SectionNeutral
     @PreAuthorize("@permissionService.canAccessSchool(#school)")
     public ApiResponse<UserDTO> me(
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -218,6 +265,7 @@ public class UserController {
     // Self-service - any signed-in user (Teacher, Parent, Admin/Accountant/...) uploading their
     // own photo from their My Profile page, as opposed to updatePhoto() above which lets an admin
     // set it on someone else's behalf.
+    @SectionNeutral
     @PatchMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@permissionService.canAccessSchool(#school)")
     public ApiResponse<UserDTO> updateMyPhoto(

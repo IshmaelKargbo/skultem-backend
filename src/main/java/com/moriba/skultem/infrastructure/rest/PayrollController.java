@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
@@ -39,6 +41,7 @@ public class PayrollController {
     // attendance/curriculum "me" endpoints. Scoped to the signed-in user's own teacher record
     // (see PayrollService#getMySalaryHistory / #getMyPayslip) rather than an admin-supplied
     // teacherId, so a teacher can't pull another staff member's payroll data.
+    @SectionNeutral
     @GetMapping("/me/history")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<PayslipDTO>> myHistory(
@@ -48,6 +51,7 @@ public class PayrollController {
                 payrollService.getMySalaryHistory(school, userId));
     }
 
+    @SectionNeutral
     @GetMapping("/me/payslip/{runId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipDTO> myPayslip(

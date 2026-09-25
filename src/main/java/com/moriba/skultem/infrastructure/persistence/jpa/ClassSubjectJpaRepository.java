@@ -45,6 +45,7 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
                 left join cs.stream st
                 where cs.schoolId = :schoolId
                 and (:classId = '' or cs.clazz.id = :classId)
+                and cs.clazz.level in :levels
                 and (:mandatory is null or cs.mandatory = :mandatory)
                 and (:query = ''
                      or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
@@ -56,5 +57,6 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
             @Param("classId") String classId,
             @Param("mandatory") Boolean mandatory,
             @Param("query") String query,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
 }

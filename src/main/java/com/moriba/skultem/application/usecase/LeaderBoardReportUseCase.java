@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class LeaderBoardReportUseCase {
 
         private final AssessmentScoreRepository repo;
+        private final SectionScopeService sectionScopeService;
 
         public Page<LeaderBoardDTO> execute(ReportBuilderDTO request, int page, int size) {
 
@@ -29,7 +32,7 @@ public class LeaderBoardReportUseCase {
 
                 // Fetch all scores for the school + filters
                 List<AssessmentScore> scores = repo
-                                .runReport(request.schoolId(), filters, Pageable.unpaged())
+                                .runReport(request.schoolId(), filters, sectionScopeService.levels(), Pageable.unpaged())
                                 .getContent();
 
                 // Group scores by student

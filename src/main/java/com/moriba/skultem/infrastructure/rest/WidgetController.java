@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +28,7 @@ public class WidgetController {
 
         private final WidgetUsecase widgetUsecase;
 
+        @SectionScoped
         @PostMapping("/run")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
         public ApiResponse<Object> runReport(

@@ -11,6 +11,7 @@ import com.moriba.skultem.application.dto.TeacherDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.TeacherMapper;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.School;
 import com.moriba.skultem.domain.model.SchoolUser;
@@ -19,6 +20,7 @@ import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.SchoolUserRepository;
+import com.moriba.skultem.domain.repository.StaffManagementSectionRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
@@ -49,6 +51,8 @@ public class CreateTeacherUseCase {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final LogActivityUseCase logActivityUseCase;
+    private final SectionScopeService sectionScopeService;
+    private final StaffManagementSectionRepository staffSectionRepo;
 
     @AuditLogAnnotation(action = "TEACHER_CREATED")
     public TeacherDTO execute(String schoolId, Title title, String givenNames, String familyName, Gender gender,
@@ -81,6 +85,13 @@ public class CreateTeacherUseCase {
 
         var schoolUser = SchoolUser.create(schoolId, user, Role.TEACHER);
         schoolUserRepo.save(schoolUser);
+
+        // A teacher added by someone limited to a management section (say the Secondary admin) works
+        // in that section only - otherwise they'd start out with the whole school.
+        var scope = sectionScopeService.currentOrAll();
+        if (!scope.wholeSchool()) {
+            staffSectionRepo.replace(schoolId, user.getId(), Role.TEACHER, scope.sectionIds());
+        }
 
         var teacherId = rg.generate("TEACHER", "THR");
         var teacher = Teacher.create(teacherId, schoolId, title, phone, street, city, gender, staffId, user,

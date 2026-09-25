@@ -15,6 +15,7 @@ import com.moriba.skultem.application.dto.FeeDetail;
 import com.moriba.skultem.application.dto.ParentDTO;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.mapper.ParentMapper;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.repository.ParentRepository;
 
 import jakarta.transaction.Transactional;
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class ListParentBySchoolUseCase {
 
     private final ParentRepository repo;
+    private final SectionScopeService sectionScopeService;
     private final @Lazy GetFeeDetailUsecase getFeeDetailUsecase;
     private final ListStudentByParentUseCase listStudentByParentUseCase;
 
@@ -51,8 +53,10 @@ public class ListParentBySchoolUseCase {
             pageable = PageRequest.of(page - 1, size, sort);
         }
 
-        boolean hasQuery = query != null && !query.isBlank();
-        var parents = hasQuery ? repo.search(schoolId, query.trim(), pageable) : repo.findBySchool(schoolId, pageable);
+        // A section-limited caller only sees parents with a child in their section (or none yet).
+        var scope = sectionScopeService.currentOrAll();
+        var parents = repo.searchInLevels(schoolId, query == null ? "" : query.trim(), scope.wholeSchool(),
+                scope.queryLevels(), pageable);
 
         return parents.map(parent -> {
             BigDecimal totalExpected = BigDecimal.ZERO;

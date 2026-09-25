@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,10 @@ public interface UserRepository {
     boolean existsByEmail(String email);
 
     Optional<User> findByEmail(String email);
+
+    // Users at this school whose guardian or staff/teacher phone ends in these digits - phone
+    // login (see LoginUseCase). Phones live on those per-school records, not on the User.
+    List<String> findIdsByPhoneInSchool(String schoolId, String phoneDigitsSuffix);
 
     Page<User> findBySchool(String school, Pageable pageable);
 

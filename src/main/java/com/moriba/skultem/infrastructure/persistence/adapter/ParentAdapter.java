@@ -47,8 +47,31 @@ public class ParentAdapter implements ParentRepository {
     }
 
     @Override
+    public boolean existsByPhoneAndSchoolAndIdNot(String phone, String schoolId, String parentId) {
+        return repo.existsByPhoneAndSchoolIdAndIdNot(phone, schoolId, parentId);
+    }
+
+    @Override
+    public Page<Parent> searchInLevels(String schoolId, String query, boolean wholeSchool,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.searchInLevels(schoolId, query == null ? "" : query, wholeSchool, levels, pageable)
+                .map(ParentMapper::toDomain);
+    }
+
+    @Override
+    public boolean visibleInLevels(String parentId, String schoolId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels) {
+        return repo.visibleInLevels(parentId, schoolId, levels);
+    }
+
+    @Override
     public boolean existsByPhoneAndSchool(String phone, String schoolId) {
         return repo.existsByPhoneAndSchoolId(phone, schoolId);
+    }
+
+    @Override
+    public Optional<Parent> findByPhoneAndSchool(String phone, String schoolId) {
+        return repo.findFirstByPhoneAndSchoolId(phone, schoolId).map(ParentMapper::toDomain);
     }
 
     @Override

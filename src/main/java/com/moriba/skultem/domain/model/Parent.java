@@ -40,6 +40,13 @@ public class Parent extends AggregateRoot<String> {
         return new Parent(id, schoolId, phone, street, city, user, Status.ACTIVE, now, now);
     }
 
+    public void updateContact(String phone, String street, String city) {
+        this.phone = phone;
+        this.street = street;
+        this.city = city;
+        touch(Instant.now());
+    }
+
     public void softDelete() {
         this.status = Status.DELETED;
         touch(Instant.now());

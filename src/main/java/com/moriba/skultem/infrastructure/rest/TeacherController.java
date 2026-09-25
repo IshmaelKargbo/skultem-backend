@@ -1,5 +1,8 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +51,12 @@ public class TeacherController {
         private final TeacherService teacherSvc;
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
 
+        // A teacher is a staff record with no level of its own, so adding one is section-neutral - a
+        // section-limited admin's new teacher is limited to that same section (CreateTeacherUseCase).
+        // The class-master class, when given, still has to be in the caller's section.
+        @SectionNeutral
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and (#param.classMaster() == null or #param.classMaster().isBlank() or @sectionScope.classSession(#school, #param.classMaster()))")
         public ApiResponse<TeacherDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateTeacherDTO param) {
@@ -67,8 +74,9 @@ public class TeacherController {
                                 "Teacher created successfully. Password is generated automatically.", res);
         }
 
+        @SectionScoped
         @PatchMapping("/edit/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> edit(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody EditTeacherDTO param,
@@ -83,8 +91,9 @@ public class TeacherController {
                                 "Teacher edited successfully.", res);
         }
 
+        @SectionScoped
         @PatchMapping("/{id}/status")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> setStatus(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId,
@@ -95,6 +104,7 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, message, res);
         }
 
+        @SectionNeutral
         @GetMapping
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherDTO>> listBySchool(
@@ -121,8 +131,9 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Teachers fetched successfully", list, meta);
         }
 
+        @SectionScoped
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> listById(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String id,
@@ -132,8 +143,9 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Teacher fetched successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/subject")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
@@ -157,8 +169,9 @@ public class TeacherController {
                                 meta);
         }
 
+        @SectionScoped
         @GetMapping("/subject/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String teacherId) {
@@ -166,6 +179,7 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Teacher subjects fetched successfully", list);
         }
 
+        @SectionScoped
         @GetMapping("/subject/me")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByMe(
@@ -175,6 +189,7 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Teacher subjects fetched successfully", list);
         }
 
+        @SectionScoped
         @GetMapping("/class-master/me")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherClassMasterDTO>> listMyClassMasterAssignments(
@@ -184,8 +199,9 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Class master assignments fetched successfully", list);
         }
 
+        @SectionScoped
         @GetMapping("/subject/session/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #sessionId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySection(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String sessionId,
@@ -201,8 +217,9 @@ public class TeacherController {
                 return new ApiResponse<>("success", 200, "Teacher subjects fetched successfully", list, meta);
         }
 
+        @SectionScoped
         @GetMapping("/subject/detail/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
         public ApiResponse<TeacherSubjectDTO> oneSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String teacherId) {

@@ -22,7 +22,8 @@ public interface SubjectGroupRepository {
 
     // Matches on name, optionally narrowed to one class - backs the subject groups list's search
     // box and class filter.
-    Page<SubjectGroup> search(String schoolId, String classId, String query, Pageable pageable);
+    Page<SubjectGroup> search(String schoolId, String classId, String query,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     List<SubjectGroup> findAllByIdsAndSchoolId(Set<String> ids, String schoolId);
 

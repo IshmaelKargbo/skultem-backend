@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class ListStudentPaymentBySchoolUseCase {
+
+    private final SectionScopeService sectionScopeService;
     private final PaymentRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
@@ -27,6 +31,10 @@ public class ListStudentPaymentBySchoolUseCase {
 
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
-        return repo.findAllByAcademicYearAndSchoolId(academicYear.getId(), schoolId, pageable).map(PaymentMapper::toDTO);
+        var levels = sectionScopeService.restrictedLevels();
+        var payments = levels == null
+                ? repo.findAllByAcademicYearAndSchoolId(academicYear.getId(), schoolId, pageable)
+                : repo.findAllByAcademicYearAndSchoolId(academicYear.getId(), schoolId, levels, pageable);
+        return payments.map(PaymentMapper::toDTO);
     }
 }

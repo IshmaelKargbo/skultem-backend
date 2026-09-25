@@ -16,7 +16,7 @@ public class ParentMapper {
         return new ParentDTO(param.getId(), param.getSchoolId(), param.getPhone(), user.name(), user.givenNames(),
                 user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getStatus().toString(), null,
                 0, param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(), user.id());
     }
 
     public static ParentDTO toDTO(Parent param, FeeDetail feeDetail, Integer students) {
@@ -24,6 +24,6 @@ public class ParentMapper {
 
         return new ParentDTO(param.getId(), param.getSchoolId(), param.getPhone(), user.name(), user.givenNames(),
                 user.familyName(), user.email(), param.getStreet(), param.getCity(), param.getStatus().toString(),
-                feeDetail, students, param.getCreatedAt(), param.getUpdatedAt());
+                feeDetail, students, param.getCreatedAt(), param.getUpdatedAt(), user.id());
     }
 }

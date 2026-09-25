@@ -1,5 +1,11 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
+
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +81,25 @@ public interface AttendanceJpaRepository
                         String schoolId,
                         LocalDate start,
                         LocalDate end);
+
+        // Scoped counterpart for the Dashboard's weekly attendance tile.
+        @Query("""
+                                SELECT
+                                    FUNCTION('TO_CHAR', a.date, 'Dy'),
+                                    SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
+                                    COUNT(a)
+                                FROM AttendanceEntity a
+                                WHERE a.schoolId = :schoolId
+                                AND a.date BETWEEN :start AND :end
+                                AND a.enrollment.clazz.level IN :levels
+                                GROUP BY FUNCTION('TO_CHAR', a.date, 'Dy'), a.date
+                                ORDER BY a.date
+                        """)
+        List<Object[]> weeklyAttendanceForLevels(
+                        @Param("schoolId") String schoolId,
+                        @Param("start") LocalDate start,
+                        @Param("end") LocalDate end,
+                        @Param("levels") Collection<Level> levels);
 
         // Per-student attendance counts for one class since a given date - backs the "needs
         // attention" flag (ComputeClassAttentionUseCase). "late" counts as attended, same
@@ -227,12 +252,17 @@ public interface AttendanceJpaRepository
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
-        default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                Pageable pageable) {
                 Specification<AttendanceEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
                 if (filters != null && !filters.isEmpty()) {
-                        spec = spec.and(FilterSpecificationBuilder.build(filters));
+                    spec = spec.and(FilterSpecificationBuilder.build(filters));
                 }
+
+                // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+                spec = spec.and((root, query, cb) -> PathResolver.<AttendanceEntity, Level>getPath(root, "enrollment.clazz.level")
+                        .in(levels));
 
                 return findAll(spec, pageable);
         }

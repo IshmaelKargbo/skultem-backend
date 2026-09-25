@@ -1,5 +1,10 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -30,6 +35,13 @@ public class StudentAdapter implements StudentRepository {
     }
 
     @Override
+    public boolean existsByNameAndDateOfBirth(String givenNames, String familyName, LocalDate dateOfBirth,
+            String schoolId) {
+        return repo.existsByGivenNamesIgnoreCaseAndFamilyNameIgnoreCaseAndDateOfBirthAndSchoolId(givenNames.trim(),
+                familyName.trim(), dateOfBirth, schoolId);
+    }
+
+    @Override
     public boolean existsByAdmissionNumberAndSchoolIdAndIdNot(String admissionNumber, String schoolId,
             String studentId) {
         return repo.existsByAdmissionNumberAndSchoolIdAndIdNot(admissionNumber, schoolId, studentId);
@@ -57,8 +69,8 @@ public class StudentAdapter implements StudentRepository {
 
     @Override
     public Page<Student> search(String value, String schoolId, String academicYearId, String classId,
-            String gender, Pageable pageable) {
-        return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, gender, pageable)
+            String gender, Collection<Level> levels, Pageable pageable) {
+        return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, gender, levels, pageable)
                 .map(StudentMapper::toDomain);
     }
 }

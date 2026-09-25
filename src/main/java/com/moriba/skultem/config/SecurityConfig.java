@@ -79,7 +79,10 @@ public class SecurityConfig {
                                 "Content-Type",
                                 "Authorization",
                                 "Accept",
-                                "Origin"));
+                                "Origin",
+                                // Lets a retried enrollment/fee/payment request be recognised - see IdempotencyAspect.
+                                "Idempotency-Key"));
+                configuration.setExposedHeaders(List.of("Idempotent-Replay"));
                 configuration.setAllowCredentials(true);
                 configuration.setMaxAge(3600L);
 

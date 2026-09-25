@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class ListUnassignClassBySchoolUseCase {
     private final AcademicYearRepository academicYearRepo;
     private final ClassMasterRepository classMasterRepos;
     private final EnrollmentRepository enrollmentRepo;
+    private final SectionScopeService sectionScopeService;
 
     public Page<ClassSessionDTO> execute(String school, int page, int size) {
         var academicYear = academicYearRepo.findActiveBySchool(school)
@@ -36,7 +39,8 @@ public class ListUnassignClassBySchoolUseCase {
                     Sort.Order.asc("clazz.levelOrder")));
         }
 
-        return repo.findUnassignedBySchoolAndAcademicYear(school, academicYear.getId(), pageable)
+        return repo.findUnassignedBySchoolAndAcademicYear(school, academicYear.getId(), sectionScopeService.levels(),
+                pageable)
                 .map((e) -> {
                     var classMaster = classMasterRepos
                             .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(e.getId());

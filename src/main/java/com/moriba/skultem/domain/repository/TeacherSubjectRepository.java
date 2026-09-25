@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +42,7 @@ public interface TeacherSubjectRepository {
         // Matches on teacher/subject name, optionally narrowed to one class and/or stream - backs
         // the teacher assignment list's search box, class filter and stream filter.
         Page<TeacherSubject> search(String schoolId, String academicYearId, String classId, String streamId,
-                        String query, Pageable pageable);
+                        String query, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
         Page<TeacherSubject> findByTeacherId(String teacherId, Pageable pageable);
 
@@ -54,5 +58,7 @@ public interface TeacherSubjectRepository {
 
         void delete(TeacherSubject domain);
 
-        Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        Page<TeacherSubject> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                Pageable pageable);
 }

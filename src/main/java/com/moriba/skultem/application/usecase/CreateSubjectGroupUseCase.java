@@ -13,7 +13,6 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
 import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -50,11 +49,11 @@ public class CreateSubjectGroupUseCase {
             clazz = classRepo.findByIdAndSchool(classId, schoolId)
                     .orElseThrow(() -> new RuleException("Class not found"));
 
-            if (clazz.getLevel() == Level.PRIMARY) {
-                throw new RuleException("Subject groups are not allowed for PRIMARY level");
+            if (clazz.getLevel().isAllSubjectsCore()) {
+                throw new RuleException("Subject groups are not allowed for " + clazz.getLevel().getLabel() + " classes - every subject is core");
             }
 
-            if (clazz.getLevel() == Level.SSS) {
+            if (clazz.getLevel().isStreamed()) {
                 throw new RuleException("For SSS classes, subject group must be assigned to a stream");
             }
         }

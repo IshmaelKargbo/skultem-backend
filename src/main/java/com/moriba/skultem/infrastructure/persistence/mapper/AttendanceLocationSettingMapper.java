@@ -9,8 +9,8 @@ public class AttendanceLocationSettingMapper {
             return null;
         }
 
-        return new AttendanceLocationSetting(param.getId(), param.getSchoolId(), param.getLatitude(),
-                param.getLongitude(), param.getRadiusMeters(), param.getAllowedIps(), param.getCreatedAt(),
+        return new AttendanceLocationSetting(param.getId(), param.getSchoolId(), param.getManagementSectionId(),
+                param.getLatitude(), param.getLongitude(), param.getRadiusMeters(), param.getAllowedIps(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }
 
@@ -22,6 +22,7 @@ public class AttendanceLocationSettingMapper {
         return AttendanceLocationSettingEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
+                .managementSectionId(param.getManagementSectionId())
                 .latitude(param.getLatitude())
                 .longitude(param.getLongitude())
                 .radiusMeters(param.getRadiusMeters())

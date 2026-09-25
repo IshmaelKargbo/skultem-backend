@@ -1,11 +1,13 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.persistence.entity.UserEntity;
@@ -14,6 +16,20 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, String> {
     boolean existsByEmailIgnoreCase(String email);
 
     Optional<UserEntity> findByEmail(String email);
+
+    // Compares digits only, on the trailing :len of them, so "076 123 456", "+232 76 123456" and
+    // "076123456" all match - phones are stored however they were typed.
+    @Query(value = """
+            SELECT DISTINCT user_id FROM (
+                SELECT user_id, phone FROM parents WHERE school_id = :schoolId
+                UNION ALL
+                SELECT user_id, phone FROM teachers WHERE school_id = :schoolId
+            ) p
+            WHERE user_id IS NOT NULL
+              AND right(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), :len) = :suffix
+            """, nativeQuery = true)
+    List<String> findIdsByPhoneSuffixInSchool(@Param("schoolId") String schoolId, @Param("suffix") String suffix,
+            @Param("len") int len);
 
     // Excludes PARENT - this backs the school-admin "Team Access" list (see
     // ListUserBySchoolUseCase), which is for managing staff/admin portal access, not browsing

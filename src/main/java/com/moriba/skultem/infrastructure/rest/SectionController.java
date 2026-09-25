@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +35,9 @@ public class SectionController {
     private final ListSectionBySchoolUseCase listSectionBySchoolUseCase;
     private final GetSectionUseCase getSectionUseCase;
 
+    // A class Section ("A"/"B") is just a school-wide label with no level of its own - see Section -
+    // so it's section-neutral like the reads below, not scoped.
+    @SectionNeutral
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SectionDTO> create(
@@ -42,6 +47,7 @@ public class SectionController {
         return new ApiResponse<SectionDTO>("success", 200, "Section created successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SectionDTO>> list(
@@ -60,6 +66,7 @@ public class SectionController {
         return new ApiResponse<List<SectionDTO>>("success", 200, "Sections fetched successfully", list, meta);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.canAccessSchool(#school)")
     public ApiResponse<SectionDTO> get(

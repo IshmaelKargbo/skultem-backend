@@ -1,11 +1,15 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+
+import com.moriba.skultem.domain.vo.Level;
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -72,6 +76,7 @@ public interface TeacherSubjectJpaRepository
                                 and s.academicYear.id = :academicYearId
                                 and (:classId = '' or s.clazz.id = :classId)
                                 and (:streamId = '' or s.stream.id = :streamId)
+                                and s.clazz.level in :levels
                                 and (:query = ''
                                      or lower(u.givenName) like lower(concat('%', :query, '%'))
                                      or lower(u.familyName) like lower(concat('%', :query, '%'))
@@ -83,15 +88,21 @@ public interface TeacherSubjectJpaRepository
                         @Param("classId") String classId,
                         @Param("streamId") String streamId,
                         @Param("query") String query,
+                        @Param("levels") Collection<Level> levels,
                         Pageable pageable);
 
-        default Page<TeacherSubjectEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
+        default Page<TeacherSubjectEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+                        Pageable pageable) {
                 Specification<TeacherSubjectEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"),
                                 schoolId);
 
                 if (filters != null && !filters.isEmpty()) {
                         spec = spec.and(FilterSpecificationBuilder.build(filters));
                 }
+
+                // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+                spec = spec.and((root, query, cb) -> PathResolver.<TeacherSubjectEntity, Level>getPath(root,
+                        "session.clazz.level").in(levels));
 
                 return findAll(spec, pageable);
         }

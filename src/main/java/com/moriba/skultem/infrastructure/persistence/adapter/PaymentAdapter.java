@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +30,12 @@ public class PaymentAdapter implements PaymentRepository {
     public void save(Payment domain) {
         var entity = PaymentMapper.toEntity(domain);
         repo.save(entity);
+    }
+
+    @Override
+    public Page<Payment> findAllByAcademicYearAndSchoolId(String academicYearId, String schoolId,
+            Collection<Level> levels, Pageable pageable) {
+        return repo.findAllInYearForLevels(academicYearId, schoolId, levels, pageable).map(PaymentMapper::toDomain);
     }
 
     @Override
@@ -77,13 +87,25 @@ public class PaymentAdapter implements PaymentRepository {
     }
 
     @Override
+    public BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end,
+            Collection<Level> levels) {
+        return repo.sumPaymentsBySchoolAndDateRangeForLevels(schoolId, start, end, levels);
+    }
+
+    @Override
     public List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId) {
         return repo.sumRevenueByCategory(schoolId);
     }
 
     @Override
-    public Page<Payment> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId, Collection<Level> levels) {
+        return repo.sumRevenueByCategoryForLevels(schoolId, levels);
+    }
+
+    @Override
+    public Page<Payment> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(PaymentMapper::toDomain);
     }
 

@@ -77,6 +77,7 @@ public class ReportExportService {
         private final ListFeeStructureBySchoolUseCase listFeeStructureBySchoolUseCase;
         private final ListStudentAssessmentTermUseCase listStudentAssessmentTermUseCase;
         private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
         private final StudentLedgerEntryReportUseCase studentLedgerEntryReportUseCase;
         private final GetStudentFeeBalancesUseCase getStudentFeeBalancesUseCase;
         private final GetPaymentHistoryReportUseCase getPaymentHistoryReportUseCase;
@@ -290,6 +291,7 @@ public class ReportExportService {
         public ReportFile exportBuilderReport(String schoolId, RunReportDTO param, String format,
                         String academicYearId) {
                 String type = normalizeType(param.entity());
+                denyIfOutOfScope(type);
 
                 List<Filter> filters = param.filters()
                                 .stream()
@@ -487,6 +489,7 @@ public class ReportExportService {
                         String academicYearId) {
 
                 String type = normalizeType(param.entity());
+                denyIfOutOfScope(type);
                 int limit = size > 0 ? Math.min(size, 200) : 50;
 
                 List<Filter> filters = param.filters()
@@ -521,6 +524,19 @@ public class ReportExportService {
                         case "grades" -> buildResponse(gradeReportUseCase.execute(report, page, limit));
                         default -> throw new NotFoundException("Unsupported report type");
                 };
+        }
+
+        // Whole-school-only report types with no reliable per-level path (staff HR, and aggregate
+        // financial ledgers rather than per-record data) - a section-limited caller is denied
+        // outright rather than silently seeing an unfiltered, unscoped result.
+        private static final java.util.Set<String> WHOLE_SCHOOL_ONLY_TYPES =
+                        java.util.Set.of("teachers", "expenses", "transactions");
+
+        private void denyIfOutOfScope(String type) {
+                if (WHOLE_SCHOOL_ONLY_TYPES.contains(type) && !sectionScopeService.currentOrAll().wholeSchool()) {
+                        throw new com.moriba.skultem.application.error.OutsideManagementScopeException(
+                                        "This report isn't available to staff limited to management sections.");
+                }
         }
 
         private String normalizeType(String type) {

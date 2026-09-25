@@ -14,7 +14,6 @@ import com.moriba.skultem.application.mapper.StreamMapper;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -91,7 +90,7 @@ public class GetPromotionRosterUseCase {
         // Streams only exist at SSS level - promoting out of a streamless class (JSS/Primary) into an
         // SSS next class means picking a stream per student for the first time.
         boolean requiresStreamSelection = stream == null && clazz.getNextClass() != null
-                && clazz.getNextClass().getLevel() == Level.SSS;
+                && clazz.getNextClass().getLevel().isStreamed();
 
         var availableStreams = requiresStreamSelection
                 ? streamRepo.findBySchool(schoolId, Pageable.unpaged()).getContent().stream()

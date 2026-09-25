@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import org.springframework.data.repository.query.Param;
+
+import org.springframework.data.jpa.repository.Query;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -40,4 +44,16 @@ public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntit
         List<ClassMasterEntity> findAllBySession_IdAndSchoolIdAndEndedAtIsNull(String sessionId, String schoolId);
 
         long countBySchoolId(String schoolId);
+
+        // Distinct teachers actively class-mastering a session in these levels this academic year -
+        // the section-scoped counterpart of TeacherRepository#countAllBySchool for the Dashboard.
+        @Query("""
+                select count(distinct cm.teacher.id) from ClassMasterEntity cm
+                where cm.schoolId = :schoolId and cm.endedAt is null
+                and cm.session.academicYear.id = :academicYearId
+                and cm.session.clazz.level in :levels
+                """)
+        long countDistinctTeachersInLevels(@Param("schoolId") String schoolId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 }

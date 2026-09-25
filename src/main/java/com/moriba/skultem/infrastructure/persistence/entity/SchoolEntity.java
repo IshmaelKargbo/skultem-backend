@@ -6,6 +6,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.moriba.skultem.domain.model.School.GenderComposition;
+import com.moriba.skultem.domain.model.School.ManagementModel;
 import com.moriba.skultem.domain.model.School.Status;
 
 import jakarta.persistence.Column;
@@ -76,6 +77,10 @@ public class SchoolEntity {
 
     @Column(name = "is_test_school", nullable = false)
     private boolean testSchool;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "management_model", nullable = false)
+    private ManagementModel managementModel;
 
     private Instant createdAt;
     private Instant updatedAt;

@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 import java.util.Set;
 
@@ -35,6 +37,7 @@ public class AttendanceReportUseCase {
     private final AcademicYearRepository academicYearRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final ClassSessionRepository classSessionRepo;
+    private final SectionScopeService sectionScopeService;
 
     /**
      * Daily attendance summary for a class.
@@ -83,6 +86,7 @@ public class AttendanceReportUseCase {
         Page<Attendance> result = repo.runReport(
                 request.schoolId(),
                 safeFilters,
+                sectionScopeService.levels(),
                 pageable);
 
         return result.map(AttendanceMapper::toDTO);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassSubjectDTO;
 import com.moriba.skultem.application.mapper.ClassSubjectMapper;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 
 import jakarta.transaction.Transactional;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class ListClassSubjectBySchoolUseCase {
 
     private final ClassSubjectRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     // Whitelisted rather than handed straight to Sort.by(sortBy) - this ends up as a JPQL "order by
     // cs.<field>", so an unchecked client value would let someone probe/sort by arbitrary entity
@@ -45,11 +47,9 @@ public class ListClassSubjectBySchoolUseCase {
             pageable = PageRequest.of(page, size, sort);
         }
 
-        boolean hasFilters = (classId != null && !classId.isBlank()) || mandatory != null
-                || (query != null && !query.isBlank());
-        var subjects = hasFilters
-                ? repo.search(school, normalize(classId), mandatory, normalize(query), pageable)
-                : repo.findBySchool(school, pageable);
+        // A section-limited caller only gets class subjects of their own section's classes.
+        var subjects = repo.search(school, normalize(classId), mandatory, normalize(query),
+                sectionScopeService.levels(), pageable);
 
         return subjects.map(ClassSubjectMapper::toDTO);
     }

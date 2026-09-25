@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class PaymentReportUseCase {
 
     private final PaymentRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     public Page<PaymentDTO> execute(
             ReportBuilderDTO request,
@@ -38,6 +41,7 @@ public class PaymentReportUseCase {
         Page<Payment> result = repo.runReport(
                 request.schoolId(),
                 filters,
+                sectionScopeService.levels(),
                 pageable);
 
         return result.map(PaymentMapper::toDTO);

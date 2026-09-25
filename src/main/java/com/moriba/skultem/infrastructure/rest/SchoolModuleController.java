@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +35,7 @@ public class SchoolModuleController {
     private final InstallSchoolModuleUseCase installSchoolModuleUseCase;
     private final DisableSchoolModuleUseCase disableSchoolModuleUseCase;
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<List<SchoolModuleDTO>> list(

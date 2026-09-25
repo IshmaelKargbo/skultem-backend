@@ -10,7 +10,6 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.repository.*;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +48,7 @@ public class EnrollmentStudentsUseCase {
 
                         Stream stream = null;
 
-                        if (clazz.getLevel() == Level.SSS) {
+                        if (clazz.getLevel().isStreamed()) {
 
                                 if (param.streamId == null || param.streamId.isBlank()) {
                                         throw new RuleException("Stream is required for SSS class");

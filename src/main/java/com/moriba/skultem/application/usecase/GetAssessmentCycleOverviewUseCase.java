@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.AssessmentCycleOverviewDTO;
 import com.moriba.skultem.application.dto.ClassAssessmentCycleStatusDTO;
 import com.moriba.skultem.application.mapper.TermMapper;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
@@ -24,6 +25,8 @@ public class GetAssessmentCycleOverviewUseCase {
     private final AssessmentRepository assessmentRepository;
     private final AssessmentScoreRepository assessmentScoreRepository;
     private final ResolveActiveTermUseCase resolveActiveTermUseCase;
+    // A section-limited caller only sees their own section's classes in the overview.
+    private final SectionScopeService sectionScopeService;
 
     public AssessmentCycleOverviewDTO execute(String schoolId) {
         return execute(schoolId, null);
@@ -38,7 +41,7 @@ public class GetAssessmentCycleOverviewUseCase {
                 .map(TermMapper::toDTO)
                 .orElse(null);
 
-        var classes = classRepository.findBySchool(schoolId, Pageable.unpaged()).getContent().stream()
+        var classes = classRepository.findBySchool(schoolId, sectionScopeService.levels(), Pageable.unpaged()).getContent().stream()
                 .sorted(Comparator.comparingInt(clazz -> clazz.getDisplayOrder()))
                 .map(clazz -> {
                     var template = clazz.getTemplate();

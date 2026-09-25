@@ -18,11 +18,13 @@ public class StudentMapper {
         ClassSession session = ClassSessionMapper.toDomain(param.getSession());
         House house = HouseMapper.toDomain(param.getHouse());
 
-        return new Student(param.getId(), param.getSchoolId(), param.getPhoto(), param.getAdmissionNumber(),
+        var student = new Student(param.getId(), param.getSchoolId(), param.getPhoto(), param.getAdmissionNumber(),
                 param.getAdmissionDate(), param.getGivenNames(), param.getFamilyName(), family, session,
                 param.getLastClass(), param.getGender(), parent, param.getDateOfBirth(), param.getEnrollmentType(),
                 param.getPreviousSchool(), house, param.getNationality(), param.getReligion(), param.getCity(),
                 param.getStreet(), param.getStatus(), param.getCreatedAt(), param.getUpdatedAt());
+        student.restoreExit(param.getExitReason(), param.getExitDate(), param.getExitNote());
+        return student;
     }
 
     public static StudentEntity toEntity(Student param) {
@@ -53,6 +55,9 @@ public class StudentMapper {
                 .house(HouseMapper.toEntity(param.getHouse()))
                 .parent(ParentMapper.toEntity(param.getParent()))
                 .status(param.getStatus())
+                .exitReason(param.getExitReason())
+                .exitDate(param.getExitDate())
+                .exitNote(param.getExitNote())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

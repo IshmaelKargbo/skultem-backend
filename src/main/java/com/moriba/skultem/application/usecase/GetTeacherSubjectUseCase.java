@@ -16,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 public class GetTeacherSubjectUseCase {
 
     private final TeacherSubjectRepository repo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public TeacherSubjectDTO execute(String schoolId, String teacherId) {
         var res = repo.findOneByTeacherIdAndSchoolId(teacherId, schoolId)
+                .filter(t -> sectionScopeService.currentOrAll().allows(t.getSession().getClazz().getLevel()))
                 .orElseThrow(() -> new NotFoundException("teacher subject not found"));
         return TeacherSubjectMapper.toDTO(res);
     }

@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +37,7 @@ public class SaveReportController {
     private final DeleteSaveReportUseCase deleteSaveReportUseCase;
     private final GetSaveReportByIdUseCase getSaveReportByIdUseCase;
 
+    @SectionNeutral
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SaveReportDTO> save(
@@ -54,6 +57,7 @@ public class SaveReportController {
         return new ApiResponse<>("success", 200, "Save report saved successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<SaveReportDTO>> listBySchool(
@@ -72,6 +76,7 @@ public class SaveReportController {
         return new ApiResponse<>("success", 200, "Report configs fetched successfully", list, meta);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<SaveReportDTO> getById(
@@ -81,6 +86,7 @@ public class SaveReportController {
         return new ApiResponse<>("success", 200, "Save report fetched successfully", res);
     }
 
+    @SectionNeutral
     @DeleteMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<Object> delete(

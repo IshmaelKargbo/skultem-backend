@@ -1,5 +1,7 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.Collection;
+
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -25,9 +27,15 @@ public interface ClassRepository {
 
     int countBySchoolAndLevel(String school, Level level);
 
+    // Non-deleted classes only - what decides whether a school can stop offering a level.
+    int countActiveBySchoolAndLevel(String school, Level level);
+
     Optional<Clazz> findBySchoolAndLevelOrder(String school, int levelOrder);
 
     Page<Clazz> findBySchool(String school, Pageable pageable);
+
+    // Only classes at these levels - a management-section caller's view (see SectionScope).
+    Page<Clazz> findBySchool(String school, Collection<Level> levels, Pageable pageable);
 
     void delete(Clazz domain);
 }

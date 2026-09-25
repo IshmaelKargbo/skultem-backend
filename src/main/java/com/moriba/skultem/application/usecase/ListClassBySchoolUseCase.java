@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ListClassBySchoolUseCase {
 
     private final ClassRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     public Page<ClassDTO> execute(String school, int page, int size) {
         Pageable pageable = Pageable.unpaged();
@@ -25,6 +28,6 @@ public class ListClassBySchoolUseCase {
             pageable = PageRequest.of(page, size);
         }
 
-        return repo.findBySchool(school, pageable).map(ClassMapper::toDTO);
+        return repo.findBySchool(school, sectionScopeService.levels(), pageable).map(ClassMapper::toDTO);
     }
 }

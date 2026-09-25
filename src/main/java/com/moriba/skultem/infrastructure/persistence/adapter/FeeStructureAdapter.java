@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -87,9 +91,10 @@ public class FeeStructureAdapter implements FeeStructureRepository {
 
     @Override
     public Page<FeeStructure> search(String schoolId, String academicYearId, String termId, String classId,
-            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Pageable pageable) {
+            Boolean newStudentsOnly, Boolean oldStudentsOnly, Gender gender, Collection<Level> levels,
+            Pageable pageable) {
         return repo.search(schoolId, academicYearId, termId, classId, newStudentsOnly, oldStudentsOnly, gender,
-                pageable)
+                levels, pageable)
                 .map(FeeStructureMapper::toDomain);
     }
 

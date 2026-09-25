@@ -1,5 +1,10 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +18,9 @@ import com.moriba.skultem.infrastructure.persistence.entity.StudentEntity;
 
 public interface StudentJpaRepository extends JpaRepository<StudentEntity, String> {
         boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId);
+
+        boolean existsByGivenNamesIgnoreCaseAndFamilyNameIgnoreCaseAndDateOfBirthAndSchoolId(String givenNames,
+                        String familyName, LocalDate dateOfBirth, String schoolId);
 
         boolean existsByAdmissionNumberAndSchoolIdAndIdNot(String admissionNumber, String schoolId, String id);
 
@@ -38,6 +46,7 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                                       AND e.schoolId = :schoolId
                                       AND e.academicYear.id = :academicYearId
                                       AND (:classId = '' OR e.clazz.id = :classId)
+                                      AND e.clazz.level IN :levels
                               )
                               AND (:gender = '' OR CAST(s.gender AS string) = :gender)
                               AND (
@@ -50,7 +59,8 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
                         """)
         Page<StudentEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
                         @Param("academicYearId") String academicYearId, @Param("excludedStatus") Status excludedStatus,
-                        @Param("classId") String classId, @Param("gender") String gender, Pageable pageable);
+                        @Param("classId") String classId, @Param("gender") String gender,
+                        @Param("levels") Collection<Level> levels, Pageable pageable);
 
         Page<StudentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 

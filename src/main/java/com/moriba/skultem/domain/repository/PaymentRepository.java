@@ -1,5 +1,9 @@
 package com.moriba.skultem.domain.repository;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +29,10 @@ public interface PaymentRepository {
 
     Page<Payment> findAllByAcademicYearAndSchoolId(String academicYearId, String schoolId, Pageable pageable);
 
+    // Only payments by students enrolled that year at these levels (see SectionScope).
+    Page<Payment> findAllByAcademicYearAndSchoolId(String academicYearId, String schoolId, Collection<Level> levels,
+            Pageable pageable);
+
     BigDecimal sumPaymentsByStudentAndFee(String studentId, String feeId);
 
     BigDecimal sumPaymentsByFeeAndSchool(String feeId, String schoolId);
@@ -36,9 +44,16 @@ public interface PaymentRepository {
 
     BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end);
 
+    BigDecimal sumPaymentsBySchoolAndDateRange(String schoolId, Instant start, Instant end,
+            Collection<Level> levels);
+
     List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId);
 
-    Page<Payment> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+    List<FeeCategoryRevenue> sumRevenueByCategory(String schoolId, Collection<Level> levels);
+
+    // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+    Page<Payment> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable);
 
     /** Same as sumPaymentsBySchool, but the platform fee is excluded. */
     BigDecimal sumSchoolPaymentsBySchool(String schoolId);

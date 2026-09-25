@@ -1,5 +1,10 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.math.BigDecimal;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -97,6 +102,9 @@ public class FeeController {
         private final UpdateFeeCategoryUseCase updateFeeCategoryUseCase;
         private final DeleteFeeCategoryUseCase deleteFeeCategoryUseCase;
 
+        // A category is just a school-wide label (Tuition, Exam Fee) with no level/class of its own -
+        // see FeeCategory - so it's section-neutral like the list endpoint below, not scoped.
+        @SectionNeutral
         @PostMapping("/category")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> create(
@@ -106,6 +114,7 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee category created successfully", res);
         }
 
+        @SectionNeutral
         @PutMapping("/category/{categoryId}")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> updateCategory(
@@ -116,6 +125,7 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee category updated successfully", res);
         }
 
+        @SectionNeutral
         @DeleteMapping("/category/{categoryId}")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> deleteCategory(
@@ -125,8 +135,10 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee category deleted successfully", null);
         }
 
+        @Idempotent(operation = "fee.structure.create")
+        @SectionScoped
         @PostMapping("/structure")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.createFee(#school, #param.type(), #param.classIds())")
         public ApiResponse<List<FeeStructureDTO>> createStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeStructureDTO param) {
@@ -145,8 +157,9 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, message, res);
         }
 
+        @SectionScoped
         @PutMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
         public ApiResponse<FeeStructureDTO> updateStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId,
@@ -162,8 +175,9 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee structure updated successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
         public ApiResponse<FeeStructureDTO> getStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -172,8 +186,9 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee structure fetched successfully", res);
         }
 
+        @SectionScoped
         @DeleteMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
         public ApiResponse<Object> deleteStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -182,8 +197,10 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee structure deleted successfully", null);
         }
 
+        @Idempotent(operation = "fee.structure.assign")
+        @SectionScoped
         @PostMapping("/structure/assign")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #param.feeId()) and @sectionScope.student(#school, #param.studentId())")
         public ApiResponse<StudentFeeDTO> assignStructureToStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody AssignFeeToStudentDTO param) {
@@ -192,6 +209,7 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee assigned to student successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/structure")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeStructureDTO>> listStructure(
@@ -230,8 +248,9 @@ public class FeeController {
                                 meta);
         }
 
+        @SectionScoped
         @GetMapping("/structure/count/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
         public ApiResponse<Long> countFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -241,8 +260,9 @@ public class FeeController {
                                 res);
         }
 
+        @SectionScoped
         @GetMapping("/student/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<BigDecimal> countStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId) {
@@ -252,8 +272,9 @@ public class FeeController {
                                 res);
         }
 
+        @SectionScoped
         @PostMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId()) and @sectionScope.feeStructure(#school, #param.feeId())")
         public ApiResponse<Object> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeDiscountDTO param) {
@@ -284,8 +305,9 @@ public class FeeController {
                                 meta);
         }
 
+        @SectionScoped
         @GetMapping("/details")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER') and @sectionScope.classSession(#school, #session)")
         public ApiResponse<ClassFeeDetails> getClassFeeDetails(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -309,6 +331,7 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee discount report fetch successfully", res);
         }
 
+        @SectionScoped
         @GetMapping("/ledger")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerPagedDTO> applyDiscount(
@@ -395,6 +418,7 @@ public class FeeController {
                                 res.getContent(), meta);
         }
 
+        @SectionNeutral
         @GetMapping("/category")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeCategoryDTO>> list(

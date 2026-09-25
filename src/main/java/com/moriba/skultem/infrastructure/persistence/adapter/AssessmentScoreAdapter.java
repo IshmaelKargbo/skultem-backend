@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -148,8 +152,9 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     }
 
     @Override
-    public Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
-        return repo.runReport(schoolId, filters, pageable)
+    public Page<AssessmentScore> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.runReport(schoolId, filters, levels, pageable)
                 .map(AssessmentScoreMapper::toDomain);
     }
 
@@ -190,13 +195,14 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
 
     @Override
     public List<Object[]> assessmentAverageTrendForReport(String schoolId, String classId, String termId,
-            String subjectId, List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
-        return repo.assessmentAverageTrendForReport(schoolId, classId, termId, subjectId, approvedStatuses);
+            String subjectId, Collection<Level> levels,
+            List<ClassSubjectAssessmentLifeCycle.Status> approvedStatuses) {
+        return repo.assessmentAverageTrendForReport(schoolId, classId, termId, subjectId, levels, approvedStatuses);
     }
 
     @Override
     public List<Object[]> averageScoresForAttentionReport(String schoolId, String classId, String termId,
-            List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
-        return repo.averageScoresForAttentionReport(schoolId, classId, termId, excludedStatuses);
+            Collection<Level> levels, List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
+        return repo.averageScoresForAttentionReport(schoolId, classId, termId, levels, excludedStatuses);
     }
 }

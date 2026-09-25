@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +38,9 @@ public class SubjectController {
     private final GetSubjectUseCase getSubjectUseCase;
     private final UpdateSubjectUseCase updateSubjectUseCase;
 
+    // A Subject (e.g. "Mathematics") is just a school-wide catalog entry with no level of its own -
+    // see Subject - so it's section-neutral like the reads below, not scoped.
+    @SectionNeutral
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SubjectDTO> create(
@@ -45,6 +50,7 @@ public class SubjectController {
         return new ApiResponse<>("success", 200, "Subject created successfully", res);
     }
 
+    @SectionNeutral
     @PatchMapping("/edit/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SubjectDTO> edit(
@@ -55,6 +61,7 @@ public class SubjectController {
         return new ApiResponse<>("success", 200, "Subject edited successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SubjectDTO>> list(
@@ -75,6 +82,7 @@ public class SubjectController {
         return new ApiResponse<>("success", 200, "Subjects fetched successfully", list, meta);
     }
 
+    @SectionNeutral
     @GetMapping("/{id}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SubjectDTO> get(

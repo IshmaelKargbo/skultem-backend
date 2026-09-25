@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.time.LocalDate;
 
 import org.springframework.http.HttpHeaders;
@@ -27,6 +29,7 @@ public class ReportExportController {
 
     private final ReportExportService reportExportService;
 
+    @SectionScoped
     @GetMapping("/payments")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ResponseEntity<byte[]> exportPayments(
@@ -38,8 +41,9 @@ public class ReportExportController {
         return toResponse(reportExportService.exportPayments(school, format, classId, startDate, endDate));
     }
 
+    @SectionScoped
     @GetMapping("/attendance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ResponseEntity<byte[]> exportAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String classSessionId,
@@ -49,8 +53,9 @@ public class ReportExportController {
         return toResponse(reportExportService.exportAttendance(school, classSessionId, format, startDate, endDate));
     }
 
+    @SectionScoped
     @GetMapping("/behaviour")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.requiredClass(#school, #classId)")
     public ResponseEntity<byte[]> exportBehaviour(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -60,6 +65,7 @@ public class ReportExportController {
         return toResponse(reportExportService.exportBehaviour(school, classId, format, startDate, endDate));
     }
 
+    @SectionScoped
     @GetMapping("/fees")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportFees(
@@ -103,8 +109,9 @@ public class ReportExportController {
                 academicYearId, termId, classSessionId, studentId, method));
     }
 
+    @SectionScoped
     @GetMapping("/grades")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ResponseEntity<byte[]> exportGrades(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String teacherSubjectId,
@@ -120,6 +127,7 @@ public class ReportExportController {
                 .body(file.data());
     }
 
+    @SectionScoped
     @PostMapping("/run")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> runReport(
@@ -138,6 +146,7 @@ public class ReportExportController {
     // CSV/PDF file (all matching rows, capped - see ReportExportService.EXPORT_ROW_CAP) instead
     // of a JSON page. Kept on the same roles as /run since it exports exactly what those roles
     // can already see on-screen via the builder.
+    @SectionScoped
     @PostMapping("/run/download")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ResponseEntity<byte[]> downloadRunReport(

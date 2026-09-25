@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +49,7 @@ public class TransactionController {
         return new ApiResponse<>("success", 200, "Term created successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<TermDTO>> list(
@@ -63,6 +66,7 @@ public class TransactionController {
         return new ApiResponse<>("success", 200, "Terms fetched successfully", res.getContent(), meta);
     }
 
+    @SectionNeutral
     @GetMapping("/active")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT')")
     public ApiResponse<TermDTO> getActive(
@@ -71,6 +75,7 @@ public class TransactionController {
         return new ApiResponse<>("success", 200, "Get active term successfully", res);
     }
 
+    @SectionNeutral
     @GetMapping("/academic-year/{academicYearId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(
@@ -88,7 +93,7 @@ public class TransactionController {
     }
 
     @PutMapping("/{id}/activate")
-    @PreAuthorize("@permissionService.hasSchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<TermDTO> activate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

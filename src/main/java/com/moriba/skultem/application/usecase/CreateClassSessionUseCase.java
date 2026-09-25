@@ -15,7 +15,6 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSectionRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
-import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -46,11 +45,11 @@ public class CreateClassSessionUseCase {
             throw new IllegalStateException("Cannot create class session in a closed academic year");
         }
 
-        if (clazz.getLevel() == Level.SSS && streamId == null) {
+        if (clazz.getLevel().isStreamed() && streamId == null) {
             throw new IllegalArgumentException("Stream is required for SSS class");
         }
 
-        if (clazz.getLevel() != Level.SSS && streamId != null) {
+        if (!clazz.getLevel().isStreamed() && streamId != null) {
             throw new IllegalArgumentException("Only SSS classes can have stream");
         }
 

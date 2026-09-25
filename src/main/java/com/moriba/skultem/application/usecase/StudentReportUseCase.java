@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.SectionScopeService;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class StudentReportUseCase {
 
     private final EnrollmentRepository repo;
+    private final SectionScopeService sectionScopeService;
 
     public Page<StudentDTO> execute(ReportBuilderDTO request, int page, int size) {
 
@@ -33,6 +36,7 @@ public class StudentReportUseCase {
         Page<Enrollment> enrollments = repo.runReport(
                 request.schoolId(),
                 filters,
+                sectionScopeService.levels(),
                 pageable);
 
         return enrollments.map(e -> StudentMapper.toDTO(e.getStudent(), e));

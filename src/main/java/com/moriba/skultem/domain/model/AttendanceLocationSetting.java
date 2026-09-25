@@ -6,7 +6,8 @@ import com.moriba.skultem.domain.shared.AggregateRoot;
 import lombok.Getter;
 
 // The school's GPS location + how far a teacher can be from it and still be allowed to clock in.
-// One row per school, same "single active config" pattern as ReceiptSetting. allowedIps is a
+// One school-wide row per school (managementSectionId null), same "single active config" pattern as
+// ReceiptSetting, plus optionally one per management section for a school run from several places. allowedIps is a
 // second, optional layer: GPS alone only stops someone who can't fake their browser's location,
 // which is trivial for anyone even slightly technical. Pinning clock-in to the school's own
 // network makes "clock in for a friend" require being physically on that network too - but it's
@@ -19,10 +20,17 @@ public class AttendanceLocationSetting extends AggregateRoot<String> {
     private double longitude;
     private int radiusMeters;
     private String allowedIps;
+    private String managementSectionId;
 
     public AttendanceLocationSetting(String id, String schoolId, double latitude, double longitude,
             int radiusMeters, String allowedIps, Instant createdAt, Instant updatedAt) {
+        this(id, schoolId, null, latitude, longitude, radiusMeters, allowedIps, createdAt, updatedAt);
+    }
+
+    public AttendanceLocationSetting(String id, String schoolId, String managementSectionId, double latitude,
+            double longitude, int radiusMeters, String allowedIps, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
+        this.managementSectionId = managementSectionId;
         this.schoolId = schoolId;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -35,6 +43,13 @@ public class AttendanceLocationSetting extends AggregateRoot<String> {
             int radiusMeters, String allowedIps) {
         Instant now = Instant.now();
         return new AttendanceLocationSetting(id, schoolId, latitude, longitude, radiusMeters, allowedIps, now, now);
+    }
+
+    public static AttendanceLocationSetting createForSection(String id, String schoolId, String managementSectionId,
+            double latitude, double longitude, int radiusMeters, String allowedIps) {
+        Instant now = Instant.now();
+        return new AttendanceLocationSetting(id, schoolId, managementSectionId, latitude, longitude, radiusMeters,
+                allowedIps, now, now);
     }
 
     public void update(double latitude, double longitude, int radiusMeters, String allowedIps) {

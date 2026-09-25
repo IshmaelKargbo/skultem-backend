@@ -267,7 +267,7 @@ public class PermissionService {
             return false;
         }
 
-        var teacher = teacherRepo.findByUserId(currentUserId());
+        var teacher = teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
         if (teacher.isEmpty()) {
             return false;
         }

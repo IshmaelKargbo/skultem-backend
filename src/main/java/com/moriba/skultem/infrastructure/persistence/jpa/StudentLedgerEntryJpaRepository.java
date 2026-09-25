@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.vo.Level;
+
+import java.util.Collection;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -128,8 +132,30 @@ public interface StudentLedgerEntryJpaRepository
         /** The school's own entries (platform fee left out), narrowed - see {@link #narrowedBy}. */
         default Page<StudentLedgerEntryEntity> searchSchoolEntries(String academicYearId, String schoolId,
                         String search, String classId, TransactionType type, String termId, Pageable pageable) {
-                return findAll(narrowedBy(academicYearId, schoolId, search, classId, type, termId)
-                                .and(schoolFeeEntries(schoolId)), pageable);
+                return searchSchoolEntries(academicYearId, schoolId, search, classId, type, termId, null, pageable);
+        }
+
+        /**
+         * {@link #searchSchoolEntries} for a section-limited caller: only students enrolled that year
+         * at one of these levels. levels == null skips the filter (whole-school).
+         */
+        default Page<StudentLedgerEntryEntity> searchSchoolEntries(String academicYearId, String schoolId,
+                        String search, String classId, TransactionType type, String termId,
+                        Collection<Level> levels, Pageable pageable) {
+                var spec = narrowedBy(academicYearId, schoolId, search, classId, type, termId)
+                                .and(schoolFeeEntries(schoolId));
+                if (levels != null) {
+                        spec = spec.and((root, query, cb) -> {
+                                var enrolled = query.subquery(String.class);
+                                var enrollment = enrolled.from(EnrollmentEntity.class);
+                                enrolled.select(enrollment.get("student").get("id")).where(
+                                                cb.equal(enrollment.get("schoolId"), schoolId),
+                                                cb.equal(enrollment.get("academicYear").get("id"), academicYearId),
+                                                enrollment.get("clazz").get("level").in(levels));
+                                return root.get("studentId").in(enrolled);
+                        });
+                }
+                return findAll(spec, pageable);
         }
 
         /** Only the platform fee's entries, narrowed the same way - see {@link #narrowedBy}. */

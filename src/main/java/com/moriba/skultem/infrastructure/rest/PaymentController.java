@@ -1,5 +1,8 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.usecase.GetReceiptUseCase;
 import com.moriba.skultem.application.usecase.ListStudentPaymentBySchoolUseCase;
@@ -40,8 +43,10 @@ public class PaymentController {
     private final ListStudentPaymentBySchoolUseCase listStudentPaymentBySchoolUseCase;
     private final GetReceiptUseCase getReceiptUseCase;
 
+    @Idempotent(operation = "payment.record")
+    @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.payment(#school, #param.studentId(), #param.allocations().![feeId()])")
     public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RecordPaymentDTO param) {
         var method = PaymentMethod.valueOf(param.method());
@@ -52,8 +57,9 @@ public class PaymentController {
         return new ApiResponse<>("success", 200, "Payment recorded successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId)")
     public ApiResponse<BigDecimal> countThisYearFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId,
@@ -62,6 +68,7 @@ public class PaymentController {
         return new ApiResponse<>("success", 200, "Student payment sum for this year successfully", res);
     }
 
+    @SectionScoped
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> list(
@@ -80,8 +87,9 @@ public class PaymentController {
         return new ApiResponse<>("success", 200, "Payments fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @GetMapping("/receipt/{referenceNo}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.receipt(#school, #referenceNo)")
     public ApiResponse<List<PaymentDTO>> getReceipt(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String referenceNo) {
@@ -89,8 +97,9 @@ public class PaymentController {
         return new ApiResponse<>("success", 200, "Receipt fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/student/{studentId}/{feeId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId) and @sectionScope.feeStructure(#school, #feeId)")
     public ApiResponse<BigDecimal> sumByStudentAndFee(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String feeId, @PathVariable String studentId) {

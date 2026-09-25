@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import java.util.List;
 import java.util.Map;
 
@@ -33,8 +35,9 @@ public class SubjectGroupController {
         private final ListSubjectGroupByClassUseCase listSubjectGroupByClassUseCase;
         private final ListSubjectGroupByStreamUseCase listSubjectGroupByStreamUseCase;
 
+        @SectionScoped
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId()) and @sectionScope.stream(#school, #param.streamId())")
         public ApiResponse<SubjectGroupDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateSubjectGroupDTO param) {
@@ -43,8 +46,9 @@ public class SubjectGroupController {
                 return new ApiResponse<>("success", 200, "Subject group created successfully", res);
         }
 
+        @SectionScoped
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
         public ApiResponse<List<SubjectGroupDTO>> list(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -66,8 +70,9 @@ public class SubjectGroupController {
                                 meta);
         }
 
+        @SectionScoped
         @GetMapping("/class/{classId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
         public ApiResponse<List<SubjectGroupDTO>> listByClass(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String classId,
@@ -85,8 +90,9 @@ public class SubjectGroupController {
                                 meta);
         }
 
+        @SectionScoped
         @GetMapping("/stream/{streamId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.stream(#school, #streamId)")
         public ApiResponse<List<SubjectGroupDTO>> listByStream(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String streamId,
