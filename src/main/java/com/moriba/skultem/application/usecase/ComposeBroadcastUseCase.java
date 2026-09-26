@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.BroadcastDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.BroadcastMapper;
+import com.moriba.skultem.application.services.CommunicationScopeService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Broadcast;
 import com.moriba.skultem.domain.repository.BroadcastRepository;
@@ -27,10 +28,12 @@ public class ComposeBroadcastUseCase {
     private final UserRepository userRepo;
     private final GetAudienceSizeUseCase getAudienceSizeUseCase;
     private final LogActivityUseCase logActivityUseCase;
+    private final CommunicationScopeService scopeService;
 
     @AuditLogAnnotation(action = "BROADCAST_COMPOSED")
     public BroadcastDTO execute(String schoolId, String userId, String title, String message, Audience audience,
-            List<Broadcast.Channel> channels, Broadcast.SendOption sendOption, Instant scheduledAt) {
+            List<Broadcast.Channel> channels, Broadcast.SendOption sendOption, Instant scheduledAt,
+            String managementSectionId) {
         if (channels == null || channels.isEmpty()) {
             throw new IllegalArgumentException("Select at least one channel");
         }
@@ -40,10 +43,11 @@ public class ComposeBroadcastUseCase {
 
         var id = UUID.randomUUID().toString();
         var sentByName = user.getGivenNames() + " " + user.getFamilyName();
-        int recipientsCount = getAudienceSizeUseCase.execute(schoolId, audience);
+        String section = scopeService.resolveTarget(schoolId, managementSectionId);
+        int recipientsCount = getAudienceSizeUseCase.execute(schoolId, audience, section);
 
         var broadcast = Broadcast.compose(id, schoolId, title, message, audience, channels, sendOption, scheduledAt,
-                recipientsCount, userId, sentByName);
+                recipientsCount, userId, sentByName, section);
         repo.save(broadcast);
 
         logActivityUseCase.log(schoolId, ActivityType.SCHOOL, "Broadcast composed", broadcast.getTitle(), null,

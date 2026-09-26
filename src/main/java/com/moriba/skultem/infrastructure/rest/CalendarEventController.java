@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class CalendarEventController {
     private final UpdateCalendarEventUseCase updateCalendarEventUseCase;
     private final DeleteCalendarEventUseCase deleteCalendarEventUseCase;
 
+    @SectionScoped
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<CalendarEventDTO> create(
@@ -49,7 +51,7 @@ public class CalendarEventController {
             @Valid @RequestBody CreateCalendarEventDTO param) {
         var type = Type.valueOf(param.type());
         var res = createCalendarEventUseCase.execute(school, userId, param.title(), param.description(), type,
-                param.startDate(), param.endDate(), param.location());
+                param.startDate(), param.endDate(), param.location(), param.managementSectionId());
         return new ApiResponse<>("success", 200, "Entry added successfully", res);
     }
 
@@ -82,8 +84,9 @@ public class CalendarEventController {
         return new ApiResponse<>("success", 200, "Entries fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.calendarEvent(#school, #id)")
     public ApiResponse<CalendarEventDTO> update(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -94,8 +97,9 @@ public class CalendarEventController {
         return new ApiResponse<>("success", 200, "Entry updated successfully", res);
     }
 
+    @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.calendarEvent(#school, #id)")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

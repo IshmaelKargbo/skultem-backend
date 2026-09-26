@@ -1,5 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -32,5 +34,15 @@ public class BroadcastAdapter implements BroadcastRepository {
     @Override
     public Page<Broadcast> findAllBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(BroadcastMapper::toDomain);
+    }
+
+    @Override
+    public Page<Broadcast> findVisibleBySchoolId(String schoolId, Collection<String> sectionIds, Pageable pageable) {
+        if (sectionIds == null) {
+            return findAllBySchoolId(schoolId, pageable);
+        }
+        // "in ()" isn't valid - with no sections, only the whole-school rows match the null branch.
+        Collection<String> ids = sectionIds.isEmpty() ? List.of("-") : sectionIds;
+        return repo.findVisible(schoolId, ids, pageable).map(BroadcastMapper::toDomain);
     }
 }

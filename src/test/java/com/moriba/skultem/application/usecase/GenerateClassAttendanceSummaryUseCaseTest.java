@@ -66,7 +66,7 @@ class GenerateClassAttendanceSummaryUseCaseTest {
 
     @Test
     void groupsRowsIntoOneEntryPerClassSessionKeepingScienceAndArtSeparate() {
-        org.mockito.Mockito.lenient().when(sectionScopeService.currentOrAll())
+        org.mockito.Mockito.lenient().when(sectionScopeService.effective())
                 .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
                 resolveAcademicYearUseCase, classRepo, sectionScopeService);
@@ -117,7 +117,7 @@ class GenerateClassAttendanceSummaryUseCaseTest {
 
     @Test
     void aSpecificTermUsesTheTermsOwnDateRangeAndNameInsteadOfTheWholeYear() {
-        org.mockito.Mockito.lenient().when(sectionScopeService.currentOrAll())
+        org.mockito.Mockito.lenient().when(sectionScopeService.effective())
                 .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
                 resolveAcademicYearUseCase, classRepo, sectionScopeService);

@@ -12,5 +12,7 @@ public record ComposeBroadcastDTO(
         @NotBlank(message = "Audience is required") String audience,
         @NotEmpty(message = "Select at least one channel") List<String> channels,
         @NotBlank(message = "Send option is required") String sendOption,
-        Instant scheduledAt) {
+        Instant scheduledAt,
+        // Which management section it's for; left out = the caller's own section / the whole school.
+        String managementSectionId) {
 }

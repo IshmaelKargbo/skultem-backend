@@ -44,6 +44,11 @@ public class SchoolModuleController {
         return new ApiResponse<>("success", 200, "Modules fetched successfully", res);
     }
 
+    // Installing only adds a feature, so an Admin limited to one management section may do it (the module
+    // is then on for the whole school - modules are school-wide). Switching one OFF takes it away from
+    // everyone, so that stays with whole-school staff: it is deliberately left unmarked (denied to a
+    // section-limited caller) below.
+    @SectionNeutral
     @PutMapping("/{key}/install")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<SchoolModuleDTO>> install(

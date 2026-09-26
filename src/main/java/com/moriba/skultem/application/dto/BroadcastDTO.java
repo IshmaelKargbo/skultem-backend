@@ -19,5 +19,6 @@ public record BroadcastDTO(
         String sentBy,
         Instant scheduledAt,
         Instant sentAt,
-        Instant createdAt) {
+        Instant createdAt,
+        String managementSectionId) {
 }

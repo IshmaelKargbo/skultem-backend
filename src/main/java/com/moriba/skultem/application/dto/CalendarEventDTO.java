@@ -11,5 +11,6 @@ public record CalendarEventDTO(
         Type type,
         Instant startDate,
         Instant endDate,
-        String location) {
+        String location,
+        String managementSectionId) {
 }

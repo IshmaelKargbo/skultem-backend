@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.NoticeDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.NoticeMapper;
+import com.moriba.skultem.application.services.CommunicationScopeService;
+import com.moriba.skultem.application.services.NoticeCalendarSync;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Notice;
 import com.moriba.skultem.domain.repository.NoticeRepository;
@@ -25,22 +27,33 @@ public class CreateNoticeUseCase {
     private final NoticeRepository repo;
     private final UserRepository userRepo;
     private final LogActivityUseCase logActivityUseCase;
+    private final NoticeCalendarSync calendarSync;
+    private final CommunicationScopeService scopeService;
 
     @AuditLogAnnotation(action = "NOTICE_CREATED")
     public NoticeDTO execute(String schoolId, String userId, String title, String content, Notice.Category category,
-            Audience audience, Instant expiresAt) {
+            Audience audience, Instant expiresAt, Instant eventAt, Instant eventEndsAt, String eventLocation,
+            boolean addToCalendar, String managementSectionId) {
+        NoticeCalendarSync.validate(category, eventAt, eventEndsAt, addToCalendar);
+
         var user = userRepo.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         var id = UUID.randomUUID().toString();
         var postedByName = user.getGivenNames() + " " + user.getFamilyName();
-        var notice = Notice.create(id, schoolId, title, content, category, audience, expiresAt, userId,
-                postedByName);
+        var notice = Notice.create(id, schoolId, title, content, category, audience, expiresAt, eventAt,
+                eventEndsAt, blankToNull(eventLocation), scopeService.resolveTarget(schoolId, managementSectionId),
+                userId, postedByName);
+        calendarSync.sync(notice, addToCalendar);
         repo.save(notice);
 
         logActivityUseCase.log(schoolId, ActivityType.SCHOOL, "Notice posted", notice.getTitle(), null,
                 notice.getId());
 
         return NoticeMapper.toDTO(notice);
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 }

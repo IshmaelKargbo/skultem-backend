@@ -81,7 +81,9 @@ public class SecurityConfig {
                                 "Accept",
                                 "Origin",
                                 // Lets a retried enrollment/fee/payment request be recognised - see IdempotencyAspect.
-                                "Idempotency-Key"));
+                                "Idempotency-Key",
+                                // Owner-level "view one section" choice - see SectionScopeService#view.
+                                "X-View-Section"));
                 configuration.setExposedHeaders(List.of("Idempotent-Replay"));
                 configuration.setAllowCredentials(true);
                 configuration.setMaxAge(3600L);

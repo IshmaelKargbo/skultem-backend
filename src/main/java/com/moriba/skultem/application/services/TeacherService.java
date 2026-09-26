@@ -57,9 +57,13 @@ public class TeacherService {
 
         // A section-limited admin sees only the teachers working in their own section(s).
         var scope = sectionScopeService.currentOrAll();
-        var found = scope.wholeSchool()
-                ? repo.search(search, gender, schoolId, pageable)
-                : repo.searchInSections(search, gender, schoolId, scope.sectionIds(), pageable);
+        var view = sectionScopeService.view();
+        // An owner viewing one section also sees the teachers who work across every section.
+        var found = view.isPresent()
+                ? repo.searchInSectionsOrUnlimited(search, gender, schoolId, view.get().sectionIds(), pageable)
+                : scope.wholeSchool()
+                        ? repo.search(search, gender, schoolId, pageable)
+                        : repo.searchInSections(search, gender, schoolId, scope.sectionIds(), pageable);
         return found.map(TeacherMapper::toDTO);
     }
 

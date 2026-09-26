@@ -14,6 +14,11 @@ public class NoticeMapper {
                 param.isPinned(),
                 param.getPostedByName(),
                 param.getCreatedAt(),
-                param.getExpiresAt());
+                param.getExpiresAt(),
+                param.getEventAt(),
+                param.getEventEndsAt(),
+                param.getEventLocation(),
+                param.getCalendarEventId() != null,
+                param.getManagementSectionId());
     }
 }

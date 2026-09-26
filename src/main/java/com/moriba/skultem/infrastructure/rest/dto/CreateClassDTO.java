@@ -17,5 +17,13 @@ public record CreateClassDTO(
 
                 @NotNull(message = "Sections are required") @NotEmpty(message = "At least one section is required") List<@NotBlank(message = "Section session cannot be blank") String> sections,
                 List<String> streams,
-                String assessmentTemplateId) {
+                String assessmentTemplateId,
+
+                // Optional, streamed levels only: which sections each stream runs, e.g. Art -> A, B and
+                // Science -> A. Left out, every chosen section is created for every chosen stream.
+                List<StreamSections> streamSections) {
+
+        public record StreamSections(@NotBlank(message = "Stream is required") String streamId,
+                        @NotNull(message = "Sections are required") @NotEmpty(message = "Pick at least one section for every stream") List<String> sectionIds) {
+        }
 }

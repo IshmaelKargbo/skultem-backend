@@ -41,7 +41,7 @@ public class DashboardReportUseCase {
                 AcademicYear academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
                 StudentCalucation studentCount = calucationStudentCount(schoolId, academicYear.getId());
-                var scope = sectionScopeService.currentOrAll();
+                var scope = sectionScopeService.effective();
                 // A section-limited admin sees only the teachers actively class-mastering a session
                 // in their sections - whole-school staff headcount stays off-limits, same as the
                 // staff directory and payroll.

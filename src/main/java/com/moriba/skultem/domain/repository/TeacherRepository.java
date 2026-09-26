@@ -44,5 +44,9 @@ public interface TeacherRepository {
     Page<Teacher> searchInSections(String value, String gender, String schoolId, java.util.Collection<String> sectionIds,
             Pageable pageable);
 
+    // A section VIEW (owner-level): teachers limited to these sections plus those not limited to any.
+    Page<Teacher> searchInSectionsOrUnlimited(String value, String gender, String schoolId,
+            java.util.Collection<String> sectionIds, Pageable pageable);
+
     Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
@@ -48,6 +49,9 @@ public class NoticeController {
     private final DeleteNoticeUseCase deleteNoticeUseCase;
     private final TogglePinNoticeUseCase togglePinNoticeUseCase;
 
+    // Posting is open to a section-limited Admin/Teacher too: the notice is then for their own section only
+    // (CommunicationScopeService#resolveTarget) and only that section's people see it.
+    @SectionScoped
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<NoticeDTO> create(
@@ -57,7 +61,8 @@ public class NoticeController {
         var category = Category.valueOf(param.category());
         var audience = Audience.valueOf(param.audience());
         var res = createNoticeUseCase.execute(school, userId, param.title(), param.content(), category, audience,
-                param.expiresAt());
+                param.expiresAt(), param.eventAt(), param.eventEndsAt(), param.eventLocation(),
+                Boolean.TRUE.equals(param.addToCalendar()), param.managementSectionId());
         return new ApiResponse<>("success", 200, "Notice posted successfully", res);
     }
 
@@ -90,8 +95,9 @@ public class NoticeController {
         return new ApiResponse<>("success", 200, "Notices fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
     public ApiResponse<NoticeDTO> update(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -99,12 +105,14 @@ public class NoticeController {
         var category = Category.valueOf(param.category());
         var audience = Audience.valueOf(param.audience());
         var res = updateNoticeUseCase.execute(school, id, param.title(), param.content(), category, audience,
-                param.expiresAt());
+                param.expiresAt(), param.eventAt(), param.eventEndsAt(), param.eventLocation(),
+                Boolean.TRUE.equals(param.addToCalendar()));
         return new ApiResponse<>("success", 200, "Notice updated successfully", res);
     }
 
+    @SectionScoped
     @PatchMapping("/{id}/pin")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
     public ApiResponse<NoticeDTO> togglePin(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -112,8 +120,9 @@ public class NoticeController {
         return new ApiResponse<>("success", 200, "Notice updated successfully", res);
     }
 
+    @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.notice(#school, #id)")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

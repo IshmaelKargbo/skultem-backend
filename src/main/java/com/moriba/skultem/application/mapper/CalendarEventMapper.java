@@ -12,6 +12,7 @@ public class CalendarEventMapper {
                 param.getType(),
                 param.getStartDate(),
                 param.getEndDate(),
-                param.getLocation());
+                param.getLocation(),
+                param.getManagementSectionId());
     }
 }

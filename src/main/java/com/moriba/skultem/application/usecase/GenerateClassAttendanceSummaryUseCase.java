@@ -60,7 +60,7 @@ public class GenerateClassAttendanceSummaryUseCase {
                 endDate);
 
         // A section-limited caller compares only the classes of their own section(s).
-        var scope = sectionScopeService.currentOrAll();
+        var scope = sectionScopeService.effective();
         java.util.Set<String> visibleClasses = scope.wholeSchool() ? null
                 : classRepo.findBySchool(schoolId, scope.levels(), Pageable.unpaged()).getContent().stream()
                         .map(Clazz::getId).collect(java.util.stream.Collectors.toSet());

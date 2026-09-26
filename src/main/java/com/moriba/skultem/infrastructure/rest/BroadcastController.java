@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +36,8 @@ public class BroadcastController {
     private final ListBroadcastBySchoolUseCase listBroadcastBySchoolUseCase;
     private final GetAudienceSizeUseCase getAudienceSizeUseCase;
 
+    // A section-limited Admin may broadcast to their own section (recipients are counted for it alone).
+    @SectionScoped
     @PostMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<BroadcastDTO> compose(
@@ -46,22 +49,25 @@ public class BroadcastController {
         var sendOption = Broadcast.SendOption.valueOf(param.sendOption());
 
         var res = composeBroadcastUseCase.execute(school, userId, param.title(), param.message(), audience, channels,
-                sendOption, param.scheduledAt());
+                sendOption, param.scheduledAt(), param.managementSectionId());
 
         var message = sendOption == Broadcast.SendOption.NOW ? "Broadcast sent successfully"
                 : "Broadcast scheduled successfully";
         return new ApiResponse<>("success", 200, message, res);
     }
 
+    @SectionScoped
     @GetMapping("/audience-size")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Integer> audienceSize(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam String audience) {
-        var res = getAudienceSizeUseCase.execute(school, Audience.valueOf(audience));
+            @RequestParam String audience,
+            @RequestParam(required = false) String sectionId) {
+        var res = getAudienceSizeUseCase.forCaller(school, Audience.valueOf(audience), sectionId);
         return new ApiResponse<>("success", 200, "Audience size fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<BroadcastDTO>> list(

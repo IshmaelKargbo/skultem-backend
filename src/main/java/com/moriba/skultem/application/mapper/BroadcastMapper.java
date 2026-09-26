@@ -17,6 +17,7 @@ public class BroadcastMapper {
                 param.getSentByName(),
                 param.getScheduledAt(),
                 param.getSentAt(),
-                param.getCreatedAt());
+                param.getCreatedAt(),
+                param.getManagementSectionId());
     }
 }

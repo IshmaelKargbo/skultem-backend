@@ -23,6 +23,8 @@ public class Broadcast extends AggregateRoot<String> {
     private String sentByName;
     private Instant scheduledAt;
     private Instant sentAt;
+    // The management section it went to; null = the whole school.
+    private String managementSectionId;
 
     public enum Channel {
         SMS,
@@ -44,7 +46,8 @@ public class Broadcast extends AggregateRoot<String> {
 
     public Broadcast(String id, String schoolId, String title, String message, Audience audience,
             List<Channel> channels, Status status, int recipientsCount, int deliveredCount, String sentByUserId,
-            String sentByName, Instant scheduledAt, Instant sentAt, Instant createdAt, Instant updatedAt) {
+            String sentByName, Instant scheduledAt, Instant sentAt, String managementSectionId, Instant createdAt,
+            Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.title = title;
@@ -58,12 +61,13 @@ public class Broadcast extends AggregateRoot<String> {
         this.sentByName = sentByName;
         this.scheduledAt = scheduledAt;
         this.sentAt = sentAt;
+        this.managementSectionId = managementSectionId;
         touch(updatedAt);
     }
 
     public static Broadcast compose(String id, String schoolId, String title, String message, Audience audience,
             List<Channel> channels, SendOption sendOption, Instant scheduledAt, int recipientsCount,
-            String sentByUserId, String sentByName) {
+            String sentByUserId, String sentByName, String managementSectionId) {
         Instant now = Instant.now();
         boolean isNow = sendOption == SendOption.NOW;
 
@@ -71,6 +75,6 @@ public class Broadcast extends AggregateRoot<String> {
         int deliveredCount = isNow ? (int) Math.round(recipientsCount * (0.93 + Math.random() * 0.06)) : 0;
 
         return new Broadcast(id, schoolId, title, message, audience, channels, status, recipientsCount,
-                deliveredCount, sentByUserId, sentByName, isNow ? null : scheduledAt, isNow ? now : null, now, now);
+                deliveredCount, sentByUserId, sentByName, isNow ? null : scheduledAt, isNow ? now : null, managementSectionId, now, now);
     }
 }

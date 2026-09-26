@@ -147,4 +147,72 @@ class SectionScopeServiceTest {
     void parentsAreNeverSectionScoped() {
         assertThat(service.resolve(SCHOOL, USER, Role.PARENT).wholeSchool()).isTrue();
     }
+
+    // ---- The owner's "view one section" choice (X-View-Section) ----
+
+    private void request(String sectionHeader, Role role) {
+        var req = new org.springframework.mock.web.MockHttpServletRequest();
+        if (sectionHeader != null) {
+            req.addHeader(SectionScopeService.VIEW_HEADER, sectionHeader);
+        }
+        org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(
+                new org.springframework.web.context.request.ServletRequestAttributes(req));
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        new com.moriba.skultem.infrastructure.security.AuthUser(USER, SCHOOL, role), null, List.of()));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearRequest() {
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void anOwnerViewingOneSectionSeesThatSectionsLevelsButStaysWholeSchool() {
+        request(early.getId(), Role.OWNER);
+
+        assertThat(service.view()).isPresent();
+        assertThat(service.levels()).containsExactlyInAnyOrder(DAYCARE, NURSERY, PRIMARY);
+        assertThat(service.restrictedLevels()).containsExactlyInAnyOrder(DAYCARE, NURSERY, PRIMARY);
+        assertThat(service.effective().sectionIds()).containsExactly(early.getId());
+        // A view is a filter, not a restriction - guards and the interceptor still see whole-school.
+        assertThat(service.current().wholeSchool()).isTrue();
+    }
+
+    @Test
+    void noHeaderMeansTheOwnersUsualWholeSchoolView() {
+        request(null, Role.OWNER);
+
+        assertThat(service.view()).isEmpty();
+        assertThat(service.levels()).containsExactlyInAnyOrder(Level.values());
+        assertThat(service.restrictedLevels()).isNull();
+    }
+
+    @Test
+    void theHeaderIsIgnoredForAnyoneButOwnerLevelUsers() {
+        request(early.getId(), Role.ADMIN);
+
+        assertThat(service.view()).isEmpty();
+        assertThat(service.levels()).containsExactlyInAnyOrder(Level.values());
+    }
+
+    @Test
+    void anUnknownSectionIdIsIgnoredAndASectionLimitedUserCannotWidenOrSwitch() {
+        request("not-a-section", Role.OWNER);
+        assertThat(service.view()).isEmpty();
+
+        org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+        assign(Role.ADMIN, jss);
+        request(early.getId(), Role.ADMIN);
+        assertThat(service.levels()).containsExactly(JSS);
+    }
+
+    @Test
+    void aSchoolWithoutSectionsHasNothingToView() {
+        school.setManagementModel(ManagementModel.UNIFIED);
+        request(early.getId(), Role.OWNER);
+
+        assertThat(service.view()).isEmpty();
+    }
 }

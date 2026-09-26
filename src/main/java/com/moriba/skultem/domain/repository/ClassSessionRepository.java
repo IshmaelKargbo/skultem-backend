@@ -18,6 +18,9 @@ public interface ClassSessionRepository {
 
         void saveAll(List<ClassSession> domains);
 
+        // Every session of the class across all academic years.
+        List<ClassSession> findAllByClassIdAndSchoolId(String classId, String schoolId);
+
         Optional<ClassSession> findByIdAndSchoolId(String id, String schoolId);
 
         Optional<ClassSession> findByAcademicYearAndClassAndSchoolId(String academic, String classId, String schoolId);

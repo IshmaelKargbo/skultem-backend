@@ -61,6 +61,8 @@ public class BroadcastEntity {
     private Instant scheduledAt;
     private Instant sentAt;
 
+    private String managementSectionId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -23,6 +23,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateClassUseCase {
 
+    // Which sections one stream runs (Art -> A, B). See execute().
+    public record StreamSectionsInput(String streamId, List<String> sectionIds) {
+    }
+
     private final ClassRepository classRepo;
     private final ClassSessionRepository sessionRepo;
     private final ClassSectionRepository classSectionRepo;
@@ -42,7 +46,8 @@ public class CreateClassUseCase {
             List<String> sectionIds,
             List<String> streamIds,
             String assessmentTemplateId,
-            String level) {
+            String level,
+            List<StreamSectionsInput> streamSections) {
 
         // Check for duplicates
         if (classRepo.existsByNameAndSchool(name, school)) {
@@ -79,11 +84,28 @@ public class CreateClassUseCase {
         Clazz clazz = Clazz.create(classId, school, template, name, levelEnum, order);
         classRepo.save(clazz);
 
+        // A streamed class can run different sections per stream (Art -> A, B; Science -> A). When
+        // that's given it decides both which streams the class has and which sections exist at all;
+        // otherwise every chosen section runs under every chosen stream, as before.
+        boolean perStream = levelEnum.isStreamed() && streamSections != null && !streamSections.isEmpty();
+        if (perStream) {
+            var seen = new HashSet<String>();
+            for (var pair : streamSections) {
+                if (!seen.add(pair.streamId())) {
+                    throw new RuleException("A stream can only be listed once");
+                }
+            }
+            streamIds = streamSections.stream().map(StreamSectionsInput::streamId).toList();
+            sectionIds = streamSections.stream().flatMap(p -> p.sectionIds().stream()).distinct().toList();
+        }
+
         // Fetch Sections once
         List<Section> sections = sectionIds.stream()
                 .map(id -> sectionRepo.findByIdAndSchoolId(id, school)
                         .orElseThrow(() -> new NotFoundException("Section not found: " + id)))
                 .toList();
+        Map<String, Section> sectionById = new HashMap<>();
+        sections.forEach(s -> sectionById.put(s.getId(), s));
 
         // Fetch Streams once (for SSS)
         List<Stream> streams = Collections.emptyList();
@@ -114,7 +136,20 @@ public class CreateClassUseCase {
 
         // Create Class Sessions
         List<ClassSession> sessionsToSave = new ArrayList<>();
-        for (Section section : sections) {
+        if (perStream) {
+            for (Stream stream : streams) {
+                var pair = streamSections.stream().filter(p -> p.streamId().equals(stream.getId())).findFirst().orElseThrow();
+                for (String sectionId : pair.sectionIds().stream().distinct().toList()) {
+                    Section section = sectionById.get(sectionId);
+                    if (!sessionRepo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
+                            classId, academicYear.getId(), section.getId(), stream.getId(), school)) {
+                        sessionsToSave.add(ClassSession.create(UUID.randomUUID().toString(), school, clazz, stream,
+                                section, academicYear));
+                    }
+                }
+            }
+        }
+        for (Section section : perStream ? List.<Section>of() : sections) {
 
             if (levelEnum.isStreamed()) {
                 for (Stream stream : streams) {

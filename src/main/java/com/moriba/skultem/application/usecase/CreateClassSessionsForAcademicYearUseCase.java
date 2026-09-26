@@ -44,8 +44,20 @@ public class CreateClassSessionsForAcademicYearUseCase {
             if (clazz.getLevel().isStreamed()) {
                 var streams = streamRepo.findAllByClassIdAndSchoolId(clazz.getId(), schoolId);
 
+                // A streamed class may run different sections per stream (Art -> A, B; Science -> A), so
+                // repeat the pairing the class has already used rather than every section x every
+                // stream. A class that has never had a session falls back to all combinations.
+                var usedPairs = sessionRepo.findAllByClassIdAndSchoolId(clazz.getId(), schoolId).stream()
+                        .filter(s -> s.getStream() != null && s.getSection() != null)
+                        .map(s -> s.getSection().getId() + "|" + s.getStream().getId())
+                        .collect(java.util.stream.Collectors.toSet());
+
                 for (var section : sections) {
                     for (var classStream : streams) {
+                        if (!usedPairs.isEmpty()
+                                && !usedPairs.contains(section.getSection().getId() + "|" + classStream.getStream().getId())) {
+                            continue;
+                        }
                         var exists = sessionRepo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
                                 clazz.getId(), academicYear.getId(), section.getSection().getId(),
                                 classStream.getStream().getId(), schoolId);

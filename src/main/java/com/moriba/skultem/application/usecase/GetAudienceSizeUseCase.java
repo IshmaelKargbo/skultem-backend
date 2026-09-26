@@ -23,6 +23,28 @@ public class GetAudienceSizeUseCase {
     private final ParentRepository parentRepo;
     private final TeacherRepository teacherRepo;
     private final SchoolUserRepository schoolUserRepo;
+    private final com.moriba.skultem.domain.repository.CommunicationAudienceRepository audienceRepo;
+    private final com.moriba.skultem.application.services.CommunicationScopeService scopeService;
+
+    // For the signed-in caller: the section they're addressing (a section-limited Admin's own by default).
+    public int forCaller(String schoolId, Audience audience, String requestedSectionId) {
+        return execute(schoolId, audience, scopeService.resolveTarget(schoolId, requestedSectionId));
+    }
+
+    // Reach of an announcement for one management section (null = the whole school).
+    public int execute(String schoolId, Audience audience, String sectionId) {
+        if (sectionId == null) {
+            return execute(schoolId, audience);
+        }
+        var c = audienceRepo.countsForSection(schoolId, sectionId);
+        return switch (audience) {
+            case STUDENTS -> c.students();
+            case PARENTS -> c.parents();
+            case TEACHERS -> c.teachers();
+            case STAFF -> c.staff();
+            case ALL -> c.students() + c.parents() + c.teachers() + c.staff();
+        };
+    }
 
     public int execute(String schoolId, Audience audience) {
         long students = studentRepo.findBySchoolId(schoolId, Pageable.unpaged()).getTotalElements();

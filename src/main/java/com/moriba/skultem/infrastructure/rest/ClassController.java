@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,6 +59,7 @@ import lombok.RequiredArgsConstructor;
 public class ClassController {
 
     private final CreateClassUseCase createClassUseCase;
+    private final com.moriba.skultem.application.usecase.DeleteClassUseCase deleteClassUseCase;
     private final NextClassUseCase nextClassUseCase;
     private final ListClassBySchoolUseCase listClassBySchoolUseCase;
     private final ListClassStreamByIdUseCase listClassStreamByIdUseCase;
@@ -81,7 +83,11 @@ public class ClassController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateClassDTO param) {
         var res = createClassUseCase.execute(school, param.name(), param.levelOrder(), param.sections(),
-                param.streams(), param.assessmentTemplateId(), param.level());
+                param.streams(), param.assessmentTemplateId(), param.level(),
+                param.streamSections() == null ? null
+                        : param.streamSections().stream()
+                                .map(p -> new CreateClassUseCase.StreamSectionsInput(p.streamId(), p.sectionIds()))
+                                .toList());
         return new ApiResponse<>("success", 200, "Class created successfully", res);
     }
 
@@ -227,6 +233,16 @@ public class ClassController {
             @RequestParam(required = false) String academicYearId) {
         var res = computeClassAttentionUseCase.execute(school, id, academicYearId);
         return new ApiResponse<>("success", 200, "Class attention fetched successfully", res);
+    }
+
+    @SectionScoped
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #id)")
+    public ApiResponse<Object> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        deleteClassUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Class deleted successfully", null);
     }
 
     @SectionScoped

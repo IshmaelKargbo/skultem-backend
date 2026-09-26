@@ -75,6 +75,11 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     }
 
     @Override
+    public List<ClassSession> findAllByClassIdAndSchoolId(String classId, String schoolId) {
+        return repo.findAllByClazz_IdAndSchoolId(classId, schoolId).stream().map(ClassSessionMapper::toDomain).toList();
+    }
+
+    @Override
     public Optional<ClassSession> findByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
             String schoolId) {
         return repo.findByClazz_IdAndAcademicYear_IdAndSchoolId(classId, academicYearId, schoolId)

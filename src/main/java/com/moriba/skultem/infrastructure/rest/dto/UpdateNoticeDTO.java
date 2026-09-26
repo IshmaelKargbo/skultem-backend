@@ -9,5 +9,9 @@ public record UpdateNoticeDTO(
         @NotBlank(message = "Content is required") String content,
         @NotBlank(message = "Category is required") String category,
         @NotBlank(message = "Audience is required") String audience,
-        Instant expiresAt) {
+        Instant expiresAt,
+        Instant eventAt,
+        Instant eventEndsAt,
+        @jakarta.validation.constraints.Size(max = 255, message = "Location must not exceed 255 characters") String eventLocation,
+        Boolean addToCalendar) {
 }

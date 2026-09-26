@@ -15,6 +15,8 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.CalendarEventRepository;
+import com.moriba.skultem.domain.repository.NoticeRepository;
 import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.ReportCardRepository;
@@ -53,6 +55,8 @@ public class SectionScopeGuard {
     private final TeacherRepository teacherRepo;
     private final ParentRepository parentRepo;
     private final StaffManagementSectionRepository staffSectionRepo;
+    private final NoticeRepository noticeRepo;
+    private final CalendarEventRepository calendarEventRepo;
 
     public boolean wholeSchool() {
         return sectionScopeService.current().wholeSchool();
@@ -63,6 +67,28 @@ public class SectionScopeGuard {
     public boolean managementSection(String sectionId) {
         var scope = sectionScopeService.current();
         return scope.wholeSchool() || (sectionId != null && scope.sectionIds().contains(sectionId));
+    }
+
+    // Editing, pinning or deleting a notice: a section-limited caller only for one addressed to their own
+    // section - a whole-school notice (no section) stays with whole-school staff.
+    public boolean notice(String schoolId, String noticeId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || noticeId == null) {
+            return true;
+        }
+        return noticeRepo.findByIdAndSchool(noticeId, schoolId)
+                .map(n -> n.getManagementSectionId() != null && scope.sectionIds().contains(n.getManagementSectionId()))
+                .orElse(true);
+    }
+
+    public boolean calendarEvent(String schoolId, String eventId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || eventId == null) {
+            return true;
+        }
+        return calendarEventRepo.findByIdAndSchool(eventId, schoolId)
+                .map(e -> e.getManagementSectionId() != null && scope.sectionIds().contains(e.getManagementSectionId()))
+                .orElse(true);
     }
 
     public boolean level(String level) {

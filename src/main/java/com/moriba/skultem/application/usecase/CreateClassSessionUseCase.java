@@ -9,10 +9,13 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSection;
 import com.moriba.skultem.domain.model.ClassSession;
+import com.moriba.skultem.domain.model.ClassStream;
 import com.moriba.skultem.domain.model.Stream;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSectionRepository;
+import com.moriba.skultem.domain.repository.ClassStreamRepository;
+import com.moriba.skultem.domain.repository.SectionRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.StreamRepository;
 
@@ -28,6 +31,8 @@ public class CreateClassSessionUseCase {
     private final ClassRepository classRepo;
     private final StreamRepository streamRepo;
     private final ClassSectionRepository classSectionRepo;
+    private final ClassStreamRepository classStreamRepo;
+    private final SectionRepository sectionRepo;
     private final AcademicYearRepository academicYearRepo;
 
     public void execute(String schoolId, String classId, String academicYearId, String streamId,
@@ -35,8 +40,22 @@ public class CreateClassSessionUseCase {
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
 
+        // sectionId is a section already linked to the class (its ClassSection id) or any of the school's
+        // sections - a class can gain a section later (SSS 1 Art B) and gets it linked here.
         ClassSection cs = classSectionRepo.findByIdAndClassIdAndSchoolId(sectionId, classId, schoolId)
-                .orElseThrow(() -> new NotFoundException("Section not found"));
+                .orElseGet(() -> {
+                    var section = sectionRepo.findByIdAndSchoolId(sectionId, schoolId)
+                            .orElseThrow(() -> new NotFoundException("Section not found"));
+                    return classSectionRepo.findByClassIdAndSchoolId(classId, schoolId).stream()
+                            .filter(c -> c.getSection().getId().equals(section.getId()))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                var created = ClassSection.create(UUID.randomUUID().toString(), schoolId, clazz, section);
+                                classSectionRepo.save(created);
+                                return created;
+                            });
+                });
+        String sectionId2 = cs.getSection().getId();
 
         AcademicYear academicYear = academicYearRepo.findByIdAndSchoolId(academicYearId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Academic year not found"));
@@ -59,11 +78,14 @@ public class CreateClassSessionUseCase {
         if (streamId != null) {
             stream = streamRepo.findByIdAndSchoolId(streamId, schoolId)
                     .orElseThrow(() -> new NotFoundException("stream not found"));
+            if (!classStreamRepo.existsByClassIdAndSchoolIdAndStreamId(classId, schoolId, streamId)) {
+                classStreamRepo.save(ClassStream.create(UUID.randomUUID().toString(), schoolId, stream, clazz));
+            }
             exists = repo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
-                    classId, academicYearId, sectionId, streamId, schoolId);
+                    classId, academicYearId, sectionId2, streamId, schoolId);
         } else {
             exists = repo.existsByClassIdAndAcademicYearIdAndSectionIdAndStreamIsNullAndSchoolId(classId,
-                    academicYearId, sectionId, schoolId);
+                    academicYearId, sectionId2, schoolId);
         }
 
         if (exists) {

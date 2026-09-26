@@ -19,7 +19,7 @@ public class BroadcastMapper {
         return new Broadcast(param.getId(), param.getSchoolId(), param.getTitle(), param.getMessage(),
                 param.getAudience(), channels, param.getStatus(), param.getRecipientsCount(),
                 param.getDeliveredCount(), param.getSentByUserId(), param.getSentByName(), param.getScheduledAt(),
-                param.getSentAt(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getSentAt(), param.getManagementSectionId(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static BroadcastEntity toEntity(Broadcast param) {
@@ -43,6 +43,7 @@ public class BroadcastMapper {
                 .sentByName(param.getSentByName())
                 .scheduledAt(param.getScheduledAt())
                 .sentAt(param.getSentAt())
+                .managementSectionId(param.getManagementSectionId())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

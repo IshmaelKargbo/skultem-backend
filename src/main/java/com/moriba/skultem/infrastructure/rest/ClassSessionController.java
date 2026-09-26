@@ -21,6 +21,7 @@ import com.moriba.skultem.infrastructure.rest.dto.CreateClassSessionDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +37,7 @@ import com.moriba.skultem.application.usecase.ListUnassignClassBySchoolUseCase;
 public class ClassSessionController {
 
     private final CreateClassSessionUseCase createClassSessionUseCase;
+    private final com.moriba.skultem.application.usecase.DeleteClassSessionUseCase deleteClassSessionUseCase;
     private final ListClassSessionBySchoolUseCase listClassSessionBySchoolUseCase;
     private final ListClassSessionByTeacherUseCase listClassSessionByTeacherUseCase;
     private final ListUnassignClassBySchoolUseCase listUnassignClassBySchoolUseCase;
@@ -50,6 +52,16 @@ public class ClassSessionController {
         @Valid @RequestBody CreateClassSessionDTO param) {
         createClassSessionUseCase.execute(school, param.classId(), param.academicYear(), param.streamId(), param.sectionId());
         return new ApiResponse<>("success", 200, "Class session created successfully", null);
+    }
+
+    @SectionScoped
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #id)")
+    public ApiResponse<Object> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        deleteClassSessionUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Class removed successfully", null);
     }
 
     @PostMapping("/setup-all")

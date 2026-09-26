@@ -64,6 +64,8 @@ public interface ClassSessionJpaRepository
 
     Page<ClassSessionEntity> findAllByClazz_IdOrderByClazz_LevelOrderAsc(String classId, Pageable pageable);
 
+    List<ClassSessionEntity> findAllByClazz_IdAndSchoolId(String classId, String schoolId);
+
     Page<ClassSessionEntity> findAllByAcademicYear_IdOrderByClazz_LevelOrderAsc(String academicYearId,
             Pageable pageable);
 

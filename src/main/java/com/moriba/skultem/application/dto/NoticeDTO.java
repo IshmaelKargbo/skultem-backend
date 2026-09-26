@@ -14,5 +14,12 @@ public record NoticeDTO(
         boolean pinned,
         String postedBy,
         Instant postedAt,
-        Instant expiresAt) {
+        Instant expiresAt,
+        // When the announced thing happens (a PTA meeting), where, and whether it's on the school calendar too.
+        Instant eventAt,
+        Instant eventEndsAt,
+        String eventLocation,
+        boolean onCalendar,
+        // The management section it's for; null = the whole school.
+        String managementSectionId) {
 }

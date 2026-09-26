@@ -54,6 +54,12 @@ public class NoticeEntity {
 
     private Instant expiresAt;
 
+    private Instant eventAt;
+    private Instant eventEndsAt;
+    private String eventLocation;
+    private String calendarEventId;
+    private String managementSectionId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -11,5 +11,7 @@ public record CreateCalendarEventDTO(
         @NotBlank(message = "Type is required") String type,
         @NotNull(message = "Start date is required") Instant startDate,
         @NotNull(message = "End date is required") Instant endDate,
-        String location) {
+        String location,
+        // Which management section it's for; left out = the caller's own section / the whole school.
+        String managementSectionId) {
 }

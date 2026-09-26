@@ -75,6 +75,42 @@ public interface TeacherJpaRepository
             @Param("gender") String gender, @Param("sectionIds") java.util.Collection<String> sectionIds,
             Pageable pageable);
 
+    // The owner's "view one section" list: teachers limited to the section AND those with no limit at all
+    // (they work across every section, so they belong to any section's view).
+    @Query("""
+                SELECT t
+                FROM TeacherEntity t
+                LEFT JOIN t.user u
+                WHERE t.schoolId = :schoolId
+                  AND (
+                        :search IS NULL
+                     OR :search = ''
+                     OR LOWER(u.givenName) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(u.familyName) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+                     OR LOWER(t.phone) LIKE LOWER(CONCAT('%', :search, '%'))
+                  )
+                  AND (:gender = '' OR CAST(t.gender AS string) = :gender)
+                  AND (
+                        EXISTS (
+                            SELECT 1 FROM StaffManagementSectionEntity sms
+                            WHERE sms.schoolId = t.schoolId
+                              AND sms.userId = u.id
+                              AND sms.role = com.moriba.skultem.domain.vo.Role.TEACHER
+                              AND sms.managementSectionId IN :sectionIds
+                        )
+                     OR NOT EXISTS (
+                            SELECT 1 FROM StaffManagementSectionEntity sms2
+                            WHERE sms2.schoolId = t.schoolId
+                              AND sms2.userId = u.id
+                              AND sms2.role = com.moriba.skultem.domain.vo.Role.TEACHER
+                        )
+                  )
+            """)
+    Page<TeacherEntity> searchInSectionsOrUnlimited(@Param("schoolId") String schoolId, @Param("search") String search,
+            @Param("gender") String gender, @Param("sectionIds") java.util.Collection<String> sectionIds,
+            Pageable pageable);
+
     long countBySchoolId(String schoolId);
 
     boolean existsByStaffIdAndSchoolIdAndIdNot(String staffId, String schoolId, String id);

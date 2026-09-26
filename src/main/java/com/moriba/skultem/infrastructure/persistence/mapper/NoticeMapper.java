@@ -9,7 +9,9 @@ public class NoticeMapper {
 
         return new Notice(param.getId(), param.getSchoolId(), param.getTitle(), param.getContent(),
                 param.getCategory(), param.getAudience(), param.isPinned(), param.getPostedByUserId(),
-                param.getPostedByName(), param.getExpiresAt(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getPostedByName(), param.getExpiresAt(), param.getEventAt(), param.getEventEndsAt(),
+                param.getEventLocation(), param.getCalendarEventId(), param.getManagementSectionId(),
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static NoticeEntity toEntity(Notice param) {
@@ -26,6 +28,11 @@ public class NoticeMapper {
                 .postedByUserId(param.getPostedByUserId())
                 .postedByName(param.getPostedByName())
                 .expiresAt(param.getExpiresAt())
+                .eventAt(param.getEventAt())
+                .eventEndsAt(param.getEventEndsAt())
+                .eventLocation(param.getEventLocation())
+                .calendarEventId(param.getCalendarEventId())
+                .managementSectionId(param.getManagementSectionId())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

@@ -54,7 +54,7 @@ public class ListParentBySchoolUseCase {
         }
 
         // A section-limited caller only sees parents with a child in their section (or none yet).
-        var scope = sectionScopeService.currentOrAll();
+        var scope = sectionScopeService.effective();
         var parents = repo.searchInLevels(schoolId, query == null ? "" : query.trim(), scope.wholeSchool(),
                 scope.queryLevels(), pageable);
 

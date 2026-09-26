@@ -52,6 +52,8 @@ public class CalendarEventEntity {
     @Column(nullable = false)
     private String createdByName;
 
+    private String managementSectionId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

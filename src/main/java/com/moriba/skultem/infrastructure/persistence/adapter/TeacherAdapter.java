@@ -91,6 +91,17 @@ public class TeacherAdapter implements TeacherRepository {
     }
 
     @Override
+    public Page<Teacher> searchInSectionsOrUnlimited(String value, String gender, String schoolId,
+            java.util.Collection<String> sectionIds, Pageable pageable) {
+        var normalizedGender = (gender == null || gender.isBlank()) ? "" : gender.trim().toUpperCase();
+        if (sectionIds == null || sectionIds.isEmpty()) {
+            return search(value, gender, schoolId, pageable);
+        }
+        return repo.searchInSectionsOrUnlimited(schoolId, value, normalizedGender, sectionIds, pageable)
+                .map(TeacherMapper::toDomain);
+    }
+
+    @Override
     public boolean existsByStaffIdAndSchoolAndIdNot(String schoolId, String staffId, String teacherId) {
         return repo.existsByStaffIdAndSchoolIdAndIdNot(staffId, schoolId, teacherId);
     }

@@ -35,7 +35,7 @@ public class DashboardEnrollmentTrendUseCase {
                 Instant start = academicYear.getStartDate().atStartOfDay(zone).toInstant();
                 Instant end = academicYear.getEndDate().atTime(23, 59, 59).atZone(zone).toInstant();
 
-                var scope = sectionScopeService.currentOrAll();
+                var scope = sectionScopeService.effective();
                 var enrollments = enrollmentRepo.findBySchoolIdAndAcademicYearAndCreatedAtBetween(
                                 schoolId, academicYear.getId(), start, end).stream()
                                 .filter(e -> scope.allows(e.getClazz().getLevel()))
