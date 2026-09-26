@@ -12,11 +12,20 @@ public class StudentAssessmentMapper {
         public static StudentAssessmentDTO toDTO(
                         StudentAssessment param,
                         List<AssessmentScore> assessments) {
+                return toDTO(param, assessments, java.util.Map.of());
+        }
+
+        // With each score's continuous-assessment recordings (keyed by score id) for assessments that use them.
+        public static StudentAssessmentDTO toDTO(
+                        StudentAssessment param,
+                        List<AssessmentScore> assessments,
+                        java.util.Map<String, List<com.moriba.skultem.domain.model.AssessmentCaEntry>> entriesByScore) {
 
                 String name = param.getEnrollment().getStudent().getName();
 
                 List<AssessmentScoreDTO> scores = assessments.stream()
-                                .map(score -> AssessmentScoreMapper.toDTO(score))
+                                .map(score -> AssessmentScoreMapper.toDTO(score,
+                                                entriesByScore.getOrDefault(score.getId(), List.of())))
                                 .toList();
 
                 int totalScore = scores.stream()

@@ -73,7 +73,9 @@ public class GetActiveAssessmentCycleUseCase {
                     .sorted(Comparator.comparingInt(a -> a.getPosition()))
                     .toList();
 
-            var lifeCycles = assessmentLifeCycleRepo.findAllBySchoolAndTerm(schoolId, activeTerm.id());
+            // Only this class's own cycles - sections advance separately, so another section sharing the template can
+            // be on a different assessment.
+            var lifeCycles = assessmentLifeCycleRepo.findAllBySchoolAndTermAndClass(schoolId, activeTerm.id(), classId);
 
             int activePosition = -1;
             // An assessment with no life cycle rows yet (never started) must not read as

@@ -60,6 +60,25 @@ public class AttendanceLocationSetting extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // A real place has been picked. 0,0 (in the ocean off West Africa) is what an untouched form holds, never a school -
+    // saving it would make every clock-in fail as "thousands of km away", and for a section it would also hide the
+    // school-wide location that section falls back to.
+    public boolean isSet() {
+        return isRealLocation(latitude, longitude);
+    }
+
+    public static boolean isRealLocation(double latitude, double longitude) {
+        return !(latitude == 0 && longitude == 0) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
+    }
+
+    public static void requireRealLocation(double latitude, double longitude) {
+        if (!isRealLocation(latitude, longitude)) {
+            throw new com.moriba.skultem.application.error.RuleException(
+                    "Pick the location on the map first - search the address, click the map or drag the pin. "
+                            + "(0, 0 isn't a real place, so nobody could clock in.)");
+        }
+    }
+
     public boolean hasIpRestriction() {
         return allowedIps != null && !allowedIps.isBlank();
     }

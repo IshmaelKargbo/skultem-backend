@@ -274,7 +274,10 @@ public class PermissionService {
 
         var request = assessmentApprovalRequestRepo.findByIdAndSchoolId(approvalRequestId, schoolId);
 
-        return request.isPresent() && request.get().getMaster().getTeacher().getId().equals(teacher.get().getId());
+        // The assigned class master reviews it - unless they taught the subject themselves, in which case it is
+        // for an admin, proprietor or owner (nobody approves their own grades).
+        return request.isPresent() && !request.get().isSelfReview()
+                && request.get().getMaster().getTeacher().getId().equals(teacher.get().getId());
     }
 
     public boolean canManagePromotionRequest(String schoolId, String requestId) {

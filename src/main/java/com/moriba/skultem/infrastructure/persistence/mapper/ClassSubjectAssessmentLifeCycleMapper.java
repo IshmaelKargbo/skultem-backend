@@ -13,7 +13,12 @@ public class ClassSubjectAssessmentLifeCycleMapper {
         var term = TermMapper.toDomain(param.getTerm());
         var assessment = AssessmentMapper.toDomain(param.getAssessment());
 
-        return new ClassSubjectAssessmentLifeCycle(param.getId(), param.getSchoolId(), subject, term, assessment, param.getStatus(), param.getCreatedAt(), param.getUpdatedAt());
+        var cycle = new ClassSubjectAssessmentLifeCycle(param.getId(), param.getSchoolId(), subject, term, assessment, param.getStatus(), param.getCreatedAt(), param.getUpdatedAt());
+        cycle.restoreStructure(param.getStructure(), param.getCaPercentage(), param.getFormalPercentage(),
+                param.getCaFrequency(), param.getCaEntries(), param.getConfigVersion(), param.getStructureFrozenAt());
+        cycle.restoreCaSubmitted(param.getCaSubmittedAt());
+        cycle.restoreLockedWeeks(param.getCaLockedWeeks());
+        return cycle;
     }
 
     public static ClassSubjectAssessmentLifeCycleEntity toEntity(ClassSubjectAssessmentLifeCycle param) {
@@ -25,6 +30,9 @@ public class ClassSubjectAssessmentLifeCycleMapper {
         var assessment = AssessmentMapper.toEntity(param.getAssessment());
         var subject = TeacherSubjectMapper.toEntity(param.getSubject());
 
-        return new ClassSubjectAssessmentLifeCycleEntity(param.getId(), param.getSchoolId(), term, assessment, subject, param.getStatus(), param.getCreatedAt(), param.getUpdatedAt());
+        return new ClassSubjectAssessmentLifeCycleEntity(param.getId(), param.getSchoolId(), term, assessment, subject, param.getStatus(),
+                param.getStructure(), param.getCaPercentage(), param.getFormalPercentage(), param.getCaFrequency(),
+                param.getCaEntries(), param.getConfigVersion(), param.getStructureFrozenAt(), param.getCaSubmittedAt(), param.lockedWeeksAsText(),
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 }

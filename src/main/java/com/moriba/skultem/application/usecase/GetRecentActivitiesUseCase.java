@@ -15,11 +15,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetRecentActivitiesUseCase {
     private final ActivityRepository activityRepo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public List<ActivityDTO> execute(String schoolId, int size) {
         int safeSize = Math.max(1, Math.min(size, 50));
-        return activityRepo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, PageRequest.of(0, safeSize))
-                .map(ActivityMapper::toDTO)
-                .toList();
+        var scope = sectionScopeService.effective();
+        var page = scope.wholeSchool()
+                ? activityRepo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, PageRequest.of(0, safeSize))
+                : activityRepo.findVisibleToSections(schoolId, scope.sectionIds(), PageRequest.of(0, safeSize));
+        return page.map(ActivityMapper::toDTO).toList();
     }
 }

@@ -77,6 +77,18 @@ public class SubmitAssessmentForApprovalUseCase {
                                         throw new RuleException(
                                                         "Assessment cannot be edited in the current state");
                                 }
+                                // Continuous assessment goes in two steps - the CA first, then the formal test -
+                                // and both must be in before it goes for approval.
+                                if (score.getCycle().isContinuous()) {
+                                        if (!score.getCycle().isCaSubmitted()) {
+                                                throw new RuleException(
+                                                                "Submit the CA recordings and enter the formal test before submitting for approval");
+                                        }
+                                        if (score.getFormalScore() == null) {
+                                                throw new RuleException(
+                                                                "The formal test is still missing for at least one student");
+                                        }
+                                }
                         });
                 }
 

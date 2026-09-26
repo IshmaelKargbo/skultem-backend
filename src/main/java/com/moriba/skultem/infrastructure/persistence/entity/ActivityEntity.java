@@ -42,6 +42,8 @@ public class ActivityEntity {
 
     private String referenceId;
 
+    private String managementSectionId;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

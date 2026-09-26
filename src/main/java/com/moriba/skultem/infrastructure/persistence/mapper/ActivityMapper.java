@@ -8,6 +8,7 @@ public class ActivityMapper {
         return new Activity(
                 param.getId(),
                 param.getSchoolId(),
+                param.getManagementSectionId(),
                 param.getType(),
                 param.getTitle(),
                 param.getSubject(),
@@ -26,6 +27,7 @@ public class ActivityMapper {
                 .subject(param.getSubject())
                 .meta(param.getMeta())
                 .referenceId(param.getReferenceId())
+                .managementSectionId(param.getManagementSectionId())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

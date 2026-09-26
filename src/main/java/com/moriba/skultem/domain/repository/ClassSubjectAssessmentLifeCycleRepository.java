@@ -18,6 +18,11 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
 
     List<ClassSubjectAssessmentLifeCycle> findAllBySchoolAndTermAndClass(String schoolId, String termId, String classId);
 
+    // Every cycle that has not gone for approval yet (open for entry, or still locked waiting for its turn) in the
+    // school, across all terms - see
+    // RefreshUnstartedAssessmentsUseCase.
+    List<ClassSubjectAssessmentLifeCycle> findAllOpenBySchool(String schoolId);
+
     List<ClassSubjectAssessmentLifeCycle> findAllBySchoolTermAndPosition(String schoolId, String termId, int position);
 
     Optional<ClassSubjectAssessmentLifeCycle> findByTeacherSubjectAndAssessmentAndTerm(String subectId,
@@ -30,5 +35,6 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
     // cycles for a whole-school report) backing the Assessment Completion Report. Row shape:
     // [classId, className, subjectId, subjectName, assessmentId, assessmentName, position,
     // status]. classId/subjectId nullable.
+    // Assessments that have not opened yet (LOCKED, waiting for their turn) are left out - nothing has been assessed.
     List<Object[]> completionReportRows(String schoolId, String termId, String classId, String subjectId);
 }

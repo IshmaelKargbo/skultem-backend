@@ -42,6 +42,8 @@ public class AssessmentScoreEntity {
     private Integer score;
 
     private String gradedByUserId;
+    private Integer caScore;
+    private Integer formalScore;
 
     private Instant createdAt;
 

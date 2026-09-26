@@ -174,7 +174,8 @@ public interface AssessmentScoreJpaRepository
                         @Param("statuses") List<ClassSubjectAssessmentLifeCycle.Status> statuses);
 
         // See AssessmentScoreRepository#assessmentCompletionByClassAndTerm. classId nullable =
-        // whole school for the term.
+        // whole school for the term. An assessment that hasn't opened yet (LOCKED, waiting for its turn) is not
+        // counted at all - it is not "missing", it hasn't happened.
         @Query("""
                         SELECT sa.enrollment.id, COUNT(a),
                                SUM(CASE WHEN cy.status IN :approvedStatuses THEN 1L ELSE 0L END)
@@ -184,6 +185,7 @@ public interface AssessmentScoreJpaRepository
                         WHERE a.schoolId = :schoolId
                           AND sa.term.id = :termId
                           AND (:classId IS NULL OR sa.enrollment.clazz.id = :classId)
+                          AND cy.status <> com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle.Status.LOCKED
                         GROUP BY sa.enrollment.id
                         """)
         List<Object[]> assessmentCompletionByClassAndTerm(

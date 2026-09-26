@@ -15,13 +15,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LogActivityUseCase {
     private final ActivityRepository activityRepo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     @Transactional
     public void log(String schoolId, ActivityType type, String title,
             String subject, String meta, String referenceId) {
         var id = UUID.randomUUID().toString();
-        var activity = Activity.create(id, schoolId, type,
-                title, subject, meta, referenceId);
+        // Done by a section-limited admin -> it belongs to that section (so the other sections' admins don't see it).
+        String sectionId = null;
+        try {
+            var scope = sectionScopeService.currentOrAll();
+            if (!scope.wholeSchool() && scope.sectionIds().size() == 1) {
+                sectionId = scope.sectionIds().iterator().next();
+            }
+        } catch (RuntimeException ignored) {
+            // No signed-in caller (a scheduled job, an event listener): a school-wide activity.
+        }
+        var activity = Activity.createInSection(id, schoolId, sectionId, type, title, subject, meta, referenceId);
         activityRepo.save(activity);
     }
 }

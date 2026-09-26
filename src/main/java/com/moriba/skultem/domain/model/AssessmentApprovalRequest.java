@@ -20,6 +20,14 @@ public class AssessmentApprovalRequest extends AggregateRoot<String> {
     private String approvalNote;
     private Status status;
 
+    // The class master is also the teacher who submitted it - nobody approves their own grades, so it goes to an
+    // admin, proprietor or owner instead.
+    public boolean isSelfReview() {
+        return master != null && teacherSubject != null && master.getTeacher() != null
+                && teacherSubject.getTeacher() != null
+                && master.getTeacher().getId().equals(teacherSubject.getTeacher().getId());
+    }
+
     public enum NoteType {
         TEACHER,
         ADMIN,

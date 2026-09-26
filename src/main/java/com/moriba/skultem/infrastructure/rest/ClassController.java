@@ -104,6 +104,7 @@ public class ClassController {
         return new ApiResponse<>("success", 200, "Next class set successfully", res);
     }
 
+    @SectionScoped
     @GetMapping("/attention-summary")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ClassAttentionSummaryDTO> attentionSummary(

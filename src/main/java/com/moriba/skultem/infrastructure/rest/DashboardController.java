@@ -74,6 +74,7 @@ public class DashboardController {
         return new ApiResponse<>("success", 200, "Report fetch successful", res);
     }
 
+    @SectionScoped
     @GetMapping("/admin/activities")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<ActivityDTO>> activities(

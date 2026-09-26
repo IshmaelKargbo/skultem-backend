@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.rest;
 
 import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
@@ -150,6 +151,7 @@ public class TeacherAttendanceController {
                 service.forTeacher(school, teacherId, from, to));
     }
 
+    @SectionScoped
     @GetMapping("/roster")
     public ApiResponse<TeacherAttendanceRosterDTO> roster(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -157,6 +159,7 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, "Roster fetched successfully", service.roster(school, date));
     }
 
+    @SectionScoped
     @GetMapping("/history")
     public ApiResponse<List<TeacherAttendanceDaySummaryDTO>> history(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -168,6 +171,7 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, "History fetched successfully", res.data(), meta);
     }
 
+    @SectionScoped
     @GetMapping("/history/{date}")
     public ApiResponse<TeacherAttendanceRosterDTO> historyDetail(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,

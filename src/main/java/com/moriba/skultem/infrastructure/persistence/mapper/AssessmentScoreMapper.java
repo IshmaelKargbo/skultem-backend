@@ -16,8 +16,10 @@ public class AssessmentScoreMapper {
         StudentAssessment studentAssessment = StudentAssessmentMapper.toDomain(param.getStudentAssessment());
         ClassSubjectAssessmentLifeCycle cycle = ClassSubjectAssessmentLifeCycleMapper.toDomain(param.getCycle()); 
         
-        return new AssessmentScore(param.getId(), param.getSchoolId(), studentAssessment, cycle, param.getWeight(),
+        var score = new AssessmentScore(param.getId(), param.getSchoolId(), studentAssessment, cycle, param.getWeight(),
                 param.getScore(), param.getGradedByUserId(), param.getCreatedAt(), param.getUpdatedAt());
+        score.restoreContinuous(param.getCaScore(), param.getFormalScore());
+        return score;
     }
 
     public static AssessmentScoreEntity toEntity(AssessmentScore param) {
@@ -36,6 +38,8 @@ public class AssessmentScoreMapper {
                 .score(param.getScore())
                 .cycle(cycle)
                 .gradedByUserId(param.getGradedByUserId())
+                .caScore(param.getCaScore())
+                .formalScore(param.getFormalScore())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

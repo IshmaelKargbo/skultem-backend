@@ -86,4 +86,12 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
         return repo.completionReportRows(schoolId, termId, classId, subjectId);
     }
 
+    @Override
+    public List<ClassSubjectAssessmentLifeCycle> findAllOpenBySchool(String schoolId) {
+        return repo.findAllBySchoolIdAndStatusIn(schoolId,
+                List.of(ClassSubjectAssessmentLifeCycle.Status.DRAFT, ClassSubjectAssessmentLifeCycle.Status.RETURNED,
+                        ClassSubjectAssessmentLifeCycle.Status.LOCKED))
+                .stream().map(ClassSubjectAssessmentLifeCycleMapper::toDomain).toList();
+    }
+
 }

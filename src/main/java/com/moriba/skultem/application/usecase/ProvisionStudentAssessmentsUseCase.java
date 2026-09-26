@@ -46,6 +46,7 @@ public class ProvisionStudentAssessmentsUseCase {
     private final StreamSubjectRepository streamSubjectRepo;
     private final TermRepository termRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
+    private final com.moriba.skultem.application.services.AssessmentStructureService structureService;
 
     public void execute(Enrollment enrollment) {
         if (enrollment == null || enrollment.getClazz() == null || enrollment.getClazz().getTemplate() == null) {
@@ -146,6 +147,8 @@ public class ProvisionStudentAssessmentsUseCase {
         }
 
         if (!cyclesToSave.isEmpty()) {
+            // An assessment that starts out open freezes the configuration in force now (see AssessmentStructureService).
+            structureService.freezeOpened(cyclesToSave);
             cycleRepo.saveAll(cyclesToSave);
         }
 

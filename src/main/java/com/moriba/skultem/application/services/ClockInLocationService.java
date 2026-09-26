@@ -81,7 +81,8 @@ public class ClockInLocationService {
     }
 
     List<AttendanceLocationSetting> candidatesFor(String schoolId, Teacher teacher) {
-        var all = locationRepo.findAllBySchoolId(schoolId);
+        // A row that was saved as 0,0 isn't a location: it must neither count as one nor hide the school-wide fallback.
+        var all = locationRepo.findAllBySchoolId(schoolId).stream().filter(AttendanceLocationSetting::isSet).toList();
         var sectionIds = staffSectionRepo
                 .findBySchoolAndUserAndRole(schoolId, teacher.getUser().getId(), Role.TEACHER).stream()
                 .map(StaffManagementSection::getManagementSectionId)

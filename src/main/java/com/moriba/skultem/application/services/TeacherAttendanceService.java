@@ -43,6 +43,7 @@ public class TeacherAttendanceService {
 
     private final TeacherAttendanceRepository attendanceRepo;
     private final TeacherRepository teacherRepo;
+    private final SectionScopeService sectionScopeService;
     private final UserRepository userRepo;
     private final MarkTeacherAttendanceUseCase markTeacherAttendanceUseCase;
     private final ClockInUseCase clockInUseCase;
@@ -144,7 +145,11 @@ public class TeacherAttendanceService {
     }
 
     public TeacherAttendanceHistoryPageDTO history(String schoolId, int page, int size) {
+        // Only the visible teachers' rows, so a section admin's history and counts are their own section's.
+        var visible = activeTeachers(schoolId).stream().map(Teacher::getId).collect(Collectors.toSet());
+        boolean scoped = !sectionScopeService.currentOrAll().wholeSchool() || sectionScopeService.view().isPresent();
         var byDate = attendanceRepo.findAllBySchoolId(schoolId).stream()
+                .filter(a -> !scoped || visible.contains(a.getTeacher().getId()))
                 .collect(Collectors.groupingBy(TeacherAttendance::getDate));
 
         // The denominator is today's active-staff headcount, not "however many rows happen to
@@ -172,7 +177,16 @@ public class TeacherAttendanceService {
     // search() has no status filter - it also returns INACTIVE/DELETED teachers, who have no
     // business showing up on a register to mark or counting toward a headcount.
     private List<Teacher> activeTeachers(String schoolId) {
-        return teacherRepo.search("", schoolId, Pageable.unpaged()).getContent().stream()
+        // A section-limited admin sees only the teachers working in their own section(s); an owner viewing one
+        // section also sees the teachers who work across every section (same rule as the Teachers list).
+        var scope = sectionScopeService.currentOrAll();
+        var view = sectionScopeService.view();
+        var found = view.isPresent()
+                ? teacherRepo.searchInSectionsOrUnlimited("", null, schoolId, view.get().sectionIds(), Pageable.unpaged())
+                : scope.wholeSchool()
+                        ? teacherRepo.search("", schoolId, Pageable.unpaged())
+                        : teacherRepo.searchInSections("", null, schoolId, scope.sectionIds(), Pageable.unpaged());
+        return found.getContent().stream()
                 .filter(t -> t.getStatus() == Teacher.Status.ACTIVE)
                 .toList();
     }

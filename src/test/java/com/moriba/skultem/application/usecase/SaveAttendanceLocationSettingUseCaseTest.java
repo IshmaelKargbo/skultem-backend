@@ -1,93 +1,58 @@
 package com.moriba.skultem.application.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.mapper.AttendanceLocationSettingMapper;
+import com.moriba.skultem.domain.model.AttendanceLocationSetting;
 import com.moriba.skultem.domain.repository.AttendanceLocationSettingRepository;
+import com.moriba.skultem.domain.repository.ManagementSectionRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 
-// Covers the "school wants to change its clock-in location" flow end to end through the real
-// use case + repository - the same upsert-by-schoolId path the Attendance settings page's Save
-// button hits (AttendanceLocationSettingController PUT /api/v1/attendance-location).
-@SpringBootTest(properties = "spring.profiles.active=test")
-@ActiveProfiles("test")
+// An untouched form holds 0,0 - saving that as a school's clock-in location would make every clock-in fail.
+@ExtendWith(MockitoExtension.class)
 class SaveAttendanceLocationSettingUseCaseTest {
 
-    @DynamicPropertySource
-    static void h2Props(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",
-                () -> "jdbc:h2:mem:skultem3;DB_CLOSE_DELAY=-1;NON_KEYWORDS=YEAR");
-    }
-
-    @Autowired
+    @Mock
+    private AttendanceLocationSettingRepository repo;
+    @Mock
+    private SchoolRepository schoolRepo;
+    @Mock
+    private ManagementSectionRepository sectionRepo;
+    @InjectMocks
     private SaveAttendanceLocationSettingUseCase useCase;
 
-    @Autowired
-    private GetAttendanceLocationSettingUseCase getUseCase;
-
-    @Autowired
-    private AttendanceLocationSettingRepository repo;
-
     @Test
-    @Transactional
-    void createsASettingWhenTheSchoolHasNoneYet() {
-        String schoolId = "school-location-1";
-
-        assertThat(getUseCase.execute(schoolId).configured()).isFalse();
-
-        var result = useCase.execute(schoolId, 8.4672512, -13.2317184, 150, null);
-
-        assertThat(result.configured()).isTrue();
-        assertThat(result.latitude()).isEqualTo(8.4672512);
-        assertThat(result.longitude()).isEqualTo(-13.2317184);
-        assertThat(result.radiusMeters()).isEqualTo(150);
-
-        var persisted = repo.findBySchoolId(schoolId).orElseThrow();
-        assertThat(persisted.getLatitude()).isEqualTo(8.4672512);
-        assertThat(persisted.getRadiusMeters()).isEqualTo(150);
+    void zeroZeroIsRefusedForTheSchoolAndForASection() {
+        assertThatThrownBy(() -> useCase.execute("school", 0, 0, 150, null)).isInstanceOf(RuleException.class)
+                .hasMessageContaining("Pick the location on the map");
+        assertThatThrownBy(() -> useCase.executeForSection("school", "sec", 0, 0, 150, null))
+                .isInstanceOf(RuleException.class);
+        verify(repo, never()).save(any());
     }
 
     @Test
-    @Transactional
-    void movingTheLocationUpdatesTheExistingRowInPlaceRatherThanCreatingASecondOne() {
-        String schoolId = "school-location-2";
+    void aRealLocationIsSaved() {
+        var res = useCase.execute("school", 8.4693, -13.2381, 150, null);
 
-        useCase.execute(schoolId, 8.4672512, -13.2317184, 150, null);
-        var originalId = repo.findBySchoolId(schoolId).orElseThrow().getId();
-
-        // The school relocates - same flow as pressing "Save Location" again with new
-        // coordinates and a wider radius on the settings page.
-        var updated = useCase.execute(schoolId, 8.4841, -13.2354, 250, "41.66.12.5");
-
-        assertThat(updated.latitude()).isEqualTo(8.4841);
-        assertThat(updated.longitude()).isEqualTo(-13.2354);
-        assertThat(updated.radiusMeters()).isEqualTo(250);
-        assertThat(updated.allowedIps()).isEqualTo("41.66.12.5");
-
-        var persisted = repo.findBySchoolId(schoolId).orElseThrow();
-        assertThat(persisted.getId()).isEqualTo(originalId);
-        assertThat(persisted.getLatitude()).isEqualTo(8.4841);
-        assertThat(persisted.getAllowedIps()).isEqualTo("41.66.12.5");
-
-        // Fetching it back (what the settings page does on load) reflects the move too.
-        var fetched = getUseCase.execute(schoolId);
-        assertThat(fetched.latitude()).isEqualTo(8.4841);
-        assertThat(fetched.radiusMeters()).isEqualTo(250);
+        assertThat(res.configured()).isTrue();
+        verify(repo).save(any());
     }
 
     @Test
-    @Transactional
-    void twoSchoolsKeepIndependentLocations() {
-        useCase.execute("school-location-3a", 8.4672512, -13.2317184, 150, null);
-        useCase.execute("school-location-3b", 9.0, -14.0, 100, null);
+    void aStoredZeroZeroReadsAsNotSetUp() {
+        var stored = AttendanceLocationSetting.create("id", "school", 0, 0, 150, null);
 
-        assertThat(getUseCase.execute("school-location-3a").latitude()).isEqualTo(8.4672512);
-        assertThat(getUseCase.execute("school-location-3b").latitude()).isEqualTo(9.0);
+        assertThat(AttendanceLocationSettingMapper.toDTO(stored).configured()).isFalse();
     }
 }

@@ -47,6 +47,18 @@ public class ClassSubjectAssessmentLifeCycleEntity {
     @Column(nullable = false)
     private ClassSubjectAssessmentLifeCycle.Status status;
 
+    @Enumerated(EnumType.STRING)
+    private com.moriba.skultem.domain.vo.AssessmentStructure structure;
+    private Integer caPercentage;
+    private Integer formalPercentage;
+    @Enumerated(EnumType.STRING)
+    private com.moriba.skultem.domain.vo.CaFrequency caFrequency;
+    private Integer caEntries;
+    private Integer configVersion;
+    private Instant structureFrozenAt;
+    private Instant caSubmittedAt;
+    private String caLockedWeeks;
+
     private Instant createdAt;
 
     private Instant updatedAt;

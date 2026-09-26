@@ -23,6 +23,12 @@ public class ActivityAdapter implements ActivityRepository {
     }
 
     @Override
+    public Page<Activity> findVisibleToSections(String schoolId, java.util.Collection<String> sectionIds,
+            Pageable pageable) {
+        return repo.findVisibleToSections(schoolId, sectionIds, pageable).map(ActivityMapper::toDomain);
+    }
+
+    @Override
     public Page<Activity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(ActivityMapper::toDomain);
     }

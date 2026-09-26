@@ -38,6 +38,7 @@ public class ListAssessmentApprovalRequestUseCase {
         private final TeacherRepository teacherRepo;
         private final AssessmentScoreRepository assessmentScoreRepo;
         private final ResolveScoreGradeUseCase resolveScoreGradeUseCase;
+        private final com.moriba.skultem.domain.repository.AssessmentCaEntryRepository caEntryRepo;
 
         private static double roundTo2Dp(double value) {
                 return Math.round(value * 100.0) / 100.0;
@@ -158,10 +159,18 @@ public class ListAssessmentApprovalRequestUseCase {
         private AssessmentApprovalRequestDTO toDTO(AssessmentApprovalRequest r) {
                 List<AssessmentScore> scores = assessmentScoreRepo.findAllByCycle(r.getCycle().getId());
 
+                // Continuous assessment: the reviewer also sees each student's CA recordings and formal test.
+                var caEntries = r.getCycle().isContinuous()
+                                ? caEntryRepo.findAllByScoreIds(scores.stream().map(AssessmentScore::getId).toList())
+                                                .stream().collect(Collectors.groupingBy(
+                                                                com.moriba.skultem.domain.model.AssessmentCaEntry::getAssessmentScoreId))
+                                : java.util.Map.<String, List<com.moriba.skultem.domain.model.AssessmentCaEntry>>of();
+
                 List<AssessmentScoreDTO> scoreDTOs = scores.stream()
                                 .map(s -> {
                                         String grade = resolveScoreGradeUseCase.execute(schoolIdOf(r), s.getScore());
-                                        return AssessmentScoreMapper.toDTO(s, grade);
+                                        return AssessmentScoreMapper.toDTO(s, grade,
+                                                        caEntries.getOrDefault(s.getId(), List.of()));
                                 }).collect(Collectors.toList());
 
                 int totalStudents = scores.size();
@@ -208,7 +217,8 @@ public class ListAssessmentApprovalRequestUseCase {
                                 scoreDTOs,
                                 r.getTeacherSubject().getId(),
                                 r.getCycle().getAssessment().getId(),
-                                r.getCycle().getTerm().getId());
+                                r.getCycle().getTerm().getId(),
+                                r.isSelfReview());
         }
 
         private String schoolIdOf(AssessmentApprovalRequest r) {

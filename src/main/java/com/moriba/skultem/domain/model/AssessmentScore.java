@@ -21,6 +21,10 @@ public class AssessmentScore extends AggregateRoot<String> {
     // changed this score - null until the first edit. Purely attribution, not an access-control
     // gate; any teacher assigned to the subject can still edit it.
     private String gradedByUserId;
+    // Only for a continuous-assessment score: the CA part (average of its recordings) and the formal test, both
+    // 0-100. `score` is then the combined value, so everything downstream reads it unchanged.
+    private Integer caScore;
+    private Integer formalScore;
 
     public AssessmentScore(
             String id,
@@ -62,6 +66,26 @@ public class AssessmentScore extends AggregateRoot<String> {
                 null,
                 now,
                 now);
+    }
+
+    // Records a continuous-assessment score: the CA average and the formal test (either may still be missing)
+    // and the combined value they make under the assessment's frozen weights.
+    public void applyContinuous(Integer caScore, Integer formalScore, Integer combined, String gradedByUserId) {
+        if (!canMark()) {
+            throw new RuleException(
+                    "You cannot update this score because the assessment is currently " + cycle.getStatus());
+        }
+        this.caScore = caScore;
+        this.formalScore = formalScore;
+        this.score = validateScore(combined);
+        this.gradedByUserId = gradedByUserId;
+        this.weightedScore = calculateWeightedScore(this.score, this.weight);
+        touch(Instant.now());
+    }
+
+    public void restoreContinuous(Integer caScore, Integer formalScore) {
+        this.caScore = caScore;
+        this.formalScore = formalScore;
     }
 
     public void updateScore(Integer score, String gradedByUserId) {

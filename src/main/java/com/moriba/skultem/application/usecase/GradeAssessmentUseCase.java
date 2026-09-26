@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.model.StudentAssessment;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
@@ -70,6 +71,10 @@ public class GradeAssessmentUseCase {
             if (!scores.isEmpty()) {
                 for (AssessmentScore score : scores) {
 
+                    if (score.getCycle().isContinuous()) {
+                        throw new RuleException("This assessment is scored with continuous assessment (CA + formal "
+                                + "test) - record the CA entries and the test score instead.");
+                    }
                     if (!score.canMark()) {
                         throw new IllegalStateException("Assessment score not in DRAFT state");
                     }

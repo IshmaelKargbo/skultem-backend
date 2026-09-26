@@ -28,6 +28,7 @@ public class SaveAttendanceLocationSettingUseCase {
     // The school-wide location.
     public AttendanceLocationSettingDTO execute(String schoolId, double latitude, double longitude,
             int radiusMeters, String allowedIps) {
+        AttendanceLocationSetting.requireRealLocation(latitude, longitude);
         var existing = repo.findBySchoolId(schoolId).orElse(null);
 
         AttendanceLocationSetting setting;
@@ -46,6 +47,7 @@ public class SaveAttendanceLocationSettingUseCase {
     // One management section's own location, for a school run from several places.
     public AttendanceLocationSettingDTO executeForSection(String schoolId, String sectionId, double latitude,
             double longitude, int radiusMeters, String allowedIps) {
+        AttendanceLocationSetting.requireRealLocation(latitude, longitude);
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
         if (school.getManagementModel() != ManagementModel.SECTION_BASED) {
             throw new RuleException("This school isn't managed in sections");

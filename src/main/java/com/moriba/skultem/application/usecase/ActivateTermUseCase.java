@@ -23,6 +23,7 @@ public class ActivateTermUseCase {
 
     private final TermRepository termRepository;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepository;
+    private final com.moriba.skultem.application.services.AssessmentStructureService structureService;
     private final SeedPlatformFeeForAcademicYearUseCase seedPlatformFeeForAcademicYearUseCase;
 
     @AuditLogAnnotation(action = "TERM_ACTIVATED")
@@ -79,6 +80,8 @@ public class ActivateTermUseCase {
 
                 var firstCycles = cycleRepository.findAllBySchoolTermAndPosition(schoolId, termId, firstPosition);
                 firstCycles.forEach(a -> a.markDraft());
+                // Opening freezes the assessment configuration in force now onto each assessment.
+                structureService.freezeOpened(firstCycles);
                 cycleRepository.saveAll(firstCycles);
             }
         }

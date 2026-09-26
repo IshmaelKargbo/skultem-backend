@@ -78,6 +78,10 @@ public class AssessmentController {
     private final GetSchoolGradingScaleUseCase getSchoolGradingScaleUseCase;
     private final UpdateSchoolGradingScaleUseCase updateSchoolGradingScaleUseCase;
     private final ReopenAssessmentCycleUseCase reopenAssessmentCycleUseCase;
+    private final com.moriba.skultem.application.usecase.RecordContinuousAssessmentUseCase recordContinuousAssessmentUseCase;
+    private final com.moriba.skultem.application.usecase.SubmitContinuousCaUseCase submitContinuousCaUseCase;
+    private final com.moriba.skultem.application.usecase.LockContinuousWeekUseCase lockContinuousWeekUseCase;
+    private final com.moriba.skultem.application.usecase.UnlockContinuousWeekUseCase unlockContinuousWeekUseCase;
 
     // A template (e.g. "Mid-Term Test", pass mark 40%) is a school-wide reusable definition with no
     // level of its own - see AssessmentTemplate - so it's section-neutral like the reads below.
@@ -241,6 +245,68 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessment approval summary fetch successfully", res);
     }
 
+    // Recording an assessment opened as continuous assessment (CA recordings + formal test). Teachers use the
+    // structure the assessment froze when it opened; nothing here can change it.
+    @SectionScoped
+    @PostMapping("/continuous/{teacherSubjectId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    public ApiResponse<Object> recordContinuous(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.RecordContinuousAssessmentDTO param) {
+        var records = param.records().stream()
+                .map(r -> new com.moriba.skultem.application.usecase.RecordContinuousAssessmentUseCase.StudentRecord(
+                        r.scoreId(),
+                        r.entries() == null ? java.util.List.of()
+                                : r.entries().stream()
+                                        .map(e -> new com.moriba.skultem.application.usecase.RecordContinuousAssessmentUseCase.CaValue(
+                                                e.entryNumber(), e.score()))
+                                        .toList(),
+                        r.formalScore()))
+                .toList();
+        int saved = recordContinuousAssessmentUseCase.execute(school, teacherSubjectId, param.assessmentId(),
+                param.termId(), records);
+        return new ApiResponse<>("success", 200, saved + " student(s) recorded", null);
+    }
+
+    // Locks a completed CA recording (every student has it) so it can't be edited afterwards.
+    @SectionScoped
+    @PostMapping("/continuous/{teacherSubjectId}/lock-week")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    public ApiResponse<Object> lockContinuousWeek(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ContinuousWeekDTO param) {
+        lockContinuousWeekUseCase.execute(school, teacherSubjectId, param.assessmentId(), param.termId(), param.week());
+        return new ApiResponse<>("success", 200, "Recording locked", null);
+    }
+
+    // The only way back into a locked recording - administrators only, with a reason (kept on the audit trail).
+    @SectionScoped
+    @PostMapping("/continuous/{teacherSubjectId}/unlock-week")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    public ApiResponse<Object> unlockContinuousWeek(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ContinuousWeekDTO param) {
+        unlockContinuousWeekUseCase.execute(school, teacherSubjectId, param.assessmentId(), param.termId(),
+                param.week(), param.reason());
+        return new ApiResponse<>("success", 200, "Recording unlocked", null);
+    }
+
+    // Closes the CA step of a continuous assessment - every recording in for every student - so the formal test
+    // can be entered next.
+    @SectionScoped
+    @PostMapping("/continuous/{teacherSubjectId}/submit-ca")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    public ApiResponse<Object> submitContinuousCa(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SubmitContinuousCaDTO param) {
+        submitContinuousCaUseCase.execute(school, teacherSubjectId, param.assessmentId(), param.termId());
+        return new ApiResponse<>("success", 200, "CA submitted - the formal test can now be entered", null);
+    }
+
     @SectionScoped
     @PostMapping("/grade/{teacherSubjectId}")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
@@ -352,12 +418,16 @@ public class AssessmentController {
         return new ApiResponse<>("success", 200, "Assessment cycle overview fetched successfully", overview);
     }
 
+    // Sections run their assessments separately, so a section moves on its own (sectionId). A section-limited admin can
+    // only move their own; a school without sections omits it.
+    @SectionScoped
     @PostMapping("/cycle/{termId}/advance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#sectionId)")
     public ApiResponse<AssessmentCycleAdvanceDTO> advanceCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String termId) {
-        var result = advanceAssessmentCycleUseCase.execute(school, termId);
+            @PathVariable String termId,
+            @RequestParam(required = false) String sectionId) {
+        var result = advanceAssessmentCycleUseCase.execute(school, termId, sectionId);
         return new ApiResponse<>("success", 200, result.message(), result);
     }
 

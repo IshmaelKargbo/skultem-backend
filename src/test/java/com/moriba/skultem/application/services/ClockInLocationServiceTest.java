@@ -111,4 +111,16 @@ class ClockInLocationServiceTest {
         assertThatThrownBy(() -> service.check(SCHOOL, teacher, 0, 0, null, "1.1.1.1", Action.CLOCK_IN))
                 .isInstanceOf(BadRequestException.class).hasMessageContaining("has not been set up");
     }
+
+    @Test
+    void aLocationSavedAsZeroZeroIsNotALocationAndDoesNotHideTheSchoolWideOne() {
+        var schoolWide = AttendanceLocationSetting.create("s", SCHOOL, FREETOWN_LAT, FREETOWN_LNG, 150, null);
+        var bogus = AttendanceLocationSetting.createForSection("c", SCHOOL, "sec-tertiary", 0, 0, 150, null);
+        when(locationRepo.findAllBySchoolId(SCHOOL)).thenReturn(List.of(schoolWide, bogus));
+        limitedTo("sec-tertiary");
+
+        var match = service.check(SCHOOL, teacher, FREETOWN_LAT, FREETOWN_LNG, null, "1.1.1.1", Action.CLOCK_IN);
+
+        assertThat(match.setting().getManagementSectionId()).isNull();
+    }
 }

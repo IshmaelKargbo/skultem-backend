@@ -78,9 +78,13 @@ class GradeAssessmentUseCaseTest {
         when(studentAssessmentRepo.findAllBySubjectAndSessionAndTermId("subj-1", "session-1", "term-1"))
                 .thenReturn(List.of(sa));
 
+        var cycle = mock(com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle.class);
+        when(cycle.isContinuous()).thenReturn(false);
+
         var score = mock(AssessmentScore.class);
         when(score.getId()).thenReturn("score-1");
         when(score.canMark()).thenReturn(true);
+        when(score.getCycle()).thenReturn(cycle);
         when(scoreRepo.findAllByStudentAssessmentIdAndAssessmentId("sa-1", "assess-1")).thenReturn(List.of(score));
 
         useCase.execute(SCHOOL, "ts-1", "assess-1", "term-1",

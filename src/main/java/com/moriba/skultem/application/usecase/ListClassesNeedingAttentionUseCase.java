@@ -31,13 +31,18 @@ public class ListClassesNeedingAttentionUseCase {
     private final ClassSessionRepository classSessionRepo;
     private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    // A section-limited admin only sees their own section's classes.
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public ClassAttentionSummaryDTO execute(String schoolId, String academicYearId) {
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
+        var levels = sectionScopeService.levels();
 
         var sessions = classSessionRepo
                 .findBySchoolIdAndAcademicYearId(schoolId, academicYear.getId(), Pageable.unpaged())
-                .getContent();
+                .getContent().stream()
+                .filter(s -> levels == null || levels.contains(s.getClazz().getLevel()))
+                .toList();
 
         // First session seen for each Clazz wins the display fields (name/section/stream) - which
         // one doesn't matter for a single-stream class, and for a multi-stream one it's simply

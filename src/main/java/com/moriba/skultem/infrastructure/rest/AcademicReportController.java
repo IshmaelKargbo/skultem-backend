@@ -50,6 +50,7 @@ public class AcademicReportController {
     private final GetAcademicTrendUseCase getAcademicTrendUseCase;
     private final GetAssessmentCompletionReportUseCase getAssessmentCompletionReportUseCase;
     private final GenerateStudentsRequiringAttentionUseCase generateStudentsRequiringAttentionUseCase;
+    private final com.moriba.skultem.application.usecase.ContinuousAssessmentReportUseCase continuousAssessmentReportUseCase;
     private final GenerateWeeklyGenderAttendanceReportUseCase generateWeeklyGenderAttendanceReportUseCase;
     private final GenerateStudentDemographicsReportUseCase generateStudentDemographicsReportUseCase;
 
@@ -122,6 +123,21 @@ public class AcademicReportController {
 
         return new ApiResponse<>("success", 200, "Assessment completion report fetched successfully", res.rows(),
                 meta);
+    }
+
+    // Continuous assessment: CA + formal test progress and the students the classwork already says need a look.
+    @SectionScoped
+    @GetMapping("/continuous")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
+    public ApiResponse<com.moriba.skultem.application.dto.ContinuousAssessmentReportDTO> getContinuousAssessmentReport(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String termId,
+            @RequestParam(required = false) String classId,
+            @RequestParam(required = false) Level level,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
+        return new ApiResponse<>("success", 200, "Continuous assessment report fetched successfully",
+                continuousAssessmentReportUseCase.execute(school, termId, classId, level, page, size));
     }
 
     @SectionScoped

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSubjectAssessmentLifeCycleEntity;
 
 public interface ClassSubjectAssessmentLifeCycleJpaRepository
@@ -25,6 +26,12 @@ public interface ClassSubjectAssessmentLifeCycleJpaRepository
 
         List<ClassSubjectAssessmentLifeCycleEntity> findAllBySchoolIdAndTerm_IdAndSubject_Session_Clazz_Id(
                         String schoolId, String termId, String classId);
+
+        // Every cycle across the whole school (all terms) still open for entry - the pool
+        // RefreshUnstartedAssessmentsUseCase considers when re-syncing untouched ones onto a
+        // just-changed configuration.
+        List<ClassSubjectAssessmentLifeCycleEntity> findAllBySchoolIdAndStatusIn(String schoolId,
+                        List<ClassSubjectAssessmentLifeCycle.Status> statuses);
 
         Optional<ClassSubjectAssessmentLifeCycleEntity> findBySubject_IdAndAssessment_IdAndTerm_Id(
                         String subjectId, String assessmentId, String termId);
@@ -55,6 +62,7 @@ public interface ClassSubjectAssessmentLifeCycleJpaRepository
                           AND c.term.id = :termId
                           AND (:classId IS NULL OR c.subject.session.clazz.id = :classId)
                           AND (:subjectId IS NULL OR c.subject.subject.id = :subjectId)
+                          AND c.status <> com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle.Status.LOCKED
                         ORDER BY c.subject.session.clazz.name, c.subject.subject.name, c.assessment.position
                         """)
         List<Object[]> completionReportRows(

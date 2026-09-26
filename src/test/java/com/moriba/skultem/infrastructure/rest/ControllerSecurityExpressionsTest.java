@@ -103,7 +103,9 @@ class ControllerSecurityExpressionsTest {
     private static final Set<String> FILTERED_IN_QUERY = Set.of(
             // {classMasterId} is a teacher id; the approval list/counts filter by level in the query.
             "AssessmentController#listAssessmentApprovals",
-            "AssessmentController#assessmentApprovalSummary");
+            "AssessmentController#assessmentApprovalSummary",
+            // {date} is a calendar date, not a record; the roster it returns only lists the caller's own teachers.
+            "TeacherAttendanceController#historyDetail");
 
     // Guards that take a record id must actually be wired into the rule - a @SectionScoped endpoint
     // with a path id but no @sectionScope check is almost always a forgotten guard.
