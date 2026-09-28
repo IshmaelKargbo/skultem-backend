@@ -1,7 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.util.Collection;
-
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -20,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class ClassAdapter implements ClassRepository {
+
     private final ClassJpaRepository repo;
 
     @Override
@@ -51,7 +51,7 @@ public class ClassAdapter implements ClassRepository {
 
     @Override
     public Page<Clazz> findBySchool(String school, Pageable pageable) {
-       return repo.findAllBySchoolIdAndStatusOrderByLevelOrderAsc(school, Status.ACTIVE, pageable).map(ClassMapper::toDomain);
+        return repo.findAllBySchoolIdAndStatusOrderByLevelOrderAsc(school, Status.ACTIVE, pageable).map(ClassMapper::toDomain);
     }
 
     @Override
@@ -83,6 +83,11 @@ public class ClassAdapter implements ClassRepository {
     @Override
     public Optional<Clazz> findByIdAndSchool(String id, String school) {
         return repo.findByIdAndSchoolId(id, school).map(ClassMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Clazz> findByNameAndSchool(String name, String school) {
+        return repo.findByNameAndSchoolId(name, school).map(ClassMapper::toDomain);
     }
 
 }

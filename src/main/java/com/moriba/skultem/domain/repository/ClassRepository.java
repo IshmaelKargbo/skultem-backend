@@ -1,7 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
 import java.util.Collection;
-
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +15,8 @@ public interface ClassRepository {
     Optional<Clazz> findByIdAndSchool(String id, String school);
 
     boolean existsByNameAndSchool(String name, String school);
+
+    Optional<Clazz> findByNameAndSchool(String name, String school);
 
     boolean existsByLevelOrderAndSchool(int levelOrder, String school);
 
