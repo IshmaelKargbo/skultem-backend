@@ -1,11 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
-import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
-
-import com.moriba.skultem.domain.vo.Level;
-
 import java.util.Collection;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -18,8 +13,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSessionEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
 
 public interface ClassSessionJpaRepository
         extends JpaRepository<ClassSessionEntity, String>, JpaSpecificationExecutor<ClassSessionEntity> {
@@ -78,6 +75,9 @@ public interface ClassSessionJpaRepository
 
     List<ClassSessionEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAsc(
             String classId, String academicYearId, String schoolId);
+
+    List<ClassSessionEntity> findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAsc(
+            String classId, String academicYearId, String streamId);
 
     Optional<ClassSessionEntity> findByAcademicYear_IdAndClazz_IdAndSchoolId(String academic, String classId,
             String schoolId);

@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +27,6 @@ import com.moriba.skultem.application.dto.ClassSubjectResponse;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.usecase.ComputeClassAttentionUseCase;
 import com.moriba.skultem.application.usecase.CreateClassUseCase;
-import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
 import com.moriba.skultem.application.usecase.GetClassMasterBySessionUseCase;
 import com.moriba.skultem.application.usecase.GetClassOverviewUseCase;
 import com.moriba.skultem.application.usecase.GetClassSubjectUseCase;
@@ -38,6 +35,7 @@ import com.moriba.skultem.application.usecase.GetCurrentClassMasterUseCase;
 import com.moriba.skultem.application.usecase.ListClassBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListClassSectionByClassUseCase;
 import com.moriba.skultem.application.usecase.ListClassStreamByIdUseCase;
+import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
 import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
@@ -49,6 +47,7 @@ import com.moriba.skultem.infrastructure.rest.dto.NextClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTerminalDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -85,9 +84,9 @@ public class ClassController {
         var res = createClassUseCase.execute(school, param.name(), param.levelOrder(), param.sections(),
                 param.streams(), param.assessmentTemplateId(), param.level(),
                 param.streamSections() == null ? null
-                        : param.streamSections().stream()
-                                .map(p -> new CreateClassUseCase.StreamSectionsInput(p.streamId(), p.sectionIds()))
-                                .toList());
+                : param.streamSections().stream()
+                        .map(p -> new CreateClassUseCase.StreamSectionsInput(p.streamId(), p.sectionIds()))
+                        .toList());
         return new ApiResponse<>("success", 200, "Class created successfully", res);
     }
 
@@ -169,8 +168,16 @@ public class ClassController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSectionDTO>> getClassSectionsByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String classId) {
-        var res = listClassSectionByClassUseCase.execute(school, classId);
+            @PathVariable String classId,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String streamId) {
+        List<ClassSectionDTO> res;
+        if (streamId == null) {
+            res = listClassSectionByClassUseCase.execute(school, classId);
+        } else {
+            res = listClassSectionByClassUseCase.execute(school, classId, streamId, academicYearId);
+        }
+
         return new ApiResponse<>("success", 200, "Class sections fetched successfully", res);
     }
 

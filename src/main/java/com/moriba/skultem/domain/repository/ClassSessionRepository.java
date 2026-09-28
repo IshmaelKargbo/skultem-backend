@@ -1,9 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
-import com.moriba.skultem.domain.vo.Level;
-
 import java.util.Collection;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 
 public interface ClassSessionRepository {
         void save(ClassSession domain);
@@ -64,6 +62,8 @@ public interface ClassSessionRepository {
 
         List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
                         String schoolId);
+
+        List<ClassSession> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String streamId, String academicYearId);
 
         long countBySchoolId(String schoolId);
 

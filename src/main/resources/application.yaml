@@ -65,7 +65,7 @@ spring:
       enabled: true
 system:
   admin:
-    bootstrap-token: ${SYSTEM_ADMIN_BOOTSTRAP_TOKEN:}
+    bootstrap-token: ${SYSTEM_ADMIN_BOOTSTRAP_TOKEN:0d9c32a5c3daf5744d4dadacd8f9b3d23160d9b2c18425c1ec47c6994312367b}
 r2:
   account-id: ${R2_ACCOUNT_ID:1317919cf429d1c5f81310e82e8f5663}
   access-key-id: ${R2_ACCESS_KEY_ID:a41fa013e777746d53eac8a611b8cd1c}

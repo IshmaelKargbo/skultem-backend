@@ -1,9 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
-import com.moriba.skultem.domain.vo.Level;
-
 import java.util.Collection;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -14,14 +11,17 @@ import org.springframework.stereotype.Repository;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassSessionEntity;
 import com.moriba.skultem.infrastructure.persistence.jpa.ClassSessionJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.ClassSessionMapper;
+
 import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
 public class ClassSessionAdapter implements ClassSessionRepository {
+
     private final ClassSessionJpaRepository repo;
 
     @Override
@@ -149,8 +149,8 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     @Override
     public Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
             Collection<Level> levels, Pageable pageable) {
-                return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId,
-                        levels, pageable).map(ClassSessionMapper::toDomain);
+        return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId,
+                levels, pageable).map(ClassSessionMapper::toDomain);
     }
 
     @Override
@@ -165,5 +165,12 @@ public class ClassSessionAdapter implements ClassSessionRepository {
             String academicYearId) {
         return repo.findByClazz_IdAndAcademicYear_IdAndStream_Id(classId, academicYearId, streamId)
                 .map(ClassSessionMapper::toDomain);
+    }
+
+    @Override
+    public List<ClassSession> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String streamId, String academicYearId) {
+        return repo.findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAsc(classId, academicYearId, streamId).stream()
+                .map(ClassSessionMapper::toDomain)
+                .toList();
     }
 }
