@@ -26,75 +26,95 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AssignTeacherToClassUseCase {
 
-        private final TeacherRepository teacherRepo;
-        private final ClassRepository classRepo;
-        private final ClassSessionRepository sessionRepo;
-        private final AcademicYearRepository academicYearRepo;
-        private final StreamRepository streamRepo;
-        private final ClassMasterRepository repo;
-        private final ReferenceGeneratorUsecase rg;
-        private final LogActivityUseCase logActivityUseCase;
+    private final TeacherRepository teacherRepo;
+    private final ClassRepository classRepo;
+    private final ClassSessionRepository sessionRepo;
+    private final AcademicYearRepository academicYearRepo;
+    private final StreamRepository streamRepo;
+    private final ClassMasterRepository repo;
+    private final ReferenceGeneratorUsecase rg;
+    private final LogActivityUseCase logActivityUseCase;
 
-        @AuditLogAnnotation(action = "ASSIGNED_TEACHER_TO_CLASS")
-        public void execute(String schoolId, String classId, String teacherId, String sectionId, String streamId) {
+    @AuditLogAnnotation(action = "ASSIGNED_TEACHER_TO_CLASS")
+    public void execute(String schoolId, String classId, String teacherId, String sectionId, String streamId) {
 
-                AcademicYear academicYear = academicYearRepo.findActiveBySchool(schoolId)
-                                .orElseThrow(() -> new NotFoundException("No active academic year found"));
+        AcademicYear academicYear = academicYearRepo.findActiveBySchool(schoolId)
+                .orElseThrow(() -> new NotFoundException("No active academic year found"));
 
-                if (academicYear.isLocked()) {
-                        throw new RuleException("Cannot assign class master in a locked academic year");
-                }
-
-                Clazz clazz = classRepo.findByIdAndSchool(classId, schoolId)
-                                .orElseThrow(() -> new NotFoundException("Class not found"));
-
-                var teacher = teacherRepo.findByIdAndSchoolId(teacherId, schoolId)
-                                .orElseThrow(() -> new NotFoundException("Teacher not found"));
-
-                if (teacher.getStatus() != Status.ACTIVE) {
-                        throw new RuleException("Inactive teacher cannot be assigned as class master");
-                }
-
-                ClassSession session;
-
-                if (clazz.getLevel().isStreamed()) {
-
-                        if (streamId == null) {
-                                throw new RuleException("Stream is required for SSS classes");
-                        }
-
-                        streamRepo.findByIdAndSchoolId(streamId, schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Stream not found"));
-
-                        session = sessionRepo
-                                        .findByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
-                                                        classId, academicYear.getId(), sectionId, streamId, schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Class session not found"));
-
-                } else {
-                        session = sessionRepo
-                                        .findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(classId,
-                                                        academicYear.getId(), sectionId,
-                                                        schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Class session not found"));
-                }
-
-                if (repo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.getId(), session.getId(), schoolId)) {
-                        throw new RuleException("This teacher is already a class master of this session.");
-                }
-
-                String id = rg.generate("CLASS_MASTER", "CMR");
-                ClassMaster record = ClassMaster.create(id, schoolId, session, teacher);
-
-                repo.save(record);
-
-                logActivityUseCase.log(
-                                schoolId,
-                                ActivityType.TEACHER,
-                                "Class master assigned",
-                                teacher.getUser().getGivenNames() + " " + teacher.getUser().getFamilyName()
-                                                + " - " + clazz.getName(),
-                                null,
-                                record.getId());
+        if (academicYear.isLocked()) {
+            throw new RuleException("Cannot assign class master in a locked academic year");
         }
+
+        Clazz clazz = classRepo.findByIdAndSchool(classId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Class not found"));
+
+        var teacher = teacherRepo.findByIdAndSchoolId(teacherId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Teacher not found"));
+
+        if (teacher.getStatus() != Status.ACTIVE) {
+            throw new RuleException("Inactive teacher cannot be assigned as class master");
+        }
+
+        ClassSession session;
+
+        if (clazz.getLevel().isStreamed()) {
+            if (streamId == null) {
+                throw new RuleException("Stream is required for SSS classes");
+            }
+
+            streamRepo.findByIdAndSchoolId(streamId, schoolId)
+                    .orElseThrow(() -> new NotFoundException("Stream not found"));
+
+            session = sessionRepo
+                    .findByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(
+                            classId,
+                            academicYear.getId(),
+                            sectionId,
+                            streamId,
+                            schoolId
+                    )
+                    .orElseThrow(() -> new NotFoundException(
+                    "Class session not found: "
+                    + "classId=" + classId
+                    + ", academicYearId=" + academicYear.getId()
+                    + ", sectionId=" + sectionId
+                    + ", streamId=" + streamId
+                    + ", schoolId=" + schoolId
+            ));
+
+        } else {
+            session = sessionRepo
+                    .findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(
+                            classId,
+                            academicYear.getId(),
+                            sectionId,
+                            schoolId
+                    )
+                    .orElseThrow(() -> new NotFoundException(
+                    "Class session not found: "
+                    + "classId=" + classId
+                    + ", academicYearId=" + academicYear.getId()
+                    + ", sectionId=" + sectionId
+                    + ", schoolId=" + schoolId
+            ));
+        }
+
+        if (repo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.getId(), session.getId(), schoolId)) {
+            throw new RuleException("This teacher is already a class master of this session.");
+        }
+
+        String id = rg.generate("CLASS_MASTER", "CMR");
+        ClassMaster record = ClassMaster.create(id, schoolId, session, teacher);
+
+        repo.save(record);
+
+        logActivityUseCase.log(
+                schoolId,
+                ActivityType.TEACHER,
+                "Class master assigned",
+                teacher.getUser().getGivenNames() + " " + teacher.getUser().getFamilyName()
+                + " - " + clazz.getName(),
+                null,
+                record.getId());
+    }
 }
