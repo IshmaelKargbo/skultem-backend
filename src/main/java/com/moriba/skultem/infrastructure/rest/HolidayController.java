@@ -1,6 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +25,7 @@ import com.moriba.skultem.domain.model.Holiday.Kind;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateHolidayDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateHolidayDTO;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class HolidayController {
     private final DeleteHolidayUseCase deleteHolidayUseCase;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<HolidayDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateHolidayDTO param) {
@@ -52,7 +52,7 @@ public class HolidayController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<HolidayDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -62,7 +62,7 @@ public class HolidayController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<HolidayDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -80,7 +80,7 @@ public class HolidayController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<HolidayDTO> update(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -91,7 +91,7 @@ public class HolidayController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

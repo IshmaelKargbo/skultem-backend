@@ -2,8 +2,12 @@ package com.moriba.skultem.infrastructure.rest;
 
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,13 +32,8 @@ import com.moriba.skultem.infrastructure.rest.dto.PromotionNoteDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SubmitPromotionRequestDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdatePromotionConfigDTO;
 
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/promotion")
@@ -80,7 +79,7 @@ public class PromotionController {
     }
 
     @GetMapping("/requests/mine")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<Object> myPromotionRequests(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -93,7 +92,7 @@ public class PromotionController {
     // --- Admin / proprietor: review queue ---
 
     @GetMapping("/requests")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<Object> listPromotionRequests(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String status,
@@ -113,7 +112,7 @@ public class PromotionController {
     }
 
     @PostMapping("/requests/{id}/return")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionRequestDTO> returnPromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -123,7 +122,7 @@ public class PromotionController {
     }
 
     @PostMapping("/requests/{id}/approve")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionRequestDTO> approvePromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -133,7 +132,7 @@ public class PromotionController {
     }
 
     @GetMapping("/progress")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionProgressDTO> promotionProgress(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPromotionProgressUseCase.execute(school);
@@ -141,7 +140,7 @@ public class PromotionController {
     }
 
     @PostMapping("/close-year")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<Object> closeAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         closeAcademicYearAndActivateNextUseCase.execute(school);
@@ -151,7 +150,7 @@ public class PromotionController {
     // --- Admin / proprietor: promotion rules ---
 
     @GetMapping("/config")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<PromotionConfigDTO> promotionConfig(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPromotionConfigUseCase.execute(school);
@@ -159,7 +158,7 @@ public class PromotionController {
     }
 
     @PostMapping("/config")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionConfigDTO> updatePromotionConfig(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody UpdatePromotionConfigDTO param) {

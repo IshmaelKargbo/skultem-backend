@@ -1,24 +1,23 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.NotificationDTO;
 import com.moriba.skultem.application.services.NotificationService;
 import com.moriba.skultem.application.usecase.ListNotificationByParentUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
-import lombok.RequiredArgsConstructor;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import lombok.RequiredArgsConstructor;
 
 @SectionNeutral
 @RestController
@@ -32,7 +31,7 @@ public class NotificationController {
     // Despite the use case's name, notifications aren't parent-specific at the
     // data level — `owner` is any User — so this is open to every portal role.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<List<NotificationDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -50,7 +49,7 @@ public class NotificationController {
     }
 
     @GetMapping("/open/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> open(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String id) {
         service.openNotification(school, id);

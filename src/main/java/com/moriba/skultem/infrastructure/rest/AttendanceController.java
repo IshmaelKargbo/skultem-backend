@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -42,6 +40,8 @@ import com.moriba.skultem.application.usecase.MarkClassSessionAttendanceUseCase.
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.ClassAttendanceMarkDTO;
 import com.moriba.skultem.infrastructure.rest.dto.MarkClassAttendanceDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -63,7 +63,7 @@ public class AttendanceController {
     private final GenerateClassAttendanceSummaryUseCase generateClassAttendanceSummaryUseCase;
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER')")
     public ApiResponse<AttendanceDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -72,7 +72,7 @@ public class AttendanceController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL' 'TEACHER')")
     public ApiResponse<List<AttendanceDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -90,7 +90,7 @@ public class AttendanceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', , 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -100,7 +100,7 @@ public class AttendanceController {
 
     @SectionScoped
     @PostMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<AttendanceDTO>> markClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -113,7 +113,7 @@ public class AttendanceController {
 
     @SectionScoped
     @DeleteMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<Void> deleteClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -124,7 +124,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<ClassSessionAttendanceDTO> getClassSessionSheet(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -135,7 +135,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/session/report/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<AttendanceHistoryDTO>> getClassSessionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -155,7 +155,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/register/{classSessionId}")
-    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') "
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') "
             + "or @permissionService.canAccessClassSessionAsTeacher(#school, #classSessionId)) "
             + "and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<ClassSessionAttendanceDTO> getDailyRegister(
@@ -168,7 +168,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/summary/monthly")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<List<StudentAttendanceSummaryDTO>> getMonthlySummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String classSessionId,
@@ -180,7 +180,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/summary/term")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<TermAttendanceSummaryDTO> getTermSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String classSessionId,
@@ -191,7 +191,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/summary/class")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
     public ApiResponse<ClassAttendanceSummaryDTO> getClassSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -202,7 +202,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/inspection-report")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<InspectionReportDTO> getInspectionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) InspectionReportType reportType,

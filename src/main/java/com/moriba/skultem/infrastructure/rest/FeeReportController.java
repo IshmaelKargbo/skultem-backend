@@ -31,22 +31,12 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Management reporting for the school's own fees - dashboard, term summary, student balances,
- * outstanding fees, daily collection, payment history and payment method breakdown. The platform
- * fee is never included in any of these (see LoadSchoolFeeRowsUseCase / PaymentJpaRepository's
- * school-fee-only queries) - it has its own reporting under /fee/platform/*.
- *
- * Same role gating as the rest of the fee-reporting endpoints (/fee/ledger/report,
- * /fee/platform/report): OWNER, PROPRIETOR, ACCOUNTANT - not the attendance-report convention
- * (ADMIN, OWNER, PROPRIETOR), since this is financial data and accountants need it.
- */
 @RestController
 @RequestMapping("/api/v1/fee/report")
 @RequiredArgsConstructor
 public class FeeReportController {
 
-    private static final String REPORT_ROLES = "@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')";
+    private static final String REPORT_ROLES = "@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT')";
 
     private final GetFeeDashboardSummaryUseCase getFeeDashboardSummaryUseCase;
     private final GenerateFeeTermSummaryUseCase generateFeeTermSummaryUseCase;

@@ -18,9 +18,6 @@ import com.moriba.skultem.infrastructure.rest.dto.GoLiveDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-// A school's own view of its playground mode (the flag itself is only ever set by a system admin -
-// see SystemAdminController). Deliberately not under /api/v1/school/**, which SecurityConfig
-// leaves open pre-auth for signup - this should never be reachable without a logged-in caller.
 @RestController
 @RequestMapping("/api/v1/playground")
 @RequiredArgsConstructor
@@ -29,7 +26,7 @@ public class PlaygroundController {
     private final WipeTestSchoolDataUseCase wipeTestSchoolDataUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<PlaygroundSummaryDTO> summary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPlaygroundSummaryUseCase.execute(school);

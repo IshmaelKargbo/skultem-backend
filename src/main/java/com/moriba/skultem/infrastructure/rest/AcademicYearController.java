@@ -1,10 +1,17 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,19 +33,10 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignNextAcademicYearDTO;
 import com.moriba.skultem.infrastructure.rest.dto.ConfigureNextAcademicYearDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateAcademicYearDTO;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping({"/api/v1/academic_year", "/api/v1/academic-year"})
@@ -56,7 +54,7 @@ public class AcademicYearController {
     private final AcademicService academicSvc;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<AcademicYearDTO> createAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateAcademicYearDTO param) {
@@ -69,7 +67,7 @@ public class AcademicYearController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<AcademicYearDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -86,7 +84,7 @@ public class AcademicYearController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PRINCIPAL')")
     public ApiResponse<AcademicYearDTO> setActiveAcademicYearBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -95,7 +93,7 @@ public class AcademicYearController {
     }
 
     @PostMapping("/{id}/next")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<ConfigureNextAcademicYearResultDTO> configureNext(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -109,7 +107,7 @@ public class AcademicYearController {
     }
 
     @PutMapping("/{id}/next")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<AcademicYearDTO> assignNext(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -129,7 +127,7 @@ public class AcademicYearController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PRINCIPAL')")
     public ApiResponse<AcademicYearDTO> update(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -139,7 +137,7 @@ public class AcademicYearController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PRINCIPAL')")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -149,7 +147,7 @@ public class AcademicYearController {
 
     @SectionNeutral
     @GetMapping("/terms")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId) {

@@ -1,15 +1,20 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.PayrollRunDTO;
 import com.moriba.skultem.application.dto.PayrollRunDetailDTO;
@@ -18,12 +23,15 @@ import com.moriba.skultem.application.dto.PayslipDTO;
 import com.moriba.skultem.application.dto.SalaryStructureDTO;
 import com.moriba.skultem.application.dto.SalaryTemplateDTO;
 import com.moriba.skultem.application.services.PayrollService;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreatePayrollRunDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SaveSalaryTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SetSalaryStructureDTO;
 import com.moriba.skultem.infrastructure.rest.dto.TogglePayslipDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,18 +40,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/payroll")
 @RequiredArgsConstructor
-@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
 public class PayrollController {
 
     private final PayrollService payrollService;
-
-    // Self-service - overrides the class-level admin-only restriction, same pattern as the
-    // attendance/curriculum "me" endpoints. Scoped to the signed-in user's own teacher record
-    // (see PayrollService#getMySalaryHistory / #getMyPayslip) rather than an admin-supplied
-    // teacherId, so a teacher can't pull another staff member's payroll data.
+    
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<PayslipDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -53,7 +57,7 @@ public class PayrollController {
 
     @SectionNeutral
     @GetMapping("/me/payslip/{runId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipDTO> myPayslip(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

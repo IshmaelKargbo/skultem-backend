@@ -1,12 +1,17 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
-import com.moriba.skultem.infrastructure.idempotency.Idempotent;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,25 +19,42 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.ClassFeeDetails;
 import com.moriba.skultem.application.dto.FeeCategoryDTO;
 import com.moriba.skultem.application.dto.FeeDiscountDTO;
+import com.moriba.skultem.application.dto.FeeDiscountReportDTO;
 import com.moriba.skultem.application.dto.FeeStructureDTO;
+import com.moriba.skultem.application.dto.PlatformFeeReportDTO;
 import com.moriba.skultem.application.dto.StudentFeeDTO;
+import com.moriba.skultem.application.dto.StudentLedgerDTO;
 import com.moriba.skultem.application.dto.StudentLedgerPagedDTO;
+import com.moriba.skultem.application.dto.StudentLedgerReportDTO;
+import com.moriba.skultem.application.services.FeeService;
 import com.moriba.skultem.application.usecase.AssignFeeToStudentUseCase;
 import com.moriba.skultem.application.usecase.AssignFeeToStudentUseCase.AssignFeeToStudentRecord;
 import com.moriba.skultem.application.usecase.CountStudentByFeeUseCase;
+import com.moriba.skultem.application.usecase.CountStudentFeesUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeCategoryUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase.DiscountRecord;
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase.StructureRecord;
+import com.moriba.skultem.application.usecase.DeleteFeeCategoryUseCase;
 import com.moriba.skultem.application.usecase.DeleteFeeStructureUseCase;
+import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
 import com.moriba.skultem.application.usecase.GetFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.ListFeeCategoryBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeStructureBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ListPlatformFeeEntriesUseCase;
 import com.moriba.skultem.application.usecase.ListStudentLedgerBySchoolUseCase;
+import com.moriba.skultem.application.usecase.PlatformFeeReportUseCase;
 import com.moriba.skultem.application.usecase.RecomputeStudentLedgerBalancesUseCase;
+import com.moriba.skultem.application.usecase.StudentLedgerReportUseCase;
+import com.moriba.skultem.application.usecase.UpdateFeeCategoryUseCase;
 import com.moriba.skultem.application.usecase.UpdateFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.UpdateFeeStructureUseCase.UpdateRecord;
+import com.moriba.skultem.domain.model.FeeDiscount.Kind;
+import com.moriba.skultem.domain.model.FeeStructure.Type;
+import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignFeeToStudentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeCategoryDTO;
@@ -40,40 +62,11 @@ import com.moriba.skultem.infrastructure.rest.dto.CreateFeeDiscountDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateFeeStructureDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateFeeCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateFeeStructureDTO;
-import com.moriba.skultem.application.usecase.UpdateFeeCategoryUseCase;
-import com.moriba.skultem.application.usecase.DeleteFeeCategoryUseCase;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-import com.moriba.skultem.application.dto.FeeDiscountReportDTO;
-import com.moriba.skultem.application.dto.PlatformFeeReportDTO;
-import com.moriba.skultem.application.dto.StudentLedgerDTO;
-import com.moriba.skultem.application.dto.StudentLedgerReportDTO;
-import com.moriba.skultem.application.usecase.ListPlatformFeeEntriesUseCase;
-import com.moriba.skultem.application.usecase.PlatformFeeReportUseCase;
-import com.moriba.skultem.application.error.BadRequestException;
-import com.moriba.skultem.application.services.FeeService;
-import com.moriba.skultem.application.usecase.CountStudentFeesUseCase;
-import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
-import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
-import com.moriba.skultem.application.usecase.StudentLedgerReportUseCase;
-import com.moriba.skultem.domain.model.FeeDiscount.Kind;
-import com.moriba.skultem.domain.model.FeeStructure.Type;
-import com.moriba.skultem.domain.vo.Gender;
 
 @RestController
 @RequestMapping("/api/v1/fee")
@@ -106,7 +99,7 @@ public class FeeController {
         // see FeeCategory - so it's section-neutral like the list endpoint below, not scoped.
         @SectionNeutral
         @PostMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeCategoryDTO param) {
@@ -116,7 +109,7 @@ public class FeeController {
 
         @SectionNeutral
         @PutMapping("/category/{categoryId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> updateCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String categoryId,
@@ -127,7 +120,7 @@ public class FeeController {
 
         @SectionNeutral
         @DeleteMapping("/category/{categoryId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> deleteCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String categoryId) {
@@ -138,7 +131,7 @@ public class FeeController {
         @Idempotent(operation = "fee.structure.create")
         @SectionScoped
         @PostMapping("/structure")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.createFee(#school, #param.type(), #param.classIds())")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.createFee(#school, #param.type(), #param.classIds())")
         public ApiResponse<List<FeeStructureDTO>> createStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeStructureDTO param) {
@@ -159,7 +152,7 @@ public class FeeController {
 
         @SectionScoped
         @PutMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
         public ApiResponse<FeeStructureDTO> updateStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId,
@@ -177,7 +170,7 @@ public class FeeController {
 
         @SectionScoped
         @GetMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
         public ApiResponse<FeeStructureDTO> getStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -188,7 +181,7 @@ public class FeeController {
 
         @SectionScoped
         @DeleteMapping("/structure/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #feeId)")
         public ApiResponse<Object> deleteStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -200,7 +193,7 @@ public class FeeController {
         @Idempotent(operation = "fee.structure.assign")
         @SectionScoped
         @PostMapping("/structure/assign")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #param.feeId()) and @sectionScope.student(#school, #param.studentId())")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.manageFeeStructure(#school, #param.feeId()) and @sectionScope.student(#school, #param.studentId())")
         public ApiResponse<StudentFeeDTO> assignStructureToStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody AssignFeeToStudentDTO param) {
@@ -211,7 +204,7 @@ public class FeeController {
 
         @SectionScoped
         @GetMapping("/structure")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeStructureDTO>> listStructure(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -219,14 +212,8 @@ public class FeeController {
                         @RequestParam(required = false) String academicYearId,
                         @RequestParam(required = false) String termId,
                         @RequestParam(required = false) String classId,
-                        // NEW or OLD - which side of the newStudentsOnly/oldStudentsOnly split to
-                        // narrow down to, e.g. finding "Class 1's old-students Tuition fee" among
-                        // several fees sharing the same class/term/category. Anything else (including
-                        // absent) means no filtering on this at all.
                         @RequestParam(required = false) String studentType,
                         @RequestParam(required = false) String gender,
-                        // See ListFeeStructureBySchoolUseCase.SORTABLE_FIELDS - anything else falls back
-                        // to createdAt.
                         @RequestParam(required = false) String sortBy,
                         @RequestParam(required = false) String direction) {
 
@@ -250,7 +237,7 @@ public class FeeController {
 
         @SectionScoped
         @GetMapping("/structure/count/{feeId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.feeStructure(#school, #feeId)")
         public ApiResponse<Long> countFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String feeId) {
@@ -262,7 +249,7 @@ public class FeeController {
 
         @SectionScoped
         @GetMapping("/student/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #studentId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<BigDecimal> countStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId) {
@@ -274,7 +261,7 @@ public class FeeController {
 
         @SectionScoped
         @PostMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId()) and @sectionScope.feeStructure(#school, #param.feeId())")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId()) and @sectionScope.feeStructure(#school, #param.feeId())")
         public ApiResponse<Object> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeDiscountDTO param) {
@@ -287,7 +274,7 @@ public class FeeController {
         }
 
         @GetMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeDiscountDTO>> listAllDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -322,7 +309,7 @@ public class FeeController {
         }
 
         @GetMapping("/discount/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<FeeDiscountReportDTO> calculateDiscountReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
 
@@ -333,7 +320,7 @@ public class FeeController {
 
         @SectionScoped
         @GetMapping("/ledger")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerPagedDTO> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
@@ -359,7 +346,7 @@ public class FeeController {
         }
 
         @PostMapping("/ledger/recompute")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
         public ApiResponse<RecomputeStudentLedgerBalancesUseCase.Result> recomputeLedgerBalances(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
 
@@ -371,7 +358,7 @@ public class FeeController {
         }
 
         @GetMapping("/ledger/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerReportDTO> calculateLedgerReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId) {
@@ -384,7 +371,7 @@ public class FeeController {
         // The platform fee (Skultem's, collected by the school on its behalf) - kept off the student
         // ledger above so the two are never mistaken for each other.
         @GetMapping("/platform/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<PlatformFeeReportDTO> platformFeeReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId) {
@@ -394,7 +381,7 @@ public class FeeController {
         }
 
         @GetMapping("/platform/entries")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<StudentLedgerDTO>> platformFeeEntries(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
@@ -420,7 +407,7 @@ public class FeeController {
 
         @SectionNeutral
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeCategoryDTO>> list(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,

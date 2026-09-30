@@ -30,7 +30,7 @@ public class WidgetController {
 
         @SectionScoped
         @PostMapping("/run")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
         public ApiResponse<Object> runReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam int page,

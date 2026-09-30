@@ -14,11 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Enforces {@link RequiresModule}. Runs after authentication, so the caller's school is known; an
- * unauthenticated request is left to the security layer, which already rejects it. Throwing here
- * is turned into a 403 by GlobalExceptionHandler.
- */
+
 @Component
 @RequiredArgsConstructor
 public class ModuleAccessInterceptor implements HandlerInterceptor {

@@ -8,14 +8,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.model.Enrollment;
+import com.moriba.skultem.domain.model.StaffManagementSection;
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.repository.AssessmentApprovalRequestRepository;
+import com.moriba.skultem.domain.repository.CalendarEventRepository;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
 import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
-import com.moriba.skultem.domain.repository.CalendarEventRepository;
 import com.moriba.skultem.domain.repository.NoticeRepository;
 import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
@@ -24,18 +25,11 @@ import com.moriba.skultem.domain.repository.StaffManagementSectionRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
-import com.moriba.skultem.domain.model.StaffManagementSection;
 import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.domain.vo.Role;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Single-record management-section checks for {@code @PreAuthorize}, e.g.
- * {@code "... and @sectionScope.classSession(#school, #id)"}. Whole-school callers pass straight
- * through without a lookup. A record that doesn't exist passes too, so the use case still answers
- * with its usual 404 rather than this turning it into a 403.
- */
 @Service("sectionScope")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

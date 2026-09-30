@@ -7,6 +7,7 @@ public enum Title {
     MS,
     DR,
     PROF,
+    PST,
     REV,
     HON,
     ENG,

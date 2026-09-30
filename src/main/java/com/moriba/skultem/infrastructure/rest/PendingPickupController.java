@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -14,13 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.PendingPickupDTO;
 import com.moriba.skultem.application.usecase.GetPendingPickupsUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import lombok.RequiredArgsConstructor;
 
-// Combines fee-entitled Supply and unfulfilled MaterialSale records into one "who still needs to
-// collect something" list - see GetPendingPickupsUseCase for why this reads both instead of
-// merging them. Nested under /materials since both underlying concepts are.
 @RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
 @RequestMapping("/api/v1/materials/pending-pickups")
@@ -30,7 +27,7 @@ public class PendingPickupController {
     private final GetPendingPickupsUseCase getPendingPickupsUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PendingPickupDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

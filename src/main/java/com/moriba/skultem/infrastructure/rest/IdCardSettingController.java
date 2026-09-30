@@ -1,8 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.IdCardSettingDTO;
 import com.moriba.skultem.application.usecase.GetIdCardSettingUseCase;
 import com.moriba.skultem.application.usecase.SaveIdCardSettingUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.SaveIdCardSettingDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class IdCardSettingController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<IdCardSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getIdCardSettingUseCase.execute(school);
@@ -38,7 +38,7 @@ public class IdCardSettingController {
     }
 
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<IdCardSettingDTO> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SaveIdCardSettingDTO param) {

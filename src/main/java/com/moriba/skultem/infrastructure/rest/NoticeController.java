@@ -1,10 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -30,9 +25,13 @@ import com.moriba.skultem.application.usecase.TogglePinNoticeUseCase;
 import com.moriba.skultem.application.usecase.UpdateNoticeUseCase;
 import com.moriba.skultem.domain.model.Notice.Category;
 import com.moriba.skultem.domain.vo.Audience;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateNoticeDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateNoticeDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +52,7 @@ public class NoticeController {
     // (CommunicationScopeService#resolveTarget) and only that section's people see it.
     @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<NoticeDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -68,7 +67,7 @@ public class NoticeController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<NoticeDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -78,7 +77,7 @@ public class NoticeController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<NoticeDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -97,7 +96,7 @@ public class NoticeController {
 
     @SectionScoped
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
     public ApiResponse<NoticeDTO> update(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -112,7 +111,7 @@ public class NoticeController {
 
     @SectionScoped
     @PatchMapping("/{id}/pin")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.notice(#school, #id)")
     public ApiResponse<NoticeDTO> togglePin(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -122,7 +121,7 @@ public class NoticeController {
 
     @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.notice(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.notice(#school, #id)")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

@@ -32,7 +32,7 @@ public class TeacherAssignmentController {
 
     @SectionScoped
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -43,7 +43,7 @@ public class TeacherAssignmentController {
 
     @SectionScoped
     @PostMapping("/subject/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #classSessionId)")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,

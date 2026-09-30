@@ -1,24 +1,25 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-import com.moriba.skultem.application.services.SectionScopeService;
-import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AttendanceLocationSettingDTO;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.application.usecase.GetAttendanceLocationSettingUseCase;
 import com.moriba.skultem.application.usecase.SaveAttendanceLocationSettingUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.SaveAttendanceLocationSettingDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/attendance-location")
 @RequiredArgsConstructor
-@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
 public class AttendanceLocationSettingController {
     private final GetAttendanceLocationSettingUseCase getAttendanceLocationSettingUseCase;
     private final SaveAttendanceLocationSettingUseCase saveAttendanceLocationSettingUseCase;
@@ -63,7 +64,7 @@ public class AttendanceLocationSettingController {
 
     @SectionScoped
     @PutMapping("/sections/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
     public ApiResponse<AttendanceLocationSettingDTO> saveForSection(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

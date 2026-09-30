@@ -35,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SectionScopeService {
 
-    public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER);
+    public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER, Role.PRINCIPAL);
 
     private static final String REQUEST_ATTRIBUTE = SectionScopeService.class.getName() + ".scope";
     private static final String VIEW_ATTRIBUTE = SectionScopeService.class.getName() + ".view";
@@ -78,11 +78,6 @@ public class SectionScopeService {
         return current();
     }
 
-    // A "view one section" choice made by an owner-level user (owner / proprietor / super admin) in a school
-    // run in sections - the X-View-Section header. It NARROWS what lists, reports and dashboards show to
-    // that section's levels; it is never a restriction: guards, the interceptor and single-record checks
-    // still see them as whole-school (so payroll, settings etc. keep working), and it is ignored for
-    // anyone else and for an id that isn't one of the school's sections.
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public Optional<SectionScope> view() {

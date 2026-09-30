@@ -1,16 +1,13 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.idempotency.Idempotent;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,10 +24,12 @@ import com.moriba.skultem.application.usecase.ListEnrollmentByClassUseCase;
 import com.moriba.skultem.application.usecase.ListStudentBySchoolUseCase;
 import com.moriba.skultem.application.usecase.SelectClassSubjectsUseCase;
 import com.moriba.skultem.application.usecase.SelectClassSubjectsUseCase.ClassSubjectSelection;
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.ChangeEnrollmentClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateEnrollmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SelectedSubjectsDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public class EnrollmentController {
     @Idempotent(operation = "enrollment.create")
     @SectionScoped
     @PostMapping("/class")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId()) and @sectionScope.students(#school, #param.students())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId()) and @sectionScope.students(#school, #param.students())")
     public ApiResponse<Void> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateEnrollmentDTO param) {
@@ -61,7 +60,7 @@ public class EnrollmentController {
 
     @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId)")
     public ApiResponse<EnrollmentDTO> getEnrollmentByClassAndSubject(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId,
@@ -71,7 +70,7 @@ public class EnrollmentController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<StudentDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -90,7 +89,7 @@ public class EnrollmentController {
 
     @SectionScoped
     @GetMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<StudentDTO>> listByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = false) String classId,
@@ -111,7 +110,7 @@ public class EnrollmentController {
 
     @SectionScoped
     @PatchMapping("/{enrollmentId}/class")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.enrollment(#school, #enrollmentId) and @sectionScope.clazz(#school, #param.classId())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.enrollment(#school, #enrollmentId) and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<ChangeEnrollmentClassUseCase.ChangeClassResult> changeClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String enrollmentId,
@@ -123,7 +122,7 @@ public class EnrollmentController {
 
     @SectionScoped
     @PostMapping("/class/{enrollmentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.enrollment(#school, #enrollmentId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.enrollment(#school, #enrollmentId)")
     public ApiResponse<StudentDTO> enrolledClassSubjects(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String enrollmentId, @Valid @RequestBody SelectedSubjectsDTO param) {

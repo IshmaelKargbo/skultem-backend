@@ -1,7 +1,13 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,21 +18,14 @@ import com.moriba.skultem.application.usecase.CreateExpenseCategoryUseCase;
 import com.moriba.skultem.application.usecase.CreateExpenseUseCase;
 import com.moriba.skultem.application.usecase.ListExpenseBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListExpenseCategoryBySchoolUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateExpenseCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateExpenseDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RequiresModule(FeatureModule.EXPENSES)
 @RestController
@@ -58,7 +57,7 @@ public class ExpenseController {
         }
 
         @GetMapping()
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'OWNER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseDTO>> listExpense(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -78,7 +77,7 @@ public class ExpenseController {
         }
 
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'OWNER', 'ACCOUNTANT')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseCategoryDTO>> listCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,

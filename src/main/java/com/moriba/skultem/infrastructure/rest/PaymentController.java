@@ -1,7 +1,18 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.idempotency.Idempotent;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.usecase.GetReceiptUseCase;
@@ -12,26 +23,13 @@ import com.moriba.skultem.application.usecase.RecordPaymentUseCase.PaymentRecord
 import com.moriba.skultem.application.usecase.SumStudentPaymentByFeeThisYearUseCase;
 import com.moriba.skultem.application.usecase.SumStudentPaymentByFeeUseCase;
 import com.moriba.skultem.domain.model.Payment.PaymentMethod;
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.RecordPaymentDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/v1/payment")
@@ -46,7 +44,7 @@ public class PaymentController {
     @Idempotent(operation = "payment.record")
     @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.payment(#school, #param.studentId(), #param.allocations().![feeId()])")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.payment(#school, #param.studentId(), #param.allocations().![feeId()])")
     public ApiResponse<List<PaymentDTO>> record(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RecordPaymentDTO param) {
         var method = PaymentMethod.valueOf(param.method());
@@ -59,7 +57,7 @@ public class PaymentController {
 
     @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId)")
     public ApiResponse<BigDecimal> countThisYearFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId,
@@ -70,7 +68,7 @@ public class PaymentController {
 
     @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<PaymentDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -89,7 +87,7 @@ public class PaymentController {
 
     @SectionScoped
     @GetMapping("/receipt/{referenceNo}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.receipt(#school, #referenceNo)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.receipt(#school, #referenceNo)")
     public ApiResponse<List<PaymentDTO>> getReceipt(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String referenceNo) {
@@ -99,7 +97,7 @@ public class PaymentController {
 
     @SectionScoped
     @GetMapping("/student/{studentId}/{feeId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId) and @sectionScope.feeStructure(#school, #feeId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.student(#school, #studentId) and @sectionScope.feeStructure(#school, #feeId)")
     public ApiResponse<BigDecimal> sumByStudentAndFee(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String feeId, @PathVariable String studentId) {

@@ -4,7 +4,7 @@ public enum Role {
     OWNER,
     SYSTEM_ADMIN,
     PROPRIETOR,
-    // Staff member with access to the whole school portal (see PermissionService#SUPER_ADMIN_COVERS).
+    PRINCIPAL,
     SUPER_ADMIN,
     ADMIN,
     ACCOUNTANT,

@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +21,7 @@ import com.moriba.skultem.application.usecase.ListClassSubjectByClassUseCase;
 import com.moriba.skultem.application.usecase.ListClassSubjectBySchoolUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassSessionDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +38,7 @@ public class ClassSubjectController {
 
     @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<Object> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateClassSessionDTO param) {
@@ -50,7 +49,7 @@ public class ClassSubjectController {
 
     @SectionScoped
     @GetMapping("/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSubjectDTO>> listByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String classId,
@@ -70,7 +69,7 @@ public class ClassSubjectController {
 
     @SectionScoped
     @GetMapping()
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSubjectDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "1") Integer page,

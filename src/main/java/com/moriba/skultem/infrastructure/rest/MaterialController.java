@@ -1,7 +1,16 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +21,7 @@ import com.moriba.skultem.application.dto.MaterialTrasactionDTO;
 import com.moriba.skultem.application.dto.SupplyDTO;
 import com.moriba.skultem.application.services.MaterialService;
 import com.moriba.skultem.domain.model.Material.Unit;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialDTO;
@@ -19,22 +29,10 @@ import com.moriba.skultem.infrastructure.rest.dto.RestockMaterialDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SupplyMaterialDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateMaterialCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateMaterialDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
@@ -45,7 +43,7 @@ public class MaterialController {
     private final MaterialService service;
 
     @PostMapping("/category")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialCategoryDTO> createCategory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateMaterialCategoryDTO param) {
@@ -54,7 +52,7 @@ public class MaterialController {
     }
 
     @PutMapping("/category/{categoryId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialCategoryDTO> updateCategory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String categoryId,
@@ -64,7 +62,7 @@ public class MaterialController {
     }
 
     @DeleteMapping("/category/{categoryId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<Object> deleteCategory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String categoryId) {
@@ -73,7 +71,7 @@ public class MaterialController {
     }
 
     @PostMapping()
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialDTO> createMaterial(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateMaterialDTO param) {
@@ -83,7 +81,7 @@ public class MaterialController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialDTO> updateMaterial(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -94,7 +92,7 @@ public class MaterialController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<Object> deleteMaterial(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -103,7 +101,7 @@ public class MaterialController {
     }
 
     @PostMapping("/restock")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialDTO> restockMaterial(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody RestockMaterialDTO param) {
@@ -112,7 +110,7 @@ public class MaterialController {
     }
 
     @PostMapping("/supply")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<SupplyDTO> supplyMaterial(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SupplyMaterialDTO param) {
@@ -121,7 +119,7 @@ public class MaterialController {
     }
 
     @GetMapping("/category")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<MaterialCategoryDTO>> listCategory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -140,7 +138,7 @@ public class MaterialController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<MaterialDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -159,7 +157,7 @@ public class MaterialController {
     }
 
     @GetMapping("/supply")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SupplyDTO>> listSupply(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -178,7 +176,7 @@ public class MaterialController {
     }
 
     @GetMapping("/{id}/transaction")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<MaterialTrasactionDTO>> listTransaction(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String id,

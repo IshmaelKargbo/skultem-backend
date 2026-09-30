@@ -50,13 +50,10 @@ public class TeacherController {
         private final ListMyClassMasterAssignmentsUseCase listMyClassMasterAssignmentsUseCase;
         private final TeacherService teacherSvc;
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
-
-        // A teacher is a staff record with no level of its own, so adding one is section-neutral - a
-        // section-limited admin's new teacher is limited to that same section (CreateTeacherUseCase).
-        // The class-master class, when given, still has to be in the caller's section.
+        
         @SectionNeutral
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and (#param.classMaster() == null or #param.classMaster().isBlank() or @sectionScope.classSession(#school, #param.classMaster()))")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and (#param.classMaster() == null or #param.classMaster().isBlank() or @sectionScope.classSession(#school, #param.classMaster()))")
         public ApiResponse<TeacherDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateTeacherDTO param) {
@@ -76,7 +73,7 @@ public class TeacherController {
 
         @SectionScoped
         @PatchMapping("/edit/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> edit(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody EditTeacherDTO param,
@@ -93,7 +90,7 @@ public class TeacherController {
 
         @SectionScoped
         @PatchMapping("/{id}/status")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> setStatus(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId,
@@ -106,7 +103,7 @@ public class TeacherController {
 
         @SectionNeutral
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -133,7 +130,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #id)")
         public ApiResponse<TeacherDTO> listById(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String id,
@@ -145,7 +142,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = false) String academicYearId,
@@ -171,7 +168,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String teacherId) {
@@ -181,7 +178,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/me")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByMe(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -191,7 +188,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/class-master/me")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<TeacherClassMasterDTO>> listMyClassMasterAssignments(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -201,7 +198,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/session/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #sessionId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #sessionId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectBySection(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String sessionId,
@@ -219,7 +216,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/detail/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
         public ApiResponse<TeacherSubjectDTO> oneSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String teacherId) {

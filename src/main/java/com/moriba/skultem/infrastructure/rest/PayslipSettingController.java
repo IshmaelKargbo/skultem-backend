@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.PayslipSettingDTO;
 import com.moriba.skultem.application.usecase.GetPayslipSettingUseCase;
 import com.moriba.skultem.application.usecase.SavePayslipSettingUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.SavePayslipSettingDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +27,8 @@ public class PayslipSettingController {
     private final GetPayslipSettingUseCase getPayslipSettingUseCase;
     private final SavePayslipSettingUseCase savePayslipSettingUseCase;
 
-    // Read-only branding (logo, accent color, footer note) - opened to TEACHER too so a
-    // teacher's own self-service payslip (payroll/history) renders with the school's actual
-    // branding instead of falling back to blank/default styling. Saving stays admin-only.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPayslipSettingUseCase.execute(school);
@@ -39,7 +36,7 @@ public class PayslipSettingController {
     }
 
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<PayslipSettingDTO> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SavePayslipSettingDTO param) {

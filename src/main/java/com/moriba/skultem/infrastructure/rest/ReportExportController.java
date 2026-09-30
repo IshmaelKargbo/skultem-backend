@@ -31,7 +31,7 @@ public class ReportExportController {
 
     @SectionScoped
     @GetMapping("/payments")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ResponseEntity<byte[]> exportPayments(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -43,7 +43,7 @@ public class ReportExportController {
 
     @SectionScoped
     @GetMapping("/attendance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
     public ResponseEntity<byte[]> exportAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String classSessionId,
@@ -55,7 +55,7 @@ public class ReportExportController {
 
     @SectionScoped
     @GetMapping("/behaviour")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.requiredClass(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') and @sectionScope.requiredClass(#school, #classId)")
     public ResponseEntity<byte[]> exportBehaviour(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -67,7 +67,7 @@ public class ReportExportController {
 
     @SectionScoped
     @GetMapping("/fees")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportFees(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -80,7 +80,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/fee-balances")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportStudentFeeBalances(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -94,7 +94,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/fee-payment-history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportFeePaymentHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,
@@ -111,7 +111,7 @@ public class ReportExportController {
 
     @SectionScoped
     @GetMapping("/grades")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ResponseEntity<byte[]> exportGrades(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String teacherSubjectId,
@@ -129,7 +129,7 @@ public class ReportExportController {
 
     @SectionScoped
     @PostMapping("/run")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> runReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam int page,
@@ -142,13 +142,9 @@ public class ReportExportController {
         return new ApiResponse<>("success", 200, "Report generated successfully", data, meta);
     }
 
-    // Generic export for the Report Builder: same entity+filters shape as /run, but returns a
-    // CSV/PDF file (all matching rows, capped - see ReportExportService.EXPORT_ROW_CAP) instead
-    // of a JSON page. Kept on the same roles as /run since it exports exactly what those roles
-    // can already see on-screen via the builder.
     @SectionScoped
     @PostMapping("/run/download")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'TEACHER', 'PARENT')")
     public ResponseEntity<byte[]> downloadRunReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "csv") String format,

@@ -26,7 +26,7 @@ public class AuditLogController {
     private final GetActiveAcademicYearBySchoolUseCase getActiveAcademicYearBySchoolUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<AuditLogDTO>> listBySchool(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,

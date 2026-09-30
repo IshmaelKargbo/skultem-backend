@@ -38,7 +38,7 @@ public class AssessmentConfigurationController {
     // Read-only for teachers. A section-limited caller only gets their own sections' (filtered in the use case).
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<AssessmentConfigurationDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         return new ApiResponse<>("success", 200, "Assessment configuration fetched successfully",
@@ -49,7 +49,7 @@ public class AssessmentConfigurationController {
     // (no sectionId) stays with whole-school staff (@sectionScope.managementSection).
     @SectionScoped
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.managementSection(#sectionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL') and @sectionScope.managementSection(#sectionId)")
     public ApiResponse<SaveResponse> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -81,7 +81,7 @@ public class AssessmentConfigurationController {
     // left exactly as it is.
     @SectionScoped
     @PostMapping("/apply-to-unstarted")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.managementSection(#sectionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL') and @sectionScope.managementSection(#sectionId)")
     public ApiResponse<RefreshUnstartedAssessmentsUseCase.Result> applyToUnstarted(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String sectionId) {

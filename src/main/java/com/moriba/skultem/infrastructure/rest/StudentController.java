@@ -77,7 +77,7 @@ public class StudentController {
         @Idempotent(operation = "student.enroll")
         @SectionScoped
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #param.classId())")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #param.classId())")
         public ApiResponse<StudentDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestPart("data") CreateStudentDTO param,
@@ -91,7 +91,7 @@ public class StudentController {
         // row by row in BulkImportStudentsUseCase, since the classes come from the file.
         @SectionScoped
         @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<BulkStudentImportResultDTO> bulkImport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestPart("file") MultipartFile file,
@@ -114,7 +114,7 @@ public class StudentController {
 
         @SectionScoped
         @PatchMapping("/edit/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> edit(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -128,7 +128,7 @@ public class StudentController {
 
         @SectionScoped
         @PostMapping("/{id}/withdraw")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> withdraw(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -140,7 +140,7 @@ public class StudentController {
 
         @SectionScoped
         @PostMapping("/{id}/expel")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> expel(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -152,7 +152,7 @@ public class StudentController {
 
         @SectionScoped
         @PostMapping("/{id}/reinstate")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> reinstate(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id) {
@@ -174,7 +174,7 @@ public class StudentController {
 
         @SectionScoped
         @PatchMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> updatePhoto(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
@@ -184,7 +184,7 @@ public class StudentController {
         }
 
         @PostMapping("/photos/reprocess")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<ReprocessStudentPhotosUseCase.Summary> reprocessPhotos(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
                 var res = reprocessStudentPhotosUseCase.execute(school);
@@ -193,7 +193,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
         public ApiResponse<List<StudentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -218,7 +218,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/rank/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.student(#school, #studentId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<Object> rankStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String studentId,
@@ -229,7 +229,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/cycle/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #sessionId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #sessionId)")
         public ApiResponse<ActiveCycleDTO> activeCycle(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(name = "sessionId") String sessionId,
@@ -240,7 +240,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/fee/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT') and @sectionScope.student(#school, #studentId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT') and @sectionScope.student(#school, #studentId)")
         public ApiResponse<List<StudentFeeDTO>> listStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId,
@@ -267,7 +267,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/{id}/finance-overview")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.student(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentFinanceOverviewDTO> financeOverview(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,

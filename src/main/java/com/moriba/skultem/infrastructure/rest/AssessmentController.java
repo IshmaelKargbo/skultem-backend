@@ -1,9 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
 import java.util.List;
 import java.util.Map;
 
@@ -17,30 +13,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.moriba.skultem.application.dto.ActiveAssessmentCycleDTO;
 import com.moriba.skultem.application.dto.AssessmentApprovalRequestDTO;
 import com.moriba.skultem.application.dto.AssessmentApprovalSummaryDTO;
-import com.moriba.skultem.application.dto.AssessmentCycleDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleAdvanceDTO;
+import com.moriba.skultem.application.dto.AssessmentCycleDTO;
 import com.moriba.skultem.application.dto.AssessmentCycleOverviewDTO;
 import com.moriba.skultem.application.dto.AssessmentDTO;
 import com.moriba.skultem.application.dto.AssessmentTemplateDTO;
-import com.moriba.skultem.application.dto.ActiveAssessmentCycleDTO;
 import com.moriba.skultem.application.dto.GradeBandDTO;
 import com.moriba.skultem.application.dto.GradingScaleDTO;
 import com.moriba.skultem.application.dto.StudentAssessmentDTO;
+import com.moriba.skultem.application.usecase.AdvanceAssessmentCycleUseCase;
 import com.moriba.skultem.application.usecase.ApproveAssessmentUseCase;
 import com.moriba.skultem.application.usecase.AssignAssessmentsToTemplateUseCase;
 import com.moriba.skultem.application.usecase.CreateAssessmentTemplateUseCase;
 import com.moriba.skultem.application.usecase.GetActiveAssessmentCycleUseCase;
 import com.moriba.skultem.application.usecase.GetAssessmentCycleOverviewUseCase;
-import com.moriba.skultem.application.usecase.AdvanceAssessmentCycleUseCase;
+import com.moriba.skultem.application.usecase.GetSchoolGradingScaleUseCase;
 import com.moriba.skultem.application.usecase.GradeAssessmentUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentApprovalRequestUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentByClassUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentTemplateBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListAssessmentUseCase;
 import com.moriba.skultem.application.usecase.ListStudentAssessmentTermUseCase;
-import com.moriba.skultem.application.usecase.GetSchoolGradingScaleUseCase;
 import com.moriba.skultem.application.usecase.ReopenAssessmentCycleUseCase;
 import com.moriba.skultem.application.usecase.ReturnAssessmentUseCase;
 import com.moriba.skultem.application.usecase.SubmitAssessmentForApprovalUseCase;
@@ -53,6 +49,8 @@ import com.moriba.skultem.infrastructure.rest.dto.GradeAssessmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.ReopenAssessmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.SubmitAssessmentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateGradingScaleDTO;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +85,7 @@ public class AssessmentController {
     // level of its own - see AssessmentTemplate - so it's section-neutral like the reads below.
     @SectionNeutral
     @PostMapping("/template")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<AssessmentTemplateDTO> createTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateAssessmentTemplateDTO param) {
@@ -97,7 +95,7 @@ public class AssessmentController {
 
     @SectionNeutral
     @PostMapping("/template/{templateId}/assignment")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<AssessmentTemplateDTO> assignToTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String templateId,
@@ -111,7 +109,7 @@ public class AssessmentController {
 
     @SectionNeutral
     @GetMapping("/template/{subjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<AssessmentCycleDTO>> getTemplateAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String subjectId,
@@ -122,7 +120,7 @@ public class AssessmentController {
 
     @SectionNeutral
     @GetMapping("/list")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentDTO>> listAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listAssessmentUseCase.executeAssessment(school);
@@ -131,7 +129,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/list/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER', 'PARENT') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER', 'PARENT') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<AssessmentDTO>> listAssessmentByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(name = "classId") String classId) {
@@ -141,7 +139,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listAllAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String status,
@@ -163,7 +161,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER')")
     public ApiResponse<AssessmentApprovalSummaryDTO> allAssessmentApprovalSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listAssessmentApprovalRequestUseCase.summaryForSchool(school);
@@ -172,7 +170,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/{classMasterId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classMasterId,
@@ -195,7 +193,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/request/{approvalRequestId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.approvalRequest(#school, #approvalRequestId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.approvalRequest(#school, #approvalRequestId)")
     public ApiResponse<AssessmentApprovalRequestDTO> getAssessmentApprovalRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String approvalRequestId) {
@@ -205,7 +203,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/{classMasterId}/summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentApprovalSummaryDTO> assessmentApprovalSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classMasterId) {
@@ -215,7 +213,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentApprovalRequestDTO>> listMeAssessmentApprovals(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -237,7 +235,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/approval/me/summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentApprovalSummaryDTO> meAssessmentApprovalSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -249,7 +247,7 @@ public class AssessmentController {
     // structure the assessment froze when it opened; nothing here can change it.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> recordContinuous(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -272,7 +270,7 @@ public class AssessmentController {
     // Locks a completed CA recording (every student has it) so it can't be edited afterwards.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/lock-week")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> lockContinuousWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -284,7 +282,7 @@ public class AssessmentController {
     // The only way back into a locked recording - administrators only, with a reason (kept on the audit trail).
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/unlock-week")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> unlockContinuousWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -298,7 +296,7 @@ public class AssessmentController {
     // can be entered next.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/submit-ca")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> submitContinuousCa(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -309,7 +307,7 @@ public class AssessmentController {
 
     @SectionScoped
     @PostMapping("/grade/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> gradeAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -323,7 +321,7 @@ public class AssessmentController {
 
     @SectionScoped
     @PostMapping("/submit/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> submitAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -346,7 +344,7 @@ public class AssessmentController {
 
     @SectionScoped
     @PostMapping("/reopen/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<AssessmentCycleDTO> reopenAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -369,7 +367,7 @@ public class AssessmentController {
 
     @SectionNeutral
     @GetMapping("/template")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<List<AssessmentTemplateDTO>> listTemplates(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -387,7 +385,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/student")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<List<StudentAssessmentDTO>> listStudentAssessments(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String teacherSubjectId,
@@ -399,7 +397,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/cycle/active")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<ActiveAssessmentCycleDTO> getActiveCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -410,7 +408,7 @@ public class AssessmentController {
 
     @SectionScoped
     @GetMapping("/cycle/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
     public ApiResponse<AssessmentCycleOverviewDTO> getCycleOverview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId) {
@@ -422,7 +420,7 @@ public class AssessmentController {
     // only move their own; a school without sections omits it.
     @SectionScoped
     @PostMapping("/cycle/{termId}/advance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#sectionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.managementSection(#sectionId)")
     public ApiResponse<AssessmentCycleAdvanceDTO> advanceCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String termId,
@@ -433,7 +431,7 @@ public class AssessmentController {
 
     @SectionNeutral
     @GetMapping("/grading-scale")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'PARENT')")
     public ApiResponse<GradingScaleDTO> getGradingScale(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var scale = getSchoolGradingScaleUseCase.execute(school);
@@ -441,7 +439,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/grading-scale")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
     public ApiResponse<GradingScaleDTO> updateGradingScale(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody UpdateGradingScaleDTO param) {

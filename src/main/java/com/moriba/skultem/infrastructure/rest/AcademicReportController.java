@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,7 @@ import com.moriba.skultem.application.usecase.GetClassAcademicPerformanceUseCase
 import com.moriba.skultem.application.usecase.GetStudentPerformanceTrendUseCase;
 import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,7 +42,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AcademicReportController {
 
-    private static final String MANAGEMENT_ROLES = "'ADMIN', 'OWNER', 'PROPRIETOR'";
+    private static final String MANAGEMENT_ROLES = "'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PROPRIETOR', 'PRINCIPAL'";
 
     private final GetClassAcademicPerformanceUseCase getClassAcademicPerformanceUseCase;
     private final GetStudentPerformanceTrendUseCase getStudentPerformanceTrendUseCase;

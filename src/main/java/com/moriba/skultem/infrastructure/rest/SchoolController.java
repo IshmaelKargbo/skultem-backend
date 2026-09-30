@@ -74,10 +74,6 @@ public class SchoolController {
         return new ApiResponse<>("success", 200, "School created successfully", res);
     }
 
-    // Public (no auth) - powers the "Trusted by N schools" line on the login page, which is
-    // rendered before anyone has signed in. /api/v1/school/** is already open at the filter-chain
-    // level (SecurityConfig) for the signup flow above; this is deliberately the one endpoint
-    // under it with no @PreAuthorize, since it exposes nothing but a count.
     @GetMapping("/count")
     public ApiResponse<Map<String, Long>> count() {
         return new ApiResponse<>("success", 200, "School count fetched successfully",
@@ -100,13 +96,9 @@ public class SchoolController {
         return new ApiResponse<List<SchoolDTO>>("success", 200, "Schools fetched successfully", list, meta);
     }
 
-    // Read by anything that lists or picks levels (class forms, filters) - so every staff role - and by
-    // parents, whose child's report card / receipt prints the child's section's logo and principal
-    // (the page has to know the school is section-based to ask for it). Read-only: levels, section
-    // names and their branding, all of which already appear on those documents.
     @SectionNeutral
     @GetMapping("/structure")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolStructureDTO> structure(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getSchoolStructureUseCase.execute(school);
@@ -129,7 +121,7 @@ public class SchoolController {
     // any section; a section-limited Admin only the sections they're limited to.
     @SectionScoped
     @PutMapping(value = "/structure/sections/{id}/branding", consumes = "multipart/form-data")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
     public ApiResponse<SchoolStructureDTO> updateSectionBranding(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -161,7 +153,7 @@ public class SchoolController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = schoolSvc.get(school);
         return new ApiResponse<>("success", 200, "School fetched successfully", res);
@@ -172,7 +164,7 @@ public class SchoolController {
     // card's PDF export when it tries to draw those images onto a canvas).
     @SectionNeutral
     @GetMapping("/branding/assets")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolBrandingAssetsDTO> getBrandingAssets(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) Level level,
@@ -189,7 +181,7 @@ public class SchoolController {
     // photo on the ID card, which needs the same same-origin swap right before PDF/print capture.
     @SectionNeutral
     @GetMapping("/asset-as-data-uri")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<AssetDataUriDTO> getAssetAsDataUri(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String url) {
@@ -198,7 +190,7 @@ public class SchoolController {
     }
 
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<SchoolDTO> update(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
@@ -208,7 +200,7 @@ public class SchoolController {
     }
 
     @PutMapping(value = "/branding", consumes = "multipart/form-data")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<SchoolDTO> updateBranding(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String motto,
             @RequestParam(required = false) String principalName,

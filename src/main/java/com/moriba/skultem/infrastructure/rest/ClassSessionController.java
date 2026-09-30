@@ -1,10 +1,15 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,21 +20,13 @@ import com.moriba.skultem.application.usecase.CreateClassSessionsForAcademicYear
 import com.moriba.skultem.application.usecase.GetClassSessionUseCase;
 import com.moriba.skultem.application.usecase.ListClassSessionBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListClassSessionByTeacherUseCase;
+import com.moriba.skultem.application.usecase.ListUnassignClassBySchoolUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassSessionDTO;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-import com.moriba.skultem.application.usecase.ListUnassignClassBySchoolUseCase;
 
 @RestController
 @RequestMapping("/api/v1/class-session")
@@ -46,7 +43,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<ClassSessionDTO> create(
         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
         @Valid @RequestBody CreateClassSessionDTO param) {
@@ -56,7 +53,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.classSession(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.classSession(#school, #id)")
     public ApiResponse<Object> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -65,7 +62,7 @@ public class ClassSessionController {
     }
 
     @PostMapping("/setup-all")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
     public ApiResponse<Object> setupAll(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String academicYearId) {
@@ -75,7 +72,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -110,7 +107,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @GetMapping({"/unassign", "/unassigned"})
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listUnassign(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

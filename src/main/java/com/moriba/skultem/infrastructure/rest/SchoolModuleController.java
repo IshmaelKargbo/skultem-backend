@@ -20,12 +20,6 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * A school's own view of the optional-module catalog - which modules exist and which it has
- * installed. Everyone in the school can read it (the menus depend on it); only the people who run
- * the school can install or disable. System admins manage any school's modules through
- * {@link PlatformSettingController}.
- */
 @RestController
 @RequestMapping("/api/v1/modules")
 @RequiredArgsConstructor
@@ -37,7 +31,7 @@ public class SchoolModuleController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
     public ApiResponse<List<SchoolModuleDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listSchoolModulesUseCase.execute(school);
@@ -50,7 +44,7 @@ public class SchoolModuleController {
     // section-limited caller) below.
     @SectionNeutral
     @PutMapping("/{key}/install")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<SchoolModuleDTO>> install(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -60,7 +54,7 @@ public class SchoolModuleController {
     }
 
     @PutMapping("/{key}/disable")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<SchoolModuleDTO>> disable(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

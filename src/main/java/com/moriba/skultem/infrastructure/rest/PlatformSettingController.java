@@ -15,25 +15,20 @@ import com.moriba.skultem.application.dto.NationalCalendarDTO;
 import com.moriba.skultem.application.dto.PlatformFeeSettingDTO;
 import com.moriba.skultem.application.dto.SchoolModuleDTO;
 import com.moriba.skultem.application.usecase.DisableSchoolModuleUseCase;
-import com.moriba.skultem.application.usecase.InstallSchoolModuleUseCase;
-import com.moriba.skultem.application.usecase.ListSchoolModulesUseCase;
 import com.moriba.skultem.application.usecase.GetNationalCalendarUseCase;
-import com.moriba.skultem.application.usecase.SaveNationalCalendarUseCase;
-import com.moriba.skultem.infrastructure.rest.dto.SaveNationalCalendarDTO;
 import com.moriba.skultem.application.usecase.GetPlatformFeeSettingUseCase;
+import com.moriba.skultem.application.usecase.InstallSchoolModuleUseCase;
 import com.moriba.skultem.application.usecase.ListPlatformFeeSettingsUseCase;
+import com.moriba.skultem.application.usecase.ListSchoolModulesUseCase;
+import com.moriba.skultem.application.usecase.SaveNationalCalendarUseCase;
 import com.moriba.skultem.application.usecase.UpdatePlatformFeeSettingUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.SaveNationalCalendarDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdatePlatformFeeSettingDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-/**
- * SYSTEM_ADMIN-only settings for the platform itself - not reachable by any school-level role
- * (ADMIN/OWNER/PROPRIETOR/ACCOUNTANT included), unlike everything under {@link FeeController}.
- * Each school has its own platform fee amount - see {@link com.moriba.skultem.domain.model.PlatformFeeSetting}.
- */
 @RestController
 @RequestMapping("/api/v1/platform")
 @RequiredArgsConstructor
@@ -49,8 +44,6 @@ public class PlatformSettingController {
     private final InstallSchoolModuleUseCase installSchoolModuleUseCase;
     private final DisableSchoolModuleUseCase disableSchoolModuleUseCase;
 
-    // A system admin managing any school's optional modules - same rules as the school's own
-    // Modules page (SchoolModuleController), just for a school picked by id.
     @GetMapping("/{schoolId}/modules")
     public ApiResponse<List<SchoolModuleDTO>> listSchoolModules(@PathVariable String schoolId) {
         var res = listSchoolModulesUseCase.execute(schoolId);
@@ -71,8 +64,6 @@ public class PlatformSettingController {
         return new ApiResponse<>("success", 200, "Module disabled successfully", res);
     }
 
-    // The platform-wide (ministry) academic year + terms every newly-created school starts from -
-    // see NationalAcademicYear. data is null until one has been configured.
     @GetMapping("/calendar")
     public ApiResponse<NationalCalendarDTO> getCalendar() {
         var res = getNationalCalendarUseCase.execute();

@@ -1,8 +1,13 @@
 package com.moriba.skultem.infrastructure.rest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,15 +17,9 @@ import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.dto.TransactionDTO;
 import com.moriba.skultem.application.usecase.FinanceReportUseCase;
 import com.moriba.skultem.application.usecase.SearchTransactionsUseCase;
-import org.springframework.format.annotation.DateTimeFormat;
-import java.time.LocalDate;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/v1/report/finance")
@@ -31,7 +30,7 @@ public class FinanceReportController {
 
     // The Transactions page's list, narrowed by type / direction / what it relates to / date range.
     @GetMapping("/transactions")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<List<TransactionDTO>> transactions(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String type,
@@ -56,14 +55,14 @@ public class FinanceReportController {
     }
 
     @GetMapping("/total")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<Object> totalCollected(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var total = reportUseCase.totalCollected(school);
         return new ApiResponse<>("success", 200, "Total fees collected fetched successfully", total);
     }
 
     @GetMapping("/outstanding")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstanding(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,
@@ -74,7 +73,7 @@ public class FinanceReportController {
     }
 
     @GetMapping("/outstanding/list")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<OutstandingBalanceDTO>> outstandingList(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,
@@ -85,7 +84,7 @@ public class FinanceReportController {
     }
 
     @GetMapping("/payments")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
     public ApiResponse<List<PaymentDTO>> paymentHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,

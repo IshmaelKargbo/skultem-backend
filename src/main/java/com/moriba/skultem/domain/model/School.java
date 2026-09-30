@@ -21,7 +21,7 @@ public class School extends AggregateRoot<String> {
     private String name;
     private Address address;
     private String domain;
-    private Owner owner;
+    private final Owner owner;
     private Status status;
     private List<GradeBand> gradingScale;
     private String logo;
@@ -63,6 +63,7 @@ public class School extends AggregateRoot<String> {
 
     private static final String DEFAULT_PRIMARY_COLOR = "#1878c5";
     private static final String DEFAULT_SECONDARY_COLOR = "#0f172a";
+
     // Below what percentage a student's attendance is flagged for attention (class "Needs
     // Attention" badge, Monthly/Term Summary, Inspection Reports). Schools set their own bar via
     // PUT /api/v1/school - 75 only applies until a school configures something else.

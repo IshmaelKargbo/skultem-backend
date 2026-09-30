@@ -10,11 +10,6 @@ import com.moriba.skultem.domain.repository.EnrollmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Turns a ledger entry into the row the ledger tables show - resolving the student's name and class
- * from their enrollment for the entry's year, falling back to their latest one. Shared by the
- * student ledger and the platform fee page so both show the same row the same way.
- */
 @Component
 @RequiredArgsConstructor
 public class StudentLedgerRowMapper {

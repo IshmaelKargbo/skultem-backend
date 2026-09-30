@@ -1,14 +1,12 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.ActivityDTO;
@@ -22,6 +20,7 @@ import com.moriba.skultem.application.usecase.DashboardRevenueBreakdownUseCase;
 import com.moriba.skultem.application.usecase.DashboardWeeklyAttendanceReportUseCase;
 import com.moriba.skultem.application.usecase.GetRecentActivitiesUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,7 +37,7 @@ public class DashboardController {
 
     @SectionScoped
     @GetMapping("/admin/report")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<DashboardDTO> report(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
             @RequestParam(required = false) String academicYearId) {
@@ -48,7 +47,7 @@ public class DashboardController {
 
     @SectionScoped
     @GetMapping("/admin/weekly-attendance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<WeeklyAttendanceDTO>> weeklyAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardWeeklyAttendanceReportUseCase.weeklyAttendance(schoolId);
@@ -57,7 +56,7 @@ public class DashboardController {
 
     @SectionScoped
     @GetMapping("/admin/revenue")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<RevenueBreakdownDTO>> revenue(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId) {
         var res = dashboardRevenueBreakdownUseCase.getRevenueBreakdown(schoolId);
@@ -66,7 +65,7 @@ public class DashboardController {
 
     @SectionScoped
     @GetMapping("/admin/student-enrollment")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<MonthlyEnrollmentDTO>> studentEnrollment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
             @RequestParam(required = false) String academicYearId) {
@@ -76,7 +75,7 @@ public class DashboardController {
 
     @SectionScoped
     @GetMapping("/admin/activities")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#schoolId, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<ActivityDTO>> activities(
             @AuthenticationPrincipal(expression = "activeSchoolId") String schoolId,
             @RequestParam(name = "size", defaultValue = "10") int size) {

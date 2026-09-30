@@ -33,7 +33,7 @@ public class SubjectAssignmentController {
 
     @SectionScoped
     @PostMapping("/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<Object> assignToClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -47,7 +47,7 @@ public class SubjectAssignmentController {
 
     @SectionScoped
     @PostMapping("/stream/{streamId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.stream(#school, #streamId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.stream(#school, #streamId)")
     public ApiResponse<Object> assignToStream(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String streamId,
@@ -61,7 +61,7 @@ public class SubjectAssignmentController {
 
     @SectionScoped
     @PostMapping("/class/{classId}/duplicate")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId) and @sectionScope.classes(#school, #param.targetClassIds())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.clazz(#school, #classId) and @sectionScope.classes(#school, #param.targetClassIds())")
     public ApiResponse<Object> duplicateToClasses(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,

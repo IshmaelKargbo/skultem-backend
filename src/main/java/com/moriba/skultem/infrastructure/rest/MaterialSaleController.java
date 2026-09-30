@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -21,18 +19,16 @@ import com.moriba.skultem.application.dto.MaterialSaleSummaryDTO;
 import com.moriba.skultem.application.services.MaterialSaleService;
 import com.moriba.skultem.domain.model.MaterialSale.PaymentMethod;
 import com.moriba.skultem.domain.model.MaterialSale.Status;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateMaterialSaleDTO;
 import com.moriba.skultem.infrastructure.rest.dto.FulfillMaterialSaleDTO;
 import com.moriba.skultem.infrastructure.rest.dto.RecordSalePaymentDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-// Point-of-sale style transactions for school materials (uniforms, socks, textbooks, ...) - a
-// cash sale to a student or a walk-in buyer, independent of the fee-entitled Supply flow at
-// /materials/supply. Nested under /materials since a sale always references a material, matching
-// how /materials/supply and /materials/category are organized.
 @RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
 @RestController
 @RequestMapping("/api/v1/materials/sales")
@@ -42,7 +38,7 @@ public class MaterialSaleController {
     private final MaterialSaleService service;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialSaleDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateMaterialSaleDTO param) {
@@ -62,7 +58,7 @@ public class MaterialSaleController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<MaterialSaleDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -84,7 +80,7 @@ public class MaterialSaleController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialSaleSummaryDTO> summary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = service.summary(school);
@@ -92,7 +88,7 @@ public class MaterialSaleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<MaterialSaleDTO> findOne(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -101,7 +97,7 @@ public class MaterialSaleController {
     }
 
     @PostMapping("/{id}/fulfill")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialSaleDTO> fulfill(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -111,7 +107,7 @@ public class MaterialSaleController {
     }
 
     @PostMapping("/{id}/payment")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialSaleDTO> recordPayment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -126,7 +122,7 @@ public class MaterialSaleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<MaterialSaleDTO> cancel(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

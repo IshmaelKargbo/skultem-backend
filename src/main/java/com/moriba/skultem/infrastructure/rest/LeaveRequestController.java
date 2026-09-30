@@ -1,25 +1,31 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.LeaveRequestDTO;
 import com.moriba.skultem.application.dto.LeaveSummaryDTO;
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.services.LeaveService;
 import com.moriba.skultem.domain.model.LeaveRequest;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateLeaveRequestDTO;
 import com.moriba.skultem.infrastructure.rest.dto.ReviewLeaveRequestDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +64,7 @@ public class LeaveRequestController {
     }
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<LeaveRequestDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateLeaveRequestDTO param) {
@@ -72,7 +78,7 @@ public class LeaveRequestController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<LeaveRequestDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
@@ -86,14 +92,14 @@ public class LeaveRequestController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<LeaveSummaryDTO> summary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         return new ApiResponse<>("success", 200, "Leave summary fetched successfully", leaveService.summary(school));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<LeaveRequestDTO> getById(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -101,7 +107,7 @@ public class LeaveRequestController {
     }
 
     @PatchMapping("/{id}/review")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<LeaveRequestDTO> review(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

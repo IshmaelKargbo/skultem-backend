@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/teacher-attendance")
 @RequiredArgsConstructor
-@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
 public class TeacherAttendanceController {
 
     private final TeacherAttendanceService service;
@@ -53,7 +53,7 @@ public class TeacherAttendanceController {
     // requires a Teacher (staff/payroll) record though, see ClockInUseCase.
     @SectionNeutral
     @PostMapping("/clock-in")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockInResponseDTO> clockIn(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -65,7 +65,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @PostMapping("/clock-out")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<ClockOutResponseDTO> clockOut(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -77,7 +77,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @GetMapping("/me/today")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<MyAttendanceTodayDTO> myToday(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -93,9 +93,6 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, "Attendance marked successfully", null);
     }
 
-    // Admin clocking a teacher in/out on their behalf - for staff who can't reliably self-service
-    // (internet/GPS issues, or no portal access at all). Inherits the class-level ADMIN/OWNER/
-    // PROPRIETOR gate; unlike self-service clock-in/out, no location is required from the client.
     @PostMapping("/{teacherId}/admin-clock-in")
     public ApiResponse<ClockInResponseDTO> adminClockIn(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -116,8 +113,6 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, message, res);
     }
 
-    // Undoes today's most recent clock event (clock-out if there is one, otherwise clock-in) -
-    // for correcting a mistaken clock. Inherits the class-level ADMIN/OWNER/PROPRIETOR gate.
     @PostMapping("/{teacherId}/admin-unclock")
     public ApiResponse<Void> adminUnclock(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -126,12 +121,9 @@ public class TeacherAttendanceController {
         return new ApiResponse<>("success", 200, "Clock corrected successfully", null);
     }
 
-    // Self-service - overrides the class-level admin-only restriction, same as /me/today. Scoped
-    // to the signed-in user's own teacher record (see TeacherAttendanceService#myHistory) rather
-    // than an admin-supplied teacherId, so a teacher can't pull another staff member's history.
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<TeacherAttendanceDayDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

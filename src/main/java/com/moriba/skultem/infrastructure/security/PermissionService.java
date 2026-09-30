@@ -38,7 +38,7 @@ public class PermissionService {
     // lets a SUPER_ADMIN through too, so the hundreds of role lists on the controllers don't each
     // need it added. Teacher- and parent-only gates stay closed: those are about the caller being
     // that teacher or parent, not about seniority.
-    private static final Set<Role> SUPER_ADMIN_COVERS = EnumSet.of(Role.ADMIN, Role.OWNER, Role.PROPRIETOR,
+    private static final Set<Role> SUPER_ADMIN_COVERS = EnumSet.of(Role.ADMIN, Role.OWNER, Role.PROPRIETOR, Role.PRINCIPAL,
             Role.ACCOUNTANT);
 
     public static AuthUser getCurrentUser() {

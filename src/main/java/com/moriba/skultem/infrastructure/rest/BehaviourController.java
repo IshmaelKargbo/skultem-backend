@@ -1,24 +1,16 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.BehaviourCategoryDTO;
 import com.moriba.skultem.application.dto.BehaviourDTO;
@@ -27,10 +19,16 @@ import com.moriba.skultem.application.usecase.CreateBehaviourUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListBehaviourCategoryBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ReportBehaviourByClassUseCase;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.domain.vo.Kind;
 import com.moriba.skultem.domain.vo.KindCount;
+import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateBehaviourCategoryDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateBehaviourDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.BEHAVIOUR)
 @RestController
@@ -44,7 +42,7 @@ public class BehaviourController {
         private final ListBehaviourCategoryBySchoolUseCase listBehaviourCategoryBySchoolUseCase;
 
         @PostMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'TEACHER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER', 'PROPRIETOR')")
         public ApiResponse<BehaviourDTO> create(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateBehaviourDTO param) {
@@ -54,7 +52,7 @@ public class BehaviourController {
         }
 
         @PostMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<BehaviourCategoryDTO> createCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateBehaviourCategoryDTO param) {
@@ -64,7 +62,7 @@ public class BehaviourController {
         }
 
         @GetMapping("/category")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<BehaviourCategoryDTO>> listCagtoryBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -81,7 +79,7 @@ public class BehaviourController {
         }
 
         @GetMapping()
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<BehaviourDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,
@@ -100,7 +98,7 @@ public class BehaviourController {
         }
 
         @GetMapping("/report")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
         public ApiResponse<List<KindCount>> listReportBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true) String classId,

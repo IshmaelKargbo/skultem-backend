@@ -1,8 +1,21 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.security.SectionNeutral;
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.moriba.skultem.application.dto.BulkSchemeOfWorkResultDTO;
 import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.LessonDTO;
@@ -13,18 +26,20 @@ import com.moriba.skultem.application.dto.TeacherProgressDetailDTO;
 import com.moriba.skultem.application.dto.WeekDTO;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.services.CurriculumService;
-import com.moriba.skultem.infrastructure.rest.dto.*;
+import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.CreateLessonDTO;
+import com.moriba.skultem.infrastructure.rest.dto.CreateSchemeOfWorkDTO;
+import com.moriba.skultem.infrastructure.rest.dto.CreateWeekDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateLessonStateDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateSchemeStateDTO;
+import com.moriba.skultem.infrastructure.rest.dto.UpdateWeekStateDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 @RequiresModule(FeatureModule.CURRICULUM)
 @RestController
@@ -35,7 +50,7 @@ public class CurriculumController {
     private final CurriculumService curriculumSvc;
 
     @PostMapping("/scheme")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeOfWorkDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateSchemeOfWorkDTO param) {
@@ -50,7 +65,7 @@ public class CurriculumController {
     // for how an ambiguous class name, e.g. one with multiple sections/streams, is resolved). Each
     // row succeeds or fails independently, so a typo in one row doesn't block the rest of the file.
     @PostMapping(value = "/scheme/bulk", consumes = "multipart/form-data")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<BulkSchemeOfWorkResultDTO> bulkCreate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam("file") MultipartFile file) {
@@ -70,7 +85,7 @@ public class CurriculumController {
     }
 
     @PostMapping("/scheme/week")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<WeekDTO> createWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateWeekDTO param) {
@@ -79,7 +94,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<SchemeOfWorkDTO>> searchSchemaOfWork(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(defaultValue = "10") Integer size,
@@ -95,7 +110,7 @@ public class CurriculumController {
 
     @SectionNeutral
     @GetMapping("/scheme/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<SchemeOfWorkDTO>> searchMySchemaOfWork(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -125,7 +140,7 @@ public class CurriculumController {
     }
 
     @PatchMapping("/scheme/{id}/state")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeOfWorkDTO> updateSchemeState(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -137,7 +152,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme/one/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeOfWorkDTO> getSchemaOfWork(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = false) String id) {
@@ -146,7 +161,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme/progress/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<SchemeProgressDTO> getSchemeProgress(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = false) String id) {
@@ -155,7 +170,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/session/scheme/weeks")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<WeekDTO>> getSchoolSchemeWeeks(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -168,7 +183,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme/weeks/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<WeekDTO>> getSchemeWeeks(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = false) String id) {
@@ -177,7 +192,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme/week/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<WeekDTO> getWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -186,7 +201,7 @@ public class CurriculumController {
     }
 
     @PatchMapping("/scheme/week/{id}/state")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<WeekDTO> updateWeekState(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -196,7 +211,7 @@ public class CurriculumController {
     }
 
     @PostMapping("/scheme/week/lesson")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<LessonDTO> createLesson(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateLessonDTO param) {
@@ -218,7 +233,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/scheme/week/{weekId}/lessons")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<LessonDTO>> getWeekLessons(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String weekId) {
@@ -227,7 +242,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/lesson/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<LessonDTO> getLesson(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -236,7 +251,7 @@ public class CurriculumController {
     }
 
     @PatchMapping("/lesson/{id}/state")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<LessonDTO> updateLessonState(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -247,7 +262,7 @@ public class CurriculumController {
 
     @SectionNeutral
     @GetMapping("/lesson/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<LessonDTO>> searchMyLessons(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -263,7 +278,7 @@ public class CurriculumController {
     // /teacher-progress/{teacherId} path variable below regardless of declaration order).
     @SectionNeutral
     @GetMapping("/teacher-progress/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<TeacherProgressDetailDTO> getMyTeacherProgress(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -272,7 +287,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/teacher-progress")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<TeacherProgressDTO>> getTeacherProgress(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = curriculumSvc.getTeacherProgress(school);
@@ -280,7 +295,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/teacher-progress/{teacherId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<TeacherProgressDetailDTO> getTeacherProgressDetail(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherId) {

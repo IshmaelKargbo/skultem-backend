@@ -28,7 +28,7 @@ public class ReportCardSettingController {
     private final SaveReportCardSettingUseCase saveReportCardSettingUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ReportCardSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardSettingUseCase.execute(school);
@@ -36,7 +36,7 @@ public class ReportCardSettingController {
     }
 
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ReportCardSettingDTO> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SaveReportCardSettingDTO param) {

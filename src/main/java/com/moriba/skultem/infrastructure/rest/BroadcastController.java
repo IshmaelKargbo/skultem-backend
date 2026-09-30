@@ -1,12 +1,9 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,8 +18,11 @@ import com.moriba.skultem.application.usecase.GetAudienceSizeUseCase;
 import com.moriba.skultem.application.usecase.ListBroadcastBySchoolUseCase;
 import com.moriba.skultem.domain.model.Broadcast;
 import com.moriba.skultem.domain.vo.Audience;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.ComposeBroadcastDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class BroadcastController {
     // A section-limited Admin may broadcast to their own section (recipients are counted for it alone).
     @SectionScoped
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<BroadcastDTO> compose(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -58,7 +58,7 @@ public class BroadcastController {
 
     @SectionScoped
     @GetMapping("/audience-size")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<Integer> audienceSize(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String audience,
@@ -69,7 +69,7 @@ public class BroadcastController {
 
     @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<BroadcastDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

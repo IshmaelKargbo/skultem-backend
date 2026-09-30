@@ -1,7 +1,5 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.domain.vo.FeatureModule;
-import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
@@ -18,9 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.moriba.skultem.application.dto.AssignHouseRecord;
 import com.moriba.skultem.application.dto.HouseDTO;
 import com.moriba.skultem.application.services.HouseService;
+import com.moriba.skultem.domain.vo.FeatureModule;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.AssignHouseDTO;
 import com.moriba.skultem.infrastructure.rest.dto.CreateHouseDTO;
+import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class HouseController {
     private final HouseService houseService;
 
     @PostMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<HouseDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateHouseDTO param) {
@@ -42,7 +42,7 @@ public class HouseController {
     }
 
     @PostMapping("/assignment")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> houseAssignment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody AssignHouseDTO param) {
@@ -52,7 +52,7 @@ public class HouseController {
     }
 
     @PostMapping("/assignment/random/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<Object> randomHouseAssignment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -61,7 +61,7 @@ public class HouseController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<List<HouseDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

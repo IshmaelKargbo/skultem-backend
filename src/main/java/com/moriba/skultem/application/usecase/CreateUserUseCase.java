@@ -53,12 +53,6 @@ public class CreateUserUseCase {
                 null);
     }
 
-    // Overload for a User with an account role (Admin/Accountant/Proprietor/Owner) who is also
-    // school staff and should be paid - includeInPayroll creates the same Teacher/staff record
-    // Add Teacher and Add Staff create (so SalaryStructure, Payslip and TeacherAttendance all pick
-    // them up), but deliberately does NOT also grant Role.TEACHER - their account keeps only the
-    // role they were actually given. teaching is always false: an Admin/Accountant on payroll
-    // isn't a classroom teacher, so the Subjects/Curriculum tabs on their profile stay hidden.
     @AuditLogAnnotation(action = "USER_CREATED")
     public UserDTO execute(String schoolId, String givenNames, String familyName, String email, String role,
             boolean includeInPayroll, String staffId, String phone, String street, String city, String gender,
@@ -77,9 +71,6 @@ public class CreateUserUseCase {
 
         var roleEnum = Role.valueOf(role);
 
-        // SYSTEM_ADMIN is a cross-tenant, platform-wide role - never something a school's own
-        // ADMIN/OWNER/PROPRIETOR (who gate this endpoint) can hand out, or every school could
-        // mint its own super-admin. See BootstrapSystemAdminUseCase for the only path onto it.
         if (roleEnum == Role.SYSTEM_ADMIN) {
             throw new RuleException("SYSTEM_ADMIN cannot be assigned through this endpoint");
         }

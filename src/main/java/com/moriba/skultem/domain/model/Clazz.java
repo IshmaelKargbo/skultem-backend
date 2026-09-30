@@ -10,9 +10,9 @@ import lombok.Getter;
 @Getter
 public class Clazz extends AggregateRoot<String> {
 
-    private String schoolId;
+    private final String schoolId;
     private String name;
-    private Level level;
+    private final Level level;
     private AssessmentTemplate template;
     private Boolean terminal;
     private int displayOrder;

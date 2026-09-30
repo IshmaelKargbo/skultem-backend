@@ -14,13 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Deny-by-default for section-limited staff: they may only reach endpoints marked
- * {@link SectionScoped} (which filter by their scope) or {@link SectionNeutral} (which expose nothing
- * per-level). Everything else - including whole-school data like payroll, expenses and settings, and
- * any endpoint not converted yet - is a 403 for them, so the API can never show more than the UI.
- * Whole-school callers (the vast majority, and everyone in a UNIFIED school) are unaffected.
- */
 @Component
 @RequiredArgsConstructor
 public class SectionScopeInterceptor implements HandlerInterceptor {
