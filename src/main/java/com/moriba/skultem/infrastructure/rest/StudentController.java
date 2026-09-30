@@ -1,56 +1,56 @@
 package com.moriba.skultem.infrastructure.rest;
 
-import com.moriba.skultem.infrastructure.idempotency.Idempotent;
-import com.moriba.skultem.infrastructure.security.SectionScoped;
-
+import java.io.IOException;
 import java.util.List;
+
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.moriba.skultem.application.dto.ActiveCycleDTO;
+import com.moriba.skultem.application.dto.BulkStudentImportResultDTO;
 import com.moriba.skultem.application.dto.ParentRequest;
 import com.moriba.skultem.application.dto.StudentDTO;
 import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.dto.StudentFinanceOverviewDTO;
 import com.moriba.skultem.application.dto.StudentRecord;
-import java.io.IOException;
 import com.moriba.skultem.application.error.RuleException;
-import com.moriba.skultem.application.usecase.BulkImportStudentsUseCase;
-import com.moriba.skultem.application.dto.BulkStudentImportResultDTO;
 import com.moriba.skultem.application.services.StudentService;
 import com.moriba.skultem.application.usecase.ActiveCycleUseCase;
+import com.moriba.skultem.application.usecase.BulkImportStudentsUseCase;
 import com.moriba.skultem.application.usecase.CreateStudentUseCase;
+import com.moriba.skultem.application.usecase.DeleteStudentPermanentlyUseCase;
+import com.moriba.skultem.application.usecase.EndStudentEnrollmentUseCase;
+import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
+import com.moriba.skultem.application.usecase.GetStudentUseCase;
+import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
+import com.moriba.skultem.application.usecase.RankStudentUseCase;
+import com.moriba.skultem.application.usecase.ReinstateStudentUseCase;
+import com.moriba.skultem.application.usecase.ReprocessStudentPhotosUseCase;
 import com.moriba.skultem.application.usecase.UpdateStudentPhotoUseCase;
+import com.moriba.skultem.application.usecase.UpdateStudentUseCase;
+import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.vo.Family;
 import com.moriba.skultem.domain.vo.Gender;
-import com.moriba.skultem.application.usecase.GetStudentFinanceOverviewUseCase;
-import com.moriba.skultem.application.usecase.GetStudentUseCase;
-import com.moriba.skultem.application.usecase.DeleteStudentPermanentlyUseCase;
-import com.moriba.skultem.application.usecase.EndStudentEnrollmentUseCase;
-import com.moriba.skultem.application.usecase.ReinstateStudentUseCase;
-import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.infrastructure.rest.dto.DeleteStudentDTO;
-import com.moriba.skultem.infrastructure.rest.dto.EndStudentEnrollmentDTO;
-import com.moriba.skultem.application.usecase.ListSubjectFeesByStudentUseCase;
-import com.moriba.skultem.application.usecase.RankStudentUseCase;
-import com.moriba.skultem.application.usecase.ReprocessStudentPhotosUseCase;
-import com.moriba.skultem.application.usecase.UpdateStudentUseCase;
+import com.moriba.skultem.infrastructure.idempotency.Idempotent;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateStudentDTO;
+import com.moriba.skultem.infrastructure.rest.dto.DeleteStudentDTO;
 import com.moriba.skultem.infrastructure.rest.dto.EditStudentDTO;
+import com.moriba.skultem.infrastructure.rest.dto.EndStudentEnrollmentDTO;
 import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,8 +87,6 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student created successfully", res);
         }
 
-        // Section-limited admins can import, but only into their own section's classes - enforced
-        // row by row in BulkImportStudentsUseCase, since the classes come from the file.
         @SectionScoped
         @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")

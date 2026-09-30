@@ -13,6 +13,7 @@ import com.moriba.skultem.application.mapper.StudentMapper;
 import com.moriba.skultem.application.usecase.GetFeeDetailUsecase;
 import com.moriba.skultem.application.usecase.ResolveAcademicYearUseCase;
 import com.moriba.skultem.domain.model.Enrollment;
+import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.Gender;
@@ -45,11 +46,7 @@ public class StudentService {
 
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
-        // Scoped to students enrolled for that year (any status) - see StudentJpaRepository#search -
-        // so the enrollment lookup below (just for display: class name, etc.) is always guaranteed to
-        // find one and never needs the "fall back to their last known enrollment" trick that
-        // ListStudentBySchoolUseCase still needs for its broader, unscoped listing.
-        return studentRepo.search(value, schoolId, academicYear.getId(), normalize(classId),
+        return studentRepo.search(value, schoolId, academicYear.getId(), Student.Status.ACTIVE, normalize(classId),
                 gender == null ? "" : gender.name(), sectionScopeService.levels(), pageable)
                 .map(student -> {
                     Enrollment enrollment = enrollmentRepo

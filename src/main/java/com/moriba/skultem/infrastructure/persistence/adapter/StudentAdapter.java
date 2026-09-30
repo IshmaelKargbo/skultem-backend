@@ -1,10 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
-import com.moriba.skultem.domain.vo.Level;
-
-import java.util.Collection;
-
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.repository.StudentRepository;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.jpa.StudentJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.StudentMapper;
 
@@ -68,9 +66,8 @@ public class StudentAdapter implements StudentRepository {
     }
 
     @Override
-    public Page<Student> search(String value, String schoolId, String academicYearId, String classId,
-            String gender, Collection<Level> levels, Pageable pageable) {
-        return repo.search(schoolId, value, academicYearId, Student.Status.DELETED, classId, gender, levels, pageable)
+    public Page<Student> search(String value, String schoolId, String academicYearId, Student.Status status, String classId, String gender, Collection<Level> levels, Pageable pageable) {
+        return repo.search(schoolId, value, academicYearId, status, classId, gender, levels, pageable)
                 .map(StudentMapper::toDomain);
     }
 }

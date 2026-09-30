@@ -1,16 +1,15 @@
 package com.moriba.skultem.domain.repository;
 
-import com.moriba.skultem.domain.vo.Level;
-
-import java.util.Collection;
-
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.moriba.skultem.domain.model.Student;
+import com.moriba.skultem.domain.model.Student.Status;
+import com.moriba.skultem.domain.vo.Level;
 
 public interface StudentRepository {
     void save(Student domain);
@@ -31,7 +30,7 @@ public interface StudentRepository {
     Page<Student> findByParentAndSchoolId(String parentId, String schoolId, Pageable pageable);
 
     // levels: only students whose class that year is at one of these levels (see SectionScope).
-    Page<Student> search(String value, String schoolId, String academicYearId, String classId, String gender,
+    Page<Student> search(String value, String schoolId, String academicYearId, Status status, String classId, String gender,
             Collection<Level> levels, Pageable pageable);
 
     long countAll();
