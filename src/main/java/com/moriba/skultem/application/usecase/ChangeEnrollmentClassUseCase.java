@@ -49,15 +49,6 @@ import com.moriba.skultem.utils.MoneyUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-// Corrects a student's class when they were placed in the wrong one at enrollment ("profiling").
-// This is a correction, not a transfer: it is only allowed while nothing has been recorded against
-// the enrollment yet (attendance, behaviour, entered scores, discounts), because all of that hangs
-// off the old class and can't be moved without rewriting history. Everything the old class
-// generated - subject selections, provisioned assessments, fee charges and their ledger entries -
-// is deleted and regenerated for the new class exactly as a fresh enrollment would. Money the
-// student already paid is kept, not refunded: each payment is re-applied to the new class's fees
-// (same receipt, method and date) and its ledger entry updated to match. The school's cashbook
-// (Transaction) is deliberately left alone - the cash was received either way.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -109,8 +100,7 @@ public class ChangeEnrollmentClassUseCase {
 
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
-        // sectionId is the Section's own id (what a class session exposes), not the ClassSection
-        // link's id that findByIdAndClassIdAndSchoolId expects - so match within the class's sections.
+
         var section = sectionRepo.findByClassIdAndSchoolId(clazz.getId(), schoolId).stream()
                 .map(ClassSection::getSection)
                 .filter(candidate -> candidate.getId().equals(sectionId))
@@ -180,9 +170,6 @@ public class ChangeEnrollmentClassUseCase {
         enrollment.changePlacement(clazz, section, stream);
         enrollmentRepo.save(enrollment);
 
-        // Same as a fresh enrollment: a missing class session/template surfaces as an error and
-        // rolls the whole move back, so the student is never left in the new class with no
-        // assessments; fees stay best-effort because a school may not have set them up yet.
         provisionStudentAssessmentsUseCase.execute(enrollment);
         try {
             applyApplicableFeesToEnrollmentUseCase.execute(enrollment);
@@ -210,8 +197,9 @@ public class ChangeEnrollmentClassUseCase {
         String enrollmentId = enrollment.getId();
 
         if (attendanceRepo.findByEnrollmentAndSchoolId(enrollmentId, schoolId, Pageable.ofSize(1)).hasContent()) {
-            throw new RuleException("Attendance has already been recorded for this student in the current class");
+            attendanceRepo.deleteAllByEnrollmentIdAndSchoolId(enrollmentId, schoolId);
         }
+
         if (behaviourRepo.existsByEnrollmentIdAndSchoolId(enrollmentId, schoolId)) {
             throw new RuleException("Behaviour records already exist for this student in the current class");
         }
@@ -224,11 +212,6 @@ public class ChangeEnrollmentClassUseCase {
         }
     }
 
-    // Re-applies the money already paid to the new class's fees: matching category and term first,
-    // then anything left over to the remaining fees in term order. A payment that doesn't fit one
-    // fee is split (extra rows share its receipt number, which the model already allows). If the
-    // new class's fees can't absorb everything paid, the whole change is refused rather than
-    // silently losing part of what the parent paid.
     private void carryPaymentsOver(String schoolId, Enrollment enrollment, List<Payment> payments,
             List<StudentLedgerEntry> ledgerEntries) {
         if (payments.isEmpty()) {

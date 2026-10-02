@@ -219,9 +219,7 @@ public class ProvisionStudentAssessmentsUseCase {
                 .stream()
                 .toList();
 
-        if (classSubjects.isEmpty()) {
-            throw new RuleException("No subjects found for enrollment to provision student assessments");
-        }
+        if (classSubjects.isEmpty()) {}
 
         return classSubjects;
     }

@@ -1,12 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
-import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
-
-import com.moriba.skultem.domain.vo.Level;
-
-import java.util.Collection;
-
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,29 +10,41 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
 import com.moriba.skultem.domain.vo.Filter;
+import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.AttendanceEntity;
 import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBuilder;
+import com.moriba.skultem.infrastructure.persistence.specs.PathResolver;
 
 public interface AttendanceJpaRepository
-                extends JpaRepository<AttendanceEntity, String>, JpaSpecificationExecutor<AttendanceEntity> {
-        Optional<AttendanceEntity> findByIdAndSchoolId(String id, String schoolId);
+        extends JpaRepository<AttendanceEntity, String>, JpaSpecificationExecutor<AttendanceEntity> {
 
-        Optional<AttendanceEntity> findByEnrollment_IdAndDateAndSchoolId(String enrollmentId, LocalDate date,
-                        String schoolId);
+    Optional<AttendanceEntity> findByIdAndSchoolId(String id, String schoolId);
 
-        boolean existsByEnrollment_IdAndDateAndSchoolId(String enrollmentId, LocalDate date, String schoolId);
+    Optional<AttendanceEntity> findByEnrollment_IdAndDateAndSchoolId(String enrollmentId, LocalDate date,
+            String schoolId);
 
-        Page<AttendanceEntity> findAllBySchoolId(String schoolId, Pageable pageable);
+    boolean existsByEnrollment_IdAndDateAndSchoolId(String enrollmentId, LocalDate date, String schoolId);
 
-        Page<AttendanceEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId,
-                        Pageable pageable);
+    Page<AttendanceEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
-        @Query("""
+    Page<AttendanceEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId,
+            Pageable pageable);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            DELETE FROM AttendanceEntity
+            WHERE enrollment.id = :enrollmentId AND schoolId = :schoolId
+    """)
+    void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,
+            @Param("schoolId") String schoolId);
+
+    @Query("""
                             SELECT
                                 a.date,
                                 c.id,
@@ -58,15 +65,15 @@ public interface AttendanceJpaRepository
                             GROUP BY a.date, c.id, c.name
                             ORDER BY a.date DESC
                         """)
-        Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(
-                        @Param("schoolId") String schoolId,
-                        @Param("classId") String classId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate,
-                        Pageable pageable);
+    Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("academicYearId") String academicYearId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable);
 
-        @Query("""
+    @Query("""
                                 SELECT
                                     FUNCTION('TO_CHAR', a.date, 'Dy'),
                                     SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
@@ -77,13 +84,13 @@ public interface AttendanceJpaRepository
                                 GROUP BY FUNCTION('TO_CHAR', a.date, 'Dy'), a.date
                                 ORDER BY a.date
                         """)
-        List<Object[]> weeklyAttendance(
-                        String schoolId,
-                        LocalDate start,
-                        LocalDate end);
+    List<Object[]> weeklyAttendance(
+            String schoolId,
+            LocalDate start,
+            LocalDate end);
 
-        // Scoped counterpart for the Dashboard's weekly attendance tile.
-        @Query("""
+    // Scoped counterpart for the Dashboard's weekly attendance tile.
+    @Query("""
                                 SELECT
                                     FUNCTION('TO_CHAR', a.date, 'Dy'),
                                     SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
@@ -95,17 +102,13 @@ public interface AttendanceJpaRepository
                                 GROUP BY FUNCTION('TO_CHAR', a.date, 'Dy'), a.date
                                 ORDER BY a.date
                         """)
-        List<Object[]> weeklyAttendanceForLevels(
-                        @Param("schoolId") String schoolId,
-                        @Param("start") LocalDate start,
-                        @Param("end") LocalDate end,
-                        @Param("levels") Collection<Level> levels);
+    List<Object[]> weeklyAttendanceForLevels(
+            @Param("schoolId") String schoolId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end,
+            @Param("levels") Collection<Level> levels);
 
-        // Per-student attendance counts for one class since a given date - backs the "needs
-        // attention" flag (ComputeClassAttentionUseCase). "late" counts as attended, same
-        // convention as fetchDailyClassAttendanceSummary/weeklyAttendance above; a holiday isn't
-        // held against a student, so it's excluded from both the numerator and denominator.
-        @Query("""
+    @Query("""
                             SELECT
                                 e.id,
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
@@ -119,16 +122,13 @@ public interface AttendanceJpaRepository
                               AND a.holiday = false
                             GROUP BY e.id
                         """)
-        List<Object[]> attendanceCountsByClassSince(
-                        @Param("schoolId") String schoolId,
-                        @Param("classId") String classId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("since") LocalDate since);
+    List<Object[]> attendanceCountsByClassSince(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("academicYearId") String academicYearId,
+            @Param("since") LocalDate since);
 
-        // Same as attendanceCountsByClassSince but classId nullable (whole school) - kept separate
-        // so ComputeClassAttentionUseCase's existing contract never changes. Backs the whole-school
-        // variant of Students Requiring Attention.
-        @Query("""
+    @Query("""
                             SELECT
                                 e.id,
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
@@ -142,19 +142,13 @@ public interface AttendanceJpaRepository
                               AND a.holiday = false
                             GROUP BY e.id
                         """)
-        List<Object[]> attendanceCountsSinceForReport(
-                        @Param("schoolId") String schoolId,
-                        @Param("classId") String classId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("since") LocalDate since);
+    List<Object[]> attendanceCountsSinceForReport(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("academicYearId") String academicYearId,
+            @Param("since") LocalDate since);
 
-        // Per-student attendance counts for one class SESSION (class + section + stream) within an
-        // explicit date range - backs Monthly/Term Summary and Inspection Reports. Same
-        // "late counts as attended, holiday excluded" convention as attendanceCountsByClassSince
-        // above, just parameterized by a date range and scoped to one session instead of the
-        // whole class, so e.g. "SSS 1 Science" and "SSS 1 Art" report separately rather than
-        // being merged into one "SSS 1" total.
-        @Query("""
+    @Query("""
                             SELECT
                                 e.id,
                                 s.id,
@@ -177,20 +171,16 @@ public interface AttendanceJpaRepository
                               AND a.holiday = false
                             GROUP BY e.id, s.id, s.givenNames, s.familyName, s.admissionNumber, s.gender
                         """)
-        List<Object[]> attendanceCountsBySessionAndDateRange(
-                        @Param("schoolId") String schoolId,
-                        @Param("classId") String classId,
-                        @Param("sectionId") String sectionId,
-                        @Param("streamId") String streamId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+    List<Object[]> attendanceCountsBySessionAndDateRange(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("sectionId") String sectionId,
+            @Param("streamId") String streamId,
+            @Param("academicYearId") String academicYearId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
-        // Per-student attendance counts across EVERY class session in the school for one date
-        // range - backs Class Summary. One row per (enrollment, i.e. student-in-a-session) rather
-        // than pre-aggregated per class, so the use case can group by (classId, sectionId,
-        // streamId) in Java and still compute per-class gender splits from the same rows.
-        @Query("""
+    @Query("""
                             SELECT
                                 e.clazz.id,
                                 c.name,
@@ -218,17 +208,17 @@ public interface AttendanceJpaRepository
                                 str.name, e.id, s.id, s.gender
                             ORDER BY c.levelOrder, sec.name, str.name
                         """)
-        List<Object[]> attendanceCountsBySchoolAndDateRange(
-                        @Param("schoolId") String schoolId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+    List<Object[]> attendanceCountsBySchoolAndDateRange(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
-        List<AttendanceEntity> findAllByEnrollment_Clazz_IdAndEnrollment_Section_IdAndDateAndSchoolId(String classId,
-                        String sectionId, LocalDate date, String schoolId);
+    List<AttendanceEntity> findAllByEnrollment_Clazz_IdAndEnrollment_Section_IdAndDateAndSchoolId(String classId,
+            String sectionId, LocalDate date, String schoolId);
 
-        // See AttendanceRepository#attendanceCountsByClassGenderAndDateRange.
-        @Query("""
+    // See AttendanceRepository#attendanceCountsByClassGenderAndDateRange.
+    @Query("""
                             SELECT
                                 a.date,
                                 s.gender,
@@ -245,25 +235,25 @@ public interface AttendanceJpaRepository
                             GROUP BY a.date, s.gender
                             ORDER BY a.date
                         """)
-        List<Object[]> attendanceCountsByClassGenderAndDateRange(
-                        @Param("schoolId") String schoolId,
-                        @Param("classId") String classId,
-                        @Param("academicYearId") String academicYearId,
-                        @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+    List<Object[]> attendanceCountsByClassGenderAndDateRange(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("academicYearId") String academicYearId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
-        default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
-                Pageable pageable) {
-                Specification<AttendanceEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
+    default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
+            Pageable pageable) {
+        Specification<AttendanceEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);
 
-                if (filters != null && !filters.isEmpty()) {
-                    spec = spec.and(FilterSpecificationBuilder.build(filters));
-                }
-
-                // levels: always applied (full catalog for whole-school callers) - see SectionScope.
-                spec = spec.and((root, query, cb) -> PathResolver.<AttendanceEntity, Level>getPath(root, "enrollment.clazz.level")
-                        .in(levels));
-
-                return findAll(spec, pageable);
+        if (filters != null && !filters.isEmpty()) {
+            spec = spec.and(FilterSpecificationBuilder.build(filters));
         }
+
+        // levels: always applied (full catalog for whole-school callers) - see SectionScope.
+        spec = spec.and((root, query, cb) -> PathResolver.<AttendanceEntity, Level>getPath(root, "enrollment.clazz.level")
+                .in(levels));
+
+        return findAll(spec, pageable);
+    }
 }
