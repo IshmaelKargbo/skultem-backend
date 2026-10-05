@@ -40,6 +40,10 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsByClassSince(String schoolId, String classId, String academicYearId,
             LocalDate since);
 
+    // One row per recorded (non-holiday) day: [enrollmentId, date, 1 if present-or-late else 0].
+    // classId == null means every class. Feeds AttendanceAttentionCalculator.
+    List<Object[]> attendanceDaysSince(String schoolId, String classId, String academicYearId, LocalDate since);
+
     List<Object[]> attendanceCountsSinceForReport(String schoolId, String classId, String academicYearId,
             LocalDate since);
 

@@ -16,5 +16,7 @@ public record StudentAttendanceSummaryDTO(
         long absent,
         long late,
         Double attendancePercentage,
-        boolean belowThreshold) {
+        boolean belowThreshold,
+        // The minimum attendance % that was applied to this student (their section's, else the school's).
+        double threshold) {
 }

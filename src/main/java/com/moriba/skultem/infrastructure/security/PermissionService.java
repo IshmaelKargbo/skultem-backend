@@ -32,6 +32,8 @@ public class PermissionService {
     private final ParentRepository parentRepo;
     private final ReportCardRepository reportCardRepo;
     private final AssessmentApprovalRequestRepository assessmentApprovalRequestRepo;
+    private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
+    private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
 
     // SUPER_ADMIN is a staff member with the whole school portal - everything the management and
     // finance roles can do, without being the owner/proprietor. Any gate naming one of these roles
@@ -273,10 +275,22 @@ public class PermissionService {
         }
 
         var request = assessmentApprovalRequestRepo.findByIdAndSchoolId(approvalRequestId, schoolId);
+        if (request.isEmpty() || request.get().getMaster() == null) {
+            return false;
+        }
+
+        // Where the school (or this class's section) has admins approve grades, a class master isn't a
+        // reviewer at all.
+        var school = schoolRepo.findById(schoolId);
+        var level = request.get().getTeacherSubject().getSession().getClazz().getLevel();
+        if (school.isEmpty() || gradeApprovalResolver.forLevel(school.get(), level)
+                != com.moriba.skultem.domain.vo.GradeApprover.CLASS_MASTER) {
+            return false;
+        }
 
         // The assigned class master reviews it - unless they taught the subject themselves, in which case it is
         // for an admin, proprietor or owner (nobody approves their own grades).
-        return request.isPresent() && !request.get().isSelfReview()
+        return !request.get().isSelfReview()
                 && request.get().getMaster().getTeacher().getId().equals(teacher.get().getId());
     }
 

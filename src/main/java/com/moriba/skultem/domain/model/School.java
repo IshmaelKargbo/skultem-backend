@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.service.AttendanceAttentionCalculator;
+import com.moriba.skultem.domain.vo.GradeApprover;
 import com.moriba.skultem.domain.shared.AggregateRoot;
 import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.GradeBand;
@@ -28,6 +30,12 @@ public class School extends AggregateRoot<String> {
     private String motto;
     private String principalName;
     private String principalSignature;
+    private String phone;
+    // How "needs attention" judges attendance - see AttendanceAttentionCalculator.Rules.
+    private int attendanceWindowDays;
+    private int attendanceMinDays;
+    private int attendanceStreakDays;
+    private GradeApprover gradeApprover;
     private String primaryColor;
     private String secondaryColor;
     private Double attendanceThreshold;
@@ -73,7 +81,8 @@ public class School extends AggregateRoot<String> {
             List<GradeBand> gradingScale, String logo, String motto, String principalName,
             String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
             GenderComposition genderComposition, boolean testSchool, ManagementModel managementModel,
-            Instant createdAt, Instant updatedAt) {
+            String phone, int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
+            GradeApprover gradeApprover, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -92,6 +101,14 @@ public class School extends AggregateRoot<String> {
         this.genderComposition = genderComposition != null ? genderComposition : GenderComposition.MIXED;
         this.testSchool = testSchool;
         this.managementModel = managementModel != null ? managementModel : ManagementModel.UNIFIED;
+        this.phone = phone;
+        this.attendanceWindowDays = attendanceWindowDays > 0 ? attendanceWindowDays
+                : AttendanceAttentionCalculator.DEFAULT_WINDOW_DAYS;
+        this.attendanceMinDays = attendanceMinDays > 0 ? attendanceMinDays
+                : AttendanceAttentionCalculator.DEFAULT_MIN_DAYS;
+        this.attendanceStreakDays = attendanceStreakDays > 0 ? attendanceStreakDays
+                : AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS;
+        this.gradeApprover = gradeApprover != null ? gradeApprover : GradeApprover.CLASS_MASTER;
         touch(updatedAt);
     }
 
@@ -99,7 +116,9 @@ public class School extends AggregateRoot<String> {
         Instant now = Instant.now();
         return new School(id, name, domain, address, owner, Status.ACTIVE, defaultGradingScale(), null, null, null,
                 null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD,
-                GenderComposition.MIXED, false, ManagementModel.UNIFIED, now, now);
+                GenderComposition.MIXED, false, ManagementModel.UNIFIED, null,
+                AttendanceAttentionCalculator.DEFAULT_WINDOW_DAYS, AttendanceAttentionCalculator.DEFAULT_MIN_DAYS,
+                AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS, GradeApprover.CLASS_MASTER, now, now);
     }
 
     public void setManagementModel(ManagementModel managementModel) {
@@ -126,6 +145,40 @@ public class School extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // Null keeps what the school already has. The window is recorded school days (5-60); the minimum
+    // can't exceed the window; the streak is 2-10 consecutive absences.
+    public void updateAttendanceRules(Integer windowDays, Integer minDays, Integer streakDays) {
+        int window = windowDays != null ? windowDays : this.attendanceWindowDays;
+        int min = minDays != null ? minDays : this.attendanceMinDays;
+        int streak = streakDays != null ? streakDays : this.attendanceStreakDays;
+        if (window < 5 || window > 60) {
+            throw new RuleException("Attendance window must be between 5 and 60 school days");
+        }
+        if (min < 1 || min > window) {
+            throw new RuleException("Minimum recorded days must be between 1 and the attendance window");
+        }
+        if (streak < 2 || streak > 10) {
+            throw new RuleException("Consecutive absences must be between 2 and 10");
+        }
+        this.attendanceWindowDays = window;
+        this.attendanceMinDays = min;
+        this.attendanceStreakDays = streak;
+        touch(Instant.now());
+    }
+
+    // Null keeps what the school already has.
+    public void updateGradeApprover(GradeApprover gradeApprover) {
+        if (gradeApprover != null) {
+            this.gradeApprover = gradeApprover;
+            touch(Instant.now());
+        }
+    }
+
+    public AttendanceAttentionCalculator.Rules attendanceRules() {
+        return new AttendanceAttentionCalculator.Rules(attendanceThreshold, attendanceWindowDays, attendanceMinDays,
+                attendanceStreakDays);
+    }
+
     private static double validateThreshold(double attendanceThreshold) {
         if (attendanceThreshold < 0 || attendanceThreshold > 100) {
             throw new RuleException("Attendance threshold must be between 0 and 100");
@@ -134,13 +187,14 @@ public class School extends AggregateRoot<String> {
     }
 
     public void updateBranding(String logo, String motto, String principalName, String principalSignature,
-            String primaryColor, String secondaryColor) {
+            String primaryColor, String secondaryColor, String phone) {
         this.logo = logo;
         this.motto = motto;
         this.principalName = principalName;
         this.principalSignature = principalSignature;
         this.primaryColor = primaryColor != null ? primaryColor : DEFAULT_PRIMARY_COLOR;
         this.secondaryColor = secondaryColor != null ? secondaryColor : DEFAULT_SECONDARY_COLOR;
+        this.phone = phone;
         touch(Instant.now());
     }
 

@@ -17,7 +17,8 @@ public class AssessmentApprovalRequestMapper {
             return null;
         }
 
-        ClassMaster master = ClassMasterMapper.toDomain(param.getMaster());
+        // Null where an admin approves the grades and the class has no class master.
+        ClassMaster master = param.getMaster() != null ? ClassMasterMapper.toDomain(param.getMaster()) : null;
         ClassSubjectAssessmentLifeCycle cycle = ClassSubjectAssessmentLifeCycleMapper.toDomain(param.getCycle());
         TeacherSubject teacherSubject = TeacherSubjectMapper.toDomain(param.getTeacherSubject());
         Term term = TermMapper.toDomain(param.getTerm());
@@ -32,7 +33,7 @@ public class AssessmentApprovalRequestMapper {
             return null;
         }
 
-        ClassMasterEntity master = ClassMasterMapper.toEntity(param.getMaster());
+        ClassMasterEntity master = param.getMaster() != null ? ClassMasterMapper.toEntity(param.getMaster()) : null;
         ClassSubjectAssessmentLifeCycleEntity cycle = ClassSubjectAssessmentLifeCycleMapper.toEntity(param.getCycle());
         TeacherSubjectEntity teacherSubject = TeacherSubjectMapper.toEntity(param.getTeacherSubject());
         TermEntity term = TermMapper.toEntity(param.getTerm());

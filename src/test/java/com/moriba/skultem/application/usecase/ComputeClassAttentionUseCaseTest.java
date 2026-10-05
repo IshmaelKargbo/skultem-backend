@@ -32,11 +32,9 @@ import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.domain.vo.Owner;
 
-// Locks in ComputeClassAttentionUseCase's migration onto AttendanceRateCalculator: the "needs
-// attention" rate math must stay byte-for-byte identical to the pre-refactor inline formula
-// (characterization), and the flagging boundary must now come from the school's own configured
-// attendanceThreshold rather than a fixed 75 - this is the one behavior change intended by that
-// refactor, not a side effect of it.
+// Locks in how ComputeClassAttentionUseCase turns a school's settings into attendance flags: the
+// threshold, window, minimum recorded days and absence streak all come from the school itself
+// (School#attendanceRules) rather than constants, and the rates are over recorded school days.
 @ExtendWith(MockitoExtension.class)
 class ComputeClassAttentionUseCaseTest {
 
@@ -59,13 +57,15 @@ class ComputeClassAttentionUseCaseTest {
     private SchoolRepository schoolRepo;
     @Mock
     private ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    @Mock
+    private com.moriba.skultem.application.services.AttendanceRulesResolver attendanceRulesResolver;
 
     private ComputeClassAttentionUseCase useCase;
 
     @BeforeEach
     void setUp() {
         useCase = new ComputeClassAttentionUseCase(classRepo, termRepo, enrollmentRepo, attendanceRepo, scoreRepo,
-                schoolRepo, resolveAcademicYearUseCase);
+                schoolRepo, resolveAcademicYearUseCase, attendanceRulesResolver);
 
         var clazz = Clazz.create(CLASS_ID, SCHOOL_ID, null, "Primary 5", Level.PRIMARY, 1);
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
@@ -84,6 +84,17 @@ class ComputeClassAttentionUseCaseTest {
         // scoreRepo is intentionally left unstubbed here.
     }
 
+    // The school itself, plus the rules the resolver reports for this class's level (no section
+    // override unless a test passes some).
+    private void useSchool(School school) {
+        useSchool(school, school.attendanceRules());
+    }
+
+    private void useSchool(School school, com.moriba.skultem.domain.service.AttendanceAttentionCalculator.Rules rules) {
+        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(school));
+        when(attendanceRulesResolver.forLevel(any(), eq(Level.PRIMARY))).thenReturn(rules);
+    }
+
     private School schoolWithThreshold(double threshold) {
         var school = School.create(SCHOOL_ID, "Test School", "test.skultem.com",
                 new Address("Western Area", "Freetown", "Freetown", "Freetown", "1 Main St"),
@@ -93,46 +104,89 @@ class ComputeClassAttentionUseCaseTest {
         return school;
     }
 
-    private void stubAttendanceCounts(long presentOrLate, long total) {
-        when(attendanceRepo.attendanceCountsByClassSince(eq(SCHOOL_ID), eq(CLASS_ID), eq(ACADEMIC_YEAR_ID), any()))
-                .thenReturn(List.<Object[]>of(new Object[] { ENROLLMENT_ID, presentOrLate, total }));
+    // pattern is oldest -> newest ('P' present, 'A' absent), one recorded day each, ending today.
+    private void stubDays(String pattern) {
+        List<Object[]> rows = new java.util.ArrayList<>();
+        for (int i = 0; i < pattern.length(); i++) {
+            rows.add(new Object[] { ENROLLMENT_ID, LocalDate.now().minusDays(pattern.length() - 1 - i),
+                    pattern.charAt(i) == 'P' ? 1 : 0 });
+        }
+        when(attendanceRepo.attendanceDaysSince(eq(SCHOOL_ID), eq(CLASS_ID), eq(ACADEMIC_YEAR_ID), any()))
+                .thenReturn(rows);
     }
 
     @Test
     void aStudentBelowTheDefaultSeventyFivePercentThresholdIsFlagged() {
-        // 22/30 = 73.3%, below the default 75% threshold - same fraction the old inline
-        // Math.round((22.0/30.0) * 1000.0) / 10.0 formula produced.
-        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(75.0)));
-        stubAttendanceCounts(22, 30);
+        // 12/20 = 60%, below the default 75% bar (no earlier window, so no trend to excuse it).
+        useSchool(schoolWithThreshold(75.0));
+        stubDays("PAPAP".repeat(4));
 
         var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
 
-        assertThat(result.flaggedCount()).isEqualTo(1);
+        assertThat(result.students()).hasSize(1);
         var flagged = result.students().get(0);
-        assertThat(flagged.attendanceRate()).isEqualTo(73.3);
         assertThat(flagged.attendanceFlag()).isTrue();
+        assertThat(flagged.attendanceRate()).isLessThan(75.0);
     }
 
     @Test
     void theSameStudentIsNotFlaggedWhenTheSchoolConfiguresALowerThreshold() {
-        // 73.3% clears a school-configured 70% bar, even though it fails the default 75% one.
-        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(70.0)));
-        stubAttendanceCounts(22, 30);
+        useSchool(schoolWithThreshold(40.0));
+        stubDays("PAPAP".repeat(4)); // 60%, above the school's 40% bar
 
         var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
 
+        assertThat(result.students()).isEmpty();
+    }
+
+    @Test
+    void tooFewRecordedDaysIsNotFlaggedOnRate() {
+        useSchool(schoolWithThreshold(75.0));
+        stubDays("PAPA"); // 4 days: under the school's minimum of 5
+
+        var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
+
+        assertThat(result.students()).isEmpty();
+    }
+
+    @Test
+    void theSchoolConfiguredStreakMakesAStudentCritical() {
+        var school = schoolWithThreshold(75.0);
+        school.updateAttendanceRules(null, null, 2); // two absences in a row is already critical here
+        useSchool(school);
+        stubDays("PPPPPPPPPPPPPPPPPPAA");
+
+        var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
+
+        assertThat(result.students()).hasSize(1);
+        assertThat(result.students().get(0).severity())
+                .isEqualTo(com.moriba.skultem.domain.service.AttendanceAttentionCalculator.Level.CRITICAL);
+        assertThat(result.students().get(0).absenceStreak()).isEqualTo(2);
+    }
+
+    @Test
+    void aStudentWhoHasRecoveredIsNoLongerFlagged() {
+        useSchool(schoolWithThreshold(75.0));
+        // 20 days at 40%, then 20 days at 90%: the recent window is above the bar.
+        stubDays("PAPAA".repeat(4) + "PPPPPPPPPA".repeat(2));
+
+        var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
+
+        assertThat(result.students()).isEmpty();
         assertThat(result.flaggedCount()).isEqualTo(0);
     }
 
     @Test
-    void aHigherSchoolConfiguredThresholdFlagsAStudentTheDefaultWouldNotHave() {
-        // 78% clears the default 75% bar but fails an 80% school-configured one.
-        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(80.0)));
-        stubAttendanceCounts(78, 100);
+    void aSectionsOwnRulesOverrideTheSchoolsForItsClasses() {
+        // The school's bar is 40%, so 60% attendance is fine for it - but this class's section sets 75%.
+        var school = schoolWithThreshold(40.0);
+        var sectionRules = new com.moriba.skultem.domain.service.AttendanceAttentionCalculator.Rules(75.0, 20, 5, 3);
+        useSchool(school, sectionRules);
+        stubDays("PAPAP".repeat(4)); // 60%
 
         var result = useCase.execute(SCHOOL_ID, CLASS_ID, null);
 
-        assertThat(result.flaggedCount()).isEqualTo(1);
-        assertThat(result.students().get(0).attendanceRate()).isEqualTo(78.0);
+        assertThat(result.students()).hasSize(1);
+        assertThat(result.students().get(0).attendanceFlag()).isTrue();
     }
 }

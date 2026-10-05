@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class UpdateSectionBrandingUseCase {
 
     public record Input(String principalName, Address address, MultipartFile logo, MultipartFile principalSignature,
-            boolean removeLogo, boolean removeSignature) {
+            boolean removeLogo, boolean removeSignature, String phone) {
     }
 
     private final SchoolRepository schoolRepo;
@@ -59,7 +59,7 @@ public class UpdateSectionBrandingUseCase {
 
         Address address = clean(in.address());
         section.updateBranding(logo, blankToNull(in.principalName()),
-                signature, SchoolBrandingResolver.hasAddress(address) ? address : null);
+                signature, SchoolBrandingResolver.hasAddress(address) ? address : null, blankToNull(in.phone()));
         sectionRepo.save(section);
 
         return getSchoolStructureUseCase.execute(schoolId);

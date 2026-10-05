@@ -131,6 +131,26 @@ public interface AttendanceJpaRepository
     @Query("""
                             SELECT
                                 e.id,
+                                a.date,
+                                CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            WHERE a.schoolId = :schoolId
+                              AND (:classId IS NULL OR e.clazz.id = :classId)
+                              AND e.academicYear.id = :academicYearId
+                              AND a.date >= :since
+                              AND a.holiday = false
+                            ORDER BY a.date
+                        """)
+    List<Object[]> attendanceDaysSince(
+            @Param("schoolId") String schoolId,
+            @Param("classId") String classId,
+            @Param("academicYearId") String academicYearId,
+            @Param("since") LocalDate since);
+
+    @Query("""
+                            SELECT
+                                e.id,
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
                                 COUNT(a)
                             FROM AttendanceEntity a

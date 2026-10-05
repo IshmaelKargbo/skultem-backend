@@ -45,6 +45,8 @@ class GenerateClassAttendanceSummaryUseCaseTest {
     private com.moriba.skultem.domain.repository.ClassRepository classRepo;
     @Mock
     private com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
+    @Mock
+    private com.moriba.skultem.application.services.AttendanceRulesResolver attendanceRulesResolver;
 
     private GenerateClassAttendanceSummaryUseCase useCase;
 
@@ -68,8 +70,12 @@ class GenerateClassAttendanceSummaryUseCaseTest {
     void groupsRowsIntoOneEntryPerClassSessionKeepingScienceAndArtSeparate() {
         org.mockito.Mockito.lenient().when(sectionScopeService.effective())
                 .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
+        // No per-section overrides here: every class falls back to the school's own threshold.
+        org.mockito.Mockito.lenient().when(classRepo.findBySchool(eq(SCHOOL_ID),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase, classRepo, sectionScopeService);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
@@ -119,8 +125,12 @@ class GenerateClassAttendanceSummaryUseCaseTest {
     void aSpecificTermUsesTheTermsOwnDateRangeAndNameInsteadOfTheWholeYear() {
         org.mockito.Mockito.lenient().when(sectionScopeService.effective())
                 .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
+        // No per-section overrides here: every class falls back to the school's own threshold.
+        org.mockito.Mockito.lenient().when(classRepo.findBySchool(eq(SCHOOL_ID),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase, classRepo, sectionScopeService);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));

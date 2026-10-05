@@ -7,5 +7,5 @@ import com.moriba.skultem.domain.vo.Address;
 // capture) and the plain URLs otherwise. principalName/address ride along so a document can show
 // the right head and location; ownPrincipal/ownAddress say those came from the section itself.
 public record SchoolBrandingAssetsDTO(String logo, String principalSignature, String principalName,
-        Address address, boolean ownPrincipal, boolean ownAddress) {
+        Address address, boolean ownPrincipal, boolean ownAddress, String phone) {
 }

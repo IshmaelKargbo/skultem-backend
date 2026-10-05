@@ -17,6 +17,8 @@ public record SchoolStructureDTO(ManagementModel managementModel, List<LevelDTO>
     // logo / principalName / principalSignature / address are the section's OWN overrides (null =
     // inherits the school's), not the resolved values - the settings screen needs to tell them apart.
     public record ManagementSectionDTO(String id, String name, int displayOrder, List<Level> levels, String logo,
-            String principalName, String principalSignature, Address address) {
+            String principalName, String principalSignature, Address address, String phone, Double attendanceThreshold,
+            Integer attendanceWindowDays, Integer attendanceMinDays, Integer attendanceStreakDays,
+            com.moriba.skultem.domain.vo.GradeApprover gradeApprover) {
     }
 }

@@ -41,6 +41,24 @@ public class ManagementSectionEntity {
     @Column(name = "principal_signature")
     private String principalSignature;
 
+    private String phone;
+
+    @Column(name = "attendance_threshold")
+    private Double attendanceThreshold;
+
+    @Column(name = "attendance_window_days")
+    private Integer attendanceWindowDays;
+
+    @Column(name = "attendance_min_days")
+    private Integer attendanceMinDays;
+
+    @Column(name = "attendance_streak_days")
+    private Integer attendanceStreakDays;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "grade_approver")
+    private com.moriba.skultem.domain.vo.GradeApprover gradeApprover;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String address;

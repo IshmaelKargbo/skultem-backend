@@ -73,7 +73,10 @@ public class SecurityConfig {
                                 // request from them (including login) fails before it reaches a controller.
                                 "http://*.localhost:3000",
                                 "http://*.localhost:3099",
-                                "https://*.skultem.space"));
+                                "https://*.skultem.space",
+                                // The marketing website - reads the public school directory.
+                                "https://skultem.com",
+                                "https://www.skultem.com"));
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList(
                                 "Content-Type",

@@ -16,5 +16,8 @@ public record IdCardSettingDTO(
         String principalName,
         String fields,
         String staffFields,
-        int validityYears) {
+        int validityYears,
+        int logoSize,
+        int logoRadius,
+        int signatureSize) {
 }

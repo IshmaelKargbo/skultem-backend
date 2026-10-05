@@ -9,6 +9,8 @@ public class SchoolMapper {
                 param.getStatus(), param.getGradingScale(), param.getLogo(), param.getMotto(),
                 param.getPrincipalName(), param.getPrincipalSignature(), param.getPrimaryColor(),
                 param.getSecondaryColor(), param.getAttendanceThreshold(), param.getGenderComposition(),
-                param.isTestSchool(), param.getManagementModel(), param.getCreatedAt(), param.getUpdatedAt());
+                param.isTestSchool(), param.getManagementModel(), param.getCreatedAt(), param.getUpdatedAt(), param.getPhone(),
+                param.getAttendanceWindowDays(), param.getAttendanceMinDays(), param.getAttendanceStreakDays(),
+                param.getGradeApprover());
     }
 }

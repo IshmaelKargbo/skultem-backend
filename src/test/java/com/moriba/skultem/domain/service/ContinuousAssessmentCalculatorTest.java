@@ -58,4 +58,13 @@ class ContinuousAssessmentCalculatorTest {
         assertThat(ContinuousAssessmentCalculator.trend(java.util.Arrays.asList(90, null, 60)))
                 .isEqualTo(ContinuousAssessmentCalculator.Trend.DECLINING);
     }
+
+    @Test
+    void whenCaIsOnlyMonitoredItNeverChangesTheScore() {
+        // CA 0% / formal 100%: the score is the formal test, whatever the CA was - strong, weak or missing.
+        assertThat(ContinuousAssessmentCalculator.combine(95, 55, 0, 100)).isEqualTo(55);
+        assertThat(ContinuousAssessmentCalculator.combine(10, 55, 0, 100)).isEqualTo(55);
+        assertThat(ContinuousAssessmentCalculator.combine(null, 55, 0, 100)).isEqualTo(55);
+        assertThat(ContinuousAssessmentCalculator.points(95, 0)).isEqualTo(0.0);
+    }
 }

@@ -138,7 +138,9 @@ public class CreateSchoolUseCase {
                 school.getPrincipalName(), school.getPrincipalSignature(), school.getPrimaryColor(),
                 school.getSecondaryColor(), school.getAttendanceThreshold(), school.getGenderComposition(),
                 school.isTestSchool(), school.getManagementModel(), school.getCreatedAt(),
-                school.getUpdatedAt());
+                school.getUpdatedAt(), school.getPhone(),
+                school.getAttendanceWindowDays(), school.getAttendanceMinDays(), school.getAttendanceStreakDays(),
+                school.getGradeApprover());
     }
 
     private void sendWelcomeEmail(School school, String password) {

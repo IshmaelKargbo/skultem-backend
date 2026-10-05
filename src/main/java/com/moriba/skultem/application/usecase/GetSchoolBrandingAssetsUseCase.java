@@ -55,7 +55,8 @@ public class GetSchoolBrandingAssetsUseCase {
                 storageService.downloadAsDataUri(branding.principalSignature());
             }).exceptionally(e -> null);
             return new SchoolBrandingAssetsDTO(branding.logo(), branding.principalSignature(),
-                    branding.principalName(), branding.address(), branding.ownPrincipal(), branding.ownAddress());
+                    branding.principalName(), branding.address(), branding.ownPrincipal(), branding.ownAddress(),
+                    branding.phone());
         }
 
         // A slow or failing R2 must not take the whole call down (or hang it): each image is given a
@@ -66,7 +67,7 @@ public class GetSchoolBrandingAssetsUseCase {
         CompletableFuture<String> signature = embed(branding.principalSignature());
 
         return new SchoolBrandingAssetsDTO(logo.join(), signature.join(), branding.principalName(),
-                branding.address(), branding.ownPrincipal(), branding.ownAddress());
+                branding.address(), branding.ownPrincipal(), branding.ownAddress(), branding.phone());
     }
 
     private static final long EMBED_WAIT_SECONDS = 25;

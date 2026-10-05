@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassAttendanceSummaryDTO;
 import com.moriba.skultem.application.dto.ClassAttendanceSummaryRowDTO;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.domain.model.Clazz;
@@ -39,6 +40,7 @@ public class GenerateClassAttendanceSummaryUseCase {
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final ClassRepository classRepo;
     private final SectionScopeService sectionScopeService;
+    private final AttendanceRulesResolver attendanceRulesResolver;
 
     public ClassAttendanceSummaryDTO execute(String schoolId, String academicYearId, String termId) {
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
@@ -65,7 +67,14 @@ public class GenerateClassAttendanceSummaryUseCase {
                 : classRepo.findBySchool(schoolId, scope.levels(), Pageable.unpaged()).getContent().stream()
                         .map(Clazz::getId).collect(java.util.stream.Collectors.toSet());
 
-        double threshold = school.getAttendanceThreshold();
+        // Each class is judged against its own section's minimum (else the school's).
+        double schoolThreshold = school.getAttendanceThreshold();
+        var rulesByLevel = attendanceRulesResolver.forAllLevels(school);
+        Map<String, Double> thresholdByClass = new java.util.HashMap<>();
+        for (var c : classRepo.findBySchool(schoolId, Pageable.unpaged()).getContent()) {
+            var r = rulesByLevel.get(c.getLevel());
+            thresholdByClass.put(c.getId(), r != null ? r.threshold() : schoolThreshold);
+        }
 
         // Group per-student rows into one accumulator per class session, preserving the query's
         // own ORDER BY (class display order, section, stream) via LinkedHashMap insertion order.
@@ -118,11 +127,12 @@ public class GenerateClassAttendanceSummaryUseCase {
             Double percentage = totalRecorded > 0
                     ? AttendanceRateCalculator.rate(acc.present + acc.late, totalRecorded)
                     : null;
+            double threshold = thresholdByClass.getOrDefault(acc.classId, schoolThreshold);
             boolean belowThreshold = AttendanceRateCalculator.isBelowThreshold(percentage, threshold);
 
             classRows.add(new ClassAttendanceSummaryRowDTO(acc.classId, acc.sectionId, acc.streamId, acc.label,
                     acc.totalStudents, acc.totalBoys, acc.totalGirls, acc.present, acc.absent, acc.late,
-                    acc.presentBoys, acc.presentGirls, percentage, belowThreshold));
+                    acc.presentBoys, acc.presentGirls, percentage, belowThreshold, threshold));
 
             schoolPresent += acc.present + acc.late;
             schoolTotal += totalRecorded;

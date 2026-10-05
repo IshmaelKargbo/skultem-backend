@@ -72,3 +72,7 @@ r2:
   secret-access-key: ${R2_SECRET_ACCESS_KEY:60d9b2c18425c1ec47c6994312367b0d9c32a5c3daf5744d4dadacd8f9b3d231}
   bucket: ${R2_BUCKET_NAME:skultem}
   public-url: ${R2_PUBLIC_URL:https://pub-ae8a4abcf04b41a888c906b81649eda5.r2.dev}
+  # Leave endpoint empty for Cloudflare R2 (production). Locally set R2_ENDPOINT to MinIO
+  # (e.g. http://localhost:9000) and R2_PATH_STYLE=true.
+  endpoint: ${R2_ENDPOINT:}
+  path-style: ${R2_PATH_STYLE:false}

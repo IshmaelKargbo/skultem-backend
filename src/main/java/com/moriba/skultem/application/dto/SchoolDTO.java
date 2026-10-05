@@ -13,6 +13,8 @@ import com.moriba.skultem.domain.vo.Owner;
 public record SchoolDTO(String id, String name, String domain, Address address, Owner owner, Status status,
         List<GradeBand> gradingScale, String logo, String motto, String principalName, String principalSignature,
         String primaryColor, String secondaryColor, Double attendanceThreshold, GenderComposition genderComposition,
-        boolean testSchool, ManagementModel managementModel, Instant createdAt, Instant updatedAt) {
+        boolean testSchool, ManagementModel managementModel, Instant createdAt, Instant updatedAt, String phone,
+        int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
+        com.moriba.skultem.domain.vo.GradeApprover gradeApprover) {
 
 }

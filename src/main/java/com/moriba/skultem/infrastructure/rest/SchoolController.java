@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AssetDataUriDTO;
 import com.moriba.skultem.application.dto.OwnerDTO;
+import com.moriba.skultem.application.dto.PublicSchoolDTO;
 import com.moriba.skultem.application.dto.SchoolBrandingAssetsDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.usecase.CreateSchoolUseCase;
@@ -60,6 +61,8 @@ public class SchoolController {
     private final GetSchoolStructureUseCase getSchoolStructureUseCase;
     private final UpdateSchoolStructureUseCase updateSchoolStructureUseCase;
     private final UpdateSectionBrandingUseCase updateSectionBrandingUseCase;
+    private final com.moriba.skultem.application.usecase.UpdateSectionAttendanceRulesUseCase updateSectionAttendanceRulesUseCase;
+    private final com.moriba.skultem.application.usecase.UpdateSectionGradeApproverUseCase updateSectionGradeApproverUseCase;
 
     @PostMapping
     public ApiResponse<SchoolDTO> create(@Valid @RequestBody CreateSchoolDTO param) {
@@ -77,7 +80,16 @@ public class SchoolController {
     @GetMapping("/count")
     public ApiResponse<Map<String, Long>> count() {
         return new ApiResponse<>("success", 200, "School count fetched successfully",
-                Map.of("count", schoolSvc.countAll()));
+                Map.of("count", schoolSvc.countLive()));
+    }
+
+    // Public directory of live schools (ACTIVE, not Playground) for the marketing website. No
+    // auth by design; only public identity fields are returned - see PublicSchoolDTO.
+    @GetMapping("/public")
+    public ApiResponse<List<PublicSchoolDTO>> listPublic() {
+        var res = schoolSvc.listLive();
+        return new ApiResponse<>("success", 200, "Schools fetched successfully", res,
+                Map.of("count", res.size()));
     }
 
     @GetMapping
@@ -131,15 +143,46 @@ public class SchoolController {
             @RequestParam(required = false) String chiefdom,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String street,
+            @RequestParam(required = false) String phone,
             @RequestParam(required = false, defaultValue = "false") boolean removeLogo,
             @RequestParam(required = false, defaultValue = "false") boolean removeSignature,
             @RequestPart(required = false) MultipartFile logo,
             @RequestPart(required = false) MultipartFile principalSignature) {
         var input = new UpdateSectionBrandingUseCase.Input(principalName,
                 new Address(region, district, chiefdom, city, street), logo, principalSignature, removeLogo,
-                removeSignature);
+                removeSignature, phone);
         var res = updateSectionBrandingUseCase.execute(school, id, input);
         return new ApiResponse<>("success", 200, "Section branding updated successfully", res);
+    }
+
+    // One management section's own attendance rules (threshold / window / minimum days / absence
+    // streak). A null field clears that override so the section inherits the school's. Same access
+    // as the section's branding: owner-level for any section, a section-limited Admin for their own.
+    @SectionScoped
+    @PutMapping("/structure/sections/{id}/attendance-rules")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
+    public ApiResponse<SchoolStructureDTO> updateSectionAttendanceRules(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SectionAttendanceRulesDTO param) {
+        var res = updateSectionAttendanceRulesUseCase.execute(school, id,
+                new com.moriba.skultem.application.usecase.UpdateSectionAttendanceRulesUseCase.Input(
+                        param.attendanceThreshold(), param.attendanceWindowDays(), param.attendanceMinDays(),
+                        param.attendanceStreakDays()));
+        return new ApiResponse<>("success", 200, "Section attendance rules updated successfully", res);
+    }
+
+    // Who approves grades for one management section - the class master or an admin. null clears the
+    // override so the section uses the school's choice. Same access as the section's other settings.
+    @SectionScoped
+    @PutMapping("/structure/sections/{id}/grade-approver")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.managementSection(#id)")
+    public ApiResponse<SchoolStructureDTO> updateSectionGradeApprover(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @RequestBody com.moriba.skultem.infrastructure.rest.dto.SectionGradeApproverDTO param) {
+        var res = updateSectionGradeApproverUseCase.execute(school, id, param.gradeApprover());
+        return new ApiResponse<>("success", 200, "Section grade approver updated successfully", res);
     }
 
     private static List<UpdateSchoolStructureUseCase.SectionInput> toSectionInputs(SchoolStructureRequestDTO param) {
@@ -195,7 +238,8 @@ public class SchoolController {
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(school, param.name(), param.domain(), address,
-                param.attendanceThreshold(), param.genderComposition());
+                param.attendanceThreshold(), param.genderComposition(), param.attendanceWindowDays(),
+                param.attendanceMinDays(), param.attendanceStreakDays(), param.gradeApprover());
         return new ApiResponse<>("success", 200, "School updated successfully", res);
     }
 
@@ -206,10 +250,11 @@ public class SchoolController {
             @RequestParam(required = false) String principalName,
             @RequestParam(required = false) String primaryColor,
             @RequestParam(required = false) String secondaryColor,
+            @RequestParam(required = false) String phone,
             @RequestPart(required = false) MultipartFile logo,
             @RequestPart(required = false) MultipartFile principalSignature) {
         var res = updateSchoolBrandingUseCase.execute(school, motto, principalName, logo, principalSignature,
-                primaryColor, secondaryColor);
+                primaryColor, secondaryColor, phone);
         return new ApiResponse<>("success", 200, "School branding updated successfully", res);
     }
 }

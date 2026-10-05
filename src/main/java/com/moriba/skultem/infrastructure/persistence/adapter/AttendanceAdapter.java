@@ -88,6 +88,12 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
+    public List<Object[]> attendanceDaysSince(String schoolId, String classId, String academicYearId,
+            LocalDate since) {
+        return repo.attendanceDaysSince(schoolId, classId, academicYearId, since);
+    }
+
+    @Override
     public List<Object[]> attendanceCountsSinceForReport(String schoolId, String classId, String academicYearId,
             LocalDate since) {
         return repo.attendanceCountsSinceForReport(schoolId, classId, academicYearId, since);

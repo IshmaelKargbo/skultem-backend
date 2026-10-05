@@ -54,7 +54,7 @@ class SchoolBrandingResolverTest {
     void setUp() {
         school = School.create(SCHOOL, "Prospect", "prospect", new Address("West", "WA", null, "Freetown", "Main St"),
                 null);
-        school.updateBranding("school-logo", null, "Head Teacher", "school-sig", null, null);
+        school.updateBranding("school-logo", null, "Head Teacher", "school-sig", null, null, null);
         school.setManagementModel(ManagementModel.SECTION_BASED);
 
         lenient().when(schoolLevelRepo.findBySchoolId(SCHOOL)).thenReturn(List.of(
@@ -65,7 +65,7 @@ class SchoolBrandingResolverTest {
 
     @Test
     void sectionOwnValuesWinAndBlankFieldsFallBackToTheSchool() {
-        secondary.updateBranding("secondary-logo", "Mr Kamara", null, new Address(null, null, null, "Bo", "Hill Rd"));
+        secondary.updateBranding("secondary-logo", "Mr Kamara", null, new Address(null, null, null, "Bo", "Hill Rd"), null);
 
         var b = resolver.forLevel(school, Level.JSS);
 
@@ -86,7 +86,7 @@ class SchoolBrandingResolverTest {
 
     @Test
     void aUnifiedSchoolIgnoresSectionValuesAndNoLevelMeansSchool() {
-        secondary.updateBranding("secondary-logo", "Mr Kamara", null, null);
+        secondary.updateBranding("secondary-logo", "Mr Kamara", null, null, null);
 
         assertThat(resolver.forLevel(school, null).logo()).isEqualTo("school-logo");
 
@@ -96,7 +96,7 @@ class SchoolBrandingResolverTest {
 
     @Test
     void aStudentPrintsTheSectionOfTheirCurrentClass() {
-        secondary.updateBranding("secondary-logo", null, null, null);
+        secondary.updateBranding("secondary-logo", null, null, null, null);
         var clazz = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Clazz.class);
         var enrollment = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Enrollment.class);
         org.mockito.Mockito.when(clazz.getLevel()).thenReturn(Level.JSS);
@@ -111,7 +111,7 @@ class SchoolBrandingResolverTest {
 
     @Test
     void aStaffMemberPrintsTheirSectionOnlyWhenLimitedToExactlyOne() {
-        secondary.updateBranding("secondary-logo", null, null, null);
+        secondary.updateBranding("secondary-logo", null, null, null, null);
         var teacher = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Teacher.class,
                 org.mockito.Mockito.RETURNS_DEEP_STUBS);
         org.mockito.Mockito.when(teacher.getUser().getId()).thenReturn("u1");

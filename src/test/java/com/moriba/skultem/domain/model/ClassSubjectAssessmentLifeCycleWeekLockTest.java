@@ -83,4 +83,19 @@ class ClassSubjectAssessmentLifeCycleWeekLockTest {
 
         assertThatThrownBy(() -> cycle.lockWeek(1)).isInstanceOf(RuleException.class);
     }
+
+    @Test
+    void anAssessmentOpenedWithMonitorOnlyCaIsMonitorOnlyAndOneWithWeightsIsNot() {
+        assertThat(cycle.isMonitorOnly()).isFalse(); // 30% / 70% from setUp
+
+        var monitored = ClassSubjectAssessmentLifeCycle.create("c2", "school", mock(TeacherSubject.class),
+                mock(Term.class), mock(Assessment.class), Status.DRAFT);
+        monitored.freezeStructure(AssessmentConfiguration.create("school", "sec", AssessmentStructure.CA_AND_TEST, 0,
+                100, CaFrequency.WEEKLY, 6, "admin"));
+
+        assertThat(monitored.isMonitorOnly()).isTrue();
+        assertThat(monitored.isContinuous()).isTrue();
+        assertThat(monitored.getCaPercentage()).isEqualTo(0);
+        assertThat(monitored.getFormalPercentage()).isEqualTo(100);
+    }
 }

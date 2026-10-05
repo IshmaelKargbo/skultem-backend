@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.StudentAttendanceSummaryDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
 import com.moriba.skultem.application.mapper.AttendanceSummaryRowMapper;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
@@ -23,6 +24,7 @@ public class GenerateMonthlyAttendanceSummaryUseCase {
     private final ClassSessionRepository classSessionRepo;
     private final SchoolRepository schoolRepo;
     private final AttendanceRepository attendanceRepo;
+    private final AttendanceRulesResolver attendanceRulesResolver;
 
     // Scoped to one class SESSION (class + section + stream), not the whole class - "SSS 1
     // Science" and "SSS 1 Art" report separately, matching the same section/stream boundary
@@ -40,6 +42,6 @@ public class GenerateMonthlyAttendanceSummaryUseCase {
                 classSession.getAcademicYear().getId(), month.atDay(1), month.atEndOfMonth());
 
         return AttendanceSummaryRowMapper.toStudentSummaries(rows, classSession.getName(),
-                school.getAttendanceThreshold());
+                attendanceRulesResolver.forLevel(school, classSession.getClazz().getLevel()).threshold());
     }
 }

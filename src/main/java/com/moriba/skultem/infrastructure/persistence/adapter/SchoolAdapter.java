@@ -1,9 +1,11 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.School;
@@ -55,6 +57,17 @@ public class SchoolAdapter implements SchoolRepository {
     @Override
     public long countAll() {
         return repo.count();
+    }
+
+    @Override
+    public List<School> findAllLive() {
+        return repo.findAllByStatusAndTestSchoolFalse(School.Status.ACTIVE, Sort.by("name").ascending()).stream()
+                .map(SchoolMapper::toDomain).toList();
+    }
+
+    @Override
+    public long countLive() {
+        return repo.countByStatusAndTestSchoolFalse(School.Status.ACTIVE);
     }
 
     @Override

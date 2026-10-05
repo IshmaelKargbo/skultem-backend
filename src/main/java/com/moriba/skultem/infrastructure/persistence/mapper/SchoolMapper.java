@@ -21,7 +21,8 @@ public class SchoolMapper {
                 param.getStatus(), gradingScale, param.getLogo(), param.getMotto(), param.getPrincipalName(),
                 param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
                 param.getAttendanceThreshold(), param.getGenderComposition(), param.isTestSchool(), param.getManagementModel(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getPhone(), param.getAttendanceWindowDays(), param.getAttendanceMinDays(),
+                param.getAttendanceStreakDays(), param.getGradeApprover(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static SchoolEntity toEntity(School args) {
@@ -41,6 +42,11 @@ public class SchoolMapper {
                 .motto(args.getMotto())
                 .principalName(args.getPrincipalName())
                 .principalSignature(args.getPrincipalSignature())
+                .phone(args.getPhone())
+                .attendanceWindowDays(args.getAttendanceWindowDays())
+                .attendanceMinDays(args.getAttendanceMinDays())
+                .attendanceStreakDays(args.getAttendanceStreakDays())
+                .gradeApprover(args.getGradeApprover())
                 .primaryColor(args.getPrimaryColor())
                 .secondaryColor(args.getSecondaryColor())
                 .attendanceThreshold(args.getAttendanceThreshold())

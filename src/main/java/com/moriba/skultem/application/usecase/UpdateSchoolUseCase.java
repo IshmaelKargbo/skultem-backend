@@ -20,9 +20,12 @@ public class UpdateSchoolUseCase {
     private final SchoolRepository repo;
 
     public SchoolDTO execute(String schoolId, String name, String domain, Address address,
-            Double attendanceThreshold, String genderComposition) {
+            Double attendanceThreshold, String genderComposition, Integer attendanceWindowDays,
+            Integer attendanceMinDays, Integer attendanceStreakDays, String gradeApprover) {
         var school = repo.findById(schoolId).orElseThrow(() -> new NotFoundException("school not found"));
         school.update(name, domain, address, attendanceThreshold, parseGenderComposition(genderComposition));
+        school.updateAttendanceRules(attendanceWindowDays, attendanceMinDays, attendanceStreakDays);
+        school.updateGradeApprover(parseGradeApprover(gradeApprover));
         repo.save(school);
         return SchoolMapper.toDTO(school);
     }
@@ -35,6 +38,17 @@ public class UpdateSchoolUseCase {
             return GenderComposition.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new RuleException("Gender composition must be one of BOYS, GIRLS or MIXED");
+        }
+    }
+
+    private static com.moriba.skultem.domain.vo.GradeApprover parseGradeApprover(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return com.moriba.skultem.domain.vo.GradeApprover.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new com.moriba.skultem.application.error.RuleException("Grade approver must be CLASS_MASTER or ADMIN");
         }
     }
 }

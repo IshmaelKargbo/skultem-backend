@@ -8,7 +8,9 @@ public class ManagementSectionMapper {
     public static ManagementSection toDomain(ManagementSectionEntity param) {
         return new ManagementSection(param.getId(), param.getSchoolId(), param.getName(), param.getDisplayOrder(),
                 param.getLogo(), param.getPrincipalName(), param.getPrincipalSignature(),
-                JsonMapper.fromJson(param.getAddress(), Address.class), param.getCreatedAt(), param.getUpdatedAt());
+                JsonMapper.fromJson(param.getAddress(), Address.class), param.getPhone(), param.getAttendanceThreshold(),
+                param.getAttendanceWindowDays(), param.getAttendanceMinDays(), param.getAttendanceStreakDays(),
+                param.getGradeApprover(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static ManagementSectionEntity toEntity(ManagementSection args) {
@@ -20,6 +22,12 @@ public class ManagementSectionMapper {
                 .logo(args.getLogo())
                 .principalName(args.getPrincipalName())
                 .principalSignature(args.getPrincipalSignature())
+                .phone(args.getPhone())
+                .attendanceThreshold(args.getAttendanceThreshold())
+                .attendanceWindowDays(args.getAttendanceWindowDays())
+                .attendanceMinDays(args.getAttendanceMinDays())
+                .attendanceStreakDays(args.getAttendanceStreakDays())
+                .gradeApprover(args.getGradeApprover())
                 .address(args.getAddress() == null ? null : JsonMapper.toJson(args.getAddress()))
                 .createdAt(args.getCreatedAt())
                 .updatedAt(args.getUpdatedAt())

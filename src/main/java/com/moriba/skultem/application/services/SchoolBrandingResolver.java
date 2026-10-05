@@ -36,7 +36,7 @@ public class SchoolBrandingResolver {
     // than the school - a document with its own school-wide design override (the ID card's
     // "school address" and "principal") should let a section's own value win over that override.
     public record EffectiveBranding(String logo, String principalName, String principalSignature, Address address,
-            boolean ownPrincipal, boolean ownAddress) {
+            boolean ownPrincipal, boolean ownAddress, String phone) {
     }
 
     private final SchoolLevelRepository schoolLevelRepo;
@@ -54,12 +54,13 @@ public class SchoolBrandingResolver {
         return new SchoolDTO(dto.id(), dto.name(), dto.domain(), b.address(), dto.owner(), dto.status(),
                 dto.gradingScale(), b.logo(), dto.motto(), b.principalName(), b.principalSignature(),
                 dto.primaryColor(), dto.secondaryColor(), dto.attendanceThreshold(), dto.genderComposition(),
-                dto.testSchool(), dto.managementModel(), dto.createdAt(), dto.updatedAt());
+                dto.testSchool(), dto.managementModel(), dto.createdAt(), dto.updatedAt(), b.phone(),
+                dto.attendanceWindowDays(), dto.attendanceMinDays(), dto.attendanceStreakDays(), dto.gradeApprover());
     }
 
     public EffectiveBranding forSchool(School school) {
         return new EffectiveBranding(school.getLogo(), school.getPrincipalName(), school.getPrincipalSignature(),
-                school.getAddress(), false, false);
+                school.getAddress(), false, false, school.getPhone());
     }
 
     // A student prints their current class's section (their most recent enrollment).
@@ -123,7 +124,8 @@ public class SchoolBrandingResolver {
                 firstNonBlank(section.getPrincipalName(), school.getPrincipalName()),
                 firstNonBlank(section.getPrincipalSignature(), school.getPrincipalSignature()),
                 hasAddress(section.getAddress()) ? section.getAddress() : school.getAddress(),
-                notBlank(section.getPrincipalName()), hasAddress(section.getAddress()));
+                notBlank(section.getPrincipalName()), hasAddress(section.getAddress()),
+                firstNonBlank(section.getPhone(), school.getPhone()));
     }
 
     public static boolean hasAddress(Address a) {

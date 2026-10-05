@@ -1,5 +1,8 @@
 package com.moriba.skultem.application.services;
 
+import java.util.List;
+
+import com.moriba.skultem.application.dto.PublicSchoolDTO;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.SchoolMapper;
@@ -26,8 +29,13 @@ public class SchoolService {
        return SchoolMapper.toDTO(domain);
     }
 
-    public long countAll() {
-        return repo.countAll();
+    // Live schools only (ACTIVE, not Playground) - the public figure shown on the login page.
+    public long countLive() {
+        return repo.countLive();
+    }
+
+    public List<PublicSchoolDTO> listLive() {
+        return repo.findAllLive().stream().map(PublicSchoolDTO::from).toList();
     }
 
 }

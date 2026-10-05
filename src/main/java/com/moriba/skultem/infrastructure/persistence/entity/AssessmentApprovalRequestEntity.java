@@ -31,7 +31,7 @@ public class AssessmentApprovalRequestEntity {
     private String schoolId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_master_id", nullable = false)
+    @JoinColumn(name = "class_master_id")
     private ClassMasterEntity master;
 
     @ManyToOne(fetch = FetchType.LAZY)

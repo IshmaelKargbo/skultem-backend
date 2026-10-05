@@ -42,7 +42,9 @@ public class GetSchoolStructureUseCase {
                                 .filter(l -> s.getId().equals(l.getManagementSectionId()))
                                 .map(SchoolLevel::getLevel)
                                 .toList(),
-                        s.getLogo(), s.getPrincipalName(), s.getPrincipalSignature(), s.getAddress()))
+                        s.getLogo(), s.getPrincipalName(), s.getPrincipalSignature(), s.getAddress(), s.getPhone(),
+                        s.getAttendanceThreshold(), s.getAttendanceWindowDays(), s.getAttendanceMinDays(),
+                        s.getAttendanceStreakDays(), s.getGradeApprover()))
                 .toList();
 
         return new SchoolStructureDTO(school.getManagementModel(), levelDTOs, sectionDTOs);

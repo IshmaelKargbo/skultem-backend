@@ -29,6 +29,8 @@ public class SubmitAssessmentForApprovalUseCase {
         private final StudentAssessmentRepository studentAssessmentRepo;
         private final ClassSubjectAssessmentLifeCycleRepository assessmentLifeCycleRepo;
         private final ClassMasterRepository classMasterRepo;
+        private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
+        private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
 
         @AuditLogAnnotation(action = "ASSESSMENT_SUBMITED")
         public void execute(
@@ -42,10 +44,21 @@ public class SubmitAssessmentForApprovalUseCase {
                                 .findByIdAndSchoolId(teacherSubjectId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Teacher subject not found"));
 
-                var classMaster = classMasterRepo
+                // Who approves depends on the school (or the class's section): the class master, or an admin.
+                // Only the class-master route needs one to exist - where an admin approves, a class with no
+                // class master can still submit.
+                var school = schoolRepo.findById(schoolId)
+                                .orElseThrow(() -> new NotFoundException("School not found"));
+                var approver = gradeApprovalResolver.forLevel(school,
+                                teacherSubject.getSession().getClazz().getLevel());
+
+                var classMasterLookup = classMasterRepo
                                 .findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(
-                                                teacherSubject.getSession().getId())
-                                .orElseThrow(() -> new NotFoundException("Class master not found"));
+                                                teacherSubject.getSession().getId());
+                if (approver == com.moriba.skultem.domain.vo.GradeApprover.CLASS_MASTER && classMasterLookup.isEmpty()) {
+                        throw new NotFoundException("Class master not found");
+                }
+                var classMaster = classMasterLookup.orElse(null);
 
                 var cycle = assessmentLifeCycleRepo
                                 .findBySubjectSessionAssessmentAndTerm(
@@ -80,7 +93,8 @@ public class SubmitAssessmentForApprovalUseCase {
                                 // Continuous assessment goes in two steps - the CA first, then the formal test -
                                 // and both must be in before it goes for approval.
                                 if (score.getCycle().isContinuous()) {
-                                        if (!score.getCycle().isCaSubmitted()) {
+                                        // A monitor-only CA never has to be finished before approval.
+                                        if (!score.getCycle().isCaSubmitted() && !score.getCycle().isMonitorOnly()) {
                                                 throw new RuleException(
                                                                 "Submit the CA recordings and enter the formal test before submitting for approval");
                                         }

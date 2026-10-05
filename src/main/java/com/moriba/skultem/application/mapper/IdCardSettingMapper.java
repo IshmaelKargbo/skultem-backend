@@ -21,6 +21,9 @@ public class IdCardSettingMapper {
                 param.getPrincipalName(),
                 param.getFields(),
                 param.getStaffFields(),
-                param.getValidityYears());
+                param.getValidityYears(),
+                param.getLogoSize(),
+                param.getLogoRadius(),
+                param.getSignatureSize());
     }
 }

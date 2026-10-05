@@ -53,13 +53,22 @@ public class R2StorageService {
             @Value("${r2.access-key-id}") String accessKeyId,
             @Value("${r2.secret-access-key}") String secretAccessKey,
             @Value("${r2.bucket}") String bucket,
-            @Value("${r2.public-url}") String publicUrl) {
+            @Value("${r2.public-url}") String publicUrl,
+            @Value("${r2.endpoint:}") String endpoint,
+            @Value("${r2.path-style:false}") boolean pathStyle) {
 
         this.bucket = bucket;
         this.publicUrl = publicUrl.replaceAll("/+$", "");
 
+        // Production talks to Cloudflare R2; local dev points r2.endpoint at MinIO (also S3-compatible,
+        // but it needs path-style addressing - bucket in the path, not the hostname).
+        String resolvedEndpoint = endpoint != null && !endpoint.isBlank()
+                ? endpoint
+                : "https://" + accountId + ".r2.cloudflarestorage.com";
+
         this.client = S3Client.builder()
-                .endpointOverride(URI.create("https://" + accountId + ".r2.cloudflarestorage.com"))
+                .endpointOverride(URI.create(resolvedEndpoint))
+                .forcePathStyle(pathStyle)
                 .region(Region.of("auto"))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKeyId, secretAccessKey)))

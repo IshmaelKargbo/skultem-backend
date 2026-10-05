@@ -31,8 +31,27 @@ class AssessmentConfigurationTest {
     @Test
     void percentagesMustAddUpToOneHundredAndBothBePositive() {
         assertThatThrownBy(() -> ca(30, 60, 6)).isInstanceOf(RuleException.class).hasMessageContaining("100%");
-        assertThatThrownBy(() -> ca(0, 100, 6)).isInstanceOf(RuleException.class);
         assertThatThrownBy(() -> ca(100, 0, 6)).isInstanceOf(RuleException.class);
+        assertThatThrownBy(() -> ca(0, 70, 6)).isInstanceOf(RuleException.class);
+    }
+
+    @Test
+    void caAtZeroPercentIsMonitorOnlyAndTheFormalTestIsTheWholeScore() {
+        var c = ca(0, 100, 6);
+
+        assertThat(c.isContinuous()).isTrue();
+        assertThat(c.isMonitorOnly()).isTrue();
+        assertThat(c.forAssessment(null, null).caPercentage()).isEqualTo(0);
+        assertThat(c.forAssessment(null, null).formalPercentage()).isEqualTo(100);
+        assertThat(c.summary()).contains("monitor only");
+        assertThat(ca(30, 70, 6).isMonitorOnly()).isFalse();
+    }
+
+    @Test
+    void aMonitorOnlyConfigurationStillNeedsAFrequencyAndRecordings() {
+        assertThatThrownBy(() -> AssessmentConfiguration.create("s", null, AssessmentStructure.CA_AND_TEST, 0, 100,
+                null, 6, "u")).isInstanceOf(RuleException.class);
+        assertThatThrownBy(() -> ca(0, 100, 0)).isInstanceOf(RuleException.class);
     }
 
     @Test

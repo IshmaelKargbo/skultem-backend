@@ -24,7 +24,9 @@ import com.moriba.skultem.domain.repository.ClassRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
-import com.moriba.skultem.domain.service.AttendanceRateCalculator;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
+import com.moriba.skultem.domain.service.AcademicAttentionCalculator;
+import com.moriba.skultem.domain.service.AttendanceAttentionCalculator;
 import com.moriba.skultem.domain.service.PerformanceTrendCalculator;
 import com.moriba.skultem.domain.vo.Level;
 
@@ -45,7 +47,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GenerateStudentsRequiringAttentionUseCase {
 
-    private static final int ATTENDANCE_WINDOW_DAYS = 30;
+    // See ComputeClassAttentionUseCase - attendance is judged by the same calculator over the same rows.
+    private static final int MIN_LOOKBACK_DAYS = 90;
     private static final int DEFAULT_PASS_MARK = 50;
 
     // Deliberately the same exclusion set ComputeClassAttentionUseCase uses (not the stricter
@@ -64,11 +67,20 @@ public class GenerateStudentsRequiringAttentionUseCase {
     private final SchoolRepository schoolRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final SectionScopeService sectionScopeService;
+    private final AttendanceRulesResolver attendanceRulesResolver;
+
+    // Calendar days of attendance to fetch: two windows of school days (~5 per 7 calendar days), with
+    // slack for breaks - never less than MIN_LOOKBACK_DAYS so term to date is covered too.
+    private static int lookbackDays(AttendanceAttentionCalculator.Rules rules) {
+        return Math.max(MIN_LOOKBACK_DAYS, rules.windowDays() * 4);
+    }
 
     public ClassAcademicAttentionDTO execute(String schoolId, String classId, String academicYearId, String termId,
             Level level, int page, int size) {
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
-        double attendanceThreshold = school.getAttendanceThreshold();
+        // Each section may have its own attendance rules; levels without an override use the school's.
+        var schoolRules = school.attendanceRules();
+        var rulesByLevel = attendanceRulesResolver.forAllLevels(school);
 
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
@@ -107,17 +119,18 @@ public class GenerateStudentsRequiringAttentionUseCase {
                     .toList();
         }
 
-        Map<String, double[]> attendanceCounts = new HashMap<>(); // enrollmentId -> [present, total]
-        LocalDate since = LocalDate.now().minusDays(ATTENDANCE_WINDOW_DAYS);
-        for (Object[] row : attendanceRepo.attendanceCountsSinceForReport(schoolId, classId, academicYear.getId(),
-                since)) {
-            attendanceCounts.put((String) row[0], new double[] {
-                    ((Number) row[1]).doubleValue(),
-                    ((Number) row[2]).doubleValue()
-            });
+        int lookback = rulesByLevel.values().stream().mapToInt(GenerateStudentsRequiringAttentionUseCase::lookbackDays).max().orElse(0);
+        lookback = Math.max(lookback, lookbackDays(schoolRules));
+        LocalDate since = LocalDate.now().minusDays(lookback);
+        LocalDate termStart = activeTerm != null ? activeTerm.getStartDate() : null;
+        if (termStart != null && termStart.isBefore(since)) {
+            since = termStart;
         }
+        var daysByEnrollment = AttendanceAttentionCalculator.groupByEnrollment(
+                attendanceRepo.attendanceDaysSince(schoolId, classId, academicYear.getId(), since));
 
         Map<String, double[]> academicAverages = new HashMap<>(); // enrollmentId -> [average, count]
+        Map<String, double[]> previousAverages = new HashMap<>(); // same, for the term before
         Map<String, long[]> completionByEnrollment = new HashMap<>(); // enrollmentId -> [total, completed]
         Map<String, List<Double>> trendByEnrollment = new HashMap<>();
 
@@ -128,6 +141,21 @@ public class GenerateStudentsRequiringAttentionUseCase {
                         ((Number) row[1]).doubleValue(),
                         ((Number) row[2]).doubleValue()
                 });
+            }
+
+            // The term before this one in the same academic year, only to tell recovering from sliding.
+            var previousTerm = activeTerm.getTermNumber() > 1
+                    ? termRepo.findByTernNumberAndAcademicYearIdAndSchoolId(activeTerm.getTermNumber() - 1,
+                            academicYear.getId(), schoolId).orElse(null)
+                    : null;
+            if (previousTerm != null) {
+                for (Object[] row : scoreRepo.averageScoresForAttentionReport(schoolId, classId, previousTerm.getId(),
+                        sectionScopeService.levels(), ACADEMIC_HEURISTIC_EXCLUDED)) {
+                    previousAverages.put((String) row[0], new double[] {
+                            ((Number) row[1]).doubleValue(),
+                            ((Number) row[2]).doubleValue()
+                    });
+                }
             }
 
             for (Object[] row : scoreRepo.assessmentCompletionByClassAndTerm(schoolId, classId, activeTerm.getId(),
@@ -151,18 +179,26 @@ public class GenerateStudentsRequiringAttentionUseCase {
         for (var enrollment : enrollments) {
             int passMark = passMarkByClass.getOrDefault(enrollment.getClazz().getId(), DEFAULT_PASS_MARK);
 
-            var attendance = attendanceCounts.get(enrollment.getId());
-            Double attendanceRate = (attendance != null && attendance[1] > 0)
-                    ? AttendanceRateCalculator.rate((long) attendance[0], (long) attendance[1])
-                    : null;
-            boolean lowAttendanceSignal = AttendanceRateCalculator.isBelowThreshold(attendanceRate,
-                    attendanceThreshold);
+            var attendance = AttendanceAttentionCalculator.evaluate(daysByEnrollment.get(enrollment.getId()),
+                    rulesByLevel.getOrDefault(levelByClass.get(enrollment.getClazz().getId()), schoolRules),
+                    termStart);
+            Double attendanceRate = attendance.recentRate();
+            // Only a real concern counts here - a "watch" (recent dip, term fine) isn't evidence of a
+            // student needing management's attention, matching the class badge.
+            boolean lowAttendanceSignal = attendance.level().atLeast(AttendanceAttentionCalculator.Level.NEEDS_ATTENTION);
 
-            var academic = academicAverages.get(enrollment.getId());
-            Double academicAverage = (academic != null && academic[1] > 0)
-                    ? Math.round(academic[0] * 10.0) / 10.0
-                    : null;
-            boolean lowAcademicSignal = academicAverage != null && academicAverage < passMark;
+            // Same judgement as the class view (AcademicAttentionCalculator): below the pass mark, unless
+            // the student is already improving on last term. A "watch" isn't counted as a signal here.
+            var current = academicAverages.get(enrollment.getId());
+            var previous = previousAverages.get(enrollment.getId());
+            var academic = AcademicAttentionCalculator.evaluate(
+                    current != null ? Math.round(current[0] * 10.0) / 10.0 : null,
+                    current != null ? (long) current[1] : 0,
+                    previous != null ? Math.round(previous[0] * 10.0) / 10.0 : null,
+                    previous != null ? (long) previous[1] : 0,
+                    passMark);
+            Double academicAverage = academic.average();
+            boolean lowAcademicSignal = academic.level().atLeast(AttendanceAttentionCalculator.Level.NEEDS_ATTENTION);
 
             long[] completion = completionByEnrollment.getOrDefault(enrollment.getId(), new long[] { 0, 0 });
             long missingAssessments = Math.max(0, completion[0] - completion[1]);

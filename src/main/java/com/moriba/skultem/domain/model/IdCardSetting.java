@@ -33,11 +33,17 @@ public class IdCardSetting extends AggregateRoot<String> {
     // colour/layout columns.
     private String staffFields;
     private int validityYears;
+    // Logo size as a percentage of the default size (100 = default).
+    private int logoSize;
+    // Corner roundness of the logo container, 0 (square) to 50 (full circle), as a % of its size.
+    private int logoRadius;
+    // Principal signature size as a percentage of the default size (100 = default).
+    private int signatureSize;
 
     public IdCardSetting(String id, String schoolId, String layout, String profileShape, String headerColor,
             String footerColor, String headerTextColor, String primaryTextColor, int widthMm, int heightMm,
             String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress, String principalName,
-            String fields, String staffFields, int validityYears, Instant createdAt, Instant updatedAt) {
+            String fields, String staffFields, int validityYears, int logoSize, int logoRadius, int signatureSize, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.layout = layout;
@@ -56,23 +62,28 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.fields = fields;
         this.staffFields = staffFields;
         this.validityYears = validityYears > 0 ? validityYears : 1;
+        this.logoSize = logoSize > 0 ? logoSize : 100;
+        this.logoRadius = Math.max(0, Math.min(50, logoRadius));
+        this.signatureSize = signatureSize > 0 ? signatureSize : 100;
         touch(updatedAt);
     }
 
     public static IdCardSetting create(String id, String schoolId, String layout, String profileShape,
             String headerColor, String footerColor, String headerTextColor, String primaryTextColor, int widthMm,
             int heightMm, String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress,
-            String principalName, String fields, String staffFields, int validityYears) {
+            String principalName, String fields, String staffFields, int validityYears, int logoSize,
+            int logoRadius, int signatureSize) {
         Instant now = Instant.now();
         return new IdCardSetting(id, schoolId, layout, profileShape, headerColor, footerColor, headerTextColor,
                 primaryTextColor, widthMm, heightMm, bgImageUrl, bgOpacity, schoolName, schoolAddress, principalName,
-                fields, staffFields, validityYears, now, now);
+                fields, staffFields, validityYears, logoSize, logoRadius, signatureSize, now, now);
     }
 
     public void update(String layout, String profileShape, String headerColor, String footerColor,
             String headerTextColor, String primaryTextColor, int widthMm, int heightMm, String bgImageUrl,
             int bgOpacity, String schoolName, String schoolAddress, String principalName, String fields,
-            String staffFields, int validityYears) {
+            String staffFields, int validityYears, int logoSize,
+            int logoRadius, int signatureSize) {
         this.layout = layout;
         this.profileShape = profileShape;
         this.headerColor = headerColor;
@@ -89,6 +100,9 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.fields = fields;
         this.staffFields = staffFields;
         this.validityYears = validityYears > 0 ? validityYears : 1;
+        this.logoSize = logoSize > 0 ? logoSize : 100;
+        this.logoRadius = Math.max(0, Math.min(50, logoRadius));
+        this.signatureSize = signatureSize > 0 ? signatureSize : 100;
         touch(Instant.now());
     }
 }

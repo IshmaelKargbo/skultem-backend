@@ -66,6 +66,15 @@ public class IdCardSettingEntity {
     @Column(nullable = false)
     private int validityYears;
 
+    @Column(nullable = false)
+    private int logoSize;
+
+    @Column(nullable = false)
+    private int logoRadius;
+
+    @Column(nullable = false)
+    private int signatureSize;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

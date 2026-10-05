@@ -110,7 +110,9 @@ public class RecordContinuousAssessmentUseCase {
             if (touchesEntries && cycle.isCaSubmitted()) {
                 throw new RuleException("The CA has already been submitted, so its recordings are closed");
             }
-            if (record.formalScore() != null && !cycle.isCaSubmitted()) {
+            // Where CA counts, it is closed first and the formal test follows. Where CA is only monitored it
+            // never stands in the way of the test, so it can be entered at any time.
+            if (record.formalScore() != null && !cycle.isCaSubmitted() && !cycle.isMonitorOnly()) {
                 throw new RuleException("Submit the CA recordings first - the formal test is entered after them");
             }
 

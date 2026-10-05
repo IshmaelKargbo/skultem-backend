@@ -208,6 +208,12 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         return structureFrozenAt != null;
     }
 
+    // CA is only for monitoring: recorded, but worth 0% of the score. The CA step then never gates the formal test or
+    // the approval - there is nothing to finish before the test counts.
+    public boolean isMonitorOnly() {
+        return isContinuous() && caPercentage != null && caPercentage == 0;
+    }
+
     // Scored as CA + formal test (only once frozen that way; an unfrozen or legacy assessment is a plain score).
     public boolean isContinuous() {
         return structure == AssessmentStructure.CA_AND_TEST;

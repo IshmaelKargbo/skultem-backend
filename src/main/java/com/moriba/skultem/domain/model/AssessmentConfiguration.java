@@ -147,6 +147,11 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
         return structure == AssessmentStructure.CA_AND_TEST;
     }
 
+    // CA is recorded to watch a student's strength but counts for nothing in the score (CA 0% / formal 100%).
+    public boolean isMonitorOnly() {
+        return isContinuous() && caPercentage == 0;
+    }
+
     public void change(AssessmentStructure structure, int caPercentage, int formalPercentage,
             CaFrequency caFrequency, int caEntries, String userId) {
         validate(structure, caPercentage, formalPercentage, caFrequency, caEntries);
@@ -179,7 +184,13 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
         if (structure == AssessmentStructure.SIMPLE) {
             return;
         }
-        if (ca < 1 || ca > 99 || formal < 1 || formal > 99) {
+        // CA at 0% is "monitor only": it is still recorded (a strength indicator) but isn't part of the score,
+        // so the formal test is the whole 100%.
+        if (ca == 0) {
+            if (formal != 100) {
+                throw new RuleException("When continuous assessment is only for monitoring, the formal test is 100%");
+            }
+        } else if (ca < 1 || ca > 99 || formal < 1 || formal > 99) {
             throw new RuleException("Continuous assessment and the formal test must each be between 1% and 99%");
         }
         if (ca + formal != 100) {
@@ -199,6 +210,10 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
     public String summary() {
         if (structure == AssessmentStructure.SIMPLE) {
             return "SIMPLE (single score)";
+        }
+        if (isMonitorOnly()) {
+            return "CA_AND_TEST (CA monitor only, formal 100%): " + caFrequency + " x" + caEntries
+                    + (plan.isEmpty() ? "" : ", " + plan.size() + " term/assessment override(s)");
         }
         return "CA_AND_TEST: CA " + caPercentage + "% / Formal " + formalPercentage + "%, " + caFrequency + " x"
                 + caEntries + (plan.isEmpty() ? "" : ", " + plan.size() + " term/assessment override(s)");

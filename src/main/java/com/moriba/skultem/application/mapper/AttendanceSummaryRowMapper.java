@@ -49,7 +49,8 @@ public final class AttendanceSummaryRowMapper {
                     absent,
                     late,
                     percentage,
-                    belowThreshold);
+                    belowThreshold,
+                    attendanceThreshold);
         }).toList();
     }
 }

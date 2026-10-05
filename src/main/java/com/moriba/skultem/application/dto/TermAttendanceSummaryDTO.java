@@ -13,5 +13,6 @@ public record TermAttendanceSummaryDTO(
         long totalBoys,
         long totalGirls,
         long presentBoys,
-        long presentGirls) {
+        long presentGirls,
+        double threshold) {
 }

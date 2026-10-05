@@ -101,7 +101,8 @@ public class SystemAdminController {
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(schoolId, param.name(), param.domain(), address,
-                param.attendanceThreshold(), param.genderComposition());
+                param.attendanceThreshold(), param.genderComposition(), param.attendanceWindowDays(),
+                param.attendanceMinDays(), param.attendanceStreakDays(), param.gradeApprover());
         return new ApiResponse<SchoolDTO>("success", 200, "School updated successfully", res);
     }
 

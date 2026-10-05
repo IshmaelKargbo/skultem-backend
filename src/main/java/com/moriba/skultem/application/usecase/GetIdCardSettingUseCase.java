@@ -47,7 +47,8 @@ public class GetIdCardSettingUseCase {
                 dto = new IdCardSettingDTO(dto.layout(), dto.profileShape(), dto.headerColor(), dto.footerColor(),
                         dto.headerTextColor(), dto.primaryTextColor(), dto.widthMm(), dto.heightMm(),
                         dto.bgImageUrl(), dto.bgOpacity(), dto.schoolName(), dto.schoolAddress(),
-                        dto.principalName(), dto.fields(), DEFAULT_STAFF_FIELDS, dto.validityYears());
+                        dto.principalName(), dto.fields(), DEFAULT_STAFF_FIELDS, dto.validityYears(),
+                        dto.logoSize(), dto.logoRadius(), dto.signatureSize());
             }
             return dto;
         }
@@ -65,6 +66,6 @@ public class GetIdCardSettingUseCase {
         }
 
         return new IdCardSettingDTO("vertical", "square", "#1878c5", "#1878c5", "#ffffff", "#111827", 85, 54, "", 20,
-                schoolName, schoolAddress, "", DEFAULT_FIELDS, DEFAULT_STAFF_FIELDS, 1);
+                schoolName, schoolAddress, "", DEFAULT_FIELDS, DEFAULT_STAFF_FIELDS, 1, 100, 50, 100);
     }
 }

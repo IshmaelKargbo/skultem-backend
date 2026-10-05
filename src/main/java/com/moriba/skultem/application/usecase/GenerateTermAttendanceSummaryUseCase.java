@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.StudentAttendanceSummaryDTO;
 import com.moriba.skultem.application.dto.TermAttendanceSummaryDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
 import com.moriba.skultem.application.mapper.AttendanceSummaryRowMapper;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
@@ -24,6 +25,7 @@ public class GenerateTermAttendanceSummaryUseCase {
     private final SchoolRepository schoolRepo;
     private final TermRepository termRepo;
     private final AttendanceRepository attendanceRepo;
+    private final AttendanceRulesResolver attendanceRulesResolver;
 
     // Scoped to one class SESSION (class + section + stream), not the whole class - "SSS 1
     // Science" and "SSS 1 Art" report separately, matching the same section/stream boundary
@@ -43,7 +45,7 @@ public class GenerateTermAttendanceSummaryUseCase {
                 classSession.getClazz().getId(), classSession.getSection().getId(), streamId,
                 classSession.getAcademicYear().getId(), term.getStartDate(), term.getEndDate());
 
-        double threshold = school.getAttendanceThreshold();
+        double threshold = attendanceRulesResolver.forLevel(school, classSession.getClazz().getLevel()).threshold();
         var students = AttendanceSummaryRowMapper.toStudentSummaries(rows, classSession.getName(), threshold);
 
         long totalPresent = students.stream().mapToLong(StudentAttendanceSummaryDTO::present).sum();
@@ -65,6 +67,6 @@ public class GenerateTermAttendanceSummaryUseCase {
                 .mapToLong(s -> s.present() + s.late()).sum();
 
         return new TermAttendanceSummaryDTO(students, students.size(), averageAttendance, studentsBelowThreshold,
-                totalPresent, totalAbsent, totalLate, totalBoys, totalGirls, presentBoys, presentGirls);
+                totalPresent, totalAbsent, totalLate, totalBoys, totalGirls, presentBoys, presentGirls, threshold);
     }
 }

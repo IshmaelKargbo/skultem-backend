@@ -62,6 +62,21 @@ public class SchoolEntity {
     @Column(name = "principal_signature")
     private String principalSignature;
 
+    private String phone;
+
+    @Column(name = "attendance_window_days", nullable = false)
+    private int attendanceWindowDays;
+
+    @Column(name = "attendance_min_days", nullable = false)
+    private int attendanceMinDays;
+
+    @Column(name = "attendance_streak_days", nullable = false)
+    private int attendanceStreakDays;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "grade_approver", nullable = false)
+    private com.moriba.skultem.domain.vo.GradeApprover gradeApprover;
+
     @Column(name = "primary_color")
     private String primaryColor;
 

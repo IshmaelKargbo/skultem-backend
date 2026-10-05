@@ -17,5 +17,7 @@ public record ClassAttendanceSummaryRowDTO(
         long presentBoys,
         long presentGirls,
         Double attendancePercentage,
-        boolean belowThreshold) {
+        boolean belowThreshold,
+        // The minimum attendance % applied to this class (its section's, else the school's).
+        double threshold) {
 }

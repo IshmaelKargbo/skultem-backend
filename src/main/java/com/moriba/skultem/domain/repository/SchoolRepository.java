@@ -1,5 +1,6 @@
 package com.moriba.skultem.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -26,4 +27,10 @@ public interface SchoolRepository {
     void delete(School domain);
 
     long countAll();
+
+    // Schools that are live: ACTIVE and not a Playground (test) school. What the public marketing
+    // site and the login page's "trusted by N schools" figure count - not everything in the table.
+    List<School> findAllLive();
+
+    long countLive();
 }
