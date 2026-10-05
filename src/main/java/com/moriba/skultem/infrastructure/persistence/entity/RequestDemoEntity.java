@@ -46,6 +46,7 @@ public class RequestDemoEntity {
     @Column(nullable = false)
     private String priority;
 
+    @Column(columnDefinition = "text")
     private String message;
 
     private Instant createdAt;

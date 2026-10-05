@@ -2,6 +2,7 @@ package com.moriba.skultem.application.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.RequestDemoDTO;
@@ -19,7 +20,7 @@ public class RequestDemoService {
     private final RequestDemoRepository repo;
 
     public Page<RequestDemoDTO> list(int page, int size) {
-        Pageable pageable = PageableMapper.toPage(page, size);
+        Pageable pageable = PageableMapper.toPage(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return repo.findAll(pageable).map(RequestDemoMapper::toDTO);
     }
 

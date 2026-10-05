@@ -15,6 +15,7 @@ public class RequestDemoMapper {
                 .id(param.getId())
                 .name(param.getName())
                 .email(param.getEmail())
+                .school(param.getSchool())
                 .phone(param.getPhone())
                 .address(param.getAddress())
                 .city(param.getCity())

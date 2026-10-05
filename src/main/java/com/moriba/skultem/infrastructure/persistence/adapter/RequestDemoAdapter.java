@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +28,7 @@ public class RequestDemoAdapter implements RequestDemoRepository {
 
     @Override
     public Optional<RequestDemo> findById(String id) {
-        return repo.findById(id).map(RequestDemoMapper::toDomain);
+        return repo.findById(UUID.fromString(id)).map(RequestDemoMapper::toDomain);
     }
 
     @Override
