@@ -25,6 +25,8 @@ public interface ClassMasterRepository {
 
     boolean existsByTeacherIdAndClassSessionIdAndSchoolId(String teacherId, String classSessionId, String schoolId);
 
+    boolean existsActiveByTeacherIdAndClassIdAndSchoolId(String teacherId, String classId, String schoolId);
+
     boolean existsByClassSessionIdAndSchoolId(String classSessionId, String schoolId);
 
     Optional<ClassMaster> findTopByClassSessionIdAndEndedAtIsNullOrderByAssignedAtDesc(String sessionId);

@@ -145,6 +145,16 @@ public class ClassSessionController {
     }
 
     @SectionScoped
+    @GetMapping("/session/{id}")
+    @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.classSession(#school, #id)")
+    public ApiResponse<ClassSessionDTO> getExact(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = getClassSessionUseCase.executeBySession(id, school);
+        return new ApiResponse<>("success", 200, "Class session fetched successfully", res);
+    }
+
+    @SectionScoped
     @GetMapping("/{classId}/stream/{streamId}")
     @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<ClassSessionDTO> getByClassAndStream(

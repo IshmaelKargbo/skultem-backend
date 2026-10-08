@@ -9,6 +9,7 @@ import com.moriba.skultem.application.dto.SystemAdminStatsDTO;
 import com.moriba.skultem.application.dto.UserDTO;
 import com.moriba.skultem.application.dto.UserSchoolMembershipDTO;
 import com.moriba.skultem.application.dto.UserWithSchoolsDTO;
+import com.moriba.skultem.application.usecase.AddSystemAdminUseCase;
 import com.moriba.skultem.application.usecase.BootstrapSystemAdminUseCase;
 import com.moriba.skultem.application.usecase.GetPlaygroundSummaryUseCase;
 import com.moriba.skultem.application.usecase.SearchUsersAcrossSchoolsUseCase;
@@ -20,6 +21,7 @@ import com.moriba.skultem.application.usecase.UpdateSchoolUseCase;
 import com.moriba.skultem.application.usecase.WipeTestSchoolDataUseCase;
 import com.moriba.skultem.domain.vo.Address;
 import com.moriba.skultem.domain.vo.Role;
+import com.moriba.skultem.infrastructure.rest.dto.AddSystemAdminDTO;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.BootstrapSystemAdminDTO;
 import com.moriba.skultem.infrastructure.rest.dto.GoLiveDTO;
@@ -46,6 +48,7 @@ public class SystemAdminController {
     private final SystemAdminStatsUseCase statsUseCase;
     private final SetSchoolStatusUseCase setSchoolStatusUseCase;
     private final BootstrapSystemAdminUseCase bootstrapSystemAdminUseCase;
+    private final AddSystemAdminUseCase addSystemAdminUseCase;
     private final SearchUsersAcrossSchoolsUseCase searchUsersAcrossSchoolsUseCase;
     private final UpdateSchoolUseCase updateSchoolUseCase;
     private final SetSchoolUserStatusUseCase setSchoolUserStatusUseCase;
@@ -139,6 +142,14 @@ public class SystemAdminController {
             @RequestParam("status") String status) {
         var res = setSchoolUserStatusUseCase.execute(schoolId, userId, status);
         return new ApiResponse<>("success", 200, "User status updated successfully", res);
+    }
+
+    @PostMapping("/admins")
+    @PreAuthorize("@permissionService.isSystemAdmin()")
+    public ApiResponse<UserDTO> addAdmin(@Valid @RequestBody AddSystemAdminDTO param) {
+        var res = addSystemAdminUseCase.execute(param.email(), param.password(), param.givenNames(),
+                param.familyName());
+        return new ApiResponse<>("success", 200, "System admin added successfully", res);
     }
 
     @PostMapping("/bootstrap")

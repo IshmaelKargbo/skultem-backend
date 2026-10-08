@@ -44,7 +44,7 @@ public interface AttendanceJpaRepository
     void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,
             @Param("schoolId") String schoolId);
 
-    @Query("""
+    @Query(value = """
                             SELECT
                                 a.date,
                                 c.id,
@@ -52,22 +52,46 @@ public interface AttendanceJpaRepository
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
                                 COUNT(a),
                                 MIN(a.createdAt),
-                                MAX(a.updatedAt)
+                                MAX(a.updatedAt),
+                                sc.name,
+                                st.name,
+                                ''
                             FROM AttendanceEntity a
                             JOIN a.enrollment e
                             JOIN e.clazz c
                             JOIN e.academicYear ac
+                            JOIN e.section sc
+                            LEFT JOIN e.stream st
                             WHERE a.schoolId = :schoolId
                               AND (:classId IS NULL OR c.id = :classId)
+                              AND (:sectionId IS NULL OR sc.id = :sectionId)
+                              AND (:streamId IS NULL OR st.id = :streamId)
                               AND (:academicYearId IS NULL OR ac.id = :academicYearId)
                               AND (:startDate IS NULL OR a.date >= :startDate)
                               AND (:endDate IS NULL OR a.date <= :endDate)
-                            GROUP BY a.date, c.id, c.name
-                            ORDER BY a.date DESC
+                            GROUP BY a.date, c.id, c.name, sc.name, st.name
+                            ORDER BY a.date DESC, sc.name, st.name
+                        """, countQuery = """
+                            SELECT COUNT(DISTINCT CONCAT(a.date, '|', c.id, '|', sc.id, '|', COALESCE(st.id, '')))
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            JOIN e.clazz c
+                            JOIN e.academicYear ac
+                            JOIN e.section sc
+                            LEFT JOIN e.stream st
+                            WHERE a.schoolId = :schoolId
+                              AND (:classId IS NULL OR c.id = :classId)
+                              AND (:sectionId IS NULL OR sc.id = :sectionId)
+                              AND (:streamId IS NULL OR st.id = :streamId)
+                              AND (:academicYearId IS NULL OR ac.id = :academicYearId)
+                              AND (:startDate IS NULL OR a.date >= :startDate)
+                              AND (:endDate IS NULL OR a.date <= :endDate)
                         """)
     Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(
             @Param("schoolId") String schoolId,
             @Param("classId") String classId,
+            @Param("sectionId") String sectionId,
+            @Param("streamId") String streamId,
             @Param("academicYearId") String academicYearId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,

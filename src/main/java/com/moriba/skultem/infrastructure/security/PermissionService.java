@@ -233,6 +233,29 @@ public class PermissionService {
                 schoolId);
     }
 
+    // Report cards belong to management and to a class's own class master: a teacher who isn't a class
+    // master of this class (any of its sessions) can't generate, list, open or remark its cards,
+    // even though the endpoints are role-gated to TEACHER.
+    public boolean canManageReportCardsForClass(String schoolId, String classId) {
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN", "PROPRIETOR")) {
+            return true;
+        }
+
+        if (classId == null || classId.isBlank() || !hasRole(Role.TEACHER)) {
+            return false;
+        }
+
+        return teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId)
+                .map(t -> classMasterRepo.existsActiveByTeacherIdAndClassIdAndSchoolId(t.getId(), classId, schoolId))
+                .orElse(false);
+    }
+
+    public boolean canManageReportCard(String schoolId, String reportCardId) {
+        return reportCardRepo.findByIdAndSchoolId(reportCardId, schoolId)
+                .map(card -> canManageReportCardsForClass(schoolId, card.getClassId()))
+                .orElse(false);
+    }
+
     // "Their own classes" for a Teacher means being one of that class session's class masters (a
     // session can have more than one, e.g. co-taught classes) - the same relationship
     // ListClassSessionByTeacherUseCase uses to build a teacher's class list (the "/class-sessions/me"

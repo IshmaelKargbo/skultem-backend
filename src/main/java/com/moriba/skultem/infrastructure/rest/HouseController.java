@@ -5,9 +5,11 @@ import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,6 +41,25 @@ public class HouseController {
             @Valid @RequestBody CreateHouseDTO param) {
         var res = houseService.createHouse(school, param.name(), param.motto(), param.color(), param.masters());
         return new ApiResponse<>("success", 200, "House created successfully", res);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<HouseDTO> update(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody CreateHouseDTO param) {
+        var res = houseService.updateHouse(school, id, param.name(), param.motto(), param.color(), param.masters());
+        return new ApiResponse<>("success", 200, "House updated successfully", res);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Object> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        houseService.deleteHouse(school, id);
+        return new ApiResponse<>("success", 200, "House deleted successfully", null);
     }
 
     @PostMapping("/assignment")

@@ -55,13 +55,23 @@ public class AttendanceReportUseCase {
                 .findByIdAndSchoolId(classId, schoolId)
                 .orElseThrow(() -> new RuleException("Class session not found"));
 
-        Pageable pageable = createPageable(page, size);
+        // `page` is already zero-based here (the controller converts it), unlike the report-builder
+        // overload below whose callers pass a 1-based page - going through createPageable would take
+        // one off again and every page after the first would reload page 1.
+        Pageable pageable = size <= 0 ? Pageable.unpaged() : PageRequest.of(Math.max(page, 0), size);
+
+        // Only this session's own section and stream (SSS 1 Art, not all of SSS 1) - a class split into
+        // sections or streams keeps a separate history for each.
+        var section = clazz.getSection();
+        var stream = clazz.getStream();
 
         return repo.fetchDailyClassAttendanceSummary(
                 clazz.getClazz().getId(),
+                section != null ? section.getId() : null,
+                stream != null ? stream.getId() : null,
                 academicYear.getId(),
                 schoolId,
-                pageable);
+                pageable).map(e -> e.withSessionId(clazz.getId()));
     }
 
     /**
@@ -102,6 +112,8 @@ public class AttendanceReportUseCase {
 
         List<AttendanceHistoryDTO> summaries = repo
                 .fetchDailyClassAttendanceSummary(
+                        null,
+                        null,
                         null,
                         academicYear.getId(),
                         schoolId,

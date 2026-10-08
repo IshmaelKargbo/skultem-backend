@@ -95,11 +95,13 @@ public class House extends AggregateRoot<String> {
     public void update(
             String name,
             String motto,
-            String color) {
+            String color,
+            List<Teacher> houseMasters) {
 
         this.name = name;
         this.motto = motto;
         this.color = color;
+        this.houseMasters = new ArrayList<>(houseMasters);
 
         touch(Instant.now());
     }

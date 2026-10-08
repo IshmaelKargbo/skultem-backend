@@ -19,15 +19,17 @@ public interface ReportCardRepository {
 
     Optional<ReportCard> findByIdAndSchoolId(String id, String schoolId);
 
-    Optional<ReportCard> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId, String termId);
+    Optional<ReportCard> findBySchoolIdAndStudentIdAndTermIdAndScopeKey(String schoolId, String studentId, String termId,
+            String scopeKey);
 
     // Every report card a student has ever had generated, most recent first - powers the Report
     // Card tab on the student profile (all terms/years in one place, not just the current term).
     List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId);
 
     // levels: only cards for classes at these levels (see SectionScope).
-    Page<ReportCard> search(String schoolId, String classId, String termId, String search, Collection<Level> levels,
-            Pageable pageable);
+    // sectionId / streamId: the student's section / stream in that term's academic year.
+    Page<ReportCard> search(String schoolId, String classId, String termId, String search, String sectionId,
+            String streamId, Collection<Level> levels, Pageable pageable);
 
     long countBySchoolId(String schoolId);
 

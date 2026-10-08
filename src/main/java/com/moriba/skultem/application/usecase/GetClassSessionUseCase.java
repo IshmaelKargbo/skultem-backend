@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.ClassSessionDTO;
 import com.moriba.skultem.application.dto.FeeDetail;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.ClassMasterRepository;
@@ -115,11 +116,23 @@ public class GetClassSessionUseCase {
         }
 
         public ClassSessionDTO executeByClassAndStream(String clazzId, String stream, String school, String academicYearId) {
-                var academicYear = academicYearRepo.findByIdAndSchoolId(academicYearId, school)
-                                .orElseThrow(() -> new NotFoundException("Active academic year not found"));
-
                 var domain = repo.findByClassIdAndStreamIdAndAcademicYearId(clazzId, stream, academicYearId)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+                return toDTO(domain, school);
+        }
+
+        // One exact session (class + section + stream) - what "JSS 1 A" vs "JSS 1 B" is. The by-class
+        // and by-stream lookups above can't tell sections of the same class apart.
+        public ClassSessionDTO executeBySession(String sessionId, String school) {
+                var domain = repo.findByIdAndSchoolId(sessionId, school)
+                                .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+                return toDTO(domain, school);
+        }
+
+        private ClassSessionDTO toDTO(ClassSession domain, String school) {
+                var academicYear = domain.getAcademicYear();
 
                 var classMasters = classMasterRepo.findAllActiveBySessionIdAndSchoolId(domain.getId(), school);
                 String teacherName = "N/A", teacherId = "";

@@ -40,6 +40,11 @@ public class ClassMasterAdapter implements ClassMasterRepository {
     }
 
     @Override
+    public boolean existsActiveByTeacherIdAndClassIdAndSchoolId(String teacherId, String classId, String schoolId) {
+        return repo.existsBySession_Clazz_IdAndTeacher_IdAndSchoolIdAndEndedAtIsNull(classId, teacherId, schoolId);
+    }
+
+    @Override
     public Page<ClassMaster> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolId(schoolId, pageable).map(ClassMasterMapper::toDomain);
     }

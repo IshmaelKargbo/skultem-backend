@@ -227,8 +227,9 @@ public class ClassController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
             @RequestParam(required = false) String academicYearId,
-            @RequestParam(required = false) String streamId) {
-        var res = getClassOverviewUseCase.execute(school, academicYearId, id, streamId);
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String sessionId) {
+        var res = getClassOverviewUseCase.execute(school, academicYearId, id, streamId, sessionId);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
     }
 

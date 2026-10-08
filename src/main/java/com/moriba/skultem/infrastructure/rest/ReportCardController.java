@@ -20,12 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.GenerateReportCardsDTO;
 import com.moriba.skultem.application.dto.GenerateReportCardsResultDTO;
+import com.moriba.skultem.application.dto.ReportCardAssessmentOptionDTO;
 import com.moriba.skultem.application.dto.ReportCardDTO;
 import com.moriba.skultem.application.dto.ReportCardStatsDTO;
 import com.moriba.skultem.application.dto.ReportCardSummaryDTO;
 import com.moriba.skultem.application.usecase.GenerateReportCardsUseCase;
 import com.moriba.skultem.application.usecase.GetReportCardStatsUseCase;
 import com.moriba.skultem.application.usecase.GetReportCardUseCase;
+import com.moriba.skultem.application.usecase.ListReportCardAssessmentsUseCase;
 import com.moriba.skultem.application.usecase.ListReportCardsUseCase;
 import com.moriba.skultem.application.usecase.ListStudentReportCardsUseCase;
 import com.moriba.skultem.application.usecase.TrackReportCardDownloadUseCase;
@@ -50,31 +52,38 @@ public class ReportCardController {
     private final GetReportCardStatsUseCase getReportCardStatsUseCase;
     private final UpdateReportCardRemarkUseCase updateReportCardRemarkUseCase;
     private final TrackReportCardDownloadUseCase trackReportCardDownloadUseCase;
+    private final ListReportCardAssessmentsUseCase listReportCardAssessmentsUseCase;
 
     @SectionScoped
     @PostMapping("/generate")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.clazz(#school, #param.classId())")
+    @PreAuthorize("@permissionService.canManageReportCardsForClass(#school, #param.classId()) and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<GenerateReportCardsResultDTO> generate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
             @Valid @RequestBody GenerateReportCardsRequestDTO param) {
         var dto = new GenerateReportCardsDTO(param.classId(), param.termId(), param.includeAttendance(),
-                param.includeRanking());
+                param.includeRanking(), param.assessmentIds(), param.wholeYear(),
+                param.sectionId(), param.streamId(), param.academicYearId());
         var res = generateReportCardsUseCase.execute(school, userId, dto);
         return new ApiResponse<>("success", 200, "Report cards generated successfully", res);
     }
 
     @SectionScoped
+    // A class master has to name one of their own classes; management can list across the school.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)")
     public ApiResponse<List<ReportCardSummaryDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
             @RequestParam(required = false) String termId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String level,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String streamId,
             @RequestParam(required = true, defaultValue = "1") Integer page,
             @RequestParam(required = true, defaultValue = "12") Integer size) {
-        var res = listReportCardsUseCase.execute(school, classId, termId, search, page, size);
+        var res = listReportCardsUseCase.execute(school, classId, termId, search, level, sectionId, streamId, page,
+                size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -98,8 +107,19 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Report cards fetched successfully", res);
     }
 
+    // The assessments a class's report cards can be limited to (the options on the Generate page).
+    @SectionScoped
+    @GetMapping("/assessments")
+    @PreAuthorize("@permissionService.canManageReportCardsForClass(#school, #classId) and @sectionScope.clazz(#school, #classId)")
+    public ApiResponse<List<ReportCardAssessmentOptionDTO>> assessments(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String classId) {
+        var res = listReportCardAssessmentsUseCase.execute(school, classId);
+        return new ApiResponse<>("success", 200, "Assessments fetched successfully", res);
+    }
+
     @GetMapping("/stats")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<ReportCardStatsDTO> stats(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardStatsUseCase.execute(school);
@@ -108,7 +128,7 @@ public class ReportCardController {
 
     @SectionScoped
     @GetMapping("/{id}")
-    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
+    @PreAuthorize("(@permissionService.canManageReportCard(#school, #id) or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -118,7 +138,7 @@ public class ReportCardController {
 
     @SectionScoped
     @PatchMapping("/{id}/remark")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') and @sectionScope.reportCard(#school, #id)")
+    @PreAuthorize("@permissionService.canManageReportCard(#school, #id) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> updateRemark(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -129,7 +149,7 @@ public class ReportCardController {
 
     @SectionScoped
     @PostMapping("/{id}/download")
-    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
+    @PreAuthorize("(@permissionService.canManageReportCard(#school, #id) or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<Void> trackDownload(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

@@ -43,7 +43,16 @@ public class ReportCardSettingEntity {
     private boolean showSignatures;
 
     @Column(nullable = false)
+    private boolean showTeacherSignature;
+
+    @Column(nullable = false)
+    private boolean showPrincipalSignature;
+
+    @Column(nullable = false)
     private boolean showGradeScale;
+
+    @Column(columnDefinition = "text")
+    private String remarkScale;
 
     private Instant createdAt;
     private Instant updatedAt;

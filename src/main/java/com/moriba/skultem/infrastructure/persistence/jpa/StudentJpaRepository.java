@@ -16,6 +16,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.StudentEntity;
 
 public interface StudentJpaRepository extends JpaRepository<StudentEntity, String> {
 
+    boolean existsByHouse_Id(String houseId);
+
     boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId);
 
     boolean existsByGivenNamesIgnoreCaseAndFamilyNameIgnoreCaseAndDateOfBirthAndSchoolId(String givenNames,

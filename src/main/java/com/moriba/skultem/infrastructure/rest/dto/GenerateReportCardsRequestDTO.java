@@ -4,7 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 
 public record GenerateReportCardsRequestDTO(
         @NotBlank(message = "Class is required") String classId,
-        @NotBlank(message = "Term is required") String termId,
+        String termId,
         boolean includeAttendance,
-        boolean includeRanking) {
+        boolean includeRanking,
+        java.util.List<String> assessmentIds,
+        boolean wholeYear,
+        String sectionId,
+        String streamId,
+        String academicYearId) {
 }

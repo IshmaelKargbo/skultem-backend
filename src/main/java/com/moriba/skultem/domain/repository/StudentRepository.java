@@ -16,6 +16,8 @@ public interface StudentRepository {
 
     Optional<Student> findByIdAndSchoolId(String id, String schoolId);
 
+    boolean existsByHouseId(String houseId);
+
     boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId);
 
     // Same name (case-insensitive) and date of birth - how a bulk import spots a student that's

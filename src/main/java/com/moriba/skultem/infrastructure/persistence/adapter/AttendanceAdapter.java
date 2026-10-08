@@ -65,9 +65,10 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
-    public Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String academicYear,
-            String schoolId, Pageable pageable) {
-                return repo.fetchDailyClassAttendanceSummary(schoolId, classId, academicYear, null, null, pageable);
+    public Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String sectionId,
+            String streamId, String academicYear, String schoolId, Pageable pageable) {
+                return repo.fetchDailyClassAttendanceSummary(schoolId, classId, sectionId, streamId, academicYear,
+                                null, null, pageable);
     }
 
     @Override

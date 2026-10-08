@@ -71,6 +71,12 @@ public class ReportCardEntity {
     @Column(nullable = false, columnDefinition = "text")
     private String subjects;
 
+    @Column(nullable = false, length = 1000)
+    private String scopeKey;
+
+    @Column(length = 500)
+    private String scopeLabel;
+
     private String generatedBy;
     private Instant generatedAt;
 

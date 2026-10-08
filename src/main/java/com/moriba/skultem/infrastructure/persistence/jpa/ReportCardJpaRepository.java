@@ -19,7 +19,8 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
 
     Optional<ReportCardEntity> findByIdAndSchoolId(String id, String schoolId);
 
-    Optional<ReportCardEntity> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId, String termId);
+    Optional<ReportCardEntity> findBySchoolIdAndStudentIdAndTermIdAndScopeKey(String schoolId, String studentId,
+            String termId, String scopeKey);
 
     List<ReportCardEntity> findAllBySchoolIdAndStudentIdOrderByGeneratedAtDesc(String schoolId, String studentId);
 
@@ -44,11 +45,18 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
             and (:classId is null or r.classId = :classId)
             and (:termId is null or r.termId = :termId)
             and r.classId in (select c.id from ClassEntity c where c.schoolId = :schoolId and c.level in :levels)
+            and (:sectionId is null or exists (select 1 from EnrollmentEntity e
+                where e.student.id = r.studentId and e.clazz.id = r.classId and e.section.id = :sectionId
+                and e.academicYear.id = (select t.academicYear.id from TermEntity t where t.id = r.termId)))
+            and (:streamId is null or exists (select 1 from EnrollmentEntity e
+                where e.student.id = r.studentId and e.clazz.id = r.classId and e.stream.id = :streamId
+                and e.academicYear.id = (select t.academicYear.id from TermEntity t where t.id = r.termId)))
             and (:search is null or lower(r.studentName) like lower(concat('%', cast(:search as string), '%'))
                 or lower(r.admissionNumber) like lower(concat('%', cast(:search as string), '%')))
             order by case when r.position = 0 then 999999 else r.position end asc, r.studentName asc
             """)
     Page<ReportCardEntity> search(@Param("schoolId") String schoolId, @Param("classId") String classId,
             @Param("termId") String termId, @Param("search") String search,
+            @Param("sectionId") String sectionId, @Param("streamId") String streamId,
             @Param("levels") Collection<Level> levels, Pageable pageable);
 }

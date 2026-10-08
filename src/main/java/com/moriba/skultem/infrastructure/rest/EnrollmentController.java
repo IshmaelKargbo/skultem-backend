@@ -95,9 +95,10 @@ public class EnrollmentController {
             @PathVariable(required = false) String classId,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = false) String stream,
+            @RequestParam(required = false) String section,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listEnrollmentByClassUseCase.execute(school, classId, stream, academicYearId, page - 1, size);
+        var res = listEnrollmentByClassUseCase.execute(school, classId, stream, section, academicYearId, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

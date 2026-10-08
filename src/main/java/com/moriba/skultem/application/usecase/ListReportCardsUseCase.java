@@ -20,11 +20,16 @@ public class ListReportCardsUseCase {
     private final SectionScopeService sectionScopeService;
 
     public Page<ReportCardSummaryDTO> execute(String schoolId, String classId, String termId, String search,
-            int page, int size) {
+            String level, String sectionId, String streamId, int page, int size) {
         Pageable pageable = size > 0 ? PageRequest.of(Math.max(page - 1, 0), size) : Pageable.unpaged();
 
+        // The picked level narrows what the caller's own section scope already allows - never widens it.
+        var levels = sectionScopeService.levels().stream()
+                .filter(e -> level == null || level.isBlank() || e.name().equalsIgnoreCase(level))
+                .toList();
+
         return repo.search(schoolId, blankToNull(classId), blankToNull(termId), blankToNull(search),
-                sectionScopeService.levels(), pageable)
+                blankToNull(sectionId), blankToNull(streamId), levels, pageable)
                 .map(ReportCardMapper::toSummaryDTO);
     }
 

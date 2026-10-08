@@ -41,8 +41,9 @@ public class ReportCardSettingController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SaveReportCardSettingDTO param) {
         var dto = new ReportCardSettingDTO(param.headerColor(), param.logoUrl(), param.footerNote(),
-                param.showAttendance(), param.showRemarks(), param.showPosition(), param.showSignatures(),
-                param.showGradeScale());
+                param.showAttendance(), param.showRemarks(), param.showPosition(),
+                param.showTeacherSignature() || param.showPrincipalSignature(), param.showTeacherSignature(),
+                param.showPrincipalSignature(), param.showGradeScale(), param.remarkScale());
         var res = saveReportCardSettingUseCase.execute(school, dto);
         return new ApiResponse<>("success", 200, "Report card settings saved successfully", res);
     }

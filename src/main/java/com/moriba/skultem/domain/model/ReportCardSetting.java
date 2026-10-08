@@ -22,11 +22,16 @@ public class ReportCardSetting extends AggregateRoot<String> {
     private boolean showRemarks;
     private boolean showPosition;
     private boolean showSignatures;
+    private boolean showTeacherSignature;
+    private boolean showPrincipalSignature;
     private boolean showGradeScale;
+    // JSON array of RemarkBand - null/empty until the school configures one.
+    private String remarkScale;
 
     public ReportCardSetting(String id, String schoolId, String headerColor, String logoUrl, String footerNote,
             boolean showAttendance, boolean showRemarks, boolean showPosition, boolean showSignatures,
-            boolean showGradeScale, Instant createdAt, Instant updatedAt) {
+            boolean showTeacherSignature, boolean showPrincipalSignature, boolean showGradeScale, String remarkScale,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.headerColor = headerColor;
@@ -36,28 +41,37 @@ public class ReportCardSetting extends AggregateRoot<String> {
         this.showRemarks = showRemarks;
         this.showPosition = showPosition;
         this.showSignatures = showSignatures;
+        this.showTeacherSignature = showTeacherSignature;
+        this.showPrincipalSignature = showPrincipalSignature;
         this.showGradeScale = showGradeScale;
+        this.remarkScale = remarkScale;
         touch(updatedAt);
     }
 
     public static ReportCardSetting create(String id, String schoolId, String headerColor, String logoUrl,
             String footerNote, boolean showAttendance, boolean showRemarks, boolean showPosition,
-            boolean showSignatures, boolean showGradeScale) {
+            boolean showTeacherSignature, boolean showPrincipalSignature, boolean showGradeScale,
+            String remarkScale) {
         Instant now = Instant.now();
         return new ReportCardSetting(id, schoolId, headerColor, logoUrl, footerNote, showAttendance, showRemarks,
-                showPosition, showSignatures, showGradeScale, now, now);
+                showPosition, showTeacherSignature || showPrincipalSignature, showTeacherSignature,
+                showPrincipalSignature, showGradeScale, remarkScale, now, now);
     }
 
     public void update(String headerColor, String logoUrl, String footerNote, boolean showAttendance,
-            boolean showRemarks, boolean showPosition, boolean showSignatures, boolean showGradeScale) {
+            boolean showRemarks, boolean showPosition, boolean showTeacherSignature, boolean showPrincipalSignature,
+            boolean showGradeScale, String remarkScale) {
         this.headerColor = headerColor;
         this.logoUrl = logoUrl;
         this.footerNote = footerNote;
         this.showAttendance = showAttendance;
         this.showRemarks = showRemarks;
         this.showPosition = showPosition;
-        this.showSignatures = showSignatures;
+        this.showTeacherSignature = showTeacherSignature;
+        this.showPrincipalSignature = showPrincipalSignature;
+        this.showSignatures = showTeacherSignature || showPrincipalSignature;
         this.showGradeScale = showGradeScale;
+        this.remarkScale = remarkScale;
         touch(Instant.now());
     }
 }

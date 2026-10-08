@@ -12,7 +12,9 @@ import com.moriba.skultem.application.dto.HouseDTO;
 import com.moriba.skultem.application.mapper.HouseMapper;
 import com.moriba.skultem.application.usecase.AssignHouseUseCase;
 import com.moriba.skultem.application.usecase.CreateHouseUseCase;
+import com.moriba.skultem.application.usecase.DeleteHouseUseCase;
 import com.moriba.skultem.application.usecase.PickBestHouse;
+import com.moriba.skultem.application.usecase.UpdateHouseUseCase;
 import com.moriba.skultem.domain.repository.HouseRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -24,9 +26,20 @@ public class HouseService {
     private final CreateHouseUseCase createHouseUseCase;
     private final AssignHouseUseCase assignHouseUseCase;
     private final PickBestHouse pickBestHouse;
+    private final UpdateHouseUseCase updateHouseUseCase;
+    private final DeleteHouseUseCase deleteHouseUseCase;
 
     public HouseDTO createHouse(String schoolId, String name, String motto, String color, List<String> masters) {
         return createHouseUseCase.execute(schoolId, name, motto, color, masters);
+    }
+
+    public HouseDTO updateHouse(String schoolId, String id, String name, String motto, String color,
+            List<String> masters) {
+        return updateHouseUseCase.execute(schoolId, id, name, motto, color, masters);
+    }
+
+    public void deleteHouse(String schoolId, String id) {
+        deleteHouseUseCase.execute(schoolId, id);
     }
 
     public void assignHouse(List<AssignHouseRecord> records, String schoolId) {

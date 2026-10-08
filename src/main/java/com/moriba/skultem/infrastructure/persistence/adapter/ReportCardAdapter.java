@@ -39,9 +39,10 @@ public class ReportCardAdapter implements ReportCardRepository {
     }
 
     @Override
-    public Optional<ReportCard> findBySchoolIdAndStudentIdAndTermId(String schoolId, String studentId,
-            String termId) {
-        return repo.findBySchoolIdAndStudentIdAndTermId(schoolId, studentId, termId).map(ReportCardMapper::toDomain);
+    public Optional<ReportCard> findBySchoolIdAndStudentIdAndTermIdAndScopeKey(String schoolId, String studentId,
+            String termId, String scopeKey) {
+        return repo.findBySchoolIdAndStudentIdAndTermIdAndScopeKey(schoolId, studentId, termId, scopeKey)
+                .map(ReportCardMapper::toDomain);
     }
 
     @Override
@@ -52,9 +53,10 @@ public class ReportCardAdapter implements ReportCardRepository {
     }
 
     @Override
-    public Page<ReportCard> search(String schoolId, String classId, String termId, String search,
-            Collection<Level> levels, Pageable pageable) {
-        return repo.search(schoolId, classId, termId, search, levels, pageable).map(ReportCardMapper::toDomain);
+    public Page<ReportCard> search(String schoolId, String classId, String termId, String search, String sectionId,
+            String streamId, Collection<Level> levels, Pageable pageable) {
+        return repo.search(schoolId, classId, termId, search, sectionId, streamId, levels, pageable)
+                .map(ReportCardMapper::toDomain);
     }
 
     @Override

@@ -36,6 +36,9 @@ public class ReportCard extends AggregateRoot<String> {
     private Double attendancePercentage;
     private String remark;
     private String subjects;
+    // Which slice of the term this card covers - see V83__report_card_scope.sql. 'ALL' is the whole term.
+    private String scopeKey;
+    private String scopeLabel;
     private String generatedBy;
     private Instant generatedAt;
     private int downloadCount;
@@ -43,7 +46,8 @@ public class ReportCard extends AggregateRoot<String> {
     public ReportCard(String id, String schoolId, String studentId, String studentName, String admissionNumber,
             String photo, String classId, String className, int classSize, String termId, String termName,
             String academicYearName, double average, int position, String overallGrade, boolean passed,
-            Double attendancePercentage, String remark, String subjects, String generatedBy, Instant generatedAt,
+            Double attendancePercentage, String remark, String subjects, String scopeKey, String scopeLabel,
+            String generatedBy, Instant generatedAt,
             int downloadCount, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
@@ -64,6 +68,8 @@ public class ReportCard extends AggregateRoot<String> {
         this.attendancePercentage = attendancePercentage;
         this.remark = remark;
         this.subjects = subjects;
+        this.scopeKey = scopeKey;
+        this.scopeLabel = scopeLabel;
         this.generatedBy = generatedBy;
         this.generatedAt = generatedAt;
         this.downloadCount = downloadCount;
@@ -73,18 +79,20 @@ public class ReportCard extends AggregateRoot<String> {
     public static ReportCard generate(String id, String schoolId, String studentId, String studentName,
             String admissionNumber, String photo, String classId, String className, int classSize, String termId,
             String termName, String academicYearName, double average, int position, String overallGrade,
-            boolean passed, Double attendancePercentage, String remark, String subjects, String generatedBy) {
+            boolean passed, Double attendancePercentage, String remark, String subjects, String scopeKey,
+            String scopeLabel, String generatedBy) {
         Instant now = Instant.now();
         return new ReportCard(id, schoolId, studentId, studentName, admissionNumber, photo, classId, className,
                 classSize, termId, termName, academicYearName, average, position, overallGrade, passed,
-                attendancePercentage, remark, subjects, generatedBy, now, 0, now, now);
+                attendancePercentage, remark, subjects, scopeKey, scopeLabel, generatedBy, now, 0, now, now);
     }
 
     // Called when the same student/term is generated again - keeps the same id
     // (and download count/history) but refreshes every computed value.
     public void regenerate(String studentName, String admissionNumber, String photo, String className, int classSize,
             String termName, String academicYearName, double average, int position, String overallGrade,
-            boolean passed, Double attendancePercentage, String subjects, String generatedBy) {
+            boolean passed, Double attendancePercentage, String subjects, String scopeLabel, String generatedBy) {
+        this.scopeLabel = scopeLabel;
         this.studentName = studentName;
         this.admissionNumber = admissionNumber;
         this.photo = photo;

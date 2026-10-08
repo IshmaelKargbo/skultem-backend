@@ -1,5 +1,9 @@
 package com.moriba.skultem.infrastructure.rest.dto;
 
+import java.util.List;
+
+import com.moriba.skultem.domain.vo.RemarkBand;
+
 import jakarta.validation.constraints.NotBlank;
 
 public record SaveReportCardSettingDTO(
@@ -9,6 +13,8 @@ public record SaveReportCardSettingDTO(
         boolean showAttendance,
         boolean showRemarks,
         boolean showPosition,
-        boolean showSignatures,
-        boolean showGradeScale) {
+        boolean showTeacherSignature,
+        boolean showPrincipalSignature,
+        boolean showGradeScale,
+        List<RemarkBand> remarkScale) {
 }

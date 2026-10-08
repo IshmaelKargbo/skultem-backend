@@ -11,7 +11,8 @@ public class ReportCardMapper {
                 param.getAdmissionNumber(), param.getPhoto(), param.getClassId(), param.getClassName(),
                 param.getClassSize(), param.getTermId(), param.getTermName(), param.getAcademicYearName(),
                 param.getAverage(), param.getPosition(), param.getOverallGrade(), param.isPassed(),
-                param.getAttendancePercentage(), param.getRemark(), param.getSubjects(), param.getGeneratedBy(),
+                param.getAttendancePercentage(), param.getRemark(), param.getSubjects(), param.getScopeKey(),
+                param.getScopeLabel(), param.getGeneratedBy(),
                 param.getGeneratedAt(), param.getDownloadCount(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -38,6 +39,8 @@ public class ReportCardMapper {
                 .attendancePercentage(param.getAttendancePercentage())
                 .remark(param.getRemark())
                 .subjects(param.getSubjects())
+                .scopeKey(param.getScopeKey())
+                .scopeLabel(param.getScopeLabel())
                 .generatedBy(param.getGeneratedBy())
                 .generatedAt(param.getGeneratedAt())
                 .downloadCount(param.getDownloadCount())

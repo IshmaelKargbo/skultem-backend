@@ -9,5 +9,5 @@ public record ReportCardDTO(String id, String studentId, String studentName, Str
         String classId, String className, int classSize, String termId, String termName, String academicYearName,
         double average, int position, String overallGrade, boolean passed, Double attendancePercentage,
         String remark, List<ReportCardSubjectDTO> subjects, Instant generatedAt, int downloadCount,
-        SchoolDTO school, ReportCardSettingDTO settings, Level level) {
+        SchoolDTO school, ReportCardSettingDTO settings, Level level, String scopeLabel, String gradeRemark) {
 }

@@ -1,5 +1,9 @@
 package com.moriba.skultem.application.dto;
 
+import java.util.List;
+
+import com.moriba.skultem.domain.vo.RemarkBand;
+
 public record ReportCardSettingDTO(
         String headerColor,
         String logoUrl,
@@ -8,5 +12,8 @@ public record ReportCardSettingDTO(
         boolean showRemarks,
         boolean showPosition,
         boolean showSignatures,
-        boolean showGradeScale) {
+        boolean showTeacherSignature,
+        boolean showPrincipalSignature,
+        boolean showGradeScale,
+        List<RemarkBand> remarkScale) {
 }

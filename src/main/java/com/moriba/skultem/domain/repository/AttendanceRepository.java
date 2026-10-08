@@ -25,7 +25,8 @@ public interface AttendanceRepository {
 
     boolean existsByEnrollmentAndDateAndSchoolId(String enrollmentId, LocalDate date, String schoolId);
 
-    Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String academicYear, String schoolId,
+    Page<AttendanceHistoryDTO> fetchDailyClassAttendanceSummary(String classId, String sectionId, String streamId,
+            String academicYear, String schoolId,
             Pageable pageable);
 
     Page<Attendance> findBySchoolId(String schoolId, Pageable pageable);

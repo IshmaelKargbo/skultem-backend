@@ -18,6 +18,9 @@ public interface ClassMasterJpaRepository extends JpaRepository<ClassMasterEntit
         boolean existsBySession_IdAndTeacher_IdAndSchoolIdAndEndedAtIsNull(String sessionId, String teacherId,
                         String schoolId);
 
+        boolean existsBySession_Clazz_IdAndTeacher_IdAndSchoolIdAndEndedAtIsNull(String classId, String teacherId,
+                        String schoolId);
+
         boolean existsBySession_IdAndSchoolId(String sessionId, String schoolId);
 
         Optional<ClassMasterEntity> findByIdAndSchoolId(String id, String schoolId);

@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 public class GetIdCardSettingUseCase {
     private static final String DEFAULT_FIELDS = "["
             + "{\"key\":\"name\",\"label\":\"Full Name\",\"icon\":\"i-lucide-user\",\"cardSlot\":\"front\",\"enabled\":true,\"required\":true},"
-            + "{\"key\":\"admissionNo\",\"label\":\"Admission No.\",\"icon\":\"i-lucide-id-card\",\"cardSlot\":\"front\",\"enabled\":true,\"required\":true},"
+            + "{\"key\":\"admissionNo\",\"label\":\"Adm. No.\",\"icon\":\"i-lucide-id-card\",\"cardSlot\":\"front\",\"enabled\":true,\"required\":true},"
             + "{\"key\":\"class\",\"label\":\"Class\",\"icon\":\"i-lucide-school\",\"cardSlot\":\"front\",\"enabled\":true},"
             + "{\"key\":\"gender\",\"label\":\"Gender\",\"icon\":\"i-lucide-user-round\",\"cardSlot\":\"front\",\"enabled\":true},"
             + "{\"key\":\"dob\",\"label\":\"Date of Birth\",\"icon\":\"i-lucide-calendar-days\",\"cardSlot\":\"front\",\"enabled\":true},"

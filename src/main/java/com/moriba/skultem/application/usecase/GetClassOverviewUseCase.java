@@ -34,10 +34,13 @@ public class GetClassOverviewUseCase {
                 masters);
     }
 
-    public ClassStreamOverviewDTO execute(String schoolId, String academicYear, String classId, String streamId) {
+    public ClassStreamOverviewDTO execute(String schoolId, String academicYear, String classId, String streamId,
+            String sessionId) {
         var clazz = getClassUseCase.execute(schoolId, classId);
         var sections = listClassSectionByClassUseCase.execute(schoolId, classId);
-        var session = getClassSessionUseCase.executeByClassAndStream(classId, streamId, schoolId, academicYear);
+        var session = sessionId != null && !sessionId.isBlank()
+                ? getClassSessionUseCase.executeBySession(sessionId, schoolId)
+                : getClassSessionUseCase.executeByClassAndStream(classId, streamId, schoolId, academicYear);
         var masters = getCurrentClassMasterUseCase.executeRecord(schoolId, session.id());
 
         return new ClassStreamOverviewDTO(

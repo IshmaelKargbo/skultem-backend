@@ -183,9 +183,12 @@ public class R2StorageService {
         int targetHeight = Math.max(1, (int) Math.round(height * scale));
 
         // TYPE_INT_RGB (no alpha channel) is fine here - these are photos of people, not graphics
-        // that rely on transparency.
+        // that rely on transparency. It starts out black though, so a transparent PNG would come
+        // out with a black background unless it's painted white first.
         BufferedImage resized = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = resized.createGraphics();
+        g.setColor(java.awt.Color.WHITE);
+        g.fillRect(0, 0, targetWidth, targetHeight);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

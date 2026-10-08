@@ -28,6 +28,11 @@ public class StudentAdapter implements StudentRepository {
     }
 
     @Override
+    public boolean existsByHouseId(String houseId) {
+        return repo.existsByHouse_Id(houseId);
+    }
+
+    @Override
     public boolean existsByAdmissionNumberAndSchoolId(String admissionNumber, String schoolId) {
         return repo.existsByAdmissionNumberAndSchoolId(admissionNumber, schoolId);
     }
