@@ -13,6 +13,17 @@ public final class RemarkScale {
     private RemarkScale() {
     }
 
+    // The scale a school starts with until it saves its own. Schools can edit or delete any of these.
+    public static List<RemarkBand> defaults() {
+        return List.of(
+                new RemarkBand(0, 39, "Needs urgent support. Please work closely with the teachers to improve."),
+                new RemarkBand(40, 49, "Below average. More effort and regular practice are needed."),
+                new RemarkBand(50, 59, "Fair performance. With more focus, there is room to improve."),
+                new RemarkBand(60, 69, "Good performance. Keep working hard."),
+                new RemarkBand(70, 79, "Very good performance. Keep it up."),
+                new RemarkBand(80, 100, "Excellent performance. Keep up the outstanding work."));
+    }
+
     // Trims and sorts the bands low-to-high, rejecting a bad range or one that overlaps another.
     public static List<RemarkBand> normalize(List<RemarkBand> bands) {
         if (bands == null || bands.isEmpty()) {

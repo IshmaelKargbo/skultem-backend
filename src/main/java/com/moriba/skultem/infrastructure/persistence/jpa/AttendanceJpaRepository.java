@@ -286,6 +286,35 @@ public interface AttendanceJpaRepository
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
+    // See AttendanceRepository#attendanceCountsByClassAndGender. Same present-or-late / non-holiday rules as
+    // attendanceCountsByClassGenderAndDateRange, grouped per class instead of per day.
+    @Query("""
+                            SELECT
+                                e.clazz.id,
+                                e.clazz.name,
+                                s.gender,
+                                SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
+                                COUNT(a)
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            JOIN e.student s
+                            WHERE a.schoolId = :schoolId
+                              AND e.academicYear.id = :academicYearId
+                              AND (:classId IS NULL OR e.clazz.id = :classId)
+                              AND e.clazz.level IN :levels
+                              AND a.date BETWEEN :startDate AND :endDate
+                              AND a.holiday = false
+                            GROUP BY e.clazz.id, e.clazz.name, s.gender
+                            ORDER BY e.clazz.name
+                        """)
+    List<Object[]> attendanceCountsByClassAndGender(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("classId") String classId,
+            @Param("levels") Collection<Level> levels,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
     default Page<AttendanceEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
             Pageable pageable) {
         Specification<AttendanceEntity> spec = (root, query, cb) -> cb.equal(root.get("schoolId"), schoolId);

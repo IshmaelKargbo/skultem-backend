@@ -1,11 +1,10 @@
 package com.moriba.skultem.application.usecase;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ReportCardSettingDTO;
 import com.moriba.skultem.application.mapper.ReportCardSettingMapper;
+import com.moriba.skultem.application.services.RemarkScale;
 import com.moriba.skultem.domain.repository.ReportCardSettingRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 
@@ -28,6 +27,7 @@ public class GetReportCardSettingUseCase {
                 : "#1878c5";
         String logoUrl = school != null && school.getLogo() != null ? school.getLogo() : "";
 
-        return new ReportCardSettingDTO(headerColor, logoUrl, "", true, true, true, true, true, true, true, List.of());
+        return new ReportCardSettingDTO(headerColor, logoUrl, "", true, true, true, true, true, true, true,
+                RemarkScale.defaults());
     }
 }

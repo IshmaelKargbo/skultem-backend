@@ -21,10 +21,14 @@ public class SaveReportCardSettingUseCase {
     private final ReportCardSettingRepository repo;
 
     public ReportCardSettingDTO execute(String schoolId, ReportCardSettingDTO param) {
-        var remarkScale = RemarkScale.normalize(param.remarkScale());
-        var remarkScaleJson = remarkScale.isEmpty() ? null : JsonMapper.toJson(remarkScale);
-
         var existing = repo.findBySchoolId(schoolId).orElse(null);
+
+        // Always store the list, even when empty ("[]"): NULL means "never configured" and brings the
+        // defaults back, so a school that deleted every range must keep its empty scale. A client that
+        // omits the field leaves the stored scale as it was.
+        String remarkScaleJson = param.remarkScale() == null
+                ? (existing != null ? existing.getRemarkScale() : null)
+                : JsonMapper.toJson(RemarkScale.normalize(param.remarkScale()));
 
         ReportCardSetting setting;
         if (existing != null) {

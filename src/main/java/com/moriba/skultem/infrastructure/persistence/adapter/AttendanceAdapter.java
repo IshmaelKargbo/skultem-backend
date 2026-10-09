@@ -127,6 +127,12 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
+    public List<Object[]> attendanceCountsByClassAndGender(String schoolId, String academicYearId, String classId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsByClassAndGender(schoolId, academicYearId, classId, levels, startDate, endDate);
+    }
+
+    @Override
     public void deleteAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
         repo.deleteAllByEnrollmentAndSchool(enrollmentId, schoolId);
     }

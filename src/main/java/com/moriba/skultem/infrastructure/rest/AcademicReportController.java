@@ -18,7 +18,9 @@ import com.moriba.skultem.application.dto.AssessmentCompletionRowDTO;
 import com.moriba.skultem.application.dto.ClassAcademicAttentionDTO;
 import com.moriba.skultem.application.dto.StudentDemographicsDTO;
 import com.moriba.skultem.application.dto.StudentPerformanceTrendDTO;
+import com.moriba.skultem.application.dto.GenderAttendanceSummaryDTO;
 import com.moriba.skultem.application.dto.WeeklyGenderAttendanceDTO;
+import com.moriba.skultem.application.usecase.GenerateGenderAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GenerateStudentDemographicsReportUseCase;
 import com.moriba.skultem.application.usecase.GenerateStudentsRequiringAttentionUseCase;
 import com.moriba.skultem.application.usecase.GenerateWeeklyGenderAttendanceReportUseCase;
@@ -52,6 +54,7 @@ public class AcademicReportController {
     private final com.moriba.skultem.application.usecase.ContinuousAssessmentReportUseCase continuousAssessmentReportUseCase;
     private final GenerateWeeklyGenderAttendanceReportUseCase generateWeeklyGenderAttendanceReportUseCase;
     private final GenerateStudentDemographicsReportUseCase generateStudentDemographicsReportUseCase;
+    private final GenerateGenderAttendanceSummaryUseCase generateGenderAttendanceSummaryUseCase;
 
     @SectionScoped
     @GetMapping
@@ -173,6 +176,21 @@ public class AcademicReportController {
         var res = generateWeeklyGenderAttendanceReportUseCase.execute(school, classId, academicYearId,
                 resolvedWeek);
         return new ApiResponse<>("success", 200, "Weekly gender attendance fetched successfully", res);
+    }
+
+    @SectionScoped
+    @GetMapping("/attendance/gender-summary")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, " + MANAGEMENT_ROLES + ") and @sectionScope.clazz(#school, #classId)")
+    public ApiResponse<GenderAttendanceSummaryDTO> getGenderAttendanceSummary(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam GenerateGenderAttendanceSummaryUseCase.Period period,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) String classId,
+            @RequestParam(required = false) LocalDate date) {
+        var res = generateGenderAttendanceSummaryUseCase.execute(school, academicYearId, period,
+                date != null ? date : LocalDate.now(), termId, classId);
+        return new ApiResponse<>("success", 200, "Gender attendance summary fetched successfully", res);
     }
 
     @SectionScoped

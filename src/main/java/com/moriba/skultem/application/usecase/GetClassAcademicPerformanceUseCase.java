@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -194,9 +195,10 @@ public class GetClassAcademicPerformanceUseCase {
                     .studentAverages.add(overallAverage);
         }
 
-        // Sort deterministically before paginating so the same page is returned consistently
-        // across requests rather than depending on map iteration order.
-        allStudents.sort((a, b) -> a.familyName().compareToIgnoreCase(b.familyName()));
+        // Highest average first (ties by family name), sorted before paginating so page 1 is the top of the
+        // class and the same page is returned consistently across requests.
+        allStudents.sort(Comparator.comparingDouble(StudentAcademicPerformanceDTO::overallAverage).reversed()
+                .thenComparing(StudentAcademicPerformanceDTO::familyName, String.CASE_INSENSITIVE_ORDER));
 
         int studentsTotal = allStudents.size();
         int safeSize = size > 0 ? size : studentsTotal;
@@ -210,6 +212,9 @@ public class GetClassAcademicPerformanceUseCase {
             subjects.add(buildSubjectPerformance(subjectEntry.getKey(), subjectEntry.getValue(), passMarkByClass,
                     school));
         }
+
+        subjects.sort(Comparator.comparingDouble(SubjectPerformanceDTO::averageScore).reversed()
+                .thenComparing(SubjectPerformanceDTO::subjectName, String.CASE_INSENSITIVE_ORDER));
 
         List<ClassPerformanceDTO> classPerformance = new ArrayList<>();
         if (classId == null || classId.isBlank()) {
@@ -228,7 +233,8 @@ public class GetClassAcademicPerformanceUseCase {
                         Math.max(0, enrolled - assessed), AcademicPerformanceCalculator.round1Dp(avg),
                         AcademicPerformanceCalculator.passRate(passCount, assessed)));
             }
-            classPerformance.sort((a, b) -> a.className().compareToIgnoreCase(b.className()));
+            classPerformance.sort(Comparator.comparingDouble(ClassPerformanceDTO::averageScore).reversed()
+                    .thenComparing(ClassPerformanceDTO::className, String.CASE_INSENSITIVE_ORDER));
         }
 
         var completionRows = cycleRepo.completionReportRows(schoolId, term.getId(), classId, subjectId);

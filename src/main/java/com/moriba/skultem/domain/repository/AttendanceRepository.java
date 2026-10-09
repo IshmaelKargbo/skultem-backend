@@ -57,6 +57,10 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId, String academicYearId,
             LocalDate startDate, LocalDate endDate);
 
+    // Rows of [classId, className, Gender, presentOrLate, totalRecorded] for non-holiday records in the range.
+    List<Object[]> attendanceCountsByClassAndGender(String schoolId, String academicYearId, String classId,
+            Collection<Level> levels, LocalDate startDate, LocalDate endDate);
+
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
             Pageable pageable);
 
