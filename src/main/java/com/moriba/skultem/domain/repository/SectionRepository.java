@@ -23,5 +23,7 @@ public interface SectionRepository {
     // Matches on name/description - backs the sections list's search box.
     Page<Section> search(String schoolId, String query, Pageable pageable);
 
+    int maxDisplayOrderBySchoolId(String schoolId);
+
     void delete(Section domain);
 }

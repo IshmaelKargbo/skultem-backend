@@ -38,12 +38,14 @@ import com.moriba.skultem.application.usecase.ListClassStreamByIdUseCase;
 import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
 import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
+import com.moriba.skultem.application.usecase.ReorderClassesUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTerminalUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.NextClassDTO;
+import com.moriba.skultem.infrastructure.rest.dto.ReorderClassesDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTemplateDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateClassTerminalDTO;
@@ -74,6 +76,7 @@ public class ClassController {
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
     private final UpdateClassTerminalUseCase updateClassTerminalUseCase;
     private final UpdateClassUseCase updateClassUseCase;
+    private final ReorderClassesUseCase reorderClassesUseCase;
 
     @SectionScoped
     @PostMapping
@@ -252,6 +255,15 @@ public class ClassController {
             @PathVariable String id) {
         deleteClassUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Class deleted successfully", null);
+    }
+
+    @PutMapping("/reorder")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
+    public ApiResponse<Void> reorder(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody ReorderClassesDTO param) {
+        reorderClassesUseCase.execute(school, param.classIds());
+        return new ApiResponse<>("success", 200, "Class order saved", null);
     }
 
     @SectionScoped

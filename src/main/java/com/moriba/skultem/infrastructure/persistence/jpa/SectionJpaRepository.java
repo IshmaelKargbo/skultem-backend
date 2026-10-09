@@ -13,7 +13,10 @@ import com.moriba.skultem.infrastructure.persistence.entity.SectionEntity;
 public interface SectionJpaRepository extends JpaRepository<SectionEntity, String> {
     boolean existsByNameIgnoreCaseAndSchoolId(String name, String schoolId);
 
-    Page<SectionEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+    Page<SectionEntity> findAllBySchoolIdOrderByDisplayOrderAscCreatedAtAsc(String schoolId, Pageable pageable);
+
+    @Query("select coalesce(max(s.displayOrder), 0) from SectionEntity s where s.schoolId = :schoolId")
+    int maxDisplayOrderBySchoolId(@Param("schoolId") String schoolId);
 
     Optional<SectionEntity> findByNameAndSchoolId(String name, String schoolId);
 
@@ -28,7 +31,7 @@ public interface SectionJpaRepository extends JpaRepository<SectionEntity, Strin
                 and (:query = ''
                      or lower(s.name) like lower(concat('%', :query, '%'))
                      or lower(s.description) like lower(concat('%', :query, '%')))
-                order by s.createdAt desc
+                order by s.displayOrder asc, s.createdAt asc
             """)
     Page<SectionEntity> search(@Param("schoolId") String schoolId, @Param("query") String query, Pageable pageable);
 }

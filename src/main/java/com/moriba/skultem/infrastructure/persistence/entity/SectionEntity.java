@@ -30,6 +30,9 @@ public class SectionEntity {
     @Column(nullable = true)
     private String description;
 
+    @Column(nullable = false, name = "display_order")
+    private int displayOrder;
+
     private Instant createdAt;
 
     private Instant updatedAt;

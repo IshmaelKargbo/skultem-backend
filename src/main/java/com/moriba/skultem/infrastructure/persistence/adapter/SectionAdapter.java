@@ -42,12 +42,17 @@ public class SectionAdapter implements SectionRepository {
 
     @Override
     public Page<Section> findBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(SectionMapper::toDomain);
+        return repo.findAllBySchoolIdOrderByDisplayOrderAscCreatedAtAsc(schoolId, pageable).map(SectionMapper::toDomain);
     }
 
     @Override
     public Page<Section> search(String schoolId, String query, Pageable pageable) {
         return repo.search(schoolId, query, pageable).map(SectionMapper::toDomain);
+    }
+
+    @Override
+    public int maxDisplayOrderBySchoolId(String schoolId) {
+        return repo.maxDisplayOrderBySchoolId(schoolId);
     }
 
     @Override

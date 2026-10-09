@@ -29,7 +29,8 @@ public class CreateSectionUseCase {
         }
 
         var id = rg.generate("SECTION", "SEC");
-        var record = Section.create(id, school, name, description);
+        var record = Section.create(id, school, name, description,
+                repo.maxDisplayOrderBySchoolId(school) + 1);
         repo.save(record);
 
         logActivityUseCase.log(

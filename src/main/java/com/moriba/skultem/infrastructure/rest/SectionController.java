@@ -13,6 +13,9 @@ import com.moriba.skultem.application.dto.SectionDTO;
 import com.moriba.skultem.application.usecase.CreateSectionUseCase;
 import com.moriba.skultem.application.usecase.GetSectionUseCase;
 import com.moriba.skultem.application.usecase.ListSectionBySchoolUseCase;
+import com.moriba.skultem.application.usecase.ReorderSectionsUseCase;
+import com.moriba.skultem.infrastructure.rest.dto.ReorderSectionsDTO;
+import org.springframework.web.bind.annotation.PutMapping;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.CreateSectionDTO;
 
@@ -34,6 +37,7 @@ public class SectionController {
     private final CreateSectionUseCase createSectionUseCase;
     private final ListSectionBySchoolUseCase listSectionBySchoolUseCase;
     private final GetSectionUseCase getSectionUseCase;
+    private final ReorderSectionsUseCase reorderSectionsUseCase;
 
     // A class Section ("A"/"B") is just a school-wide label with no level of its own - see Section -
     // so it's section-neutral like the reads below, not scoped.
@@ -45,6 +49,16 @@ public class SectionController {
             @Valid @RequestBody CreateSectionDTO param) {
         var res = createSectionUseCase.execute(school, param.name(), param.description());
         return new ApiResponse<SectionDTO>("success", 200, "Section created successfully", res);
+    }
+
+    @SectionNeutral
+    @PutMapping("/reorder")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    public ApiResponse<Void> reorder(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody ReorderSectionsDTO param) {
+        reorderSectionsUseCase.execute(school, param.sectionIds());
+        return new ApiResponse<>("success", 200, "Section order saved", null);
     }
 
     @SectionNeutral

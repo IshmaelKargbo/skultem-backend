@@ -304,8 +304,8 @@ public interface AttendanceJpaRepository
                               AND e.clazz.level IN :levels
                               AND a.date BETWEEN :startDate AND :endDate
                               AND a.holiday = false
-                            GROUP BY e.clazz.id, e.clazz.name, s.gender
-                            ORDER BY e.clazz.name
+                            GROUP BY e.clazz.id, e.clazz.name, e.clazz.levelOrder, s.gender
+                            ORDER BY e.clazz.levelOrder, e.clazz.name
                         """)
     List<Object[]> attendanceCountsByClassAndGender(
             @Param("schoolId") String schoolId,

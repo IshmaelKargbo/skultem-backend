@@ -39,7 +39,7 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public Page<ClassSession> findBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolIdOrderByClazz_LevelOrderAsc(schoolId, pageable).map(ClassSessionMapper::toDomain);
+        return repo.findAllBySchoolIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(schoolId, pageable).map(ClassSessionMapper::toDomain);
     }
 
     @Override
@@ -112,14 +112,14 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     @Override
     public Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
             Collection<Level> levels, Pageable pageable) {
-        return repo.findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAsc(schoolId,
+        return repo.findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(schoolId,
                 academicYearId, levels, pageable).map(ClassSessionMapper::toDomain);
     }
 
     @Override
     public Page<ClassSession> findBySchoolIdAndAcademicYearId(String schoolId, String academicYearId,
             Pageable pageable) {
-        return repo.findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAsc(schoolId, academicYearId, pageable)
+        return repo.findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(schoolId, academicYearId, pageable)
                 .map(ClassSessionMapper::toDomain);
     }
 
@@ -133,7 +133,7 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     @Override
     public List<ClassSession> findAllByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
             String schoolId) {
-        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAsc(classId, academicYearId, schoolId)
+        return repo.findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(classId, academicYearId, schoolId)
                 .stream()
                 .map(ClassSessionMapper::toDomain)
                 .toList();
@@ -149,7 +149,7 @@ public class ClassSessionAdapter implements ClassSessionRepository {
     @Override
     public Page<ClassSession> findUnassignedBySchoolAndAcademicYear(String schoolId, String academicYearId,
             Collection<Level> levels, Pageable pageable) {
-        return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(schoolId, academicYearId,
+        return repo.findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(schoolId, academicYearId,
                 levels, pageable).map(ClassSessionMapper::toDomain);
     }
 
@@ -169,7 +169,7 @@ public class ClassSessionAdapter implements ClassSessionRepository {
 
     @Override
     public List<ClassSession> findAllByClassIdAndStreamIdAndAcademicYearId(String classId, String streamId, String academicYearId) {
-        return repo.findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAsc(classId, academicYearId, streamId).stream()
+        return repo.findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(classId, academicYearId, streamId).stream()
                 .map(ClassSessionMapper::toDomain)
                 .toList();
     }

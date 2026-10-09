@@ -51,32 +51,32 @@ public interface ClassSessionJpaRepository
                     AND cm.endedAt IS NULL
                 )
             """)
-    Page<ClassSessionEntity> findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAsc(
+    Page<ClassSessionEntity> findUnassignedBySchoolAndAcademicYearOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(
             @Param("schoolId") String schoolId,
             @Param("academicYearId") String academicYearId,
             @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
-    Page<ClassSessionEntity> findAllBySchoolIdOrderByClazz_LevelOrderAsc(String schoolId, Pageable pageable);
+    Page<ClassSessionEntity> findAllBySchoolIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(String schoolId, Pageable pageable);
 
-    Page<ClassSessionEntity> findAllByClazz_IdOrderByClazz_LevelOrderAsc(String classId, Pageable pageable);
+    Page<ClassSessionEntity> findAllByClazz_IdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(String classId, Pageable pageable);
 
     List<ClassSessionEntity> findAllByClazz_IdAndSchoolId(String classId, String schoolId);
 
-    Page<ClassSessionEntity> findAllByAcademicYear_IdOrderByClazz_LevelOrderAsc(String academicYearId,
+    Page<ClassSessionEntity> findAllByAcademicYear_IdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(String academicYearId,
             Pageable pageable);
 
-    Page<ClassSessionEntity> findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAsc(String schoolId,
+    Page<ClassSessionEntity> findAllBySchoolIdAndAcademicYear_IdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(String schoolId,
             String academicYearId,
             Pageable pageable);
 
     Optional<ClassSessionEntity> findByClazz_IdAndAcademicYear_IdAndStream_Id(
             String classId, String academicYearId, String streamId);
 
-    List<ClassSessionEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAsc(
+    List<ClassSessionEntity> findAllByClazz_IdAndAcademicYear_IdAndSchoolIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(
             String classId, String academicYearId, String schoolId);
 
-    List<ClassSessionEntity> findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAsc(
+    List<ClassSessionEntity> findAllByClazzIdAndAcademicYearIdAndStreamIdOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(
             String classId, String academicYearId, String streamId);
 
     Optional<ClassSessionEntity> findByAcademicYear_IdAndClazz_IdAndSchoolId(String academic, String classId,
@@ -102,6 +102,7 @@ public interface ClassSessionJpaRepository
                      or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
                      or lower(cs.section.name) like lower(concat('%', :query, '%'))
                      or lower(st.name) like lower(concat('%', :query, '%')))
+                order by cs.clazz.levelOrder asc, st.name asc nulls first, cs.section.displayOrder asc
             """)
     Page<ClassSessionEntity> search(
             @Param("schoolId") String schoolId,
@@ -113,7 +114,7 @@ public interface ClassSessionJpaRepository
             @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
-    Page<ClassSessionEntity> findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAsc(
+    Page<ClassSessionEntity> findAllBySchoolIdAndAcademicYear_IdAndClazz_LevelInOrderByClazz_LevelOrderAscStream_NameAscSection_DisplayOrderAsc(
             String schoolId, String academicYearId, Collection<Level> levels, Pageable pageable);
 
     default Page<ClassSessionEntity> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,

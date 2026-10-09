@@ -51,6 +51,11 @@ public class Clazz extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    public void moveTo(int displayOrder) {
+        this.displayOrder = displayOrder;
+        touch(Instant.now());
+    }
+
     public void setTerminal(boolean state) {
         this.terminal = state;
         touch(Instant.now());
