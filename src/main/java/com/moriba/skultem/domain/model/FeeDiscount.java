@@ -15,6 +15,8 @@ import lombok.Getter;
 @Getter
 public class FeeDiscount extends AggregateRoot<String> {
     private String schoolId;
+    // Rows of one discount that spans several fees share a groupId; a single-fee discount is a group of one.
+    private String groupId;
     private String name;
     private Kind kind;
     private FeeStructure fee;
@@ -28,11 +30,12 @@ public class FeeDiscount extends AggregateRoot<String> {
         AMOUNT
     }
 
-    public FeeDiscount(String id, String schoolId, String name, Kind kind, BigDecimal value, Enrollment enrollment,
+    public FeeDiscount(String id, String schoolId, String groupId, String name, Kind kind, BigDecimal value, Enrollment enrollment,
             FeeStructure fee, String reason, LocalDate expiryDate, Instant createdAt,
             Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
+        this.groupId = groupId;
         this.name = name;
         this.fee = fee;
         this.kind = kind;
@@ -43,10 +46,10 @@ public class FeeDiscount extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static FeeDiscount create(String id, String schoolId, String name, Kind kind, BigDecimal value,
+    public static FeeDiscount create(String id, String schoolId, String groupId, String name, Kind kind, BigDecimal value,
             Student assignTo, LocalDate expiryDate, Enrollment enrollment, FeeStructure fee, String reason) {
         Instant now = Instant.now();
-        return new FeeDiscount(id, schoolId, name, kind, value, enrollment, fee, reason, expiryDate, now, now);
+        return new FeeDiscount(id, schoolId, groupId, name, kind, value, enrollment, fee, reason, expiryDate, now, now);
     }
 
     public boolean isActive() {

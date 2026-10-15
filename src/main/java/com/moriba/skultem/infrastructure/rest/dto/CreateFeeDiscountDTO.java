@@ -2,10 +2,13 @@ package com.moriba.skultem.infrastructure.rest.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import com.moriba.skultem.utils.ValidPercentageValue;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Pattern;
@@ -17,13 +20,17 @@ public record CreateFeeDiscountDTO(
 
         @NotBlank(message = "Name is required") String name,
 
-        @NotNull(message = "Value is required") @Positive(message = "Value must be greater than 0") BigDecimal value,
-
         @NotNull(message = "Expiry date is required") @FutureOrPresent(message = "Expiry date cannot be in the past") LocalDate expiryDate,
 
         @NotBlank(message = "Student is required") String studentId,
 
         @NotBlank(message = "Reason is required") String reason,
 
-        @NotBlank(message = "Fee is required") String feeId) {
+        @NotEmpty(message = "Select at least one fee") List<@Valid FeeItem> fees) {
+
+    // Each fee carries its own value, so one discount can be 100% on some fees and 50% on another.
+    public record FeeItem(
+            @NotBlank(message = "Fee is required") String feeId,
+            @NotNull(message = "Value is required") @Positive(message = "Value must be greater than 0") BigDecimal value) {
+    }
 }

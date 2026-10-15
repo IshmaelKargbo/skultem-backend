@@ -225,6 +225,13 @@ public class SectionScopeGuard {
                 .map(f -> f.getClazz() == null || scope.allows(f.getClazz().getLevel())).orElse(true);
     }
 
+    public boolean feeStructures(String schoolId, java.util.List<String> feeIds) {
+        if (feeIds == null) {
+            return true;
+        }
+        return feeIds.stream().allMatch(id -> feeStructure(schoolId, id));
+    }
+
     // Changing a fee (edit, delete, assign): only a class fee inside the caller's sections - a fee
     // with no class reaches students in other sections, so only whole-school staff can change it.
     public boolean manageFeeStructure(String schoolId, String feeId) {

@@ -11,10 +11,10 @@ public class PercentageValueValidator implements ConstraintValidator<ValidPercen
 
     @Override
     public boolean isValid(CreateFeeDiscountDTO dto, ConstraintValidatorContext context) {
-        if (dto.kind() == null || dto.value() == null) return true; // skip other null checks
+        if (dto.kind() == null || dto.fees() == null) return true; // skip other null checks
         if ("PERCENTAGE".equals(dto.kind())) {
-            return dto.value().compareTo(BigDecimal.ONE) >= 0 &&
-                   dto.value().compareTo(BigDecimal.valueOf(100)) <= 0;
+            return dto.fees().stream().allMatch(f -> f == null || f.value() == null
+                    || (f.value().compareTo(BigDecimal.ONE) >= 0 && f.value().compareTo(BigDecimal.valueOf(100)) <= 0));
         }
         return true;
     }

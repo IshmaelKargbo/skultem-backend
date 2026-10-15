@@ -48,26 +48,40 @@ public class ProvisionStudentAssessmentsUseCase {
     private final TeacherSubjectRepository teacherSubjectRepo;
     private final com.moriba.skultem.application.services.AssessmentStructureService structureService;
 
-    public void execute(Enrollment enrollment) {
+    // created: how many student/term/subject assessment sets were made. subjectsWithoutTeacher: subjects
+    // that could not be provisioned yet because no teacher is assigned to them in the class.
+    public record Result(int created, java.util.Set<String> subjectsWithoutTeacher) {
+    }
+
+    public Result execute(Enrollment enrollment) {
+        var withoutTeacher = new java.util.LinkedHashSet<String>();
         if (enrollment == null || enrollment.getClazz() == null || enrollment.getClazz().getTemplate() == null) {
-            return;
+            return new Result(0, withoutTeacher);
         }
 
         String schoolId = enrollment.getSchoolId();
         String templateId = enrollment.getClazz().getTemplate().getId();
 
-        ClassSession session = null;
-        if (enrollment.getStream() != null) {
-            session = classSessionRepo
-                    .findByClassIdAndStreamIdAndAcademicYearId(enrollment.getClazz().getId(),
-                            enrollment.getStream().getId(), enrollment.getAcademicYear().getId())
-                    .orElseThrow(() -> new NotFoundException("Class session not found"));
+        // A class has one session per section (and stream), so the lookup must include the student's own
+        // section - class + year alone matches several sessions once a class has more than one section.
+        var classId = enrollment.getClazz().getId();
+        var yearId = enrollment.getAcademicYear().getId();
+        var section = enrollment.getSection();
+        var stream = enrollment.getStream();
+
+        java.util.Optional<ClassSession> found;
+        if (section != null && stream != null) {
+            found = classSessionRepo.findByClassIdAndAcademicYearIdAndSectionIdAndStreamIdAndSchoolId(classId, yearId,
+                    section.getId(), stream.getId(), schoolId);
+        } else if (section != null) {
+            found = classSessionRepo.findByClassIdAndAcademicYearIdAndSectionIdAndSchoolId(classId, yearId,
+                    section.getId(), schoolId);
+        } else if (stream != null) {
+            found = classSessionRepo.findByClassIdAndStreamIdAndAcademicYearId(classId, stream.getId(), yearId);
         } else {
-            session = classSessionRepo
-                    .findByAcademicYearAndClassAndSchoolId(enrollment.getAcademicYear().getId(),
-                            enrollment.getClazz().getId(), schoolId)
-                    .orElseThrow(() -> new NotFoundException("Class not found"));
+            found = classSessionRepo.findByAcademicYearAndClassAndSchoolId(yearId, classId, schoolId);
         }
+        ClassSession session = found.orElseThrow(() -> new NotFoundException("Class session not found"));
 
         var assessments = assessmentRepo.findAllByTemplateIdAndSchoolId(templateId, schoolId);
         if (assessments.isEmpty()) {
@@ -91,6 +105,7 @@ public class ProvisionStudentAssessmentsUseCase {
                                 schoolId);
 
                 if (teacherSubjectRes.isEmpty()) {
+                    withoutTeacher.add(subject.getName());
                     continue;
                 }
 
@@ -159,6 +174,8 @@ public class ProvisionStudentAssessmentsUseCase {
         if (!scoresToSave.isEmpty()) {
             assessmentScoreRepo.saveAll(scoresToSave);
         }
+
+        return new Result(studentAssessmentsToSave.size(), withoutTeacher);
     }
 
     private List<Term> resolveTerms(Enrollment enrollment) {

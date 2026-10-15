@@ -26,6 +26,15 @@ public class StudentFee extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public void applyDiscount(FeeDiscount discount) {
+        this.discount = discount;
+        touch(Instant.now());
+    }
+
+    public void clearDiscount() {
+        applyDiscount(null);
+    }
+
     public static StudentFee create(String schoolId, Enrollment enrollment, Student student,
             FeeStructure fee, FeeDiscount discount) {
         Instant now = Instant.now();

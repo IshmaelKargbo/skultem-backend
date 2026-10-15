@@ -39,6 +39,7 @@ import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase
 import com.moriba.skultem.application.usecase.NextClassUseCase;
 import com.moriba.skultem.application.usecase.RemoveTeacherFromClassUseCase;
 import com.moriba.skultem.application.usecase.ReorderClassesUseCase;
+import com.moriba.skultem.application.usecase.SyncClassAssessmentsUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassTerminalUseCase;
 import com.moriba.skultem.application.usecase.UpdateClassUseCase;
@@ -74,6 +75,7 @@ public class ClassController {
     private final GetClassMasterBySessionUseCase getClassMasterBySessionUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
     private final UpdateClassTemplateUseCase updateClassTemplateUseCase;
+    private final SyncClassAssessmentsUseCase syncClassAssessmentsUseCase;
     private final UpdateClassTerminalUseCase updateClassTerminalUseCase;
     private final UpdateClassUseCase updateClassUseCase;
     private final ReorderClassesUseCase reorderClassesUseCase;
@@ -297,5 +299,15 @@ public class ClassController {
             @Valid @RequestBody UpdateClassTemplateDTO param) {
         var res = updateClassTemplateUseCase.execute(school, id, param.templateId());
         return new ApiResponse<>("success", 200, "Class template updated successfully", res);
+    }
+
+    @SectionScoped
+    @PostMapping("/{id}/assessments/sync")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.clazz(#school, #id)")
+    public ApiResponse<SyncClassAssessmentsUseCase.Result> syncAssessments(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = syncClassAssessmentsUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Class assessments synced", res);
     }
 }

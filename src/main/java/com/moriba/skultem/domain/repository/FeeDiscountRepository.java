@@ -19,5 +19,11 @@ public interface FeeDiscountRepository {
 
     Page<FeeDiscount> findAllBySchool(String schoolId, Pageable pageable);
 
+    List<FeeDiscount> findAllByGroupIdAndSchoolId(String groupId, String schoolId);
+
+    List<FeeDiscount> findAllBySchoolOrderByCreatedAtDesc(String schoolId);
+
+    void deleteAll(List<FeeDiscount> discounts);
+
     List<FeeDiscount> findBySchoolAndStudentIdAndFeeId(String schoolId, String studentId, String feeId);
 }

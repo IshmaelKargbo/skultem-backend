@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -20,6 +23,7 @@ import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
+import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.utils.Generate;
@@ -38,6 +42,7 @@ public class CreateFeeDiscountUseCase {
         private final FeeStructureRepository feeStructureRepo;
         private final FeeDiscountRepository repo;
         private final PaymentRepository paymentRepo;
+        private final StudentFeeRepository studentFeeRepo;
         private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
         private final LogActivityUseCase logActivityUseCase;
 
@@ -50,9 +55,6 @@ public class CreateFeeDiscountUseCase {
                 var academicYear = academicYearRepo.findActiveBySchool(param.schoolId())
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
-                var fee = feeStructureRepo.findByIdAndSchoolId(param.feeId(), param.schoolId())
-                                .orElseThrow(() -> new NotFoundException("Fee structure not found"));
-
                 var enrollment = enrollmentRepo
                                 .findByStudentAndAcademicYearAndSchoolId(
                                                 param.studentId(),
@@ -61,64 +63,86 @@ public class CreateFeeDiscountUseCase {
                                 .orElseThrow(() -> new NotFoundException(
                                                 "Student not enrolled in active academic year"));
 
-                if (repo.existsByNameAndEnrollmentAndFeeAndSchoolId(
-                                param.name(),
-                                enrollment.getId(),
-                                fee.getId(),
-                                param.schoolId())) {
-                        throw new AlreadyExistsException("Discount already exists for this fee and student");
+                var items = param.fees().stream().collect(java.util.stream.Collectors.toMap(
+                                FeeValue::feeId, f -> f, (a, b) -> a, java.util.LinkedHashMap::new)).values();
+                if (items.isEmpty()) {
+                        throw new IllegalArgumentException("Select at least one fee");
                 }
 
-                BigDecimal discountAmount = calculateDiscountAmount(
-                                param.kind(),
-                                param.value(),
-                                fee.getAmount());
+                // One discount, one group: every fee row below shares it, so the discount is listed and
+                // deleted as a unit. All-or-nothing - any failing fee rolls back the rest.
+                var groupId = UUID.randomUUID().toString();
+                var studentName = student.getGivenNames() + " " + student.getFamilyName();
 
-                // Validated against what's actually still outstanding on this fee - not the fee's full
-                // original amount - so a second discount (or one on a fee already partly paid) can't
-                // stack past what's left to owe and push the student's ledger balance negative.
-                BigDecimal existingDiscounts = repo.findBySchoolAndStudentIdAndFeeId(
-                                param.schoolId(), param.studentId(), param.feeId())
-                                .stream()
-                                .map(d -> calculateDiscountAmount(d.getKind(), d.getValue(), fee.getAmount()))
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                for (FeeValue item : items) {
+                        String feeId = item.feeId();
+                        BigDecimal value = item.value();
+                        var fee = feeStructureRepo.findByIdAndSchoolId(feeId, param.schoolId())
+                                        .orElseThrow(() -> new NotFoundException("Fee structure not found"));
+                        var feeLabel = fee.getTerm().getName() + " " + fee.getCategory().getName();
 
-                BigDecimal paid = java.util.Optional.ofNullable(
-                                paymentRepo.sumPaymentsByStudentAndFee(param.studentId(), param.feeId()))
-                                .orElse(BigDecimal.ZERO);
+                        // The discount lives on the student's own fee record, which holds a single one.
+                        var studentFee = studentFeeRepo
+                                        .findBySchoolAndEnrollmentAndFee(param.schoolId(), enrollment.getId(), feeId,
+                                                        Pageable.unpaged())
+                                        .getContent().stream().findFirst()
+                                        .orElseThrow(() -> new NotFoundException(
+                                                        studentName + " has not been charged " + feeLabel));
 
-                BigDecimal outstanding = fee.getAmount().subtract(existingDiscounts).subtract(paid);
-                if (outstanding.compareTo(BigDecimal.ZERO) < 0) {
-                        outstanding = BigDecimal.ZERO;
+                        if (studentFee.getDiscount() != null
+                                        || !repo.findBySchoolAndStudentIdAndFeeId(param.schoolId(), param.studentId(),
+                                                        feeId).isEmpty()) {
+                                throw new AlreadyExistsException(
+                                                feeLabel + " already has a discount - delete it before adding another");
+                        }
+
+                        BigDecimal discountAmount = calculateDiscountAmount(param.kind(), value,
+                                        fee.getAmount());
+
+                        // Validated against what's still outstanding on this fee, so a discount can't push
+                        // the student's ledger balance negative.
+                        BigDecimal paid = java.util.Optional.ofNullable(
+                                        paymentRepo.sumPaymentsByStudentAndFee(param.studentId(), feeId))
+                                        .orElse(BigDecimal.ZERO);
+
+                        BigDecimal outstanding = fee.getAmount().subtract(paid);
+                        if (outstanding.compareTo(BigDecimal.ZERO) < 0) {
+                                outstanding = BigDecimal.ZERO;
+                        }
+
+                        if (discountAmount.compareTo(outstanding) > 0) {
+                                throw new IllegalArgumentException(
+                                                "Discount cannot exceed the outstanding balance of " + outstanding
+                                                                + " on " + feeLabel);
+                        }
+
+                        var id = UUID.randomUUID().toString();
+                        var feeDiscount = FeeDiscount.create(id, param.schoolId(), groupId, param.name(),
+                                        param.kind(), value, student, param.expiryDate(), enrollment, fee,
+                                        param.reason());
+
+                        repo.save(feeDiscount);
+
+                        studentFee.applyDiscount(feeDiscount);
+                        studentFeeRepo.save(studentFee);
+
+                        var description = Generate.generateLedgerDescription(TransactionType.DISCOUNT,
+                                        fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),
+                                        student.getFamilyName(), student.getAdmissionNumber(), discountAmount);
+
+                        createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
+                                        student.getId(), fee.getTerm().getId(), TransactionType.DISCOUNT,
+                                        Direction.CREDIT, discountAmount, id, description, Instant.now());
                 }
-
-                if (discountAmount.compareTo(outstanding) > 0) {
-                        throw new IllegalArgumentException(
-                                        "Discount cannot exceed the outstanding balance of " + outstanding
-                                                        + " on this fee");
-                }
-
-                var id = UUID.randomUUID().toString();
-                var feeDiscount = FeeDiscount.create(id, param.schoolId(), param.name(), param.kind(),
-                                param.value(), student, param.expiryDate(), enrollment, fee, param.reason);
-
-                repo.save(feeDiscount);
 
                 logActivityUseCase.log(
                                 param.schoolId(),
                                 ActivityType.FEES,
                                 "Fee discount created",
-                                student.getGivenNames() + " " + student.getFamilyName() + " - " + fee.getCategory().getName(),
+                                studentName + " - " + param.name() + " (" + items.size() + " fee"
+                                                + (items.size() == 1 ? "" : "s") + ")",
                                 null,
-                                feeDiscount.getId());
-
-                var description = Generate.generateLedgerDescription(TransactionType.DISCOUNT,
-                                fee.getTerm().getName(), fee.getCategory().getName(), student.getGivenNames(),
-                                student.getFamilyName(), student.getAdmissionNumber(), discountAmount);
-
-                createStudentLedgerUsercase.createEntry(param.schoolId(), academicYear.getId(),
-                                student.getId(), fee.getTerm().getId(), TransactionType.DISCOUNT,
-                                Direction.CREDIT, discountAmount, id, description, Instant.now());
+                                groupId);
         }
 
         private BigDecimal calculateDiscountAmount(Kind kind, BigDecimal value, BigDecimal feeAmount) {
@@ -131,7 +155,10 @@ public class CreateFeeDiscountUseCase {
                 return value;
         }
 
-        public record DiscountRecord(String schoolId, Kind kind, String name, BigDecimal value,
-                        LocalDate expiryDate, String studentId, String feeId, String reason) {
+        public record FeeValue(String feeId, BigDecimal value) {
+        }
+
+        public record DiscountRecord(String schoolId, Kind kind, String name,
+                        LocalDate expiryDate, String studentId, List<FeeValue> fees, String reason) {
         }
 }

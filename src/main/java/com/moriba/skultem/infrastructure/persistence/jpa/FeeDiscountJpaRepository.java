@@ -18,6 +18,10 @@ public interface FeeDiscountJpaRepository extends JpaRepository<FeeDiscountEntit
                         String feeId,
                         String schoolId);
 
+        List<FeeDiscountEntity> findAllByGroupIdAndSchoolId(String groupId, String schoolId);
+
+        List<FeeDiscountEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId);
+
         Page<FeeDiscountEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
         Optional<FeeDiscountEntity> findAllByIdAndSchoolId(String id, String schoolId);

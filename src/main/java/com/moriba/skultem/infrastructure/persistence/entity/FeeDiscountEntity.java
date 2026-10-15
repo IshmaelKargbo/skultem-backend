@@ -34,6 +34,9 @@ public class FeeDiscountEntity {
     private String schoolId;
 
     @Column(nullable = false)
+    private String groupId;
+
+    @Column(nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)

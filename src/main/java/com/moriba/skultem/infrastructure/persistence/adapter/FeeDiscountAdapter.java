@@ -51,6 +51,21 @@ public class FeeDiscountAdapter implements FeeDiscountRepository {
     }
 
     @Override
+    public List<FeeDiscount> findAllByGroupIdAndSchoolId(String groupId, String schoolId) {
+        return repo.findAllByGroupIdAndSchoolId(groupId, schoolId).stream().map(FeeDiscountMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<FeeDiscount> findAllBySchoolOrderByCreatedAtDesc(String schoolId) {
+        return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId).stream().map(FeeDiscountMapper::toDomain).toList();
+    }
+
+    @Override
+    public void deleteAll(List<FeeDiscount> discounts) {
+        repo.deleteAllById(discounts.stream().map(FeeDiscount::getId).toList());
+    }
+
+    @Override
     public Page<FeeDiscount> findAllBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolId(schoolId, pageable).map(FeeDiscountMapper::toDomain);
     }

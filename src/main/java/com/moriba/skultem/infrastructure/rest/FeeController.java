@@ -37,6 +37,7 @@ import com.moriba.skultem.application.usecase.CreateFeeDiscountUseCase.DiscountR
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.CreateFeeStructureUseCase.StructureRecord;
 import com.moriba.skultem.application.usecase.DeleteFeeCategoryUseCase;
+import com.moriba.skultem.application.usecase.DeleteFeeDiscountUseCase;
 import com.moriba.skultem.application.usecase.DeleteFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
 import com.moriba.skultem.application.usecase.GetFeeStructureUseCase;
@@ -86,6 +87,7 @@ public class FeeController {
         private final FeeDiscountReportUseCase feeDiscountReportUseCase;
         private final CountStudentFeesUseCase countStudentFeesUseCase;
         private final CreateFeeDiscountUseCase createFeeDiscountUseCase;
+        private final DeleteFeeDiscountUseCase deleteFeeDiscountUseCase;
         private final CountStudentByFeeUseCase countStudentByFeeUseCase;
         private final StudentLedgerReportUseCase studentLedgerReportUseCase;
         private final PlatformFeeReportUseCase platformFeeReportUseCase;
@@ -261,16 +263,28 @@ public class FeeController {
 
         @SectionScoped
         @PostMapping("/discount")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId()) and @sectionScope.feeStructure(#school, #param.feeId())")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId()) and @sectionScope.feeStructures(#school, #param.fees().![feeId()])")
         public ApiResponse<Object> applyDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @Valid @RequestBody CreateFeeDiscountDTO param) {
 
                 var kind = Kind.valueOf(param.kind());
-                var payload = new DiscountRecord(school, kind, param.name(), param.value(), param.expiryDate(),
-                                param.studentId(), param.feeId(), param.reason());
+                var payload = new DiscountRecord(school, kind, param.name(), param.expiryDate(),
+                                param.studentId(),
+                                param.fees().stream().map(f -> new CreateFeeDiscountUseCase.FeeValue(f.feeId(), f.value())).toList(),
+                                param.reason());
                 createFeeDiscountUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "create fee discount successfully", null);
+        }
+
+        @DeleteMapping("/discount/{discountId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<Object> deleteDiscount(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String discountId) {
+
+                deleteFeeDiscountUseCase.execute(school, discountId);
+                return new ApiResponse<>("success", 200, "Fee discount deleted successfully", null);
         }
 
         @GetMapping("/discount")

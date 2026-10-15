@@ -15,7 +15,7 @@ public class FeeDiscountMapper {
         Enrollment enrollment = EnrollmentMapper.toDomain(param.getEnrollment());
         FeeStructure fee = FeeStructureMapper.toDomain(param.getFee());
 
-        return new FeeDiscount(param.getId(), param.getSchoolId(), param.getName(), param.getKind(), param.getValue(),
+        return new FeeDiscount(param.getId(), param.getSchoolId(), param.getGroupId(), param.getName(), param.getKind(), param.getValue(),
                 enrollment, fee, param.getReason(), param.getExpiryDate(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -29,6 +29,7 @@ public class FeeDiscountMapper {
         return FeeDiscountEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
+                .groupId(param.getGroupId())
                 .name(param.getName())
                 .expiryDate(param.getExpiryDate())
                 .enrollment(enrollment)
