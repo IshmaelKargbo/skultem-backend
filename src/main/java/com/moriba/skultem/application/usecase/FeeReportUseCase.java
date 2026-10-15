@@ -29,6 +29,7 @@ public class FeeReportUseCase {
 
         private final StudentFeeRepository repo;
         private final PaymentRepository paymentRepo;
+        private final com.moriba.skultem.domain.repository.FeeDiscountRepository discountRepo;
         private final SectionScopeService sectionScopeService;
 
         public Page<StudentFeeDTO> execute(ReportBuilderDTO request, int page, int size) {
@@ -62,7 +63,16 @@ public class FeeReportUseCase {
                                                 amountPaid = BigDecimal.ZERO;
                                         }
 
-                                        return StudentFeeMapper.toDTO(e, amountPaid);
+                                        // Summed from the discounts themselves so it shows whether or not the
+                                        // fee record carries a link to it.
+                                        BigDecimal discount = discountRepo.findBySchoolAndStudentIdAndFeeId(
+                                                        e.getSchoolId(), e.getEnrollment().getStudent().getId(),
+                                                        e.getFee().getId())
+                                                        .stream()
+                                                        .map(d -> d.computeSavings())
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                                        return StudentFeeMapper.toDTO(e, amountPaid, discount);
                                 })
                                 .toList();
 

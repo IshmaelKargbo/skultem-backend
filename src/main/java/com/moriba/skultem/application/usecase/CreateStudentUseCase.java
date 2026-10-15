@@ -95,6 +95,11 @@ public class CreateStudentUseCase {
                         .distinct()
                         .toList();
 
+        // Born in the past, and at least a year ago.
+        if (param.dateOfBirth() == null || param.dateOfBirth().isAfter(java.time.LocalDate.now().minusYears(1))) {
+            throw new RuleException("Date of birth must be at least 1 year ago");
+        }
+
         School school = schoolRepo.findById(param.schoolId())
                 .orElseThrow(() -> new NotFoundException("School not found"));
         House house = null;

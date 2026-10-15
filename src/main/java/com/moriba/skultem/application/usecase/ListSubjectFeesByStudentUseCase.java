@@ -25,6 +25,7 @@ public class ListSubjectFeesByStudentUseCase {
 
     private final StudentFeeRepository repo;
     private final PaymentRepository paymentRepo;
+    private final com.moriba.skultem.domain.repository.FeeDiscountRepository discountRepo;
     private final AcademicYearRepository academicYearRepo;
 
     /**
@@ -61,7 +62,15 @@ public class ListSubjectFeesByStudentUseCase {
                     .ofNullable(paymentRepo.sumPaymentsByStudentAndFee(e.getStudent().getId(), e.getFee().getId()))
                     .orElse(BigDecimal.ZERO);
 
-            return StudentFeeMapper.toDTO(e, amountPaid);
+            // Read from the discounts themselves (the same source the balance and payment checks use) so
+            // the amount always shows, whether or not the fee record carries a link to it.
+            BigDecimal discount = discountRepo
+                    .findBySchoolAndStudentIdAndFeeId(school, e.getStudent().getId(), e.getFee().getId())
+                    .stream()
+                    .map(d -> d.computeSavings())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            return StudentFeeMapper.toDTO(e, amountPaid, discount);
         });
     }
 }

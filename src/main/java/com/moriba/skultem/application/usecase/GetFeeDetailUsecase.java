@@ -37,6 +37,7 @@ public class GetFeeDetailUsecase {
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalPaid = BigDecimal.ZERO;
         BigDecimal totalOutstanding = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
 
         for (StudentFeeDTO fee : fees) {
             BigDecimal feeAmount = fee.amount() != null ? fee.amount() : BigDecimal.ZERO;
@@ -47,11 +48,13 @@ public class GetFeeDetailUsecase {
             totalAmount = totalAmount.add(feeAmount);
             totalPaid = totalPaid.add(amountPaid);
             totalOutstanding = totalOutstanding.add(outstanding);
+            totalDiscount = totalDiscount.add(fee.discount() != null ? fee.discount() : BigDecimal.ZERO);
         }
 
         // Determine overall status
         String overallStatus;
-        if (totalAmount.compareTo(BigDecimal.ZERO) > 0 && totalPaid.compareTo(totalAmount) >= 0) {
+        BigDecimal payable = totalAmount.subtract(totalDiscount);
+        if (totalAmount.compareTo(BigDecimal.ZERO) > 0 && totalPaid.compareTo(payable) >= 0) {
             overallStatus = "Paid";
         } else if (totalPaid.compareTo(BigDecimal.ZERO) > 0) {
             overallStatus = "Partial";
@@ -62,7 +65,7 @@ public class GetFeeDetailUsecase {
         }
 
         // Return full fee detail
-        return new FeeDetail(totalAmount, totalPaid, totalOutstanding, overallStatus);
+        return new FeeDetail(totalAmount, totalPaid, totalOutstanding, overallStatus, totalDiscount);
     }
 
     public FeeDetail execute(String schoolId, String studentId) {
@@ -79,6 +82,7 @@ public class GetFeeDetailUsecase {
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalPaid = BigDecimal.ZERO;
         BigDecimal totalOutstanding = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
 
         for (StudentFeeDTO fee : fees) {
             BigDecimal feeAmount = fee.amount() != null ? fee.amount() : BigDecimal.ZERO;
@@ -89,11 +93,13 @@ public class GetFeeDetailUsecase {
             totalAmount = totalAmount.add(feeAmount);
             totalPaid = totalPaid.add(amountPaid);
             totalOutstanding = totalOutstanding.add(outstanding);
+            totalDiscount = totalDiscount.add(fee.discount() != null ? fee.discount() : BigDecimal.ZERO);
         }
 
         // Determine overall status
         String overallStatus;
-        if (totalPaid.compareTo(totalAmount) >= 0) {
+        BigDecimal payable = totalAmount.subtract(totalDiscount);
+        if (totalPaid.compareTo(payable) >= 0) {
             overallStatus = "Paid";
         } else if (totalPaid.compareTo(BigDecimal.ZERO) > 0) {
             overallStatus = "Partial";
@@ -102,6 +108,6 @@ public class GetFeeDetailUsecase {
         }
 
         // Return full fee detail
-        return new FeeDetail(totalAmount, totalPaid, totalOutstanding, overallStatus);
+        return new FeeDetail(totalAmount, totalPaid, totalOutstanding, overallStatus, totalDiscount);
     }
 }

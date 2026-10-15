@@ -14,6 +14,15 @@ public class StudentFeeMapper {
         if (param == null)
             return null;
 
+        BigDecimal linked = param.getDiscount() != null ? param.getDiscount().computeSavings() : BigDecimal.ZERO;
+        return toDTO(param, amountPaid, linked);
+    }
+
+    // discount: what every discount on this student's fee takes off, however it is linked.
+    public static StudentFeeDTO toDTO(StudentFee param, BigDecimal amountPaid, BigDecimal discount) {
+        if (param == null)
+            return null;
+
         FeeStructureDTO fee = FeeStructureMapper.toDTO(param.getFee());
         StudentDTO student = StudentMapper.toDTO(param.getStudent(), param.getEnrollment());
 
@@ -23,7 +32,6 @@ public class StudentFeeMapper {
         // Net of any discount linked to this student's fee - without this a discounted fee
         // never shows as fully paid/settled even once the (lower) amount actually owed has
         // been paid in full.
-        BigDecimal discount = param.getDiscount() != null ? param.getDiscount().computeSavings() : BigDecimal.ZERO;
         BigDecimal netPayable = fee.amount().subtract(discount);
         BigDecimal balance = netPayable.subtract(amountPaid);
         if (balance.compareTo(BigDecimal.ZERO) < 0) {
@@ -44,7 +52,8 @@ public class StudentFeeMapper {
                 fee.dueDate(),
                 status,
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                discount);
     }
 
     private static String resolveStatus(BigDecimal amountPaid, BigDecimal netPayable, LocalDate dueDate) {
