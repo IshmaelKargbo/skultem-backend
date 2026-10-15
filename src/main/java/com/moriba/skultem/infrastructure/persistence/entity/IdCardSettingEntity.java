@@ -75,6 +75,24 @@ public class IdCardSettingEntity {
     @Column(nullable = false)
     private int signatureSize;
 
+    @Column(nullable = false)
+    private int photoSize;
+
+    @Column(nullable = false)
+    private int photoPadding;
+
+    @Column(nullable = false)
+    private int photoBorder;
+
+    @Column(nullable = false)
+    private int cardBorder;
+
+    @Column(nullable = false)
+    private int logoBoxSize;
+
+    @Column(nullable = false)
+    private int logoPadding;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -46,7 +46,7 @@ public class IdCardSettingController {
                 param.footerColor(), param.headerTextColor(), param.primaryTextColor(), param.widthMm(),
                 param.heightMm(), param.bgImageUrl(), param.bgOpacity(), param.schoolName(), param.schoolAddress(),
                 param.principalName(), param.fields(), param.staffFields(), param.validityYears(), param.logoSize(),
-                param.logoRadius(), param.signatureSize());
+                param.logoRadius(), param.signatureSize(), param.photoSize(), param.photoPadding(), param.photoBorder(), param.cardBorder(), param.logoBoxSize(), param.logoPadding());
         var res = saveIdCardSettingUseCase.execute(school, dto);
         return new ApiResponse<>("success", 200, "ID card settings saved successfully", res);
     }

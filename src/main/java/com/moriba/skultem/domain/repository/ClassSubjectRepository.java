@@ -31,7 +31,7 @@ public interface ClassSubjectRepository {
     Page<ClassSubject> findBySchool(String school, Pageable pageable);
 
     // levels: only class subjects of classes at these levels (pass every level for no restriction).
-    Page<ClassSubject> search(String school, String classId, Boolean mandatory, String query,
+    Page<ClassSubject> search(String school, String classId, Boolean mandatory, String streamId, String sectionId, String query,
             java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     void delete(ClassSubject domain);

@@ -27,7 +27,7 @@ public class SaveIdCardSettingUseCase {
                     param.headerTextColor(), param.primaryTextColor(), param.widthMm(), param.heightMm(),
                     param.bgImageUrl(), param.bgOpacity(), param.schoolName(), param.schoolAddress(),
                     param.principalName(), param.fields(), param.staffFields(), param.validityYears(), param.logoSize(),
-                    param.logoRadius(), param.signatureSize());
+                    param.logoRadius(), param.signatureSize(), param.photoSize(), param.photoPadding(), param.photoBorder(), param.cardBorder(), param.logoBoxSize(), param.logoPadding());
             setting = existing;
         } else {
             setting = IdCardSetting.create(UUID.randomUUID().toString(), schoolId, param.layout(),
@@ -35,7 +35,7 @@ public class SaveIdCardSettingUseCase {
                     param.primaryTextColor(), param.widthMm(), param.heightMm(), param.bgImageUrl(),
                     param.bgOpacity(), param.schoolName(), param.schoolAddress(), param.principalName(),
                     param.fields(), param.staffFields(), param.validityYears(), param.logoSize(),
-                    param.logoRadius(), param.signatureSize());
+                    param.logoRadius(), param.signatureSize(), param.photoSize(), param.photoPadding(), param.photoBorder(), param.cardBorder(), param.logoBoxSize(), param.logoPadding());
         }
 
         repo.save(setting);

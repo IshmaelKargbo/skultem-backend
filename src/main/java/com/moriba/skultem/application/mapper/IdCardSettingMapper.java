@@ -24,6 +24,12 @@ public class IdCardSettingMapper {
                 param.getValidityYears(),
                 param.getLogoSize(),
                 param.getLogoRadius(),
-                param.getSignatureSize());
+                param.getSignatureSize(),
+                param.getPhotoSize(),
+                param.getPhotoPadding(),
+                param.getPhotoBorder(),
+                param.getCardBorder(),
+                param.getLogoBoxSize(),
+                param.getLogoPadding());
     }
 }

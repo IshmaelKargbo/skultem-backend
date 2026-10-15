@@ -40,6 +40,11 @@ public class ListClassSubjectBySchoolUseCase {
 
     public Page<ClassSubjectDTO> execute(String school, int page, int size, String classId, Boolean mandatory,
             String query, String sortBy, String direction) {
+        return execute(school, page, size, classId, mandatory, null, null, query, sortBy, direction);
+    }
+
+    public Page<ClassSubjectDTO> execute(String school, int page, int size, String classId, Boolean mandatory,
+            String streamId, String sectionId, String query, String sortBy, String direction) {
         Sort sort = resolveSort(sortBy, direction);
         Pageable pageable = Pageable.unpaged(sort);
 
@@ -48,7 +53,7 @@ public class ListClassSubjectBySchoolUseCase {
         }
 
         // A section-limited caller only gets class subjects of their own section's classes.
-        var subjects = repo.search(school, normalize(classId), mandatory, normalize(query),
+        var subjects = repo.search(school, normalize(classId), mandatory, normalize(streamId), normalize(sectionId), normalize(query),
                 sectionScopeService.levels(), pageable);
 
         return subjects.map(ClassSubjectMapper::toDTO);

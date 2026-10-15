@@ -76,11 +76,13 @@ public class ClassSubjectController {
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = false) String classId,
             @RequestParam(required = false) Boolean mandatory,
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String sectionId,
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String direction) {
-        var res = listClassSubjectBySchoolUseCase.execute(school, page - 1, size, classId, mandatory, query, sortBy,
-                direction);
+        var res = listClassSubjectBySchoolUseCase.execute(school, page - 1, size, classId, mandatory, streamId, sectionId, query,
+                sortBy, direction);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

@@ -12,7 +12,7 @@ public class IdCardSettingMapper {
                 param.getPrimaryTextColor(), param.getWidthMm(), param.getHeightMm(), param.getBgImageUrl(),
                 param.getBgOpacity(), param.getSchoolName(), param.getSchoolAddress(), param.getPrincipalName(),
                 param.getFields(), param.getStaffFields(), param.getValidityYears(), param.getLogoSize(), param.getLogoRadius(),
-                param.getSignatureSize(), param.getCreatedAt(),
+                param.getSignatureSize(), param.getPhotoSize(), param.getPhotoPadding(), param.getPhotoBorder(), param.getCardBorder(), param.getLogoBoxSize(), param.getLogoPadding(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }
 
@@ -41,6 +41,12 @@ public class IdCardSettingMapper {
                 .logoSize(param.getLogoSize())
                 .logoRadius(param.getLogoRadius())
                 .signatureSize(param.getSignatureSize())
+                .photoSize(param.getPhotoSize())
+                .photoPadding(param.getPhotoPadding())
+                .photoBorder(param.getPhotoBorder())
+                .cardBorder(param.getCardBorder())
+                .logoBoxSize(param.getLogoBoxSize())
+                .logoPadding(param.getLogoPadding())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

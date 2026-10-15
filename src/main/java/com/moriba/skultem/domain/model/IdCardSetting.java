@@ -39,11 +39,22 @@ public class IdCardSetting extends AggregateRoot<String> {
     private int logoRadius;
     // Principal signature size as a percentage of the default size (100 = default).
     private int signatureSize;
+    // Photo container size as a percentage of the default size (100 = default).
+    private int photoSize;
+    // Padding between the photo container's border and the photo itself, in px.
+    private int photoPadding;
+    // Photo container border thickness in px (0 = no border).
+    private int photoBorder;
+    // Border thickness around the whole card in px (0 = no border).
+    private int cardBorder;
+    // Logo container size as a percentage of the default size (100 = default) and its inner padding in px.
+    private int logoBoxSize;
+    private int logoPadding;
 
     public IdCardSetting(String id, String schoolId, String layout, String profileShape, String headerColor,
             String footerColor, String headerTextColor, String primaryTextColor, int widthMm, int heightMm,
             String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress, String principalName,
-            String fields, String staffFields, int validityYears, int logoSize, int logoRadius, int signatureSize, Instant createdAt, Instant updatedAt) {
+            String fields, String staffFields, int validityYears, int logoSize, int logoRadius, int signatureSize, int photoSize, int photoPadding, int photoBorder, int cardBorder, int logoBoxSize, int logoPadding, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.layout = layout;
@@ -65,6 +76,12 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.logoSize = logoSize > 0 ? logoSize : 100;
         this.logoRadius = Math.max(0, Math.min(50, logoRadius));
         this.signatureSize = signatureSize > 0 ? signatureSize : 100;
+        this.photoSize = photoSize > 0 ? photoSize : 100;
+        this.photoPadding = Math.max(0, Math.min(24, photoPadding));
+        this.photoBorder = Math.max(0, Math.min(12, photoBorder));
+        this.cardBorder = Math.max(0, Math.min(12, cardBorder));
+        this.logoBoxSize = logoBoxSize > 0 ? logoBoxSize : 100;
+        this.logoPadding = Math.max(0, Math.min(24, logoPadding));
         touch(updatedAt);
     }
 
@@ -72,18 +89,18 @@ public class IdCardSetting extends AggregateRoot<String> {
             String headerColor, String footerColor, String headerTextColor, String primaryTextColor, int widthMm,
             int heightMm, String bgImageUrl, int bgOpacity, String schoolName, String schoolAddress,
             String principalName, String fields, String staffFields, int validityYears, int logoSize,
-            int logoRadius, int signatureSize) {
+            int logoRadius, int signatureSize, int photoSize, int photoPadding, int photoBorder, int cardBorder, int logoBoxSize, int logoPadding) {
         Instant now = Instant.now();
         return new IdCardSetting(id, schoolId, layout, profileShape, headerColor, footerColor, headerTextColor,
                 primaryTextColor, widthMm, heightMm, bgImageUrl, bgOpacity, schoolName, schoolAddress, principalName,
-                fields, staffFields, validityYears, logoSize, logoRadius, signatureSize, now, now);
+                fields, staffFields, validityYears, logoSize, logoRadius, signatureSize, photoSize, photoPadding, photoBorder, cardBorder, logoBoxSize, logoPadding, now, now);
     }
 
     public void update(String layout, String profileShape, String headerColor, String footerColor,
             String headerTextColor, String primaryTextColor, int widthMm, int heightMm, String bgImageUrl,
             int bgOpacity, String schoolName, String schoolAddress, String principalName, String fields,
             String staffFields, int validityYears, int logoSize,
-            int logoRadius, int signatureSize) {
+            int logoRadius, int signatureSize, int photoSize, int photoPadding, int photoBorder, int cardBorder, int logoBoxSize, int logoPadding) {
         this.layout = layout;
         this.profileShape = profileShape;
         this.headerColor = headerColor;
@@ -103,6 +120,12 @@ public class IdCardSetting extends AggregateRoot<String> {
         this.logoSize = logoSize > 0 ? logoSize : 100;
         this.logoRadius = Math.max(0, Math.min(50, logoRadius));
         this.signatureSize = signatureSize > 0 ? signatureSize : 100;
+        this.photoSize = photoSize > 0 ? photoSize : 100;
+        this.photoPadding = Math.max(0, Math.min(24, photoPadding));
+        this.photoBorder = Math.max(0, Math.min(12, photoBorder));
+        this.cardBorder = Math.max(0, Math.min(12, cardBorder));
+        this.logoBoxSize = logoBoxSize > 0 ? logoBoxSize : 100;
+        this.logoPadding = Math.max(0, Math.min(24, logoPadding));
         touch(Instant.now());
     }
 }

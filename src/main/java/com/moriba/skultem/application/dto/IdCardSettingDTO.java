@@ -19,5 +19,11 @@ public record IdCardSettingDTO(
         int validityYears,
         int logoSize,
         int logoRadius,
-        int signatureSize) {
+        int signatureSize,
+        int photoSize,
+        int photoPadding,
+        int photoBorder,
+        int cardBorder,
+        int logoBoxSize,
+        int logoPadding) {
 }

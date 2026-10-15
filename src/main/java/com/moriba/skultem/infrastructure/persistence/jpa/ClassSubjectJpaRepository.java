@@ -47,6 +47,10 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
                 and (:classId = '' or cs.clazz.id = :classId)
                 and cs.clazz.level in :levels
                 and (:mandatory is null or cs.mandatory = :mandatory)
+                and (:streamId = '' or st.id = :streamId)
+                and (:sectionId = '' or exists (
+                     select 1 from ClassSessionEntity s
+                     where s.clazz.id = cs.clazz.id and s.section.id = :sectionId))
                 and (:query = ''
                      or lower(cs.clazz.name) like lower(concat('%', :query, '%'))
                      or lower(cs.subject.name) like lower(concat('%', :query, '%'))
@@ -56,6 +60,8 @@ public interface ClassSubjectJpaRepository extends JpaRepository<ClassSubjectEnt
             @Param("schoolId") String schoolId,
             @Param("classId") String classId,
             @Param("mandatory") Boolean mandatory,
+            @Param("streamId") String streamId,
+            @Param("sectionId") String sectionId,
             @Param("query") String query,
             @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
