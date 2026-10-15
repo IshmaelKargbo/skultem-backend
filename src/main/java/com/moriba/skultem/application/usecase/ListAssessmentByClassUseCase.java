@@ -24,6 +24,8 @@ public class ListAssessmentByClassUseCase {
                 var clazz = repo.findByIdAndSchool(classId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Class not found"));
                 var template = clazz.getTemplate();
+                if (template == null)
+                        return List.of();
 
                 return assessmentRepo.findAllByTemplateIdAndSchoolId(template.getId(), schoolId)
                                 .stream().map(AssessmentMapper::toDTO)
