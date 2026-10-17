@@ -40,6 +40,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
 
     private static final String SCHOOL = "school-1";
     private static final String SECTION = "sec-secondary";
+    private static final String TEMPLATE = "tpl-jss";
 
     @Mock
     private ClassSubjectAssessmentLifeCycleRepository cycleRepo;
@@ -53,10 +54,15 @@ class RefreshUnstartedAssessmentsUseCaseTest {
     private RefreshUnstartedAssessmentsUseCase useCase;
 
     private ClassSubjectAssessmentLifeCycle cycle(String id, Status status, boolean frozen) {
+        return cycle(id, status, frozen, TEMPLATE);
+    }
+
+    private ClassSubjectAssessmentLifeCycle cycle(String id, Status status, boolean frozen, String templateId) {
         var ts = mock(TeacherSubject.class, RETURNS_DEEP_STUBS);
-        when(ts.getSession().getClazz().getLevel()).thenReturn(Level.SSS);
+        var assessment = mock(com.moriba.skultem.domain.model.Assessment.class, RETURNS_DEEP_STUBS);
+        lenient().when(assessment.getTemplate().getId()).thenReturn(templateId);
         var cycle = ClassSubjectAssessmentLifeCycle.create(id, SCHOOL, ts, mock(com.moriba.skultem.domain.model.Term.class),
-                mock(com.moriba.skultem.domain.model.Assessment.class), status);
+                assessment, status);
         if (frozen) {
             cycle.freezeStructure(AssessmentConfiguration.simple(SCHOOL, SECTION));
         }
@@ -79,8 +85,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        when(structureService.levelsOfSection(SCHOOL, SECTION)).thenReturn(java.util.Set.of(Level.SSS));
-        lenient().when(structureService.forLevel(SCHOOL, Level.SSS)).thenReturn(caConfig());
+        lenient().when(structureService.forCycle(org.mockito.ArgumentMatchers.any())).thenReturn(caConfig());
     }
 
     @Test
@@ -89,7 +94,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
         when(cycleRepo.findAllOpenBySchool(SCHOOL)).thenReturn(List.of(blank));
         when(scoreRepo.findAllByCycle("blank")).thenReturn(List.of());
 
-        var result = useCase.execute(SCHOOL, SECTION);
+        var result = useCase.execute(SCHOOL, TEMPLATE);
 
         assertThat(result.refreshed()).isEqualTo(1);
         assertThat(result.skipped()).isZero();
@@ -105,7 +110,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
         var score = scoreGradedBy("teacher-1");
         when(scoreRepo.findAllByCycle("graded")).thenReturn(List.of(score));
 
-        var result = useCase.execute(SCHOOL, SECTION);
+        var result = useCase.execute(SCHOOL, TEMPLATE);
 
         assertThat(result.refreshed()).isZero();
         assertThat(result.skipped()).isEqualTo(1);
@@ -121,7 +126,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
         when(scoreRepo.findAllByCycle("half")).thenReturn(List.of(score));
         when(caEntryRepo.findAllByScoreIds(List.of("score-null"))).thenReturn(List.of(mock(AssessmentCaEntry.class)));
 
-        var result = useCase.execute(SCHOOL, SECTION);
+        var result = useCase.execute(SCHOOL, TEMPLATE);
 
         assertThat(result.refreshed()).isZero();
         assertThat(result.skipped()).isEqualTo(1);
@@ -129,12 +134,11 @@ class RefreshUnstartedAssessmentsUseCaseTest {
     }
 
     @Test
-    void anAssessmentOutsideTheSectionIsNeverTouched() {
-        when(structureService.levelsOfSection(SCHOOL, SECTION)).thenReturn(java.util.Set.of(Level.PRIMARY));
-        var blank = cycle("blank", Status.DRAFT, true);
+    void anAssessmentOfAnotherTemplateIsNeverTouched() {
+        var blank = cycle("blank", Status.DRAFT, true, "tpl-primary");
         when(cycleRepo.findAllOpenBySchool(SCHOOL)).thenReturn(List.of(blank));
 
-        var result = useCase.execute(SCHOOL, SECTION);
+        var result = useCase.execute(SCHOOL, TEMPLATE);
 
         assertThat(result.refreshed()).isZero();
         assertThat(result.skipped()).isZero();
@@ -147,7 +151,7 @@ class RefreshUnstartedAssessmentsUseCaseTest {
         var locked = cycle("locked", Status.LOCKED, true);
         when(cycleRepo.findAllOpenBySchool(SCHOOL)).thenReturn(List.of());
 
-        var result = useCase.execute(SCHOOL, SECTION);
+        var result = useCase.execute(SCHOOL, TEMPLATE);
 
         assertThat(result.refreshed()).isZero();
         assertThat(result.skipped()).isZero();

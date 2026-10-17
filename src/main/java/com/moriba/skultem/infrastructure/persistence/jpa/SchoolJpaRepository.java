@@ -27,4 +27,13 @@ public interface SchoolJpaRepository extends JpaRepository<SchoolEntity, String>
                    or lower(s.domain) like lower(concat('%', :query, '%'))
             """)
     Page<SchoolEntity> search(String query, Pageable pageable);
+
+    @Query("""
+                select s from SchoolEntity s
+                where (lower(s.name) like lower(concat('%', :query, '%'))
+                   or lower(s.domain) like lower(concat('%', :query, '%')))
+                  and (:status is null or s.status = :status)
+                  and (:testSchool is null or s.testSchool = :testSchool)
+            """)
+    Page<SchoolEntity> filter(String query, Status status, Boolean testSchool, Pageable pageable);
 }

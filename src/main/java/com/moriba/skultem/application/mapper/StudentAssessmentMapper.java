@@ -41,6 +41,7 @@ public class StudentAssessmentMapper {
                 return new StudentAssessmentDTO(
                                 param.getId(),
                                 name,
+                                param.getEnrollment().getStudent().getPhoto(),
                                 scores,
                                 totalScore,
                                 passMark,

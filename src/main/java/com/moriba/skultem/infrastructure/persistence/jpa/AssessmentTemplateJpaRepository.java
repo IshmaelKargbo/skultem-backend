@@ -11,5 +11,7 @@ import com.moriba.skultem.infrastructure.persistence.entity.AssessmentTemplateEn
 public interface AssessmentTemplateJpaRepository extends JpaRepository<AssessmentTemplateEntity, String> {
     Optional<AssessmentTemplateEntity> findByIdAndSchoolId(String id, String schoolId);
 
+    void deleteByIdAndSchoolId(String id, String schoolId);
+
     Page<AssessmentTemplateEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 }

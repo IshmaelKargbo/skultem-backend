@@ -5,9 +5,11 @@ import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -78,6 +80,12 @@ public class AssessmentController {
     private final ReopenAssessmentCycleUseCase reopenAssessmentCycleUseCase;
     private final com.moriba.skultem.application.usecase.RecordContinuousAssessmentUseCase recordContinuousAssessmentUseCase;
     private final com.moriba.skultem.application.usecase.SubmitContinuousCaUseCase submitContinuousCaUseCase;
+    private final com.moriba.skultem.application.usecase.SyncAttendanceCaUseCase syncAttendanceCaUseCase;
+    private final com.moriba.skultem.application.usecase.DeleteAssessmentTemplateUseCase deleteAssessmentTemplateUseCase;
+    private final com.moriba.skultem.application.usecase.ListTermGradedSessionsUseCase listTermGradedSessionsUseCase;
+    private final com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase updateAssessmentTemplateUseCase;
+    private final com.moriba.skultem.domain.repository.TemplateMaintenanceRepository templateMaintenanceRepository;
+    private final com.moriba.skultem.application.usecase.UpdateAssessmentTemplateStartTermUseCase updateAssessmentTemplateStartTermUseCase;
     private final com.moriba.skultem.application.usecase.LockContinuousWeekUseCase lockContinuousWeekUseCase;
     private final com.moriba.skultem.application.usecase.UnlockContinuousWeekUseCase unlockContinuousWeekUseCase;
 
@@ -91,6 +99,70 @@ public class AssessmentController {
             @Valid @RequestBody CreateAssessmentTemplateDTO param) {
         var res = createAssessmentTemplateUseCase.execute(school, param.name(), param.passMark(), param.description());
         return new ApiResponse<>("success", 200, "Assessment template created successfully", res);
+    }
+
+    // The classes and class subjects that have assessments in a term (a class joining later has none in earlier terms).
+    @SectionNeutral
+    @GetMapping("/term/{termId}/graded")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER')")
+    public ApiResponse<com.moriba.skultem.application.usecase.ListTermGradedSessionsUseCase.Result> termGraded(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String termId) {
+        return new ApiResponse<>("success", 200, "Graded classes fetched successfully",
+                listTermGradedSessionsUseCase.execute(school, termId));
+    }
+
+    @SectionNeutral
+    @DeleteMapping("/template/{templateId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
+    public ApiResponse<Object> deleteTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId) {
+        var name = deleteAssessmentTemplateUseCase.execute(school, templateId);
+        return new ApiResponse<>("success", 200, name + " deleted", null);
+    }
+
+    // Edits a template in place and carries the change through to the classes already using it. See
+    // UpdateAssessmentTemplateUseCase for what is refused without `force`.
+    @SectionNeutral
+    @PutMapping("/template/{templateId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
+    public ApiResponse<AssessmentTemplateDTO> updateTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.UpdateAssessmentTemplateDTO param) {
+        var items = param.assessments().stream()
+                .map(i -> new com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.Item(i.id(),
+                        i.name(), i.weight()))
+                .toList();
+        var res = updateAssessmentTemplateUseCase.execute(school, templateId,
+                new com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.Details(param.name(),
+                        param.passMark(), param.description()),
+                items, Boolean.TRUE.equals(param.force()));
+        return new ApiResponse<>("success", 200, "Assessment template updated successfully", res.template());
+    }
+
+    // How far a template has been used - what an edit would touch.
+    @SectionNeutral
+    @GetMapping("/template/{templateId}/usage")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
+    public ApiResponse<com.moriba.skultem.domain.repository.TemplateMaintenanceRepository.Usage> templateUsage(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId) {
+        return new ApiResponse<>("success", 200, "Template usage fetched successfully",
+                templateMaintenanceRepository.usage(school, templateId));
+    }
+
+    // The term students of classes using this template start being graded in.
+    @SectionNeutral
+    @PutMapping("/template/{templateId}/starts-in-term")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
+    public ApiResponse<Object> updateTemplateStartTerm(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String templateId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.UpdateClassStartTermDTO param) {
+        updateAssessmentTemplateStartTermUseCase.execute(school, templateId, param.termNumber());
+        return new ApiResponse<>("success", 200, "Grading start term saved", null);
     }
 
     @SectionNeutral
@@ -290,6 +362,18 @@ public class AssessmentController {
         unlockContinuousWeekUseCase.execute(school, teacherSubjectId, param.assessmentId(), param.termId(),
                 param.week(), param.reason());
         return new ApiResponse<>("success", 200, "Recording unlocked", null);
+    }
+
+    // Refreshes the CA part that is taken from attendance (days present or late over the term's school days).
+    @SectionScoped
+    @PostMapping("/continuous/{teacherSubjectId}/sync-attendance")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId)")
+    public ApiResponse<Object> syncContinuousAttendance(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String teacherSubjectId,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SubmitContinuousCaDTO param) {
+        int changed = syncAttendanceCaUseCase.execute(school, teacherSubjectId, param.assessmentId(), param.termId());
+        return new ApiResponse<>("success", 200, changed + " attendance mark(s) updated", changed);
     }
 
     // Closes the CA step of a continuous assessment - every recording in for every student - so the formal test

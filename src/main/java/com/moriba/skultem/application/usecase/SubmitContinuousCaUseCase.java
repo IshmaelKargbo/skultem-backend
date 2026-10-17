@@ -32,6 +32,7 @@ public class SubmitContinuousCaUseCase {
     private final AssessmentCaEntryRepository caEntryRepo;
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
     private final AssessmentStructureService structureService;
+    private final com.moriba.skultem.application.services.AttendanceCaService attendanceCaService;
 
     @AuditLogAnnotation(action = "CONTINUOUS_ASSESSMENT_CA_SUBMITTED")
     public void execute(String schoolId, String teacherSubjectId, String assessmentId, String termId) {
@@ -57,6 +58,14 @@ public class SubmitContinuousCaUseCase {
         cycleRepo.saveAll(structureService.freezeOpened(cycles));
         var cycle = cycles.get(0);
 
+        // The attendance part is taken from the register one last time, so the marks that get frozen are current.
+        if (cycle.isContinuous() && cycle.canEdit() && cycle.attendanceEntryNumber() > 0) {
+            var synced = attendanceCaService.sync(schoolId, ts, cycle, scores,
+                    com.moriba.skultem.infrastructure.security.PermissionService.getCurrentUser().userId());
+            caEntryRepo.saveAll(synced.entries());
+            assessmentScoreRepo.saveAll(synced.scores());
+        }
+
         var recorded = caEntryRepo.findAllByScoreIds(scores.stream().map(s -> s.getId()).toList()).stream()
                 .collect(Collectors.groupingBy(AssessmentCaEntry::getAssessmentScoreId,
                         Collectors.mapping(AssessmentCaEntry::getEntryNumber, Collectors.toSet())));
@@ -65,7 +74,10 @@ public class SubmitContinuousCaUseCase {
             int have = recorded.getOrDefault(score.getId(), java.util.Set.of()).size();
             if (have < expected) {
                 throw new RuleException("Every student needs all " + expected + " CA recordings before the CA can be "
-                        + "submitted - at least one still has " + (expected - have) + " missing");
+                        + "submitted - at least one still has " + (expected - have) + " missing"
+                        + (cycle.attendanceEntryNumber() > 0
+                                ? ". The attendance part comes from the register, so attendance must be recorded for this term"
+                                : ""));
             }
         }
 

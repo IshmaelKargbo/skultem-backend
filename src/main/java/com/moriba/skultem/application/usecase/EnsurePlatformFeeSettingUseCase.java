@@ -40,6 +40,7 @@ public class EnsurePlatformFeeSettingUseCase {
 
     private final PlatformFeeSettingRepository settingRepo;
     private final FeeCategoryRepository feeCategoryRepo;
+    private final com.moriba.skultem.application.services.PlatformFeeService platformFeeService;
 
     /**
      * Called once when a school is created: gives it a platform fee setting at
@@ -52,7 +53,12 @@ public class EnsurePlatformFeeSettingUseCase {
      */
     public void provisionForNewSchool(String schoolId) {
         if (settingRepo.findBySchool(schoolId).isEmpty()) {
-            settingRepo.save(PlatformFeeSetting.create(schoolId, PlatformFeeSetting.DEFAULT_AMOUNT));
+            // A new school starts on the platform's fee (what most schools pay), not a hard-coded number.
+            var platformFee = platformFeeService.feePerYearForNewSchools();
+            if (platformFee == null) {
+                platformFee = resolveDefaultAmount();
+            }
+            settingRepo.save(PlatformFeeSetting.create(schoolId, platformFee != null ? platformFee : PlatformFeeSetting.DEFAULT_AMOUNT));
         }
 
         var categoryName = SeedPlatformFeeForAcademicYearUseCase.PLATFORM_FEE_CATEGORY_NAME;

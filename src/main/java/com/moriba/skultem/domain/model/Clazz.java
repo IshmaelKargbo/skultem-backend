@@ -18,7 +18,6 @@ public class Clazz extends AggregateRoot<String> {
     private int displayOrder;
     private Clazz nextClass;
     private Status status;
-
     public enum Status {
         ACTIVE,
         DELETED

@@ -58,12 +58,11 @@ public class Attendance extends AggregateRoot<String> {
     }
 
     public String getStatus() {
-        // A "late" mark is recorded as present=true, late=true (the student did show up, just
-        // late) - checking present first, as this used to, always won and reported "Present"
-        // before late was ever consulted, silently hiding every late arrival (from this school's
-        // reports, the parent portal calendar, everywhere getStatus() is used) behind a 100%
-        // present rate.
-        if (isPresent() && isLate())
+        // The register records a late arrival as late=true with present=false (marking someone present AND late is
+        // refused, see MarkClassSessionAttendanceUseCase), and every attendance rate counts "present or late" as
+        // attending. So late has to be checked on its own - requiring present too meant a late student was reported as
+        // Absent everywhere this label is used (reports, the parent calendar, the class page).
+        if (isLate())
             return "Late";
         if (isPresent())
             return "Present";

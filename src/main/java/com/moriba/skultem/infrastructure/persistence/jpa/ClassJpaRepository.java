@@ -14,6 +14,10 @@ import com.moriba.skultem.domain.vo.Level;
 import com.moriba.skultem.infrastructure.persistence.entity.ClassEntity;
 
 public interface ClassJpaRepository extends JpaRepository<ClassEntity, String> {
+    // Every class that points at the template, soft-deleted ones included (the foreign key still holds them).
+    @Query(value = "select count(*) from classes where assessment_template_id = :templateId", nativeQuery = true)
+    long countByTemplateId(@Param("templateId") String templateId);
+
     boolean existsByNameIgnoreCaseAndSchoolId(String name, String schoolId);
 
     boolean existsByLevelOrderAndSchoolId(int levelOrder, String schoolId);

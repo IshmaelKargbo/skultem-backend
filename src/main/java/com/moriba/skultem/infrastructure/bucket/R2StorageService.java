@@ -75,6 +75,19 @@ public class R2StorageService {
                 .build();
     }
 
+    /** Whether the storage bucket answers, for the platform health page. Returns how long it took, in milliseconds. */
+    public long ping() {
+        long start = System.nanoTime();
+        try {
+            client.headBucket(software.amazon.awssdk.services.s3.model.HeadBucketRequest.builder().bucket(bucket).build());
+        } catch (S3Exception ex) {
+            throw new StorageException("Storage check failed with status " + ex.statusCode(), ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            throw new StorageException("Storage could not be reached", ex.getMessage(), ex);
+        }
+        return (System.nanoTime() - start) / 1_000_000;
+    }
+
     public String uploadFile(MultipartFile file, String path) throws IOException {
         String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
 

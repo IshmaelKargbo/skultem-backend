@@ -49,6 +49,41 @@ public interface AssessmentScoreJpaRepository
 
         boolean existsByStudentAssessment_IdAndCycle_Id(String studentAssessmentId, String cycleId);
 
+        // "Grading has started": someone has entered a mark, or the test has moved past being open for entry. A test that
+        // was only ever provisioned (locked, waiting for its term) is not activity.
+        @Query("""
+                        select count(s) > 0 from AssessmentScoreEntity s
+                        where s.schoolId = :schoolId
+                          and s.studentAssessment.enrollment.clazz.id = :classId
+                          and (s.score > 0 or s.gradedByUserId is not null or s.cycle.status in :started)
+                        """)
+        boolean hasGradeActivityByClass(@Param("classId") String classId, @Param("schoolId") String schoolId,
+                        @Param("started") java.util.Collection<ClassSubjectAssessmentLifeCycle.Status> started);
+
+        @Query("""
+                        select count(s) > 0 from AssessmentScoreEntity s
+                        where s.schoolId = :schoolId
+                          and s.studentAssessment.enrollment.clazz.id = :classId
+                          and s.studentAssessment.teacherSubject.subject.id = :subjectId
+                          and (s.score > 0 or s.gradedByUserId is not null or s.cycle.status in :started)
+                        """)
+        boolean hasGradeActivityByClassAndSubject(@Param("classId") String classId,
+                        @Param("subjectId") String subjectId, @Param("schoolId") String schoolId,
+                        @Param("started") java.util.Collection<ClassSubjectAssessmentLifeCycle.Status> started);
+
+        @Query("""
+                        select count(s) > 0 from AssessmentScoreEntity s
+                        where s.schoolId = :schoolId
+                          and s.studentAssessment.enrollment.clazz.id = :classId
+                          and s.studentAssessment.teacherSubject.subject.id = :subjectId
+                          and s.studentAssessment.enrollment.academicYear.id = :academicYearId
+                          and (s.score > 0 or s.gradedByUserId is not null or s.cycle.status in :started)
+                        """)
+        boolean hasGradeActivityByClassSubjectAndYear(@Param("classId") String classId,
+                        @Param("subjectId") String subjectId, @Param("academicYearId") String academicYearId,
+                        @Param("schoolId") String schoolId,
+                        @Param("started") java.util.Collection<ClassSubjectAssessmentLifeCycle.Status> started);
+
         boolean existsByStudentAssessment_Enrollment_Clazz_IdAndSchoolIdAndScoreGreaterThan(
                         String classId,
                         String schoolId,

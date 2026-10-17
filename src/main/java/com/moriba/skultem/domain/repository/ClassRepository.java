@@ -39,4 +39,7 @@ public interface ClassRepository {
     Page<Clazz> findBySchool(String school, Collection<Level> levels, Pageable pageable);
 
     void delete(Clazz domain);
+
+    // Classes (even soft-deleted) assessed with this template.
+    long countByTemplate(String templateId);
 }

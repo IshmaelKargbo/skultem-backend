@@ -95,7 +95,13 @@ public class ProvisionStudentAssessmentsUseCase {
         List<AssessmentScore> scoresToSave = new ArrayList<>();
         List<ClassSubjectAssessmentLifeCycle> cyclesToSave = new ArrayList<>();
 
+        // A class that joins part-way through the year (SSS 1 in the second term) is not graded for the terms before.
+        int firstTerm = Math.max(1, enrollment.getClazz().getTemplate().getStartsInTerm());
+
         for (var term : terms) {
+            if (term.getTermNumber() < firstTerm) {
+                continue;
+            }
             for (var subject : subjects) {
 
                 var teacherSubjectRes = teacherSubjectRepo
@@ -124,7 +130,12 @@ public class ProvisionStudentAssessmentsUseCase {
                 var cycles = new ArrayList<>(cycleRepo.findAllBySubjectAndTerm(teacherSubject.getId(), term.getId()));
                 if (cycles.isEmpty()) {
                     for (var assessment : assessments) {
-                        var status = (term.getTermNumber() == 1 && assessment.getPosition() == 1)
+                        // The first assessment of the first term opens at once. A class joining later starts on its
+                        // first term's first assessment only if that term is already running; otherwise it opens
+                        // with the term, like everyone else's.
+                        boolean opensNow = assessment.getPosition() == 1 && (term.getTermNumber() == 1
+                                || (term.getTermNumber() == firstTerm && term.getStatus() == Term.Status.ACTIVE));
+                        var status = opensNow
                                 ? ClassSubjectAssessmentLifeCycle.Status.DRAFT
                                 : ClassSubjectAssessmentLifeCycle.Status.LOCKED;
                         var cycle = ClassSubjectAssessmentLifeCycle.create(

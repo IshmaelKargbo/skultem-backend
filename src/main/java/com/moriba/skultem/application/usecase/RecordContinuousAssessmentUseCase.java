@@ -90,6 +90,8 @@ public class RecordContinuousAssessmentUseCase {
         int caPct = cycle.getCaPercentage();
         int formalPct = cycle.getFormalPercentage();
         int maxEntries = cycle.getCaEntries();
+        // The attendance part is filled in from the register; whatever the sheet sends for it is ignored.
+        int attendanceSlot = cycle.attendanceEntryNumber();
         String userId = PermissionService.getCurrentUser().userId();
 
         var existing = caEntryRepo.findAllByScoreIds(scoreById.keySet()).stream()
@@ -123,7 +125,7 @@ public class RecordContinuousAssessmentUseCase {
                                 + "recording" + (maxEntries == 1 ? "" : "s") + " - no. " + value.entryNumber()
                                 + " doesn't exist");
                     }
-                    if (value.score() == null) {
+                    if (value.score() == null || value.entryNumber() == attendanceSlot) {
                         continue;
                     }
                     var current = entries.get(value.entryNumber());
@@ -146,8 +148,9 @@ public class RecordContinuousAssessmentUseCase {
                 }
             }
 
-            Integer ca = ContinuousAssessmentCalculator.caComponent(
-                    entries.values().stream().map(AssessmentCaEntry::getScore).toList());
+            Map<Integer, Integer> recorded = new HashMap<>();
+            entries.forEach((n, e) -> recorded.put(n, e.getScore()));
+            Integer ca = ContinuousAssessmentCalculator.caComponent(recorded, cycle.caWeights());
             Integer formal = record.formalScore() != null ? record.formalScore() : score.getFormalScore();
             if (formal != null && (formal < 0 || formal > 100)) {
                 throw new RuleException("The formal test score must be between 0 and 100");

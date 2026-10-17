@@ -27,7 +27,12 @@ class EndpointAuthorizationCoverageTest {
             "AuthController#tenant", "AuthController#logout",
             // Marketing site / onboarding, before any account exists.
             "RequestDemoController#create", "SchoolController#create", "SchoolController#count",
-            "SystemAdminController#bootstrap");
+            "SystemAdminController#bootstrap",
+            // The marketing site's public API (see SecurityConfig): only published content is returned, and
+            // the contact form is the one thing it can send. Also the public school directory it reads.
+            "PublicMarketingController#testimonials", "PublicMarketingController#posts",
+            "PublicMarketingController#post", "PublicMarketingController#contact", "PublicMarketingController#settings",
+            "SchoolController#listPublic");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {

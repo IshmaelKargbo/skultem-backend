@@ -30,6 +30,11 @@ public class AssessmentTemplateAdapter implements AssessmentTemplateRepository {
     }
 
     @Override
+    public void deleteByIdAndSchoolId(String id, String schoolId) {
+        repo.deleteByIdAndSchoolId(id, schoolId);
+    }
+
+    @Override
     public Page<AssessmentTemplate> findAllBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(AssessmentTemplateMapper::toDomain);
     }

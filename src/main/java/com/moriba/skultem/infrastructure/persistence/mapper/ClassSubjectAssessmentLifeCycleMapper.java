@@ -18,6 +18,7 @@ public class ClassSubjectAssessmentLifeCycleMapper {
                 param.getCaFrequency(), param.getCaEntries(), param.getConfigVersion(), param.getStructureFrozenAt());
         cycle.restoreCaSubmitted(param.getCaSubmittedAt());
         cycle.restoreLockedWeeks(param.getCaLockedWeeks());
+        cycle.restoreComponents(param.getCaComponentsText(), param.getFormalLabel());
         return cycle;
     }
 
@@ -33,6 +34,6 @@ public class ClassSubjectAssessmentLifeCycleMapper {
         return new ClassSubjectAssessmentLifeCycleEntity(param.getId(), param.getSchoolId(), term, assessment, subject, param.getStatus(),
                 param.getStructure(), param.getCaPercentage(), param.getFormalPercentage(), param.getCaFrequency(),
                 param.getCaEntries(), param.getConfigVersion(), param.getStructureFrozenAt(), param.getCaSubmittedAt(), param.lockedWeeksAsText(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.componentsAsText(), param.getFormalLabel(), param.getCreatedAt(), param.getUpdatedAt());
     }
 }

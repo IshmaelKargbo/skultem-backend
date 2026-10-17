@@ -22,6 +22,9 @@ public interface SchoolRepository {
     // list needs to look across every school at once. Matches on name/domain.
     Page<School> search(String query, Pageable pageable);
 
+    /** Name/domain search narrowed by status and by playground (true) or live (false); null leaves that filter off. */
+    Page<School> filter(String query, School.Status status, Boolean testSchool, Pageable pageable);
+
     Optional<School> findByDomain(String domain);
 
     void delete(School domain);

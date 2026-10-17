@@ -31,6 +31,8 @@ public class AssessmentConfigurationEntity {
 
     private String managementSectionId;
 
+    private String assessmentTemplateId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AssessmentStructure structure;
@@ -54,6 +56,11 @@ public class AssessmentConfigurationEntity {
 
     @Column(columnDefinition = "TEXT")
     private String planText;
+
+    @Column(columnDefinition = "TEXT")
+    private String caComponentsText;
+
+    private String formalLabel;
 
     private Instant createdAt;
     private Instant updatedAt;

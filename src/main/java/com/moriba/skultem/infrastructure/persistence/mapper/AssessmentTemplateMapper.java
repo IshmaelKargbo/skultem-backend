@@ -16,7 +16,7 @@ public class AssessmentTemplateMapper {
                 param.getPassMark(),
                 param.getDescription(),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt()).startsInTerm(param.getStartsInTerm());
     }
 
     public static AssessmentTemplateEntity toEntity(AssessmentTemplate param) {
@@ -30,6 +30,7 @@ public class AssessmentTemplateMapper {
                 .name(param.getName())
                 .passMark(param.getPassMark())
                 .description(param.getDescription())
+                .startsInTerm(param.getStartsInTerm())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

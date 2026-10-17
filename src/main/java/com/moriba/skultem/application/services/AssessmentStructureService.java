@@ -42,6 +42,19 @@ public class AssessmentStructureService {
                 .orElseGet(() -> AssessmentConfiguration.simple(schoolId, sectionId));
     }
 
+    // What applies to one assessment: its template's own configuration, else (templates not set up yet) the earlier
+    // section / school-wide one, else SIMPLE.
+    public AssessmentConfiguration forCycle(ClassSubjectAssessmentLifeCycle cycle) {
+        var template = cycle.getAssessment() == null ? null : cycle.getAssessment().getTemplate();
+        if (template != null) {
+            var own = configRepo.findByTemplate(cycle.getSchoolId(), template.getId());
+            if (own.isPresent()) {
+                return own.get();
+            }
+        }
+        return forLevel(cycle.getSchoolId(), cycle.getSubject().getSession().getClazz().getLevel());
+    }
+
     public AssessmentConfiguration forLevel(String schoolId, Level level) {
         return forSection(schoolId, sectionOfLevel(schoolId, level));
     }
@@ -63,7 +76,7 @@ public class AssessmentStructureService {
     // the structure and weights they were opened with. Returns those it changed, for the caller to save.
     public java.util.List<ClassSubjectAssessmentLifeCycle> freezeOpened(
             Collection<ClassSubjectAssessmentLifeCycle> cycles) {
-        Map<String, AssessmentConfiguration> byLevel = new HashMap<>();
+        Map<String, AssessmentConfiguration> byTemplateAndLevel = new HashMap<>();
         var changed = new java.util.ArrayList<ClassSubjectAssessmentLifeCycle>();
         for (var cycle : cycles) {
             boolean open = cycle.getStatus() == Status.DRAFT || cycle.getStatus() == Status.RETURNED;
@@ -71,8 +84,10 @@ public class AssessmentStructureService {
                 continue;
             }
             Level level = cycle.getSubject().getSession().getClazz().getLevel();
-            var config = byLevel.computeIfAbsent(cycle.getSchoolId() + "|" + level,
-                    k -> forLevel(cycle.getSchoolId(), level));
+            var templateId = cycle.getAssessment() == null || cycle.getAssessment().getTemplate() == null ? "" :
+                    cycle.getAssessment().getTemplate().getId();
+            var config = byTemplateAndLevel.computeIfAbsent(cycle.getSchoolId() + "|" + templateId + "|" + level,
+                    k -> forCycle(cycle));
             cycle.freezeStructure(config);
             changed.add(cycle);
         }

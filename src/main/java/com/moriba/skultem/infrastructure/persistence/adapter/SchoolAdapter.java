@@ -44,6 +44,11 @@ public class SchoolAdapter implements SchoolRepository {
     }
 
     @Override
+    public Page<School> filter(String query, School.Status status, Boolean testSchool, Pageable pageable) {
+        return repo.filter(query, status, testSchool, pageable).map(SchoolMapper::toDomain);
+    }
+
+    @Override
     public Page<School> search(String query, Pageable pageable) {
         return repo.search(query, pageable).map(SchoolMapper::toDomain);
     }

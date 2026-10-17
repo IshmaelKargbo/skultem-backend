@@ -33,6 +33,10 @@ public class AssessmentTemplateEntity {
 
     private String description;
 
+    @lombok.Builder.Default
+    @Column(nullable = false)
+    private int startsInTerm = 1;
+
     private Instant createdAt;
 
     private Instant updatedAt;

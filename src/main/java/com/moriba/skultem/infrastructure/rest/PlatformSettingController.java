@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/platform")
 @RequiredArgsConstructor
-@PreAuthorize("@permissionService.isSystemAdmin()")
+@PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
 public class PlatformSettingController {
 
     private final GetPlatformFeeSettingUseCase getPlatformFeeSettingUseCase;

@@ -12,6 +12,12 @@ import com.moriba.skultem.infrastructure.persistence.entity.ClassSubjectAssessme
 
 public interface ClassSubjectAssessmentLifeCycleJpaRepository
                 extends JpaRepository<ClassSubjectAssessmentLifeCycleEntity, String> {
+        @Query("select c from ClassSubjectAssessmentLifeCycleEntity c where c.assessment.template.id = :templateId")
+        List<ClassSubjectAssessmentLifeCycleEntity> findAllByTemplateId(@Param("templateId") String templateId);
+
+        @Query("select count(c) from ClassSubjectAssessmentLifeCycleEntity c where c.assessment.template.id = :templateId")
+        long countByTemplateId(@Param("templateId") String templateId);
+
         boolean existsByTerm_IdAndAssessment_IdAndSubject_Id(String termId, String assessmentId,
                         String teacherSubjectId);
 

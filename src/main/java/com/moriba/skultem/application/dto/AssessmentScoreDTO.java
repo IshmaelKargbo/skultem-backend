@@ -21,6 +21,12 @@ public record AssessmentScoreDTO(String id, String name, String assessment, Stri
                         // The CA recordings were submitted as complete - the formal test can now be entered.
                         boolean caSubmitted,
                         // Recording slots that are locked (completed for every student): no longer editable.
-                        java.util.List<Integer> lockedWeeks) {
+                        java.util.List<Integer> lockedWeeks,
+                        // Named, weighted CA parts (recording n is part n) and the formal part's name - both empty/null
+                        // when the CA is plain equal recordings.
+                        java.util.List<Component> caComponents, String formalLabel) {
+        }
+
+        public record Component(String name, int weight, String source) {
         }
 }

@@ -58,6 +58,9 @@ public class ClassSubjectAssessmentLifeCycleEntity {
     private Instant structureFrozenAt;
     private Instant caSubmittedAt;
     private String caLockedWeeks;
+    @Column(columnDefinition = "TEXT")
+    private String caComponentsText;
+    private String formalLabel;
 
     private Instant createdAt;
 

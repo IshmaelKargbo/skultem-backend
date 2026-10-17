@@ -18,16 +18,38 @@ public class ListSchoolUseCase {
 
     private final SchoolRepository repo;
 
-    public Page<SchoolDTO> execute(int page, int size, String query) {
+    public Page<SchoolDTO> execute(int page, int size, String query, String status, String type) {
         Pageable pageable = Pageable.unpaged();
 
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
 
-        boolean hasQuery = query != null && !query.isBlank();
-        var schools = hasQuery ? repo.search(query.trim(), pageable) : repo.findAll(pageable);
+        var schools = repo.filter(query == null ? "" : query.trim(), parseStatus(status), parseType(type), pageable);
 
         return schools.map(SchoolMapper::toDTO);
+    }
+
+    private static com.moriba.skultem.domain.model.School.Status parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return com.moriba.skultem.domain.model.School.Status.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    // "PLAYGROUND" = schools still being tried out, "LIVE" = the rest.
+    private static Boolean parseType(String type) {
+        if (type == null || type.isBlank()) {
+            return null;
+        }
+        return switch (type.trim().toUpperCase()) {
+            case "PLAYGROUND" -> true;
+            case "LIVE" -> false;
+            default -> null;
+        };
     }
 }

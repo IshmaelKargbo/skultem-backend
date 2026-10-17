@@ -34,6 +34,7 @@ public class PermissionService {
     private final AssessmentApprovalRequestRepository assessmentApprovalRequestRepo;
     private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
     private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
+    private final com.moriba.skultem.application.services.PlatformAccessService platformAccess;
 
     // SUPER_ADMIN is a staff member with the whole school portal - everything the management and
     // finance roles can do, without being the owner/proprietor. Any gate naming one of these roles
@@ -71,6 +72,31 @@ public class PermissionService {
 
     public boolean isSystemAdmin() {
         return currentRole() == Role.SYSTEM_ADMIN;
+    }
+
+    /**
+     * A system admin whose platform role includes this permission (BILLING, MARKETING, ...). An unknown name is
+     * never granted. Anyone who is not a system admin - a school admin included - is always refused.
+     */
+    public boolean hasPlatformPermission(String permission) {
+        return hasAnyPlatformPermission(permission);
+    }
+
+    public boolean hasAnyPlatformPermission(String... permissions) {
+        if (!isSystemAdmin()) {
+            return false;
+        }
+        var granted = platformAccess.permissionsOf(currentUserId());
+        for (String name : permissions) {
+            try {
+                if (granted.contains(com.moriba.skultem.application.services.PlatformAccessService.Permission.valueOf(name))) {
+                    return true;
+                }
+            } catch (IllegalArgumentException e) {
+                // a misspelt permission grants nothing
+            }
+        }
+        return false;
     }
 
     public boolean hasRole(Role role) {

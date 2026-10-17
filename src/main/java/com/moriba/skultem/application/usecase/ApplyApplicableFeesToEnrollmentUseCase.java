@@ -59,6 +59,12 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
     private final CreateStudentLedgerUsercase createStudentLedgerUsercase;
     private final LogActivityUseCase logActivityUseCase;
 
+    // The term the enrollment's class starts in, as set on its assessment template (1 when it has none).
+    private static int startsInTermOf(Enrollment enrollment) {
+        var template = enrollment.getClazz() == null ? null : enrollment.getClazz().getTemplate();
+        return template == null ? 1 : template.getStartsInTerm();
+    }
+
     public void execute(Enrollment enrollment) {
         Student student = enrollment.getStudent();
         String schoolId = enrollment.getSchoolId();
@@ -75,6 +81,12 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
         for (FeeStructure fee : fees) {
             if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(schoolId, enrollment.getId(),
                     student.getId(), fee.getId())) {
+                continue;
+            }
+
+            // A class that joins part-way through the year (SSS 1 in the second term) isn't billed for the terms
+            // before it starts.
+            if (fee.getTerm() != null && fee.getTerm().getTermNumber() < startsInTermOf(enrollment)) {
                 continue;
             }
 

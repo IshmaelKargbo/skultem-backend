@@ -10,6 +10,12 @@ public interface ClassSubjectAssessmentLifeCycleRepository {
 
     void saveAll(List<ClassSubjectAssessmentLifeCycle> domain);
 
+    // Every test opened from any assessment of the template.
+    List<ClassSubjectAssessmentLifeCycle> findAllByTemplate(String templateId);
+
+    // Tests opened from this template's assessments (any term) - once there are any, it can't be deleted.
+    long countByTemplate(String templateId);
+
     boolean existByTermAndAssessmentAndTeacherSubject(String termId, String assessmentId, String teacherSubjectId);
 
     List<ClassSubjectAssessmentLifeCycle> findAllBySubjectAndTerm(String subjectId, String tearmId);

@@ -199,6 +199,15 @@ public class CreateFeeStructureUseCase {
                                         .toList();
                 }
 
+                // A class that joins part-way through the year isn't billed for the terms before it starts
+                // (a hand-picked list of students is a deliberate assignment, so it is left alone).
+                if (!hasExplicitStudents) {
+                        enrollments = enrollments.stream()
+                                        .filter(e -> e.getClazz().getTemplate() == null
+                                                        || term.getTermNumber() >= e.getClazz().getTemplate().getStartsInTerm())
+                                        .toList();
+                }
+
                 int assignedCount = 0;
                 BigDecimal totalAssignedAmount = BigDecimal.ZERO;
 

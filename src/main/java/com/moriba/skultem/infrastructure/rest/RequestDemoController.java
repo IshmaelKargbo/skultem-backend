@@ -35,7 +35,7 @@ public class RequestDemoController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('MARKETING')")
     public ApiResponse<List<RequestDemoDTO>> list(@RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
         var res = demoSvc.list(page, size);
@@ -50,7 +50,7 @@ public class RequestDemoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('MARKETING')")
     public ApiResponse<RequestDemoDTO> get(@PathVariable String id) {
         var res = demoSvc.get(id);
         return new ApiResponse<>("success", 200, "Request demo fetched successfully", res);

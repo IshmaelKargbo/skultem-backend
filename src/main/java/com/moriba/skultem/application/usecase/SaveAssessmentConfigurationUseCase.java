@@ -6,10 +6,8 @@ import com.moriba.skultem.application.dto.AssessmentConfigurationDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.AssessmentConfiguration;
-import com.moriba.skultem.domain.model.School.ManagementModel;
 import com.moriba.skultem.domain.repository.AssessmentConfigurationRepository;
-import com.moriba.skultem.domain.repository.ManagementSectionRepository;
-import com.moriba.skultem.domain.repository.SchoolRepository;
+import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.AssessmentStructure;
 import com.moriba.skultem.domain.vo.CaFrequency;
@@ -37,30 +35,22 @@ public class SaveAssessmentConfigurationUseCase {
         }
     }
 
-    private final SchoolRepository schoolRepo;
-    private final ManagementSectionRepository sectionRepo;
+    private final AssessmentTemplateRepository templateRepo;
     private final AssessmentConfigurationRepository configRepo;
     private final ListAssessmentConfigurationsUseCase listUseCase;
     private final LogActivityUseCase logActivityUseCase;
     private final RefreshUnstartedAssessmentsUseCase refreshUnstartedUseCase;
 
     @AuditLogAnnotation(action = "ASSESSMENT_CONFIGURATION_CHANGED")
-    public Result execute(String schoolId, String userId, String requestedSectionId, AssessmentStructure structure,
+    public Result execute(String schoolId, String userId, String templateId, AssessmentStructure structure,
             int caPercentage, int formalPercentage, CaFrequency caFrequency, int caEntries,
-            java.util.List<AssessmentConfiguration.PlanEntry> plan, boolean applyToUnstarted) {
-        var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
+            java.util.List<AssessmentConfiguration.PlanEntry> plan, boolean applyToUnstarted,
+            java.util.List<com.moriba.skultem.domain.vo.CaComponent> components, String formalLabel) {
+        var template = templateRepo.findByIdAndSchoolId(templateId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Assessment template not found"));
+        String scope = "template " + template.getName();
 
-        // A school without sections has one configuration for the whole school.
-        String sectionId = school.getManagementModel() == ManagementModel.SECTION_BASED && requestedSectionId != null
-                && !requestedSectionId.isBlank() ? requestedSectionId : null;
-        String scope = "the whole school";
-        if (sectionId != null) {
-            var section = sectionRepo.findBySchoolId(schoolId).stream().filter(s -> s.getId().equals(sectionId))
-                    .findFirst().orElseThrow(() -> new NotFoundException("Management section not found"));
-            scope = section.getName();
-        }
-
-        var existing = configRepo.findBySection(schoolId, sectionId).orElse(null);
+        var existing = configRepo.findByTemplate(schoolId, templateId).orElse(null);
         String previous = existing != null ? existing.summary() + " (v" + existing.getVersion() + ")"
                 : "not set (single score)";
 
@@ -69,21 +59,22 @@ public class SaveAssessmentConfigurationUseCase {
             existing.change(structure, caPercentage, formalPercentage, caFrequency, caEntries, userId);
             saved = existing;
         } else {
-            saved = AssessmentConfiguration.create(schoolId, sectionId, structure, caPercentage, formalPercentage,
-                    caFrequency, caEntries, userId);
+            saved = AssessmentConfiguration.create(schoolId, null, structure, caPercentage, formalPercentage,
+                    caFrequency, caEntries, userId).forTemplate(templateId);
         }
         saved.replacePlan(plan);
+        saved.replaceComponents(components, formalLabel);
         configRepo.save(saved);
 
         // Assessments nobody has graded yet move onto the new setup right away (a school going live with blank
         // assessments doesn't have to wait for a new term); anything with a grade in it is never touched.
-        var applied = applyToUnstarted ? refreshUnstartedUseCase.execute(schoolId, sectionId) : null;
+        var applied = applyToUnstarted ? refreshUnstartedUseCase.execute(schoolId, templateId) : null;
 
         String changedTo = saved.summary() + " (v" + saved.getVersion() + ")";
         logActivityUseCase.log(schoolId, ActivityType.SETTINGS, "Assessment configuration changed",
                 scope + ": " + saved.summary(), applied == null ? "Applies to assessments that open from now on" : applied.toString(), schoolId);
 
-        var dto = listUseCase.toDTO(saved, sectionId == null ? null : scope, false);
+        var dto = listUseCase.toDTO(saved, template.getName(), false);
         return new Result(dto, scope, previous, changedTo, applied);
     }
 }

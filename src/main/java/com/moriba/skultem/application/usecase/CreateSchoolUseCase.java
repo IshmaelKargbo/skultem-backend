@@ -44,6 +44,7 @@ public class CreateSchoolUseCase {
     private final MailService mailService;
     private final LogActivityUseCase logActivityUseCase;
     private final EnsurePlatformFeeSettingUseCase ensurePlatformFeeSettingUseCase;
+    private final SeedPlatformFeeForAcademicYearUseCase seedPlatformFeeUseCase;
     private final ProvisionAcademicCalendarForNewSchoolUseCase provisionAcademicCalendarUseCase;
     private final ProvisionStarterModulesForNewSchoolUseCase provisionStarterModulesUseCase;
     private final UpdateSchoolStructureUseCase updateSchoolStructureUseCase;
@@ -105,6 +106,15 @@ public class CreateSchoolUseCase {
             provisionAcademicCalendarUseCase.execute(school.getId());
         } catch (Exception e) {
             log.warn("Could not set the academic calendar for new school {}: {}", school.getId(), e.getMessage());
+        }
+
+        // With the platform fee setting and the current term both in place, create the school's platform fee for
+        // this academic year now - it would otherwise wait for the next sweep. Students the school admits from
+        // here on are charged it at enrollment.
+        try {
+            seedPlatformFeeUseCase.execute(school.getId());
+        } catch (Exception e) {
+            log.warn("Could not create the platform fee for new school {}: {}", school.getId(), e.getMessage());
         }
 
         logActivityUseCase.log(

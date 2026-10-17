@@ -45,6 +45,10 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/auth/**").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/demos").permitAll()
                                                 .requestMatchers("/api/v1/school/**").permitAll()
+                                                // Content for the marketing site: testimonials and blog posts to read,
+                                                // and the contact form to send.
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/public/contact").permitAll()
                                                 // Reachable pre-auth by design - see
                                                 // BootstrapSystemAdminUseCase for how this stays safe
                                                 // without a logged-in caller.

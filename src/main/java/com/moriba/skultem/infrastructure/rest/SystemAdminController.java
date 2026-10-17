@@ -17,6 +17,8 @@ import com.moriba.skultem.application.usecase.SetSchoolStatusUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolTestFlagUseCase;
 import com.moriba.skultem.application.usecase.SetSchoolUserStatusUseCase;
 import com.moriba.skultem.application.usecase.SystemAdminStatsUseCase;
+import com.moriba.skultem.application.usecase.SystemInsightsUseCase;
+import com.moriba.skultem.application.dto.SystemInsightsDTO;
 import com.moriba.skultem.application.usecase.UpdateSchoolUseCase;
 import com.moriba.skultem.application.usecase.WipeTestSchoolDataUseCase;
 import com.moriba.skultem.domain.vo.Address;
@@ -46,6 +48,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RequiredArgsConstructor
 public class SystemAdminController {
     private final SystemAdminStatsUseCase statsUseCase;
+    private final SystemInsightsUseCase insightsUseCase;
     private final SetSchoolStatusUseCase setSchoolStatusUseCase;
     private final BootstrapSystemAdminUseCase bootstrapSystemAdminUseCase;
     private final AddSystemAdminUseCase addSystemAdminUseCase;
@@ -57,14 +60,20 @@ public class SystemAdminController {
     private final GetPlaygroundSummaryUseCase getPlaygroundSummaryUseCase;
 
     @GetMapping("/stats")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('DASHBOARD')")
     public ApiResponse<SystemAdminStatsDTO> stats() {
         var res = statsUseCase.execute();
         return new ApiResponse<SystemAdminStatsDTO>("success", 200, "System stats fetched successfully", res);
     }
 
+    @GetMapping("/insights")
+    @PreAuthorize("@permissionService.hasPlatformPermission('DASHBOARD')")
+    public ApiResponse<SystemInsightsDTO> insights(@RequestParam(defaultValue = "30") int days) {
+        return new ApiResponse<>("success", 200, "System insights fetched successfully", insightsUseCase.execute(days));
+    }
+
     @PutMapping("/school/{id}/status")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
     public ApiResponse<SchoolDTO> updateSchoolStatus(@PathVariable("id") String schoolId,
             @RequestParam("status") String status) {
         var res = setSchoolStatusUseCase.execute(schoolId, status);
@@ -72,7 +81,7 @@ public class SystemAdminController {
     }
 
     @PutMapping("/school/{id}/test")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
     public ApiResponse<SchoolDTO> updateSchoolTestFlag(@PathVariable("id") String schoolId,
             @RequestParam("testSchool") boolean testSchool) {
         var res = setSchoolTestFlagUseCase.execute(schoolId, testSchool);
@@ -80,7 +89,7 @@ public class SystemAdminController {
     }
 
     @GetMapping("/school/{id}/playground")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
     public ApiResponse<PlaygroundSummaryDTO> playgroundSummary(@PathVariable("id") String schoolId) {
         var res = getPlaygroundSummaryUseCase.execute(schoolId);
         return new ApiResponse<>("success", 200, "Playground summary fetched successfully", res);
@@ -88,7 +97,7 @@ public class SystemAdminController {
 
     // Same go-live as PlaygroundController#goLive, for a system admin doing it on the school's behalf.
     @PostMapping("/school/{id}/move-to-production")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
     public ApiResponse<SchoolDTO> moveSchoolToProduction(@PathVariable("id") String schoolId,
             @Valid @RequestBody GoLiveDTO param) {
         var res = wipeTestSchoolDataUseCase.execute(schoolId, param.categories(), param.confirmation());
@@ -99,7 +108,7 @@ public class SystemAdminController {
     // activeSchoolId), this edits an arbitrary school by id - the system-admin schools table isn't
     // scoped to any one tenant.
     @PutMapping("/school/{id}")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
     public ApiResponse<SchoolDTO> updateSchool(@PathVariable("id") String schoolId,
             @Valid @RequestBody UpdateSchoolDTO param) {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
@@ -113,7 +122,7 @@ public class SystemAdminController {
     // them (see UserJpaRepository#searchByRole's LIKE '%%'), so this doubles as both a plain
     // "browse every system admin" listing and a name/email search within that roster.
     @GetMapping("/users")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('ADMINS')")
     public ApiResponse<List<UserWithSchoolsDTO>> searchUsers(
             @RequestParam(required = false, defaultValue = "") String query,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -135,7 +144,7 @@ public class SystemAdminController {
     // the cross-tenant lookup above shouldn't accidentally touch that same person's access to
     // every other school they belong to.
     @PutMapping("/school/{schoolId}/user/{userId}/status")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('ADMINS')")
     public ApiResponse<UserSchoolMembershipDTO> updateSchoolUserStatus(
             @PathVariable("schoolId") String schoolId,
             @PathVariable("userId") String userId,
@@ -145,7 +154,7 @@ public class SystemAdminController {
     }
 
     @PostMapping("/admins")
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasPlatformPermission('ADMINS')")
     public ApiResponse<UserDTO> addAdmin(@Valid @RequestBody AddSystemAdminDTO param) {
         var res = addSystemAdminUseCase.execute(param.email(), param.password(), param.givenNames(),
                 param.familyName());

@@ -8,6 +8,11 @@ import com.moriba.skultem.domain.model.AssessmentTemplate;
 
 public class AssessmentTemplateMapper {
     public static AssessmentTemplateDTO toDTO(AssessmentTemplate param, List<AssessmentDTO> assessments) {
+        return toDTO(param, assessments, null);
+    }
+
+    public static AssessmentTemplateDTO toDTO(AssessmentTemplate param, List<AssessmentDTO> assessments,
+            AssessmentTemplateDTO.Scoring scoring) {
         if (param == null) {
             return null;
         }
@@ -19,7 +24,9 @@ public class AssessmentTemplateMapper {
                 param.getPassMark(),
                 assessments,
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                scoring,
+                param.getStartsInTerm());
     }
 
     public static AssessmentTemplateDTO toDTO(AssessmentTemplate param) {
@@ -34,6 +41,8 @@ public class AssessmentTemplateMapper {
                 param.getPassMark(),
                 null,
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                null,
+                param.getStartsInTerm());
     }
 }

@@ -20,6 +20,29 @@ public final class ContinuousAssessmentCalculator {
         return (int) Math.round(recordings.stream().mapToInt(Integer::intValue).average().orElse(0));
     }
 
+    // The CA component when the CA is split into weighted components: recording n carries weights.get(n-1). Only the
+    // components recorded so far count (as with the plain average), so 80 in Attendance (20) and 60 in Assignment (20)
+    // gives 70. With no weights it is the plain average.
+    public static Integer caComponent(java.util.Map<Integer, Integer> scoreByEntry, java.util.List<Integer> weights) {
+        if (scoreByEntry == null || scoreByEntry.isEmpty()) {
+            return null;
+        }
+        if (weights == null || weights.isEmpty()) {
+            return caComponent(scoreByEntry.values());
+        }
+        double sum = 0;
+        double weightSum = 0;
+        for (var e : scoreByEntry.entrySet()) {
+            int idx = e.getKey() - 1;
+            if (idx < 0 || idx >= weights.size() || e.getValue() == null) {
+                continue;
+            }
+            sum += e.getValue() * (double) weights.get(idx);
+            weightSum += weights.get(idx);
+        }
+        return weightSum == 0 ? null : (int) Math.round(sum / weightSum);
+    }
+
     // Points a component contributes to the assessment, e.g. 80 at 30% -> 24.0 (of 30).
     public static double points(Integer component, int percentage) {
         return component == null ? 0 : Math.round(component * percentage / 10.0) / 10.0;

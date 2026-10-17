@@ -20,6 +20,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ClassAdapter implements ClassRepository {
 
+    @Override
+    public long countByTemplate(String templateId) {
+        return repo.countByTemplateId(templateId);
+    }
+
+
     private final ClassJpaRepository repo;
 
     @Override

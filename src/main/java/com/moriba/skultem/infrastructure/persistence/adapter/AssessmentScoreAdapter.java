@@ -88,67 +88,27 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
                 .toList();
     }
 
+    // Tests that have been submitted for approval or beyond. (A test that is merely LOCKED is waiting for its term, so it
+    // doesn't count; one locked after approval is caught by its marks.)
+    private static final java.util.List<ClassSubjectAssessmentLifeCycle.Status> STARTED = java.util.List.of(
+            ClassSubjectAssessmentLifeCycle.Status.SUBMITTED, ClassSubjectAssessmentLifeCycle.Status.RETURNED,
+            ClassSubjectAssessmentLifeCycle.Status.APPROVED, ClassSubjectAssessmentLifeCycle.Status.COMPLETED);
+
     @Override
     public boolean existsGradeActivityByClassIdAndSchoolId(String classId, String schoolId) {
-        boolean hasScored = repo.existsByStudentAssessment_Enrollment_Clazz_IdAndSchoolIdAndScoreGreaterThan(
-                classId,
-                schoolId,
-                0);
-
-        if (hasScored) {
-            return true;
-        }
-
-        return repo.existsByStudentAssessment_Enrollment_Clazz_IdAndSchoolIdAndCycle_StatusNot(
-                classId,
-                schoolId,
-                ClassSubjectAssessmentLifeCycle.Status.DRAFT);
+        return repo.hasGradeActivityByClass(classId, schoolId, STARTED);
     }
 
     @Override
     public boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId,
             String schoolId) {
-        boolean hasScored = repo
-                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndSchoolIdAndScoreGreaterThan(
-                        classId,
-                        subjectId,
-                        schoolId,
-                        0);
-
-        if (hasScored) {
-            return true;
-        }
-
-        return repo
-                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndSchoolIdAndCycle_StatusNot(
-                        classId,
-                        subjectId,
-                        schoolId,
-                        ClassSubjectAssessmentLifeCycle.Status.DRAFT);
+        return repo.hasGradeActivityByClassAndSubject(classId, subjectId, schoolId, STARTED);
     }
 
     @Override
     public boolean existsGradeActivityByClassIdAndSubjectIdAndAcademicYearIdAndSchoolId(String classId,
             String subjectId, String academicYearId, String schoolId) {
-        boolean hasScored = repo
-                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndScoreGreaterThan(
-                        classId,
-                        subjectId,
-                        academicYearId,
-                        schoolId,
-                        0);
-
-        if (hasScored) {
-            return true;
-        }
-
-        return repo
-                .existsByStudentAssessment_Enrollment_Clazz_IdAndStudentAssessment_TeacherSubject_Subject_IdAndStudentAssessment_Enrollment_AcademicYear_IdAndSchoolIdAndCycle_StatusNot(
-                        classId,
-                        subjectId,
-                        academicYearId,
-                        schoolId,
-                        ClassSubjectAssessmentLifeCycle.Status.DRAFT);
+        return repo.hasGradeActivityByClassSubjectAndYear(classId, subjectId, academicYearId, schoolId, STARTED);
     }
 
     @Override

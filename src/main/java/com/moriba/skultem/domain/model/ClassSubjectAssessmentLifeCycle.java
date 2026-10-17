@@ -27,6 +27,10 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
     private CaFrequency caFrequency;
     private Integer caEntries;
     private Integer configVersion;
+    // The CA components (name + share of the whole assessment) and the formal part's name, frozen with the rest.
+    // Empty = the CA is caEntries equal recordings.
+    private final List<com.moriba.skultem.domain.vo.CaComponent> caComponents = new java.util.ArrayList<>();
+    private String formalLabel;
     private Instant structureFrozenAt;
     // Continuous assessment only: when the CA recordings were submitted as complete. Until then the formal test
     // can't be entered; after it, the recordings are closed.
@@ -81,6 +85,9 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         this.formalPercentage = resolved.formalPercentage();
         this.caFrequency = resolved.caFrequency();
         this.caEntries = resolved.caEntries();
+        this.caComponents.clear();
+        this.caComponents.addAll(resolved.components());
+        this.formalLabel = resolved.formalLabel();
         this.configVersion = config.getVersion();
     }
 
@@ -92,10 +99,12 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
     // Returns whether anything actually changed (an assessment already on the right setup is left alone).
     public boolean resyncStructure(AssessmentConfiguration config) {
         var before = List.of(String.valueOf(structure), String.valueOf(caPercentage), String.valueOf(formalPercentage),
-                String.valueOf(caFrequency), String.valueOf(caEntries));
+                String.valueOf(caFrequency), String.valueOf(caEntries),
+                String.valueOf(caComponents), String.valueOf(formalLabel));
         applyConfiguration(config);
         var after = List.of(String.valueOf(structure), String.valueOf(caPercentage), String.valueOf(formalPercentage),
-                String.valueOf(caFrequency), String.valueOf(caEntries));
+                String.valueOf(caFrequency), String.valueOf(caEntries), String.valueOf(caComponents),
+                String.valueOf(formalLabel));
         boolean changed = !before.equals(after);
         if (changed) {
             this.structureFrozenAt = Instant.now();
@@ -116,6 +125,35 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         this.caEntries = caEntries;
         this.configVersion = configVersion;
         this.structureFrozenAt = structureFrozenAt;
+    }
+
+    public void restoreComponents(String text, String formalLabel) {
+        caComponents.clear();
+        caComponents.addAll(com.moriba.skultem.domain.vo.CaComponent.decode(text));
+        this.formalLabel = formalLabel;
+    }
+
+    public String componentsAsText() {
+        return com.moriba.skultem.domain.vo.CaComponent.encode(caComponents);
+    }
+
+    public List<com.moriba.skultem.domain.vo.CaComponent> getCaComponents() {
+        return java.util.Collections.unmodifiableList(caComponents);
+    }
+
+    // The weight of each CA recording, in recording order - empty when the CA is equal recordings.
+    public List<Integer> caWeights() {
+        return caComponents.stream().map(com.moriba.skultem.domain.vo.CaComponent::weight).toList();
+    }
+
+    // Which CA recording (1-based) is filled in from the attendance register, or 0 when none is.
+    public int attendanceEntryNumber() {
+        for (int i = 0; i < caComponents.size(); i++) {
+            if (caComponents.get(i).fromAttendance()) {
+                return i + 1;
+            }
+        }
+        return 0;
     }
 
     public void restoreCaSubmitted(Instant caSubmittedAt) {

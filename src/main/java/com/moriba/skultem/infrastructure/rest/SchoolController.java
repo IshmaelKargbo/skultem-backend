@@ -93,11 +93,13 @@ public class SchoolController {
     }
 
     @GetMapping
-    @PreAuthorize("@permissionService.isSystemAdmin()")
+    @PreAuthorize("@permissionService.hasAnyPlatformPermission('SCHOOLS', 'BILLING', 'MARKETING', 'SUPPORT')")
     public ApiResponse<List<SchoolDTO>> list(@RequestParam(required = true, defaultValue = "10") Integer size,
                                              @RequestParam(required = true, defaultValue = "1") Integer page,
-                                             @RequestParam(required = false) String query) {
-        var res = listSchoolUseCase.execute(page - 1, size, query);
+                                             @RequestParam(required = false) String query,
+                                             @RequestParam(required = false) String status,
+                                             @RequestParam(required = false) String type) {
+        var res = listSchoolUseCase.execute(page - 1, size, query, status, type);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,

@@ -12,5 +12,7 @@ public interface AssessmentTemplateRepository {
 
     Optional<AssessmentTemplate> findByIdAndSchoolId(String id, String schoolId);
 
+    void deleteByIdAndSchoolId(String id, String schoolId);
+
     Page<AssessmentTemplate> findAllBySchoolId(String schoolId, Pageable pageable);
 }

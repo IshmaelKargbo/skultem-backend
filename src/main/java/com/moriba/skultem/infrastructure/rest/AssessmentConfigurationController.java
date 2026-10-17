@@ -24,7 +24,7 @@ import com.moriba.skultem.infrastructure.security.SectionScoped;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-// How each management section assesses its students. Administrators (owner, proprietor, admin) configure it;
+// How each assessment template scores its tests (the earlier per-section setup still applies to templates without one). Administrators (owner, proprietor, admin) configure it;
 // teachers can read it, to know how to record, but never change it; parents and accountants don't need it.
 @RestController
 @RequestMapping("/api/v1/assessment-configuration")
@@ -47,22 +47,41 @@ public class AssessmentConfigurationController {
 
     // Administrators only. A section-limited Admin may set their own section's; the school-wide default
     // (no sectionId) stays with whole-school staff (@sectionScope.managementSection).
-    @SectionScoped
-    @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL') and @sectionScope.managementSection(#sectionId)")
+    @SectionNeutral
+    @GetMapping("/templates/{templateId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL')")
+    public ApiResponse<AssessmentConfigurationDTO> forTemplate(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @org.springframework.web.bind.annotation.PathVariable String templateId) {
+        return new ApiResponse<>("success", 200, "Assessment configuration fetched successfully",
+                listUseCase.forTemplate(school, templateId));
+    }
+
+    @SectionNeutral
+    @PutMapping("/templates/{templateId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'PRINCIPAL')")
     public ApiResponse<SaveResponse> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
-            @RequestParam(required = false) String sectionId,
+            @org.springframework.web.bind.annotation.PathVariable String templateId,
             @Valid @RequestBody SaveAssessmentConfigurationDTO param) {
         var plan = param.plan() == null ? java.util.List.<com.moriba.skultem.domain.model.AssessmentConfiguration.PlanEntry>of()
                 : param.plan().stream().map(p -> new com.moriba.skultem.domain.model.AssessmentConfiguration.PlanEntry(
-                        p.termId(), p.assessmentName(), p.usesCa(), p.caEntries())).toList();
-        var res = saveUseCase.execute(school, userId, sectionId, param.structure(),
+                        p.termId(), p.assessmentName(), p.usesCa(), p.caEntries(),
+                        p.caComponents() == null ? java.util.List.<com.moriba.skultem.domain.vo.CaComponent>of()
+                                : p.caComponents().stream()
+                                        .map(c -> new com.moriba.skultem.domain.vo.CaComponent(c.name(), c.weight(), c.source()))
+                                        .toList(),
+                        p.formalLabel())).toList();
+        var res = saveUseCase.execute(school, userId, templateId, param.structure(),
                 param.caPercentage() == null ? 0 : param.caPercentage(),
                 param.formalPercentage() == null ? 100 : param.formalPercentage(), param.caFrequency(),
                 param.caEntries() == null ? 0 : param.caEntries(), plan,
-                param.applyToUnstarted() == null || param.applyToUnstarted());
+                param.applyToUnstarted() == null || param.applyToUnstarted(),
+                param.caComponents() == null ? java.util.List.<com.moriba.skultem.domain.vo.CaComponent>of()
+                        : param.caComponents().stream()
+                                .map(c -> new com.moriba.skultem.domain.vo.CaComponent(c.name(), c.weight(), c.source())).toList(),
+                param.formalLabel());
         return new ApiResponse<>("success", 200,
                 res.applied() == null ? "Assessment configuration saved. It applies to assessments that open from now on."
                         : "Assessment configuration saved. " + res.applied(),
@@ -79,13 +98,13 @@ public class AssessmentConfigurationController {
     // configuration in force now, instead of leaving it stuck with whatever it was frozen with before the
     // config changed - see RefreshUnstartedAssessmentsUseCase. Anything with even one recorded score is
     // left exactly as it is.
-    @SectionScoped
-    @PostMapping("/apply-to-unstarted")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL') and @sectionScope.managementSection(#sectionId)")
+    @SectionNeutral
+    @PostMapping("/templates/{templateId}/apply-to-unstarted")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL')")
     public ApiResponse<RefreshUnstartedAssessmentsUseCase.Result> applyToUnstarted(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = false) String sectionId) {
-        var res = refreshUnstartedUseCase.execute(school, sectionId);
+            @org.springframework.web.bind.annotation.PathVariable String templateId) {
+        var res = refreshUnstartedUseCase.execute(school, templateId);
         return new ApiResponse<>("success", 200, res.toString(), res);
     }
 }

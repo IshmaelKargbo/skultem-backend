@@ -8,9 +8,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.moriba.skultem.infrastructure.persistence.entity.AssessmentConfigurationEntity;
 
 public interface AssessmentConfigurationJpaRepository extends JpaRepository<AssessmentConfigurationEntity, String> {
-    Optional<AssessmentConfigurationEntity> findBySchoolIdAndManagementSectionIdIsNull(String schoolId);
+    Optional<AssessmentConfigurationEntity> findBySchoolIdAndManagementSectionIdIsNullAndAssessmentTemplateIdIsNull(
+            String schoolId);
 
-    Optional<AssessmentConfigurationEntity> findBySchoolIdAndManagementSectionId(String schoolId, String sectionId);
+    Optional<AssessmentConfigurationEntity> findBySchoolIdAndManagementSectionIdAndAssessmentTemplateIdIsNull(
+            String schoolId, String sectionId);
+
+    Optional<AssessmentConfigurationEntity> findBySchoolIdAndAssessmentTemplateId(String schoolId, String templateId);
 
     List<AssessmentConfigurationEntity> findAllBySchoolId(String schoolId);
 }

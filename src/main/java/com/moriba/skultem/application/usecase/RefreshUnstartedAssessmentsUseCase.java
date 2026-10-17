@@ -40,13 +40,14 @@ public class RefreshUnstartedAssessmentsUseCase {
     private final AssessmentStructureService structureService;
 
     @AuditLogAnnotation(action = "ASSESSMENT_CONFIGURATION_APPLIED_TO_UNSTARTED")
-    public Result execute(String schoolId, String sectionId) {
-        var levels = structureService.levelsOfSection(schoolId, sectionId);
+    public Result execute(String schoolId, String templateId) {
         var candidates = cycleRepo.findAllOpenBySchool(schoolId).stream()
                 .filter(cycle -> cycle.isStructureFrozen())
                 // A term that has closed is history - its (empty) assessments are never rewritten.
                 .filter(cycle -> cycle.getTerm() == null || cycle.getTerm().getStatus() != com.moriba.skultem.domain.model.Term.Status.CLOSED)
-                .filter(cycle -> levels == null || levels.contains(cycle.getSubject().getSession().getClazz().getLevel()))
+                .filter(cycle -> templateId == null || (cycle.getAssessment() != null
+                        && cycle.getAssessment().getTemplate() != null
+                        && templateId.equals(cycle.getAssessment().getTemplate().getId())))
                 .toList();
 
         var toSave = new ArrayList<com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle>();
@@ -57,7 +58,7 @@ public class RefreshUnstartedAssessmentsUseCase {
                 skipped++;
                 continue;
             }
-            var config = structureService.forLevel(schoolId, cycle.getSubject().getSession().getClazz().getLevel());
+            var config = structureService.forCycle(cycle);
             if (cycle.resyncStructure(config)) {
                 toSave.add(cycle);
             }

@@ -19,6 +19,17 @@ public class ClassSubjectAssessmentLifeCycleAdapter implements ClassSubjectAsses
     private final ClassSubjectAssessmentLifeCycleJpaRepository repo;
 
     @Override
+    public java.util.List<ClassSubjectAssessmentLifeCycle> findAllByTemplate(String templateId) {
+        return repo.findAllByTemplateId(templateId).stream().map(ClassSubjectAssessmentLifeCycleMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public long countByTemplate(String templateId) {
+        return repo.countByTemplateId(templateId);
+    }
+
+    @Override
     public void save(ClassSubjectAssessmentLifeCycle domain) {
         var entity = ClassSubjectAssessmentLifeCycleMapper.toEntity(domain);
         repo.save(entity);

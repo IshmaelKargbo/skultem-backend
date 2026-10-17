@@ -25,8 +25,18 @@ public record AssessmentConfigurationDTO(
         String updatedBy,
         // Per-term, per-assessment overrides: which assessments use CA + formal test in which term, and how many CA
         // recordings each has.
-        java.util.List<PlanItem> plan) {
+        java.util.List<PlanItem> plan,
+        // Optional: the CA split into named, weighted parts (each a share of the whole assessment) and the name of
+        // the formal part. Empty = the CA is caEntries equal recordings.
+        java.util.List<Component> caComponents,
+        String formalLabel,
+        // Set when this is an assessment template's own configuration.
+        String assessmentTemplateId) {
 
-    public record PlanItem(String termId, String assessmentName, boolean usesCa, int caEntries) {
+    public record Component(String name, int weight, String source) {
+    }
+
+    public record PlanItem(String termId, String assessmentName, boolean usesCa, int caEntries,
+            java.util.List<Component> caComponents, String formalLabel) {
     }
 }
