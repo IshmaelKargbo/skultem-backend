@@ -18,5 +18,8 @@ public record AddSystemAdminDTO(
         String givenNames,
 
         @NotBlank(message = "Family name is required")
-        String familyName) {
+        String familyName,
+
+        // A platform role key (see PlatformAccessService); left out means owner, as before.
+        String role) {
 }

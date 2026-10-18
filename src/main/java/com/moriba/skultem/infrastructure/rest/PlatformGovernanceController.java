@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,18 +59,22 @@ public class PlatformGovernanceController {
     public ApiResponse<Me> me() {
         var role = access.roleOf(permissions.currentUserId());
         return new ApiResponse<>("success", 200, "Access fetched successfully",
-                new Me(role.name(), role.label, role.permissions.stream().map(Enum::name).sorted().toList()));
+                new Me(role.key(), role.label(), role.permissions().stream().map(Enum::name).sorted().toList()));
     }
 
     // ---- Roles & permissions ----
 
-    public record RoleInfo(String role, String label, String description, List<String> permissions) {
+    public record RoleInfo(String role, String label, String description, List<String> permissions, boolean custom) {
+        static RoleInfo of(PlatformAccessService.RoleDef r) {
+            return new RoleInfo(r.key(), r.label(), r.description(),
+                    r.permissions().stream().map(Enum::name).sorted().toList(), r.custom());
+        }
     }
 
     public record StaffInfo(String userId, String name, String email, String status, String role, String roleLabel,
             boolean explicit, Instant lastLoginAt) {
         static StaffInfo of(PlatformAccessService.Staff s) {
-            return new StaffInfo(s.userId(), s.name(), s.email(), s.status(), s.role().name(), s.role().label,
+            return new StaffInfo(s.userId(), s.name(), s.email(), s.status(), s.role().key(), s.role().label(),
                     s.explicit(), s.lastLoginAt());
         }
     }
@@ -80,11 +85,21 @@ public class PlatformGovernanceController {
     @GetMapping("/roles")
     @PreAuthorize("@permissionService.hasPlatformPermission('ROLES')")
     public ApiResponse<RolesView> roles() {
-        var roles = java.util.Arrays.stream(PlatformAccessService.Role.values())
-                .map(r -> new RoleInfo(r.name(), r.label, r.description, r.permissions.stream().map(Enum::name).sorted().toList()))
-                .toList();
+        var roles = access.roles().stream().map(RoleInfo::of).toList();
         var staff = access.staff().stream().map(StaffInfo::of).toList();
         return new ApiResponse<>("success", 200, "Roles fetched successfully", new RolesView(roles, staff));
+    }
+
+    public record CreateRole(@NotBlank(message = "Give the role a name") String label, String description,
+            List<String> permissions) {
+    }
+
+    @PostMapping("/roles")
+    @PreAuthorize("@permissionService.hasPlatformPermission('ROLES')")
+    public ApiResponse<RoleInfo> createRole(@AuthenticationPrincipal(expression = "userId") String actorId,
+            @Valid @RequestBody CreateRole param) {
+        return new ApiResponse<>("success", 200, "Role created successfully",
+                RoleInfo.of(access.createRole(param.label(), param.description(), param.permissions(), actorId)));
     }
 
     public record AssignRole(@NotBlank(message = "Choose a role") String role) {

@@ -52,6 +52,7 @@ public class SystemAdminController {
     private final SetSchoolStatusUseCase setSchoolStatusUseCase;
     private final BootstrapSystemAdminUseCase bootstrapSystemAdminUseCase;
     private final AddSystemAdminUseCase addSystemAdminUseCase;
+    private final com.moriba.skultem.application.services.PlatformAccessService platformAccess;
     private final SearchUsersAcrossSchoolsUseCase searchUsersAcrossSchoolsUseCase;
     private final UpdateSchoolUseCase updateSchoolUseCase;
     private final SetSchoolUserStatusUseCase setSchoolUserStatusUseCase;
@@ -155,9 +156,18 @@ public class SystemAdminController {
 
     @PostMapping("/admins")
     @PreAuthorize("@permissionService.hasPlatformPermission('ADMINS')")
-    public ApiResponse<UserDTO> addAdmin(@Valid @RequestBody AddSystemAdminDTO param) {
+    public ApiResponse<UserDTO> addAdmin(@org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "userId") String actorId,
+            @Valid @RequestBody AddSystemAdminDTO param) {
+        // Check the role first so a bad one doesn't leave a new account behind.
+        var role = param.role() == null || param.role().isBlank() ? null : param.role();
+        if (role != null && platformAccess.roles().stream().noneMatch(r -> r.key().equals(role))) {
+            throw new com.moriba.skultem.application.error.RuleException("Unknown role");
+        }
         var res = addSystemAdminUseCase.execute(param.email(), param.password(), param.givenNames(),
                 param.familyName());
+        if (role != null) {
+            platformAccess.assign(res.id(), role, actorId);
+        }
         return new ApiResponse<>("success", 200, "System admin added successfully", res);
     }
 
