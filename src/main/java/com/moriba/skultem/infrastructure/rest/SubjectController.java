@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.SubjectDTO;
 import com.moriba.skultem.application.usecase.CreateSubjectUseCase;
+import com.moriba.skultem.application.usecase.DeleteSubjectUseCase;
 import com.moriba.skultem.application.usecase.GetSubjectUseCase;
 import com.moriba.skultem.application.usecase.ListSubjectBySchoolUseCase;
 import com.moriba.skultem.application.usecase.UpdateSubjectUseCase;
@@ -21,6 +22,7 @@ import com.moriba.skultem.infrastructure.rest.dto.EditSubjectDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -37,6 +39,7 @@ public class SubjectController {
     private final ListSubjectBySchoolUseCase listSubjectBySchoolUseCase;
     private final GetSubjectUseCase getSubjectUseCase;
     private final UpdateSubjectUseCase updateSubjectUseCase;
+    private final DeleteSubjectUseCase deleteSubjectUseCase;
 
     // A Subject (e.g. "Mathematics") is just a school-wide catalog entry with no level of its own -
     // see Subject - so it's section-neutral like the reads below, not scoped.
@@ -59,6 +62,16 @@ public class SubjectController {
             @Valid @RequestBody EditSubjectDTO param) {
         var res = updateSubjectUseCase.execute(school, id, param.name(), param.code(), param.description());
         return new ApiResponse<>("success", 200, "Subject edited successfully", res);
+    }
+
+    @SectionNeutral
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<Void> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        deleteSubjectUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Subject deleted successfully", null);
     }
 
     @SectionNeutral
