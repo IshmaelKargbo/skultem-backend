@@ -230,7 +230,10 @@ public class CreateStudentUseCase {
             List<String> selected = selectionsByGroup.getOrDefault(group.groupId(), List.of());
             if (selected.size() < group.select())
                 throw new RuleException(
-                        "You must select at least " + group.select() + " subject(s) for " + group.name());
+                        "You must select " + group.select() + " subject(s) for " + group.name());
+            if (selected.size() > group.select())
+                throw new RuleException(
+                        "You can only select " + group.select() + " subject(s) for " + group.name());
             if (selected.size() > group.list().size())
                 throw new RuleException(
                         "You can only select up to " + group.list().size() + " subject(s) for " + group.name());
