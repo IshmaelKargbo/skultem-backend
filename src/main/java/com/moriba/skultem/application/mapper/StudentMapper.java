@@ -70,7 +70,8 @@ public class StudentMapper {
                 null,
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment) {
@@ -133,7 +134,8 @@ public class StudentMapper {
                 null,
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, FeeDetail feeDetail) {
@@ -195,7 +197,8 @@ public class StudentMapper {
                 feeDetail,
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, String teacher, int classSize,
@@ -258,7 +261,8 @@ public class StudentMapper {
                 feeDetail,
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, String teacher, int classSize,
@@ -321,6 +325,7 @@ public class StudentMapper {
                 null,
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(),
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
     }
 }

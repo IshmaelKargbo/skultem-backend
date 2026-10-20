@@ -69,6 +69,7 @@ public class StudentController {
         private final UpdateStudentPhotoUseCase updateStudentPhotoUseCase;
         private final ReprocessStudentPhotosUseCase reprocessStudentPhotosUseCase;
         private final UpdateStudentUseCase updateStudentUseCase;
+        private final com.moriba.skultem.application.usecase.ChangeStudentEnrollmentTypeUseCase changeStudentEnrollmentTypeUseCase;
         private final BulkImportStudentsUseCase bulkImportStudentsUseCase;
         private final EndStudentEnrollmentUseCase endStudentEnrollmentUseCase;
         private final ReinstateStudentUseCase reinstateStudentUseCase;
@@ -122,6 +123,18 @@ public class StudentController {
                                 param.familyName(), gender, param.dateOfBirth(), param.nationality(),
                                 param.religion(), param.city(), param.street());
                 return new ApiResponse<>("success", 200, "Student edited successfully", res);
+        }
+
+        // Also re-bills the student: moving between "new" and "old" students adds and removes the fees marked for each.
+        @SectionScoped
+        @PatchMapping("/{id}/enrollment-type")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        public ApiResponse<com.moriba.skultem.application.usecase.ChangeStudentEnrollmentTypeUseCase.Result> changeEnrollmentType(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ChangeEnrollmentTypeDTO param) {
+                var res = changeStudentEnrollmentTypeUseCase.execute(school, id, EnrollmentType.valueOf(param.enrollmentType()));
+                return new ApiResponse<>("success", 200, "Enrollment type updated successfully", res);
         }
 
         @SectionScoped

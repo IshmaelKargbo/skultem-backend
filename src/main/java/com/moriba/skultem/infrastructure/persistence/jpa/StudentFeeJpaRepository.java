@@ -33,6 +33,11 @@ public interface StudentFeeJpaRepository
     void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,
             @Param("schoolId") String schoolId);
 
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM StudentFeeEntity f WHERE f.enrollment.id = :enrollmentId AND f.fee.id = :feeId AND f.schoolId = :schoolId")
+    void deleteByEnrollmentAndFeeAndSchool(@Param("enrollmentId") String enrollmentId, @Param("feeId") String feeId,
+            @Param("schoolId") String schoolId);
+
     @Query("""
                 SELECT COALESCE(SUM(f.fee.amount), 0)
                 FROM StudentFeeEntity f

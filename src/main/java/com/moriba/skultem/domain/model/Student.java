@@ -48,7 +48,12 @@ public class Student extends AggregateRoot<String> {
         NEW, TRANSFER, RE_ENROLLMENT,
         // Already attends the school but is only now being entered into the system - not a new
         // admission and not a transfer, so previous school / last class don't apply.
-        EXISTING
+        EXISTING;
+
+        /** NEW and TRANSFER are charged the "new students" fees; RE_ENROLLMENT and EXISTING the "old students" ones. */
+        public boolean isNewAdmission() {
+            return this == NEW || this == TRANSFER;
+        }
     }
 
     public Student(String id, String schoolId, String photo, String admissionNumber, LocalDate admissionDate,
@@ -103,6 +108,11 @@ public class Student extends AggregateRoot<String> {
         this.religion = religion;
         this.city = city;
         this.street = street;
+        touchNow();
+    }
+
+    public void changeEnrollmentType(EnrollmentType enrollmentType) {
+        this.enrollmentType = enrollmentType;
         touchNow();
     }
 
