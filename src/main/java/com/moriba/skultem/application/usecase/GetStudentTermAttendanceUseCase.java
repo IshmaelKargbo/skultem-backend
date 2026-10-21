@@ -1,8 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 
 // Term-to-date attendance over every school day so far: the students list and class roster columns
 // (execute) and one student's breakdown on their profile / the parent view (executeForStudent).
-// A student only owes the school days since they enrolled - someone who joined in week 6 is measured
-// from week 6, not from the first day of term.
+// Every student is measured over the whole term from its first day, whenever their enrollment was
+// created - schools onboarded mid-term enroll everyone late and then backfill the earlier registers.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -37,24 +35,21 @@ public class GetStudentTermAttendanceUseCase {
         var window = resolveTermSchoolDaysUseCase.execute(schoolId, academicYearId, termId);
         var term = window.term();
 
-        // A student can have more than one enrollment in the year (a class change): their days run from
-        // the earliest one, and their attendance across all of them adds up.
-        Map<String, Instant> enrolledAt = new LinkedHashMap<>();
+        // A student can have more than one enrollment in the year (a class change): their attendance
+        // across all of them adds up.
         Map<String, Long> present = new LinkedHashMap<>();
         if (!window.schoolDays().isEmpty()) {
             for (Object[] row : attendanceRepo.presentCountsByStudent(schoolId, window.academicYear().getId(), classId,
                     sectionScopeService.levels(), term.getStartDate(), window.asOf())) {
-                String studentId = (String) row[0];
-                enrolledAt.merge(studentId, (Instant) row[1], (a, b) -> a.isBefore(b) ? a : b);
-                present.merge(studentId, row[2] == null ? 0L : ((Number) row[2]).longValue(), Long::sum);
+                present.merge((String) row[0], row[2] == null ? 0L : ((Number) row[2]).longValue(), Long::sum);
             }
         }
 
-        List<StudentRow> students = enrolledAt.entrySet().stream().map(entry -> {
-            LocalDate from = countedFrom(term.getStartDate(), entry.getValue());
-            int days = daysFrom(window.schoolDays(), from);
+        LocalDate from = term.getStartDate();
+        int days = window.schoolDays().size();
+        List<StudentRow> students = present.entrySet().stream().map(entry -> {
             // Capped: a record on a day later declared a holiday can't push anyone past 100%.
-            long attended = Math.min(present.get(entry.getKey()), days);
+            long attended = Math.min(entry.getValue(), days);
             return new StudentRow(entry.getKey(), from, days, attended,
                     days == 0 ? null : AttendanceRateCalculator.rate(attended, days));
         }).toList();
@@ -68,13 +63,10 @@ public class GetStudentTermAttendanceUseCase {
         var window = resolveTermSchoolDaysUseCase.execute(schoolId, academicYearId, termId);
         var term = window.term();
 
-        Instant enrolledAt = null;
         long present = 0, late = 0, excused = 0, recorded = 0;
         if (!window.schoolDays().isEmpty()) {
             for (Object[] r : attendanceRepo.statusCountsForStudent(schoolId, studentId, window.academicYear().getId(),
                     term.getStartDate(), window.asOf())) {
-                Instant at = (Instant) r[0];
-                if (at != null && (enrolledAt == null || at.isBefore(enrolledAt))) enrolledAt = at;
                 present += r[1] == null ? 0 : ((Number) r[1]).longValue();
                 late += r[2] == null ? 0 : ((Number) r[2]).longValue();
                 excused += r[3] == null ? 0 : ((Number) r[3]).longValue();
@@ -82,8 +74,8 @@ public class GetStudentTermAttendanceUseCase {
             }
         }
 
-        LocalDate from = enrolledAt == null ? term.getStartDate() : countedFrom(term.getStartDate(), enrolledAt);
-        int days = daysFrom(window.schoolDays(), from);
+        LocalDate from = term.getStartDate();
+        int days = window.schoolDays().size();
 
         // Capped like execute(): records outside the counted days can't overflow it.
         recorded = Math.min(recorded, days);
@@ -94,17 +86,5 @@ public class GetStudentTermAttendanceUseCase {
         return new StudentTermAttendanceDetailDTO(term.getId(), term.getName(), term.getStartDate(), window.asOf(),
                 from, days, present, late, absent, excused, notMarked,
                 days == 0 ? null : AttendanceRateCalculator.rate(attended, days));
-    }
-
-    // The later of the term's start and the day they enrolled (in the server's zone, like the rest of the
-    // app's createdAt dates).
-    private static LocalDate countedFrom(LocalDate termStart, Instant enrolledAt) {
-        if (enrolledAt == null) return termStart;
-        LocalDate enrolled = enrolledAt.atZone(ZoneId.systemDefault()).toLocalDate();
-        return termStart == null || enrolled.isAfter(termStart) ? enrolled : termStart;
-    }
-
-    private static int daysFrom(List<LocalDate> schoolDays, LocalDate from) {
-        return (int) schoolDays.stream().filter(d -> from == null || !d.isBefore(from)).count();
     }
 }
