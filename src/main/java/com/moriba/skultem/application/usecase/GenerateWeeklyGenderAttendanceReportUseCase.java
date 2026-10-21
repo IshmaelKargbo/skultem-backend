@@ -38,8 +38,9 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
     private final AttendanceRepository attendanceRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
 
-    public WeeklyGenderAttendanceDTO execute(String schoolId, String classId, String academicYearId,
-            LocalDate weekOf) {
+    // sectionId/streamId optionally narrow the class to one section and/or stream - null means all of it.
+    public WeeklyGenderAttendanceDTO execute(String schoolId, String classId, String sectionId, String streamId,
+            String academicYearId, LocalDate weekOf) {
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
 
@@ -50,7 +51,11 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
 
         var enrollments = enrollmentRepo
                 .findAllByClassAndAcademicAndSchoolId(classId, academicYear.getId(), schoolId, Pageable.unpaged())
-                .getContent();
+                .getContent()
+                .stream()
+                .filter(e -> sectionId == null || (e.getSection() != null && sectionId.equals(e.getSection().getId())))
+                .filter(e -> streamId == null || (e.getStream() != null && streamId.equals(e.getStream().getId())))
+                .toList();
 
         int boysEnrolled = (int) enrollments.stream()
                 .filter(e -> e.getStudent().getGender() == Gender.MALE)
@@ -59,8 +64,8 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
                 .filter(e -> e.getStudent().getGender() == Gender.FEMALE)
                 .count();
 
-        var rows = attendanceRepo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, academicYear.getId(),
-                start, end);
+        var rows = attendanceRepo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, sectionId, streamId,
+                academicYear.getId(), start, end);
 
         Map<LocalDate, long[]> presentByDate = new LinkedHashMap<>(); // [boysPresent, girlsPresent]
         for (Object[] row : rows) {

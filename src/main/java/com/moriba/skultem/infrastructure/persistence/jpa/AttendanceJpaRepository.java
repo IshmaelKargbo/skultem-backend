@@ -273,6 +273,8 @@ public interface AttendanceJpaRepository
                             JOIN e.student s
                             WHERE a.schoolId = :schoolId
                               AND e.clazz.id = :classId
+                              AND (:sectionId IS NULL OR e.section.id = :sectionId)
+                              AND (:streamId IS NULL OR e.stream.id = :streamId)
                               AND (:academicYearId IS NULL OR e.academicYear.id = :academicYearId)
                               AND a.date BETWEEN :startDate AND :endDate
                               AND a.holiday = false
@@ -282,35 +284,49 @@ public interface AttendanceJpaRepository
     List<Object[]> attendanceCountsByClassGenderAndDateRange(
             @Param("schoolId") String schoolId,
             @Param("classId") String classId,
+            @Param("sectionId") String sectionId,
+            @Param("streamId") String streamId,
             @Param("academicYearId") String academicYearId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
     // See AttendanceRepository#attendanceCountsByClassAndGender. Same present-or-late / non-holiday rules as
-    // attendanceCountsByClassGenderAndDateRange, grouped per class instead of per day.
+    // attendanceCountsByClassGenderAndDateRange, grouped per class + section + stream instead of per day.
+    // Stream is a LEFT JOIN: classes without streams have none, and those rows must still count.
     @Query("""
                             SELECT
                                 e.clazz.id,
                                 e.clazz.name,
+                                sec.id,
+                                sec.name,
+                                st.id,
+                                st.name,
                                 s.gender,
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
                                 COUNT(a)
                             FROM AttendanceEntity a
                             JOIN a.enrollment e
                             JOIN e.student s
+                            JOIN e.section sec
+                            LEFT JOIN e.stream st
                             WHERE a.schoolId = :schoolId
                               AND e.academicYear.id = :academicYearId
                               AND (:classId IS NULL OR e.clazz.id = :classId)
+                              AND (:sectionId IS NULL OR e.section.id = :sectionId)
+                              AND (:streamId IS NULL OR e.stream.id = :streamId)
                               AND e.clazz.level IN :levels
                               AND a.date BETWEEN :startDate AND :endDate
                               AND a.holiday = false
-                            GROUP BY e.clazz.id, e.clazz.name, e.clazz.levelOrder, s.gender
-                            ORDER BY e.clazz.levelOrder, e.clazz.name
+                            GROUP BY e.clazz.id, e.clazz.name, e.clazz.levelOrder, sec.id, sec.name, sec.displayOrder,
+                                     st.id, st.name, s.gender
+                            ORDER BY e.clazz.levelOrder, e.clazz.name, sec.displayOrder, sec.name, st.name
                         """)
     List<Object[]> attendanceCountsByClassAndGender(
             @Param("schoolId") String schoolId,
             @Param("academicYearId") String academicYearId,
             @Param("classId") String classId,
+            @Param("sectionId") String sectionId,
+            @Param("streamId") String streamId,
             @Param("levels") Collection<Level> levels,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
@@ -329,4 +345,81 @@ public interface AttendanceJpaRepository
 
         return findAll(spec, pageable);
     }
+
+    // See AttendanceRepository#presentCountsByStudent. Starts from the enrollment so students with no
+    // records yet still come back (with 0) - the caller needs their enrollment date either way.
+    @Query("""
+                            SELECT
+                                s.id,
+                                e.createdAt,
+                                SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END)
+                            FROM EnrollmentEntity e
+                            JOIN e.student s
+                            LEFT JOIN AttendanceEntity a ON a.enrollment = e
+                                AND a.date BETWEEN :startDate AND :endDate
+                                AND a.holiday = false
+                            WHERE e.schoolId = :schoolId
+                              AND e.academicYear.id = :academicYearId
+                              AND (:classId IS NULL OR e.clazz.id = :classId)
+                              AND e.clazz.level IN :levels
+                            GROUP BY s.id, e.id, e.createdAt
+                        """)
+    List<Object[]> presentCountsByStudent(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("classId") String classId,
+            @Param("levels") Collection<Level> levels,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // See AttendanceRepository#markedDaysByClassSession. Stream is a LEFT JOIN so classes without one count.
+    @Query("""
+                            SELECT
+                                e.clazz.id,
+                                sec.id,
+                                st.id,
+                                a.date
+                            FROM AttendanceEntity a
+                            JOIN a.enrollment e
+                            JOIN e.section sec
+                            LEFT JOIN e.stream st
+                            WHERE a.schoolId = :schoolId
+                              AND e.academicYear.id = :academicYearId
+                              AND e.clazz.level IN :levels
+                              AND a.date BETWEEN :startDate AND :endDate
+                              AND a.holiday = false
+                            GROUP BY e.clazz.id, sec.id, st.id, a.date
+                        """)
+    List<Object[]> markedDaysByClassSession(
+            @Param("schoolId") String schoolId,
+            @Param("academicYearId") String academicYearId,
+            @Param("levels") Collection<Level> levels,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    // See AttendanceRepository#statusCountsForStudent. Same states as the Daily Register: late wins over
+    // present, and excused only counts when the student wasn't there. Starts from the enrollment so the
+    // enrollment date comes back even before anything is recorded.
+    @Query("""
+                            SELECT
+                                e.createdAt,
+                                SUM(CASE WHEN a.present = true AND a.late = false THEN 1 ELSE 0 END),
+                                SUM(CASE WHEN a.late = true THEN 1 ELSE 0 END),
+                                SUM(CASE WHEN a.present = false AND a.late = false AND a.excused = true THEN 1 ELSE 0 END),
+                                COUNT(a)
+                            FROM EnrollmentEntity e
+                            LEFT JOIN AttendanceEntity a ON a.enrollment = e
+                                AND a.date BETWEEN :startDate AND :endDate
+                                AND a.holiday = false
+                            WHERE e.schoolId = :schoolId
+                              AND e.student.id = :studentId
+                              AND e.academicYear.id = :academicYearId
+                            GROUP BY e.id, e.createdAt
+                        """)
+    List<Object[]> statusCountsForStudent(
+            @Param("schoolId") String schoolId,
+            @Param("studentId") String studentId,
+            @Param("academicYearId") String academicYearId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

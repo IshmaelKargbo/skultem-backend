@@ -2,12 +2,17 @@ package com.moriba.skultem.application.usecase;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.moriba.skultem.application.dto.ClassInspectionReportDTO;
 import com.moriba.skultem.application.dto.InspectionReportDTO;
 import com.moriba.skultem.application.dto.InspectionReportType;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.services.SectionScopeService;
+import com.moriba.skultem.domain.repository.ClassSessionRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +32,28 @@ public class GenerateInspectionReportUseCase {
     private final GenerateDailyAttendanceRegisterUseCase generateDailyAttendanceRegisterUseCase;
     private final GenerateMonthlyAttendanceSummaryUseCase generateMonthlyAttendanceSummaryUseCase;
     private final GenerateTermAttendanceSummaryUseCase generateTermAttendanceSummaryUseCase;
+    private final ClassSessionRepository classSessionRepo;
+    private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final SectionScopeService sectionScopeService;
+
+    // "All classes": the single-class report above, run for every class session of the year that the
+    // caller's section scope covers, in the same order as the class dropdown (class rank, stream,
+    // section). Still no school-wide calculation of its own - each block is exactly that class's report.
+    public List<ClassInspectionReportDTO> executeForAllClasses(String schoolId, String academicYearId,
+            InspectionReportType reportType, String termId, LocalDate date, Integer year, Integer month) {
+        var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
+        var sessions = classSessionRepo.findBySchoolIdAndAcademicYearId(schoolId, academicYear.getId(),
+                sectionScopeService.levels(), Pageable.unpaged()).getContent();
+
+        return sessions.stream()
+                .map(session -> new ClassInspectionReportDTO(
+                        session.getId(),
+                        session.getClazz().getName(),
+                        session.getSection() != null ? session.getSection().getName() : null,
+                        session.getStream() != null ? session.getStream().getName() : null,
+                        execute(schoolId, reportType, session.getId(), termId, date, year, month)))
+                .toList();
+    }
 
     public InspectionReportDTO execute(String schoolId, InspectionReportType reportType, String classSessionId,
             String termId, LocalDate date, Integer year, Integer month) {

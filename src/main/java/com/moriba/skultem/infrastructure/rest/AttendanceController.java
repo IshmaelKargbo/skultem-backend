@@ -18,7 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.AttendanceDTO;
 import com.moriba.skultem.application.dto.AttendanceHistoryDTO;
+import com.moriba.skultem.application.dto.AttendanceMarkingComplianceDTO;
+import com.moriba.skultem.application.dto.StudentTermAttendanceDTO;
+import com.moriba.skultem.application.dto.StudentTermAttendanceDetailDTO;
 import com.moriba.skultem.application.dto.ClassAttendanceSummaryDTO;
+import com.moriba.skultem.application.dto.ClassInspectionReportDTO;
 import com.moriba.skultem.application.dto.ClassSessionAttendanceDTO;
 import com.moriba.skultem.application.dto.InspectionReportDTO;
 import com.moriba.skultem.application.dto.InspectionReportType;
@@ -30,6 +34,8 @@ import com.moriba.skultem.application.usecase.DeleteClassSessionAttendanceUseCas
 import com.moriba.skultem.application.usecase.GenerateClassAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GenerateDailyAttendanceRegisterUseCase;
 import com.moriba.skultem.application.usecase.GenerateInspectionReportUseCase;
+import com.moriba.skultem.application.usecase.GetAttendanceMarkingComplianceUseCase;
+import com.moriba.skultem.application.usecase.GetStudentTermAttendanceUseCase;
 import com.moriba.skultem.application.usecase.GenerateMonthlyAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GenerateTermAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GetAttendanceUseCase;
@@ -60,6 +66,8 @@ public class AttendanceController {
     private final GenerateMonthlyAttendanceSummaryUseCase generateMonthlyAttendanceSummaryUseCase;
     private final GenerateTermAttendanceSummaryUseCase generateTermAttendanceSummaryUseCase;
     private final GenerateInspectionReportUseCase generateInspectionReportUseCase;
+    private final GetStudentTermAttendanceUseCase getStudentTermAttendanceUseCase;
+    private final GetAttendanceMarkingComplianceUseCase getAttendanceMarkingComplianceUseCase;
     private final GenerateClassAttendanceSummaryUseCase generateClassAttendanceSummaryUseCase;
 
     @GetMapping("/{id}")
@@ -214,6 +222,75 @@ public class AttendanceController {
         var res = generateInspectionReportUseCase.execute(school, reportType, classSessionId, termId, date, year,
                 month);
         return new ApiResponse<>("success", 200, "Inspection report generated successfully", res);
+    }
+
+    // Every class at once, one block per class - scoped to the caller's sections inside the use case
+    // (a section-scoped admin only gets their own sections' classes).
+    @SectionScoped
+    @GetMapping("/inspection-report/all-classes")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
+    public ApiResponse<List<ClassInspectionReportDTO>> getInspectionReportForAllClasses(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = true) InspectionReportType reportType,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId,
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        var res = generateInspectionReportUseCase.executeForAllClasses(school, academicYearId, reportType, termId,
+                date, year, month);
+        return new ApiResponse<>("success", 200, "Inspection report generated successfully", res);
+    }
+
+    // Term-to-date attendance per student over every school day so far - the students list's Attendance column.
+    @SectionScoped
+    @GetMapping("/term-to-date/students")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
+    public ApiResponse<StudentTermAttendanceDTO> getStudentTermAttendance(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId) {
+        var res = getStudentTermAttendanceUseCase.execute(school, academicYearId, termId, null);
+        return new ApiResponse<>("success", 200, "Student term attendance fetched successfully", res);
+    }
+
+    // One class's roster - the class page. Same access as that page's other roster data (class attention),
+    // plus accountants, who see the roster too.
+    @SectionScoped
+    @GetMapping("/term-to-date/class/{classId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.clazz(#school, #classId)")
+    public ApiResponse<StudentTermAttendanceDTO> getClassTermAttendance(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String classId,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId) {
+        var res = getStudentTermAttendanceUseCase.execute(school, academicYearId, termId, classId);
+        return new ApiResponse<>("success", 200, "Class term attendance fetched successfully", res);
+    }
+
+    // One student's term breakdown - their profile's attendance section, and the parent's view of their own child.
+    @SectionScoped
+    @GetMapping("/term-to-date/student/{studentId}")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
+    public ApiResponse<StudentTermAttendanceDetailDTO> getStudentTermAttendanceDetail(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId) {
+        var res = getStudentTermAttendanceUseCase.executeForStudent(school, studentId, academicYearId, termId);
+        return new ApiResponse<>("success", 200, "Student term attendance fetched successfully", res);
+    }
+
+    // How completely each class's register has been marked this term so far.
+    @SectionScoped
+    @GetMapping("/marking-compliance")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
+    public ApiResponse<AttendanceMarkingComplianceDTO> getMarkingCompliance(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String academicYearId,
+            @RequestParam(required = false) String termId) {
+        var res = getAttendanceMarkingComplianceUseCase.execute(school, academicYearId, termId);
+        return new ApiResponse<>("success", 200, "Attendance marking compliance fetched successfully", res);
     }
 
     private MarkRecord toMarkRecord(ClassAttendanceMarkDTO param) {

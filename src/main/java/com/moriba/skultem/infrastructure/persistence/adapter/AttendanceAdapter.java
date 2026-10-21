@@ -122,14 +122,17 @@ public class AttendanceAdapter implements AttendanceRepository {
 
     @Override
     public List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId,
-            String academicYearId, LocalDate startDate, LocalDate endDate) {
-        return repo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, academicYearId, startDate, endDate);
+            String sectionId, String streamId, String academicYearId, LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, sectionId, streamId, academicYearId,
+                startDate, endDate);
     }
 
     @Override
     public List<Object[]> attendanceCountsByClassAndGender(String schoolId, String academicYearId, String classId,
-            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, LocalDate startDate, LocalDate endDate) {
-        return repo.attendanceCountsByClassAndGender(schoolId, academicYearId, classId, levels, startDate, endDate);
+            String sectionId, String streamId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
+            LocalDate startDate, LocalDate endDate) {
+        return repo.attendanceCountsByClassAndGender(schoolId, academicYearId, classId, sectionId, streamId, levels,
+                startDate, endDate);
     }
 
     @Override
@@ -137,4 +140,22 @@ public class AttendanceAdapter implements AttendanceRepository {
         repo.deleteAllByEnrollmentAndSchool(enrollmentId, schoolId);
     }
     
+
+    @Override
+    public List<Object[]> presentCountsByStudent(String schoolId, String academicYearId, String classId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, LocalDate startDate, LocalDate endDate) {
+        return repo.presentCountsByStudent(schoolId, academicYearId, classId, levels, startDate, endDate);
+    }
+
+    @Override
+    public List<Object[]> statusCountsForStudent(String schoolId, String studentId, String academicYearId,
+            LocalDate startDate, LocalDate endDate) {
+        return repo.statusCountsForStudent(schoolId, studentId, academicYearId, startDate, endDate);
+    }
+
+    @Override
+    public List<Object[]> markedDaysByClassSession(String schoolId, String academicYearId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, LocalDate startDate, LocalDate endDate) {
+        return repo.markedDaysByClassSession(schoolId, academicYearId, levels, startDate, endDate);
+    }
 }

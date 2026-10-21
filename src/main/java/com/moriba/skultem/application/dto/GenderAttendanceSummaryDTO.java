@@ -4,7 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 // Result of GenerateGenderAttendanceSummaryUseCase: boys/girls present for a week, month, term or
-// academic year, for the whole school (totals) and per class (classes). "Present" counts are
+// academic year, for the whole school (totals) and per class (classes - one row per class + section
+// + stream, stream null when the class has none). "Present" counts are
 // present-or-late student-days; percentages are over recorded non-holiday student-days.
 public record GenderAttendanceSummaryDTO(
         String period,
@@ -26,6 +27,10 @@ public record GenderAttendanceSummaryDTO(
     public record ClassGenderAttendanceDTO(
             String classId,
             String className,
+            String sectionId,
+            String sectionName,
+            String streamId,
+            String streamName,
             GenderAttendanceTotalsDTO totals) {
     }
 }

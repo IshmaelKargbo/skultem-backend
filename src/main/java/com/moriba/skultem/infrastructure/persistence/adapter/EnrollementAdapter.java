@@ -222,4 +222,10 @@ public class EnrollementAdapter implements EnrollmentRepository {
             Level level, Collection<Level> levels) {
         return repo.demographicsByFilters(schoolId, academicYearId, classId, level, levels);
     }
+
+    @Override
+    public List<Object[]> firstEnrollmentByClassSession(String schoolId, String academicYearId,
+            Collection<Level> levels) {
+        return repo.firstEnrollmentByClassSession(schoolId, academicYearId, levels);
+    }
 }

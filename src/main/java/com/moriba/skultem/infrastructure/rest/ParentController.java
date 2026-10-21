@@ -136,6 +136,21 @@ public class ParentController {
                                 "Email added. The parent now has portal access.", res);
         }
 
+        // One guardian's children, for the parent view page - the same list that guardian sees in their own
+        // portal (ListStudentByParentUseCase resolves the parent from its login), with the same access as
+        // GET /{id}.
+        @SectionScoped
+        @GetMapping("/{id}/students")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.parent(#school, #id)")
+        public ApiResponse<List<StudentDTO>> listStudentsOfParent(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id) {
+                var parent = parentRepo.findByIdAndSchoolId(id, school)
+                                .orElseThrow(() -> new NotFoundException("Parent not found"));
+                var res = listStudentByParentUseCase.execute(school, parent.getUser().getId(), 1, 0);
+                return new ApiResponse<>("success", 200, "Parent students fetched successfully", res.getContent());
+        }
+
         @SectionScoped
         @GetMapping("/{id}")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.parent(#school, #id)")

@@ -111,6 +111,12 @@ public class Student extends AggregateRoot<String> {
         touchNow();
     }
 
+    // Links the student to a different guardian (the parent account that sees them in the portal).
+    public void changeGuardian(Parent parent) {
+        this.parent = parent;
+        touchNow();
+    }
+
     public void changeEnrollmentType(EnrollmentType enrollmentType) {
         this.enrollmentType = enrollmentType;
         touchNow();

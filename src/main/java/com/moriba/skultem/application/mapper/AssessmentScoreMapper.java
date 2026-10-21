@@ -22,7 +22,8 @@ public class AssessmentScoreMapper {
                 param.getStatus().name(),
                 "",
                 "",
-                param.isPassed());
+                param.isPassed())
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade, String trend) {
@@ -52,7 +53,8 @@ public class AssessmentScoreMapper {
                 param.getStatus().name(),
                 grade,
                 trend,
-                passed);
+                passed)
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade) {
@@ -82,7 +84,8 @@ public class AssessmentScoreMapper {
                 param.getStatus().name(),
                 grade,
                 "",
-                passed);
+                passed)
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
     }
 
     // The plain score plus, when this assessment was opened as continuous assessment, its frozen structure and
@@ -123,6 +126,6 @@ public class AssessmentScoreMapper {
                 cycle.getFormalLabel());
         return new AssessmentScoreDTO(base.id(), base.name(), base.assessment(), base.term(), base.student(),
                 base.teacher(), base.subject(), base.clazz(), base.score(), base.weight(), base.weightScore(),
-                base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous);
+                base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous, base.classSession());
     }
 }

@@ -162,4 +162,20 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentEntity,
 
                 return findAll(spec, pageable);
         }
+
+        // See EnrollmentRepository#firstEnrollmentByClassSession. Stream is a LEFT JOIN so classes without one count.
+        @Query("""
+                        SELECT e.clazz.id, sec.id, st.id, MIN(e.createdAt)
+                        FROM EnrollmentEntity e
+                        JOIN e.section sec
+                        LEFT JOIN e.stream st
+                        WHERE e.schoolId = :schoolId
+                          AND e.academicYear.id = :academicYearId
+                          AND e.clazz.level IN :levels
+                        GROUP BY e.clazz.id, sec.id, st.id
+                        """)
+        List<Object[]> firstEnrollmentByClassSession(
+                        @Param("schoolId") String schoolId,
+                        @Param("academicYearId") String academicYearId,
+                        @Param("levels") Collection<Level> levels);
 }

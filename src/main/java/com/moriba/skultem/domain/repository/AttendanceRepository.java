@@ -54,15 +54,34 @@ public interface AttendanceRepository {
     List<Object[]> attendanceCountsBySchoolAndDateRange(String schoolId, String academicYearId, LocalDate startDate,
             LocalDate endDate);
 
-    List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId, String academicYearId,
-            LocalDate startDate, LocalDate endDate);
+    // sectionId/streamId: optional narrowing within the class - null means any.
+    List<Object[]> attendanceCountsByClassGenderAndDateRange(String schoolId, String classId, String sectionId,
+            String streamId, String academicYearId, LocalDate startDate, LocalDate endDate);
 
-    // Rows of [classId, className, Gender, presentOrLate, totalRecorded] for non-holiday records in the range.
+    // Rows of [classId, className, sectionId, sectionName, streamId, streamName, Gender, presentOrLate,
+    // totalRecorded] for non-holiday records in the range - streamId/streamName are null for no stream.
+    // classId/sectionId/streamId are optional filters - null means any.
     List<Object[]> attendanceCountsByClassAndGender(String schoolId, String academicYearId, String classId,
-            Collection<Level> levels, LocalDate startDate, LocalDate endDate);
+            String sectionId, String streamId, Collection<Level> levels, LocalDate startDate, LocalDate endDate);
 
     Page<Attendance> runReport(String schoolId, List<Filter> filters, Collection<Level> levels,
             Pageable pageable);
 
     void deleteAllByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
+
+    // One row per enrollment of the year (classes at these levels; classId optionally narrows to one class),
+    // including enrollments with no records: [studentId, enrolledAt (Instant), presentOrLate] over
+    // non-holiday records in the range. A student who changed class has a row per enrollment.
+    List<Object[]> presentCountsByStudent(String schoolId, String academicYearId, String classId,
+            Collection<Level> levels, LocalDate startDate, LocalDate endDate);
+
+    // One row per enrollment of the student's year, including ones with no records: [enrolledAt (Instant),
+    // present (on time), late, excused, totalRecorded] over non-holiday records in the range.
+    List<Object[]> statusCountsForStudent(String schoolId, String studentId, String academicYearId,
+            LocalDate startDate, LocalDate endDate);
+
+    // Rows of [classId, sectionId, streamId, date] - each day a class (class + section + stream) has any
+    // non-holiday record in the range, i.e. the days it was marked. streamId is null for no stream.
+    List<Object[]> markedDaysByClassSession(String schoolId, String academicYearId, Collection<Level> levels,
+            LocalDate startDate, LocalDate endDate);
 }

@@ -95,4 +95,8 @@ public interface EnrollmentRepository {
         // levels: always applied (full catalog for whole-school callers) - see SectionScope.
         List<Object[]> demographicsByFilters(String schoolId, String academicYearId, String classId, Level level,
                         Collection<Level> levels);
+
+        // Rows of [classId, sectionId, streamId, firstEnrolledAt (Instant)] - when each class (class +
+        // section + stream) of the year got its first student; streamId is null for no stream.
+        List<Object[]> firstEnrollmentByClassSession(String schoolId, String academicYearId, Collection<Level> levels);
 }

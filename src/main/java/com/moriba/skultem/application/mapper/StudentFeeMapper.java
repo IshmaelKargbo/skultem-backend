@@ -53,7 +53,8 @@ public class StudentFeeMapper {
                 status,
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                discount);
+                discount,
+                ClassSessionLabel.of(param.getEnrollment()));
     }
 
     private static String resolveStatus(BigDecimal amountPaid, BigDecimal netPayable, LocalDate dueDate) {

@@ -19,6 +19,7 @@ import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.service.AttendanceRateCalculator;
 import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.Level;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class GenerateGenderAttendanceSummaryUseCase {
     private final SectionScopeService sectionScopeService;
 
     public GenderAttendanceSummaryDTO execute(String schoolId, String academicYearId, Period period, LocalDate date,
-            String termId, String classId) {
+            String termId, String classId, String sectionId, String streamId, Level level) {
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
         LocalDate start;
@@ -66,23 +67,29 @@ public class GenerateGenderAttendanceSummaryUseCase {
             }
         }
 
-        var rows = attendanceRepo.attendanceCountsByClassAndGender(schoolId, academicYear.getId(), classId,
-                sectionScopeService.levels(), start, end);
+        // level narrows the caller's own section scope - it can never widen it.
+        var levels = sectionScopeService.levels().stream()
+                .filter(l -> level == null || l == level)
+                .toList();
+        List<Object[]> rows = levels.isEmpty() ? List.of()
+                : attendanceRepo.attendanceCountsByClassAndGender(schoolId, academicYear.getId(), classId,
+                        sectionId, streamId, levels, start, end);
 
-        // [boysPresent, girlsPresent, boysRecorded, girlsRecorded]
-        Map<String, long[]> byClass = new LinkedHashMap<>();
-        Map<String, String> names = new LinkedHashMap<>();
+        // One entry per class + section + stream, in the query's order (class rank, then section, then stream).
+        // counts: [boysPresent, girlsPresent, boysRecorded, girlsRecorded]
+        Map<String, long[]> byGroup = new LinkedHashMap<>();
+        Map<String, Object[]> groups = new LinkedHashMap<>();
         long[] school = new long[4];
 
         for (Object[] row : rows) {
-            String cid = (String) row[0];
-            names.put(cid, (String) row[1]);
-            Gender gender = (Gender) row[2];
-            long present = ((Number) row[3]).longValue();
-            long recorded = ((Number) row[4]).longValue();
+            String key = row[0] + "|" + row[2] + "|" + row[4];
+            groups.putIfAbsent(key, row);
+            Gender gender = (Gender) row[6];
+            long present = ((Number) row[7]).longValue();
+            long recorded = ((Number) row[8]).longValue();
 
             int offset = gender == Gender.MALE ? 0 : 1;
-            long[] counts = byClass.computeIfAbsent(cid, k -> new long[4]);
+            long[] counts = byGroup.computeIfAbsent(key, k -> new long[4]);
             counts[offset] += present;
             counts[offset + 2] += recorded;
             school[offset] += present;
@@ -90,7 +97,11 @@ public class GenerateGenderAttendanceSummaryUseCase {
         }
 
         List<ClassGenderAttendanceDTO> classes = new ArrayList<>();
-        byClass.forEach((cid, counts) -> classes.add(new ClassGenderAttendanceDTO(cid, names.get(cid), totals(counts))));
+        byGroup.forEach((key, counts) -> {
+            Object[] g = groups.get(key);
+            classes.add(new ClassGenderAttendanceDTO((String) g[0], (String) g[1], (String) g[2], (String) g[3],
+                    (String) g[4], (String) g[5], totals(counts)));
+        });
 
         return new GenderAttendanceSummaryDTO(period.name(), start, end, totals(school), classes);
     }

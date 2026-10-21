@@ -61,6 +61,7 @@ import lombok.RequiredArgsConstructor;
 public class StudentController {
         private final CreateStudentUseCase createStudentUseCase;
         private final GetStudentUseCase getStudentUseCase;
+        private final com.moriba.skultem.application.usecase.ChangeStudentGuardianUseCase changeStudentGuardianUseCase;
         private final GetStudentFinanceOverviewUseCase getStudentFinanceOverviewUseCase;
         private final ListSubjectFeesByStudentUseCase listSubjectFeesByStudentUseCase;
         private final RankStudentUseCase rankStudentUseCase;
@@ -123,6 +124,22 @@ public class StudentController {
                                 param.familyName(), gender, param.dateOfBirth(), param.nationality(),
                                 param.religion(), param.city(), param.street());
                 return new ApiResponse<>("success", 200, "Student edited successfully", res);
+        }
+
+        // Links the student to another guardian: an existing one (parentId), or any account already at the
+        // school (userId - given a guardian profile if they have none). Both the student and an existing
+        // guardian must be in the caller's section scope.
+        @SectionScoped
+        @PatchMapping("/{id}/guardian")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id) and @sectionScope.parent(#school, #param.parentId())")
+        public ApiResponse<StudentDTO> changeGuardian(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ChangeGuardianDTO param) {
+                var target = new com.moriba.skultem.application.usecase.ChangeStudentGuardianUseCase.Target(
+                                param.parentId(), param.userId(), param.phone(), param.street(), param.city());
+                var res = changeStudentGuardianUseCase.execute(school, id, target, param.relationship());
+                return new ApiResponse<>("success", 200, "Guardian updated successfully", res);
         }
 
         // Also re-bills the student: moving between "new" and "old" students adds and removes the fees marked for each.

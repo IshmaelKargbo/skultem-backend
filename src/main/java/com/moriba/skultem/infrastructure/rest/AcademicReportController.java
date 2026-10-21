@@ -170,11 +170,13 @@ public class AcademicReportController {
     public ApiResponse<WeeklyGenderAttendanceDTO> getWeeklyGenderAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String streamId,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = false) LocalDate weekOf) {
         LocalDate resolvedWeek = weekOf != null ? weekOf : LocalDate.now();
-        var res = generateWeeklyGenderAttendanceReportUseCase.execute(school, classId, academicYearId,
-                resolvedWeek);
+        var res = generateWeeklyGenderAttendanceReportUseCase.execute(school, classId, sectionId, streamId,
+                academicYearId, resolvedWeek);
         return new ApiResponse<>("success", 200, "Weekly gender attendance fetched successfully", res);
     }
 
@@ -187,9 +189,12 @@ public class AcademicReportController {
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = false) String termId,
             @RequestParam(required = false) String classId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) Level level,
             @RequestParam(required = false) LocalDate date) {
         var res = generateGenderAttendanceSummaryUseCase.execute(school, academicYearId, period,
-                date != null ? date : LocalDate.now(), termId, classId);
+                date != null ? date : LocalDate.now(), termId, classId, sectionId, streamId, level);
         return new ApiResponse<>("success", 200, "Gender attendance summary fetched successfully", res);
     }
 
