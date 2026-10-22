@@ -169,6 +169,7 @@ public class ComputeClassAttentionUseCase {
                     academic.trend()));
         }
 
-        return new ClassAttentionDTO(enrollments.size(), needsAttentionCount, watchCount, flagged);
+        return new ClassAttentionDTO(enrollments.size(), needsAttentionCount, watchCount, flagged, passMark,
+                attendanceRules.threshold());
     }
 }

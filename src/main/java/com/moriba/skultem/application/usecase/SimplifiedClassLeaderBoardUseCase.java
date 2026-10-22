@@ -52,61 +52,67 @@ public class SimplifiedClassLeaderBoardUseCase {
                         subjectScores.sort(Comparator.comparingInt(
                                         a -> a.getCycle().getAssessment().getPosition()));
 
-                        int cumulativeWeight = 0;
-                        String trend = "STABLE";
-                        Integer previousScore = null;
+                        // Only approved work counts - a draft or submitted test has no settled score yet.
+                        List<AssessmentScore> approved = subjectScores.stream()
+                                        .filter(AssessmentScore::isApproved).toList();
 
                         List<AssessmentScoreDTO> scoresDTO = new ArrayList<>();
+                        Integer previousScore = null;
+                        String trend = null;
+                        long weightedSum = 0;
+                        int weightTotal = 0;
+                        int rawSum = 0;
 
-                        for (AssessmentScore score : subjectScores) {
-                                if (!score.isApproved())
-                                        continue;
-
+                        for (AssessmentScore score : approved) {
                                 int currentScore = score.getScore() != null ? score.getScore() : 0;
-                                int currentWeight = score.getWeightedScore() != null ? score.getWeightedScore() : 0;
+                                int weight = score.getWeight() != null ? score.getWeight() : 0;
 
-                                if (previousScore != null) {
-                                        if (currentScore > previousScore)
-                                                trend = "IMPROVED";
-                                        else if (currentScore < previousScore)
-                                                trend = "DROPPED";
-                                }
-
+                                // Each row's trend is against the test before it; the subject's is its latest one.
+                                trend = previousScore == null ? null
+                                                : currentScore > previousScore ? "IMPROVED"
+                                                                : currentScore < previousScore ? "DROPPED" : "STABLE";
                                 previousScore = currentScore;
-                                cumulativeWeight += currentWeight;
 
-                                String grade = resolveScoreGradeUseCase.execute(request.schoolId(), score.getScore(),
-                                                score.getStatus());
-                                
+                                weightedSum += (long) currentScore * weight;
+                                weightTotal += weight;
+                                rawSum += currentScore;
+
+                                String grade = resolveScoreGradeUseCase.execute(request.schoolId(), currentScore);
                                 scoresDTO.add(AssessmentScoreMapper.toDTO(score, grade, trend));
                         }
 
-                        if (subjectScores.isEmpty())
-                                continue;
-
                         AssessmentScore lastScore = subjectScores.get(subjectScores.size() - 1);
-
-                        String grade = resolveScoreGradeUseCase.execute(request.schoolId(), cumulativeWeight,
-                                        lastScore.getStatus());
-
-                        // Same pass mark the last assessment itself was graded against (AssessmentScore#isPassed) -
-                        // whether the subject's cumulative weighted score clears it is what "failed this subject"
-                        // actually means, not just being the lowest-scoring subject in the list.
                         int passMark = lastScore.getAssessment().getTemplate().getPassMark();
-                        boolean passed = cumulativeWeight >= passMark;
+
+                        // Weighted percentage over what has been approved so far: a 30% test scored 80 reads as 80,
+                        // not 24. Falls back to a plain average if those tests carry no weight.
+                        Integer subjectScore = null;
+                        String grade = null;
+                        Boolean passed = null;
+                        if (!approved.isEmpty()) {
+                                subjectScore = weightTotal > 0
+                                                ? (int) Math.round((double) weightedSum / weightTotal)
+                                                : Math.round((float) rawSum / approved.size());
+                                grade = resolveScoreGradeUseCase.execute(request.schoolId(), subjectScore);
+                                passed = subjectScore >= passMark;
+                        }
 
                         breakdown.add(new BreakdownDTO(
                                         lastScore.getStudentAssessment().getTeacherSubject().getId(),
                                         lastScore.getStudentAssessment().getTeacherSubject().getSubject().getName(),
-                                        cumulativeWeight,
+                                        subjectScore,
                                         grade,
                                         trend,
                                         scoresDTO,
-                                        passed));
+                                        passed,
+                                        passMark,
+                                        approved.size(),
+                                        subjectScores.size()));
                 }
 
-                // Sort by cumulative score descending
-                breakdown.sort(Comparator.comparingInt(BreakdownDTO::score).reversed());
+                // Highest first; subjects with nothing approved yet go last.
+                breakdown.sort(Comparator.comparing(BreakdownDTO::score,
+                                Comparator.nullsLast(Comparator.<Integer>reverseOrder())));
 
                 // Pagination
                 int start = (page - 1) * size;

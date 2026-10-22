@@ -9,5 +9,9 @@ public record ClassAttentionDTO(
         int totalStudents,
         int flaggedCount,
         int watchCount,
-        List<StudentAttentionDTO> students) {
+        List<StudentAttentionDTO> students,
+        // The cut-offs behind the flags: a term average below passMark, or recent attendance below
+        // attendanceThreshold (%), so the page can say what "needs attention" means for this class.
+        int passMark,
+        double attendanceThreshold) {
 }
