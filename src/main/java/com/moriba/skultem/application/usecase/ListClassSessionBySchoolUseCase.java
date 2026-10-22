@@ -78,7 +78,7 @@ public class ListClassSessionBySchoolUseCase {
         // A session can have more than one active class master (e.g. co-taught classes) - list
         // every one of them rather than picking just the most recently assigned.
         var classMasters = classMasterRepos.findAllActiveBySessionIdAndSchoolId(e.getId(), school);
-        String teacherName = "N/A", teacherId = "";
+        String teacherName = "N/A", teacherId = "", teacherPhoto = null;
         String streamName = "N/A", streamId = "";
 
         if (!classMasters.isEmpty()) {
@@ -86,6 +86,7 @@ public class ListClassSessionBySchoolUseCase {
                     .map(cm -> cm.getTeacher().getUser().getName())
                     .collect(Collectors.joining(", "));
             teacherId = classMasters.get(0).getTeacher().getId();
+            teacherPhoto = classMasters.get(0).getTeacher().getUser().getPhoto();
         }
 
         if (e.getStream() != null) {
@@ -129,7 +130,7 @@ public class ListClassSessionBySchoolUseCase {
         }
 
         return new ClassSessionDTO(e.getId(), clazzName, classId, teacherName, teacherId, lists.size(),
-                streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail, needsAttention);
+                streamName, streamId, sectionName, sectionId, classLevel, grade, feeDetail, needsAttention, teacherPhoto);
     }
 
     // Empty string, never null - see the repository's search query for why.

@@ -89,7 +89,12 @@ public class ComputeClassAttentionUseCase {
         var daysByEnrollment = AttendanceAttentionCalculator.groupByEnrollment(
                 attendanceRepo.attendanceDaysSince(schoolId, classId, academicYear.getId(), since));
 
+        // Approved work only (APPROVED / COMPLETED) - the same marks the class page shows as each student's average,
+        // so a flag never cites a number found nowhere else. Submitted or returned tests aren't settled yet, and
+        // draft / locked rows sit at 0 until someone marks them.
         var excludedStatuses = List.of(ClassSubjectAssessmentLifeCycle.Status.DRAFT,
+                ClassSubjectAssessmentLifeCycle.Status.SUBMITTED,
+                ClassSubjectAssessmentLifeCycle.Status.RETURNED,
                 ClassSubjectAssessmentLifeCycle.Status.LOCKED);
         Map<String, double[]> academicAverages = new HashMap<>(); // enrollmentId -> [average, count]
         Map<String, double[]> previousAverages = new HashMap<>(); // same, for the term before
@@ -120,6 +125,8 @@ public class ComputeClassAttentionUseCase {
         }
 
         var flagged = new ArrayList<StudentAttentionDTO>();
+        // Every student's term average (flagged or not), keyed by student id, for the page's Average column.
+        var averages = new HashMap<String, Double>();
 
         int needsAttentionCount = 0;
         int watchCount = 0;
@@ -131,6 +138,9 @@ public class ComputeClassAttentionUseCase {
 
             var current = academicAverages.get(enrollment.getId());
             var previous = previousAverages.get(enrollment.getId());
+            if (current != null) {
+                averages.put(enrollment.getStudent().getId(), Math.round(current[0] * 10.0) / 10.0);
+            }
             var academic = AcademicAttentionCalculator.evaluate(
                     current != null ? Math.round(current[0] * 10.0) / 10.0 : null,
                     current != null ? (long) current[1] : 0,
@@ -170,6 +180,6 @@ public class ComputeClassAttentionUseCase {
         }
 
         return new ClassAttentionDTO(enrollments.size(), needsAttentionCount, watchCount, flagged, passMark,
-                attendanceRules.threshold());
+                attendanceRules.threshold(), averages, activeTerm != null ? activeTerm.getName() : null);
     }
 }
