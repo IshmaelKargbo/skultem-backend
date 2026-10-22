@@ -5,24 +5,31 @@ public record AssessmentScoreDTO(String id, String name, String assessment, Stri
                 // Only for an assessment opened as continuous assessment (CA + formal test); null otherwise.
                 Continuous continuous,
                 // The class down to section and stream ("SSS 1 · A · Science") - see ClassSessionLabel.
-                String classSession) {
+                String classSession,
+                // The student's profile photo URL, null when none was uploaded.
+                String studentPhoto) {
 
         public AssessmentScoreDTO(String id, String name, String assessment, String term, String student, String teacher, String subject, String clazz,
                         Integer score, Integer weight, Integer weightScore, Integer level, String status, String grade, String trend, Boolean passed,
                         Continuous continuous) {
                 this(id, name, assessment, term, student, teacher, subject, clazz, score, weight, weightScore, level, status, grade,
-                                trend, passed, continuous, null);
+                                trend, passed, continuous, null, null);
         }
 
         public AssessmentScoreDTO(String id, String name, String assessment, String term, String student, String teacher, String subject, String clazz,
                         Integer score, Integer weight, Integer weightScore, Integer level, String status, String grade, String trend, Boolean passed) {
                 this(id, name, assessment, term, student, teacher, subject, clazz, score, weight, weightScore, level, status, grade,
-                                trend, passed, null, null);
+                                trend, passed, null, null, null);
         }
 
         public AssessmentScoreDTO withClassSession(String label) {
                 return new AssessmentScoreDTO(id, name, assessment, term, student, teacher, subject, clazz, score, weight,
-                                weightScore, level, status, grade, trend, passed, continuous, label);
+                                weightScore, level, status, grade, trend, passed, continuous, label, studentPhoto);
+        }
+
+        public AssessmentScoreDTO withStudentPhoto(String photo) {
+                return new AssessmentScoreDTO(id, name, assessment, term, student, teacher, subject, clazz, score, weight,
+                                weightScore, level, status, grade, trend, passed, continuous, classSession, photo);
         }
 
         // The structure this assessment was opened with (frozen - see ClassSubjectAssessmentLifeCycle) and this

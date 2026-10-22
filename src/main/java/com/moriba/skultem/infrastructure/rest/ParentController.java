@@ -159,7 +159,11 @@ public class ParentController {
                         @PathVariable String id) {
                 var parent = parentRepo.findByIdAndSchoolId(id, school)
                                 .orElseThrow(() -> new NotFoundException("Parent not found"));
-                return new ApiResponse<>("success", 200, "Parent fetched successfully", ParentMapper.toDTO(parent));
+                // The plain mapper leaves the child count at 0 - count the same list GET /{id}/students returns.
+                int students = listStudentByParentUseCase.execute(school, parent.getUser().getId(), 1, 0)
+                                .getContent().size();
+                return new ApiResponse<>("success", 200, "Parent fetched successfully",
+                                ParentMapper.toDTO(parent, null, students));
         }
 
         @SectionScoped

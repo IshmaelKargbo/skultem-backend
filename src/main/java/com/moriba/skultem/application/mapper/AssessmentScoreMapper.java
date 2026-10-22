@@ -23,7 +23,8 @@ public class AssessmentScoreMapper {
                 "",
                 "",
                 param.isPassed())
-                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade, String trend) {
@@ -54,7 +55,8 @@ public class AssessmentScoreMapper {
                 grade,
                 trend,
                 passed)
-                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade) {
@@ -85,7 +87,8 @@ public class AssessmentScoreMapper {
                 grade,
                 "",
                 passed)
-                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()));
+                .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
     }
 
     // The plain score plus, when this assessment was opened as continuous assessment, its frozen structure and
@@ -126,6 +129,7 @@ public class AssessmentScoreMapper {
                 cycle.getFormalLabel());
         return new AssessmentScoreDTO(base.id(), base.name(), base.assessment(), base.term(), base.student(),
                 base.teacher(), base.subject(), base.clazz(), base.score(), base.weight(), base.weightScore(),
-                base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous, base.classSession());
+                base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous, base.classSession(),
+                base.studentPhoto());
     }
 }
