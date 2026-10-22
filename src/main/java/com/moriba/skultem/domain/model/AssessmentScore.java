@@ -156,6 +156,18 @@ public class AssessmentScore extends AggregateRoot<String> {
                 || getStatus() == ClassSubjectAssessmentLifeCycle.Status.LOCKED;
     }
 
+    // A score that was actually marked and settled. LOCKED alone isn't enough: a test nobody marked (an exam
+    // still to come when the term was locked) is locked too, sitting at 0 with no grader. graded_by_user_id only
+    // exists since V51, so an older marked score is recognised by being above 0 instead.
+    public boolean hasSettledScore() {
+        if (getStatus() == ClassSubjectAssessmentLifeCycle.Status.APPROVED
+                || getStatus() == ClassSubjectAssessmentLifeCycle.Status.COMPLETED) {
+            return true;
+        }
+        return getStatus() == ClassSubjectAssessmentLifeCycle.Status.LOCKED
+                && (gradedByUserId != null || (score != null && score > 0));
+    }
+
     public boolean isPassed() {
         return score >= getAssessment().getTemplate().getPassMark();
     }

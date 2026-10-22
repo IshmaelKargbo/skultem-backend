@@ -220,8 +220,9 @@ public class ClassController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #id)")
     public ApiResponse<ClassOverviewDTO> overview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @PathVariable String id) {
-        var res = getClassOverviewUseCase.execute(school, id);
+            @PathVariable String id,
+            @RequestParam(required = false) String academicYearId) {
+        var res = getClassOverviewUseCase.execute(school, id, academicYearId);
         return new ApiResponse<>("success", 200, "Class overview fetched successfully", res);
     }
 

@@ -52,9 +52,10 @@ public class SimplifiedClassLeaderBoardUseCase {
                         subjectScores.sort(Comparator.comparingInt(
                                         a -> a.getCycle().getAssessment().getPosition()));
 
-                        // Only approved work counts - a draft or submitted test has no settled score yet.
+                        // Only marked, approved work counts - a draft, submitted or never-marked (locked at 0) test
+                        // has no score yet and must not read as a drop to 0.
                         List<AssessmentScore> approved = subjectScores.stream()
-                                        .filter(AssessmentScore::isApproved).toList();
+                                        .filter(AssessmentScore::hasSettledScore).toList();
 
                         List<AssessmentScoreDTO> scoresDTO = new ArrayList<>();
                         Integer previousScore = null;
@@ -102,7 +103,9 @@ public class SimplifiedClassLeaderBoardUseCase {
                                         lastScore.getStudentAssessment().getTeacherSubject().getSubject().getName(),
                                         subjectScore,
                                         grade,
-                                        trend,
+                                        // One marked test so far (e.g. the first test, exam still to come): nothing
+                                        // to compare against yet, so it is stable - not a drop.
+                                        approved.isEmpty() ? null : trend == null ? "STABLE" : trend,
                                         scoresDTO,
                                         passed,
                                         passMark,
