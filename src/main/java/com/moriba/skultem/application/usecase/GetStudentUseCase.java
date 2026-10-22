@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.StudentDTO;
@@ -40,6 +41,13 @@ public class GetStudentUseCase {
                                                 student.getId(), schoolId))
                                 .orElse(null);
 
-                return StudentMapper.toDTO(student, enrollment, studentParent.getRelationship());
+                var dto = StudentMapper.toDTO(student, enrollment, studentParent.getRelationship());
+                if (enrollment == null || enrollment.getClazz() == null) {
+                        return dto;
+                }
+                // Everyone in the class that year (all sections) - the group a Class Rank is "out of".
+                long classSize = enrollmentRepo.findAllByClassAndAcademicAndSchoolId(enrollment.getClazz().getId(),
+                                enrollment.getAcademicYear().getId(), schoolId, Pageable.unpaged()).getTotalElements();
+                return dto.withClassSize((int) classSize);
         }
 }

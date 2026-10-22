@@ -124,6 +124,13 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     }
 
     @Override
+    public List<Object[]> settledAverageScoresByClassAndTerm(String schoolId, String classId, String termId) {
+        return repo.settledAverageScoresByClassAndTerm(schoolId, classId, termId,
+                List.of(ClassSubjectAssessmentLifeCycle.Status.APPROVED, ClassSubjectAssessmentLifeCycle.Status.COMPLETED),
+                ClassSubjectAssessmentLifeCycle.Status.LOCKED);
+    }
+
+    @Override
     public List<Object[]> averageScoresByClassAndTerm(String schoolId, String classId, String termId,
             List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses) {
         return repo.averageScoresByClassAndTerm(schoolId, classId, termId, excludedStatuses);

@@ -3,6 +3,7 @@ package com.moriba.skultem.application.usecase;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -49,7 +50,6 @@ public class GenerateReportCardsUseCase {
 
         private final ListEnrollmentByClassUseCase listEnrollmentByClassUseCase;
         private final GradeReportUseCase gradeReportUseCase;
-        private final RankStudentUseCase rankStudentUseCase;
         private final AttendanceRepository attendanceRepo;
         private final ClassRepository classRepo;
         private final TermRepository termRepo;
@@ -117,8 +117,6 @@ public class GenerateReportCardsUseCase {
                 }
 
                 // One section/stream of the class (JSS 1 A vs JSS 1 B) when chosen, else the whole class.
-                boolean narrowed = (param.sectionId() != null && !param.sectionId().isBlank())
-                                || (param.streamId() != null && !param.streamId().isBlank());
                 var roster = listEnrollmentByClassUseCase.execute(schoolId, param.classId(), param.streamId(),
                                 param.sectionId(), term.getAcademicYear().getId(),
                                 0, 0);
@@ -209,6 +207,32 @@ public class GenerateReportCardsUseCase {
                 }
 
                 // --- Rank, then save -----------------------------------------------------------------
+                // Same rule as every Class Rank (see RankStudentUseCase), applied to what the cards print: the
+                // card average, then attendance over the card's dates on a tie, then name - positions 1, 2, 3...
+                // never shared.
+                Map<String, Integer> positions = new HashMap<>();
+                if (param.includeRanking()) {
+                        Map<String, Double> rankAttendance = new HashMap<>();
+                        for (Pending p : pending) {
+                                Double rate = computeAttendancePercentage(p.student().enrollmentId(), schoolId,
+                                                attendanceFrom, attendanceTo);
+                                if (rate != null)
+                                        rankAttendance.put(p.student().id(), rate);
+                        }
+                        var ordered = pending.stream()
+                                        .sorted(Comparator.comparingDouble((Pending p) -> Math.round(p.average() * 10.0) / 10.0)
+                                                        .reversed()
+                                                        .thenComparing(p -> rankAttendance.getOrDefault(p.student().id(), -1.0),
+                                                                        Comparator.reverseOrder())
+                                                        .thenComparing(p -> (p.student().givenNames() + " "
+                                                                        + p.student().familyName()).trim(),
+                                                                        String.CASE_INSENSITIVE_ORDER))
+                                        .toList();
+                        for (int i = 0; i < ordered.size(); i++) {
+                                positions.put(ordered.get(i).student().id(), i + 1);
+                        }
+                }
+
                 List<ReportCardSummaryDTO> generated = new ArrayList<>();
                 double totalAverage = 0;
                 long passedCount = 0;
@@ -217,16 +241,7 @@ public class GenerateReportCardsUseCase {
                         var student = p.student();
                         double average = p.average();
 
-                        int position = 0;
-                        if (param.includeRanking()) {
-                                // The whole-class, whole-term card keeps the existing term ranking. A partial,
-                                // whole-year or single-section card is ranked among the students generated
-                                // here, by their own average.
-                                position = "ALL".equals(scopeKey) && !narrowed
-                                                ? rankStudentUseCase.execute(student.id(), term.getId(), schoolId)
-                                                : 1 + (int) pending.stream().filter(o -> o.average() > average)
-                                                                .count();
-                        }
+                        int position = positions.getOrDefault(student.id(), 0);
 
                         String overallGrade = resolveGrade(school, average);
                         boolean passed = average >= passMark;

@@ -50,6 +50,12 @@ public interface AssessmentScoreRepository {
 
     Integer getStudentRank(String schoolId, String classId, String termId, String studentId);
 
+    // Each student's average over the class's marked, settled scores in a term - the AssessmentScore#hasSettledScore
+    // rule in SQL: APPROVED / COMPLETED, or LOCKED with a grader or a score above 0 (a never-marked locked test sits at
+    // 0 with no grader). Row shape: [enrollmentId, studentId, givenNames, familyName, averageScore (Double),
+    // scoreCount (Long)]. Backs every Class Rank (RankStudentUseCase) and the class page's averages and flags.
+    List<Object[]> settledAverageScoresByClassAndTerm(String schoolId, String classId, String termId);
+
     // Row shape: [enrollmentId (String), averageScore (Double), scoreCount (Long)] - see
     // ComputeClassAttentionUseCase. excludedStatuses (DRAFT, LOCKED) are left out (see the JPA
     // query for why).

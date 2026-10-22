@@ -89,21 +89,16 @@ public class ComputeClassAttentionUseCase {
         var daysByEnrollment = AttendanceAttentionCalculator.groupByEnrollment(
                 attendanceRepo.attendanceDaysSince(schoolId, classId, academicYear.getId(), since));
 
-        // Approved work only (APPROVED / COMPLETED) - the same marks the class page shows as each student's average,
-        // so a flag never cites a number found nowhere else. Submitted or returned tests aren't settled yet, and
-        // draft / locked rows sit at 0 until someone marks them.
-        var excludedStatuses = List.of(ClassSubjectAssessmentLifeCycle.Status.DRAFT,
-                ClassSubjectAssessmentLifeCycle.Status.SUBMITTED,
-                ClassSubjectAssessmentLifeCycle.Status.RETURNED,
-                ClassSubjectAssessmentLifeCycle.Status.LOCKED);
+        // Marked, approved work only (AssessmentScoreRepository#settledAverageScoresByClassAndTerm) - the same
+        // averages every Class Rank uses and the class page shows, so a flag never cites a number found nowhere
+        // else. Submitted / returned tests aren't settled yet, and draft or never-marked locked rows sit at 0.
         Map<String, double[]> academicAverages = new HashMap<>(); // enrollmentId -> [average, count]
         Map<String, double[]> previousAverages = new HashMap<>(); // same, for the term before
         if (activeTerm != null) {
-            for (Object[] row : scoreRepo.averageScoresByClassAndTerm(schoolId, classId, activeTerm.getId(),
-                    excludedStatuses)) {
+            for (Object[] row : scoreRepo.settledAverageScoresByClassAndTerm(schoolId, classId, activeTerm.getId())) {
                 academicAverages.put((String) row[0], new double[] {
-                        ((Number) row[1]).doubleValue(),
-                        ((Number) row[2]).doubleValue()
+                        ((Number) row[4]).doubleValue(),
+                        ((Number) row[5]).doubleValue()
                 });
             }
 
@@ -114,11 +109,11 @@ public class ComputeClassAttentionUseCase {
                             academicYear.getId(), schoolId).orElse(null)
                     : null;
             if (previousTerm != null) {
-                for (Object[] row : scoreRepo.averageScoresByClassAndTerm(schoolId, classId, previousTerm.getId(),
-                        excludedStatuses)) {
+                for (Object[] row : scoreRepo.settledAverageScoresByClassAndTerm(schoolId, classId,
+                        previousTerm.getId())) {
                     previousAverages.put((String) row[0], new double[] {
-                            ((Number) row[1]).doubleValue(),
-                            ((Number) row[2]).doubleValue()
+                            ((Number) row[4]).doubleValue(),
+                            ((Number) row[5]).doubleValue()
                     });
                 }
             }

@@ -183,6 +183,29 @@ public interface AssessmentScoreJpaRepository
                         @Param("termId") String termId,
                         @Param("excludedStatuses") List<ClassSubjectAssessmentLifeCycle.Status> excludedStatuses);
 
+        // See AssessmentScoreRepository#settledAverageScoresByClassAndTerm.
+        @Query("""
+                        SELECT sa.enrollment.id, sa.enrollment.student.id, sa.enrollment.student.givenNames,
+                               sa.enrollment.student.familyName, AVG(a.score), COUNT(a)
+                        FROM AssessmentScoreEntity a
+                        JOIN a.studentAssessment sa
+                        JOIN a.cycle cy
+                        WHERE a.schoolId = :schoolId
+                          AND sa.enrollment.clazz.id = :classId
+                          AND sa.term.id = :termId
+                          AND a.score IS NOT NULL
+                          AND (cy.status IN :settled
+                               OR (cy.status = :locked AND (a.gradedByUserId IS NOT NULL OR a.score > 0)))
+                        GROUP BY sa.enrollment.id, sa.enrollment.student.id, sa.enrollment.student.givenNames,
+                                 sa.enrollment.student.familyName
+                        """)
+        List<Object[]> settledAverageScoresByClassAndTerm(
+                        @Param("schoolId") String schoolId,
+                        @Param("classId") String classId,
+                        @Param("termId") String termId,
+                        @Param("settled") List<ClassSubjectAssessmentLifeCycle.Status> settled,
+                        @Param("locked") ClassSubjectAssessmentLifeCycle.Status locked);
+
         // See AssessmentScoreRepository#studentSubjectAveragesForReport. classId nullable = whole
         // school for the term.
         @Query("""
