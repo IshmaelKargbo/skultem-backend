@@ -36,7 +36,6 @@ public class TestimonialService {
                 .map(TestimonialService::toDTO);
     }
 
-    // What the marketing site shows: published only, featured first.
     // The author's photo: checked, shrunk and stored under marketing/testimonials, and its public URL handed back
     // for the testimonial's photoUrl.
     public String uploadPhoto(org.springframework.web.multipart.MultipartFile file) {
@@ -54,6 +53,7 @@ public class TestimonialService {
         }
     }
 
+    // What the marketing site shows: published only, featured first.
     public List<TestimonialDTO> listPublished() {
         return repo.findAllByPublishedTrueOrderByFeaturedDescDisplayOrderAscCreatedAtDesc().stream()
                 .map(TestimonialService::toDTO).toList();

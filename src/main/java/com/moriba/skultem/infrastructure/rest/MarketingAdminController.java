@@ -39,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class MarketingAdminController {
 
     private final TestimonialService testimonialService;
+    private final com.moriba.skultem.application.services.MarketingVideoService videoService;
     private final BlogPostService blogPostService;
     private final ContactMessageService contactMessageService;
 
@@ -83,6 +84,33 @@ public class MarketingAdminController {
     public ApiResponse<Object> deleteTestimonial(@PathVariable String id) {
         testimonialService.delete(id);
         return new ApiResponse<>("success", 200, "Testimonial deleted successfully", null);
+    }
+
+    // ---- Videos (YouTube) ----
+
+    @GetMapping("/videos")
+    public ApiResponse<List<com.moriba.skultem.application.dto.MarketingVideoDTO>> listVideos(
+            @RequestParam(defaultValue = "10") Integer size, @RequestParam(defaultValue = "1") Integer page) {
+        var res = videoService.list(page, size);
+        return new ApiResponse<>("success", 200, "Videos fetched successfully", res.getContent(), meta(res));
+    }
+
+    @PostMapping("/videos")
+    public ApiResponse<com.moriba.skultem.application.dto.MarketingVideoDTO> createVideo(
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SaveMarketingVideoDTO param) {
+        return new ApiResponse<>("success", 200, "Video added successfully", videoService.create(param));
+    }
+
+    @PutMapping("/videos/{id}")
+    public ApiResponse<com.moriba.skultem.application.dto.MarketingVideoDTO> updateVideo(@PathVariable String id,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SaveMarketingVideoDTO param) {
+        return new ApiResponse<>("success", 200, "Video updated successfully", videoService.update(id, param));
+    }
+
+    @DeleteMapping("/videos/{id}")
+    public ApiResponse<Object> deleteVideo(@PathVariable String id) {
+        videoService.delete(id);
+        return new ApiResponse<>("success", 200, "Video deleted successfully", null);
     }
 
     // ---- Blog ----

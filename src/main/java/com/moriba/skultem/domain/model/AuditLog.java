@@ -23,7 +23,8 @@ public class AuditLog extends AggregateRoot<String> {
     private final String details;
 
     public enum Status {
-        SUCCESS, FAILURE
+        // REJECTED: refused by a business rule (bad or duplicate input) - not a fault. FAILURE: an unexpected error.
+        SUCCESS, FAILURE, REJECTED
     }
 
     public AuditLog(

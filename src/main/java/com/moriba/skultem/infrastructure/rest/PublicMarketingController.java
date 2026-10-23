@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class PublicMarketingController {
 
     private final TestimonialService testimonialService;
+    private final com.moriba.skultem.application.services.MarketingVideoService videoService;
     private final BlogPostService blogPostService;
     private final ContactMessageService contactMessageService;
     private final com.moriba.skultem.application.services.PlatformSettingsService platformSettings;
@@ -38,6 +39,13 @@ public class PublicMarketingController {
     public ApiResponse<List<TestimonialDTO>> testimonials() {
         return new ApiResponse<>("success", 200, "Testimonials fetched successfully",
                 testimonialService.listPublished());
+    }
+
+    // The YouTube videos to show: published only, featured first, then by display order. Each carries ready-made
+    // watchUrl, embedUrl (for an <iframe>) and thumbnailUrl.
+    @GetMapping("/videos")
+    public ApiResponse<List<com.moriba.skultem.application.dto.MarketingVideoDTO>> videos() {
+        return new ApiResponse<>("success", 200, "Videos fetched successfully", videoService.listPublished());
     }
 
     @GetMapping("/blog")

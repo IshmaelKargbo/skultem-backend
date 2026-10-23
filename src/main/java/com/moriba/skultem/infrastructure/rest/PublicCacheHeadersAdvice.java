@@ -36,6 +36,7 @@ public class PublicCacheHeadersAdvice implements ResponseBodyAdvice<Object> {
 
     private static final List<Cached> CACHED = List.of(
             new Cached("/api/v1/public/testimonials", false, CONTENT),
+            new Cached("/api/v1/public/videos", false, CONTENT),
             new Cached("/api/v1/public/blog", true, CONTENT),
             new Cached("/api/v1/public/settings", false, CONTENT),
             new Cached("/api/v1/school/public", false, CONTENT),

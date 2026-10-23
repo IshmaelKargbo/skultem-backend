@@ -38,11 +38,8 @@ public class CreateParentUseCase {
 
     @AuditLogAnnotation(action = "PARENT_CREATED")
     public ParentDTO execute(ParentRequest param) {
+        rejectExistingPhone(param);
         User user = resolveOrCreateUser(param);
-
-        if (repo.existsByPhoneAndSchool(param.phone(), param.schoolId())) {
-            throw new AlreadyExistsException("phone already exist in this school");
-        }
 
         if (schoolUserRepo.existsBySchoolAndUserAndRole(param.schoolId(), user.getId(), Role.PARENT)) {
             throw new AlreadyExistsException("user already exist in this school");
@@ -66,11 +63,8 @@ public class CreateParentUseCase {
     }
 
     public Parent create(ParentRequest param) {
+        rejectExistingPhone(param);
         User user = resolveOrCreateUser(param);
-
-        if (repo.existsByPhoneAndSchool(param.phone(), param.schoolId())) {
-            throw new AlreadyExistsException("phone already exist in this school");
-        }
 
         if (schoolUserRepo.existsBySchoolAndUserAndRole(param.schoolId(), user.getId(), Role.PARENT)) {
             throw new AlreadyExistsException("user already exist in this school");
@@ -96,6 +90,18 @@ public class CreateParentUseCase {
     // Blank/null email is normalized to null - not every parent has one. Only reuse an existing
     // User by email when an email was actually given; a blank email must never be looked up (it'd
     // match/merge every other email-less parent into the same User row the first two collide).
+    // One guardian per phone in a school. The usual way to hit this is registering a sibling and entering their
+    // guardian as new - so say who already has the number and what to do instead.
+    private void rejectExistingPhone(ParentRequest param) {
+        repo.findByPhoneAndSchool(param.phone(), param.schoolId()).ifPresent(existing -> {
+            var u = existing.getUser();
+            String name = u == null ? "" : (u.getGivenNames() + " " + u.getFamilyName()).trim();
+            throw new AlreadyExistsException("A guardian with phone " + param.phone() + " is already registered"
+                    + (name.isEmpty() ? "" : " (" + name + ")")
+                    + ". Choose them as the existing guardian instead of adding a new one.");
+        });
+    }
+
     private User resolveOrCreateUser(ParentRequest param) {
         String email = (param.email() == null || param.email().isBlank()) ? null : param.email().trim();
 

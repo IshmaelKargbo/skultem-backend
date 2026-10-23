@@ -48,7 +48,9 @@ public class AuditAspect {
             return result;
 
         } catch (Throwable ex) {
-            status = Status.FAILURE;
+            // A rule saying no (duplicate, not found, not allowed) is the system working - only anything else is a
+            // failure worth an alert (PlatformOperationsService counts FAILURE only).
+            status = isRejection(ex) ? Status.REJECTED : Status.FAILURE;
             details = truncate(ex.getMessage(), MAX_DETAILS_LENGTH);
             throw ex;
 
@@ -125,5 +127,16 @@ public class AuditAspect {
         if (value == null)
             return "";
         return value.length() <= maxLength ? value : value.substring(0, maxLength - 3) + "...";
+    }
+
+    private static boolean isRejection(Throwable ex) {
+        return ex instanceof com.moriba.skultem.application.error.AlreadyExistsException
+                || ex instanceof com.moriba.skultem.application.error.RuleException
+                || ex instanceof com.moriba.skultem.application.error.NotFoundException
+                || ex instanceof com.moriba.skultem.application.error.OutsideManagementScopeException
+                || ex instanceof com.moriba.skultem.application.error.BadRequestException
+                || ex instanceof com.moriba.skultem.application.error.AccessDeniedException
+                || ex instanceof com.moriba.skultem.application.error.ModuleNotInstalledException
+                || ex instanceof org.springframework.security.access.AccessDeniedException;
     }
 }

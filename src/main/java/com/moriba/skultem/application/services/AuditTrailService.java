@@ -40,7 +40,7 @@ public class AuditTrailService {
                 args.add(like);
             }
         }
-        if ("SUCCESS".equals(f.status()) || "FAILURE".equals(f.status())) {
+        if ("SUCCESS".equals(f.status()) || "FAILURE".equals(f.status()) || "REJECTED".equals(f.status())) {
             where.append(" AND a.status = ?");
             args.add(f.status());
         }
