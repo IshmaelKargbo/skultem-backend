@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.TestimonialDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.infrastructure.bucket.R2StorageService;
 import com.moriba.skultem.application.mapper.PageableMapper;
 import com.moriba.skultem.infrastructure.persistence.entity.TestimonialEntity;
 import com.moriba.skultem.infrastructure.persistence.jpa.TestimonialJpaRepository;
@@ -24,6 +26,10 @@ import lombok.RequiredArgsConstructor;
 public class TestimonialService {
 
     private final TestimonialJpaRepository repo;
+    private final R2StorageService storage;
+
+    // Shown small (an avatar beside the quote) - stored no bigger than this.
+    private static final int MAX_PHOTO_DIMENSION = 600;
 
     public Page<TestimonialDTO> list(int page, int size) {
         return repo.findAll(PageableMapper.toPage(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
@@ -31,6 +37,23 @@ public class TestimonialService {
     }
 
     // What the marketing site shows: published only, featured first.
+    // The author's photo: checked, shrunk and stored under marketing/testimonials, and its public URL handed back
+    // for the testimonial's photoUrl.
+    public String uploadPhoto(org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuleException("A photo is required");
+        }
+        String type = file.getContentType();
+        if (type == null || !type.startsWith("image/")) {
+            throw new RuleException("Only image files can be uploaded");
+        }
+        try {
+            return storage.uploadPhoto(file, "marketing/testimonials/" + UUID.randomUUID(), MAX_PHOTO_DIMENSION);
+        } catch (java.io.IOException e) {
+            throw new RuleException("The photo could not be uploaded");
+        }
+    }
+
     public List<TestimonialDTO> listPublished() {
         return repo.findAllByPublishedTrueOrderByFeaturedDescDisplayOrderAscCreatedAtDesc().stream()
                 .map(TestimonialService::toDTO).toList();

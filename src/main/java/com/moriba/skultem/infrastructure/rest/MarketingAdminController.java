@@ -64,6 +64,14 @@ public class MarketingAdminController {
         return new ApiResponse<>("success", 200, "Testimonial created successfully", testimonialService.create(param));
     }
 
+    // The author's photo (multipart "photo"); returns its URL for the testimonial's photoUrl.
+    @PostMapping(value = "/testimonials/photo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, String>> uploadTestimonialPhoto(
+            @org.springframework.web.bind.annotation.RequestPart("photo") org.springframework.web.multipart.MultipartFile photo) {
+        return new ApiResponse<>("success", 200, "Photo uploaded successfully",
+                Map.of("url", testimonialService.uploadPhoto(photo)));
+    }
+
     @PutMapping("/testimonials/{id}")
     public ApiResponse<TestimonialDTO> updateTestimonial(@PathVariable String id,
             @Valid @RequestBody SaveTestimonialDTO param) {
