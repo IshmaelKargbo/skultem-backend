@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ClassAttentionDTO;
+import com.moriba.skultem.config.CacheConfig;
 import com.moriba.skultem.application.dto.StudentAttentionDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.services.AttendanceRulesResolver;
@@ -60,6 +62,9 @@ public class ComputeClassAttentionUseCase {
         return Math.max(MIN_LOOKBACK_DAYS, rules.windowDays() * 4);
     }
 
+    // Cached briefly (CacheConfig.CLASS_ATTENTION): the classes list and dashboard run this for every class. Cleared
+    // by the writes that change it - attendance, grade approval/reopen, enrollment, attendance rules.
+    @Cacheable(cacheNames = CacheConfig.CLASS_ATTENTION, key = "#schoolId + ':' + #classId + ':' + #academicYearId")
     public ClassAttentionDTO execute(String schoolId, String classId, String academicYearId) {
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
@@ -174,7 +179,8 @@ public class ComputeClassAttentionUseCase {
                     academic.trend()));
         }
 
-        return new ClassAttentionDTO(enrollments.size(), needsAttentionCount, watchCount, flagged, passMark,
-                attendanceRules.threshold(), averages, activeTerm != null ? activeTerm.getName() : null);
+        // Read-only copies: the result is cached and shared between requests.
+        return new ClassAttentionDTO(enrollments.size(), needsAttentionCount, watchCount, List.copyOf(flagged), passMark,
+                attendanceRules.threshold(), Map.copyOf(averages), activeTerm != null ? activeTerm.getName() : null);
     }
 }

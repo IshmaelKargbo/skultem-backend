@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.cache.annotation.CacheEvict;
+import com.moriba.skultem.config.CacheConfig;
 import java.time.LocalDate;
 
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,8 @@ import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+// Changes what ComputeClassAttentionUseCase reports - clears its cache once a call here succeeds.
+@CacheEvict(cacheNames = CacheConfig.CLASS_ATTENTION, allEntries = true)
 @Service
 @Transactional
 @RequiredArgsConstructor

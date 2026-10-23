@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.cache.annotation.CacheEvict;
+import com.moriba.skultem.config.CacheConfig;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,6 +51,8 @@ import com.moriba.skultem.utils.MoneyUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+// Changes what ComputeClassAttentionUseCase reports - clears its cache once a call here succeeds.
+@CacheEvict(cacheNames = CacheConfig.CLASS_ATTENTION, allEntries = true)
 @Service
 @Transactional
 @RequiredArgsConstructor

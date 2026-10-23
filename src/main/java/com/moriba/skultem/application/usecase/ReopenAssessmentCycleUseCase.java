@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.cache.annotation.CacheEvict;
+import com.moriba.skultem.config.CacheConfig;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.AssessmentCycleDTO;
@@ -24,6 +26,8 @@ import lombok.RequiredArgsConstructor;
  * Only works while the cycle's academic year is still open. Once a year is closed, its grades are
  * frozen for good - this deliberately does not offer a way around that, even for admins.
  */
+// Changes what ComputeClassAttentionUseCase reports - clears its cache once a call here succeeds.
+@CacheEvict(cacheNames = CacheConfig.CLASS_ATTENTION, allEntries = true)
 @Service
 @Transactional
 @RequiredArgsConstructor

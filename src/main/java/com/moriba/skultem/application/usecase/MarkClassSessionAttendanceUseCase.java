@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.cache.annotation.CacheEvict;
+import com.moriba.skultem.config.CacheConfig;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -38,6 +40,8 @@ import com.moriba.skultem.infrastructure.security.PermissionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+// Changes what ComputeClassAttentionUseCase reports - clears its cache once a call here succeeds.
+@CacheEvict(cacheNames = CacheConfig.CLASS_ATTENTION, allEntries = true)
 @Service
 @Transactional
 @RequiredArgsConstructor

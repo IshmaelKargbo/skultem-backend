@@ -4,20 +4,26 @@ import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import java.util.List;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.Widget;
+import com.moriba.skultem.application.services.SectionScopeService;
 import com.moriba.skultem.application.usecase.WidgetUsecase;
+import com.moriba.skultem.config.CacheConfig;
 import com.moriba.skultem.domain.vo.Filter;
 import com.moriba.skultem.domain.vo.Metric;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.WidgetDTO;
+import com.moriba.skultem.infrastructure.security.AuthUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,12 +33,15 @@ import lombok.RequiredArgsConstructor;
 public class WidgetController {
 
         private final WidgetUsecase widgetUsecase;
+        private final CacheManager cacheManager;
 
         @SectionScoped
         @PostMapping("/run")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
         public ApiResponse<Object> runReport(
+                        @AuthenticationPrincipal AuthUser user,
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestHeader(value = SectionScopeService.VIEW_HEADER, required = false) String viewSection,
                         @RequestParam int page,
                         @RequestParam int size,
                         @RequestParam(required = false) String academicYearId,
@@ -66,7 +75,20 @@ public class WidgetController {
                                 : List.of();
 
                 var widget = new Widget(param.entity(), filters, metrics, param.chartType(), param.title());
-                var res = widgetUsecase.runAnalytics(school, widget, page, size, academicYearId);
+
+                // Dashboards ask for the same widgets on every visit - answered from a 30-second cache
+                // (CacheConfig.WIDGETS). Per user, role and section view, since those shape what a widget may show.
+                Cache cache = cacheManager.getCache(CacheConfig.WIDGETS);
+                String key = String.join("|", school, user.userId(), String.valueOf(user.activeRole()),
+                                String.valueOf(viewSection), String.valueOf(academicYearId),
+                                String.valueOf(page), String.valueOf(size), widget.toString());
+                Object res = cache != null ? cache.get(key, Object.class) : null;
+                if (res == null) {
+                        res = widgetUsecase.runAnalytics(school, widget, page, size, academicYearId);
+                        // Only successful results are kept - a failure throws before this and is retried next time.
+                        if (cache != null && res != null)
+                                cache.put(key, res);
+                }
 
                 return new ApiResponse<>("success", 200, "Widget fetch successfully", res);
         }

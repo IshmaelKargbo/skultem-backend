@@ -1,5 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
+import org.springframework.cache.annotation.CacheEvict;
+import com.moriba.skultem.config.CacheConfig;
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 // enrollment becomes LEFT, so they drop out of class rosters, attendance, grading and new fee
 // assignments - but the record, the fees they already owe and their history all stay, and
 // ReinstateStudentUseCase can undo it.
+// Changes what ComputeClassAttentionUseCase reports - clears its cache once a call here succeeds.
+@CacheEvict(cacheNames = CacheConfig.CLASS_ATTENTION, allEntries = true)
 @Service
 @Transactional
 @RequiredArgsConstructor

@@ -72,6 +72,16 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- In-memory caching of a few expensive reads - see CacheConfig. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- API docs (OpenAPI + Swagger UI) - off unless API_DOCS_ENABLED=true, and behind their own
              login (see ApiDocsSecurityConfig). -->
         <dependency>
