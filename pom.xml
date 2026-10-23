@@ -72,6 +72,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- HTML sanitising for blog post content - see BlogHtmlSanitizer. -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.22.2</version>
+        </dependency>
+
         <!-- In-memory caching of a few expensive reads - see CacheConfig. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

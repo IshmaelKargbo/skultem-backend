@@ -123,7 +123,12 @@ public class BlogPostService {
         e.setTitle(p.title().trim());
         e.setSlug(candidate);
         e.setExcerpt(blankToNull(p.excerpt()));
-        e.setContent(p.content());
+        // Cleaned of anything that could run in a reader's browser - see BlogHtmlSanitizer.
+        String content = BlogHtmlSanitizer.clean(p.content());
+        if (BlogHtmlSanitizer.isBlank(content)) {
+            throw new RuleException("Content is required");
+        }
+        e.setContent(content);
         var images = p.images() == null ? List.<String>of()
                 : p.images().stream().filter(u -> u != null && !u.isBlank()).map(String::trim).distinct().toList();
         if (images.size() > MAX_PHOTOS) {
@@ -186,7 +191,8 @@ public class BlogPostService {
         List<String> images = e.getImages() == null || e.getImages().isBlank() ? List.of()
                 : Arrays.asList(e.getImages().split("\n"));
         return new BlogPostDTO(e.getId().toString(), e.getTitle(), e.getSlug(), e.getExcerpt(),
-                withContent ? e.getContent() : null, e.getCoverImageUrl(), images, e.getAuthorName(), tags, e.isPublished(),
+                // Cleaned on the way out too, so posts saved before cleaning existed are just as safe.
+                withContent ? BlogHtmlSanitizer.clean(e.getContent()) : null, e.getCoverImageUrl(), images, e.getAuthorName(), tags, e.isPublished(),
                 e.getPublishedAt(), e.getCreatedAt(), e.getUpdatedAt());
     }
 }
