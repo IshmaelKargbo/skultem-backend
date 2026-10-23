@@ -23,6 +23,32 @@ security:
     access-expiration: ${SKULTEM_ACCESS_EXP_MS:900000}
     refresh-expiration: ${SKULTEM_REFRESH_EXP_MS:604800000}
     secret: ${SKULTEM_SECRET_KEY:q6sZ2v4E0j1W8v7o9Jj8lZtFJk9s6Fh1z4Q9a5yKpU8=}
+# API docs - see ApiDocsSecurityConfig. Off unless API_DOCS_ENABLED=true; then they need API_DOCS_USERNAME and
+# API_DOCS_PASSWORD (16+ characters, no defaults) and are served at /docs (Swagger UI) and /v3/api-docs (spec).
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+    path: /docs
+    # Which methods "Try it out" may send - empty (the default) turns it off, so reading the docs can never change
+    # data. e.g. API_DOCS_SUBMIT_METHODS=get on staging.
+    supported-submit-methods: ${API_DOCS_SUBMIT_METHODS:}
+    persist-authorization: false
+  show-actuator: false
+  paths-to-match: /api/**
+api-docs:
+  username: ${API_DOCS_USERNAME:}
+  password: ${API_DOCS_PASSWORD:}
+  version: ${API_DOCS_VERSION:v1}
+# Request limits - see RateLimitFilter / SecurityConfig#rateLimitRules. Logged-in calls are counted per user,
+# anonymous ones (login, website forms) per client IP. Behind Cloudflare, set RATE_LIMIT_CLIENT_IP_HEADER to
+# CF-Connecting-IP - only once the server accepts traffic from Cloudflare alone, or the header can be forged.
+rate-limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  client-ip-header: ${RATE_LIMIT_CLIENT_IP_HEADER:}
+  login-per-minute: ${RATE_LIMIT_LOGIN_PER_MIN:10}
+  api-per-minute: ${RATE_LIMIT_API_PER_MIN:300}
 server:
   port: ${PORT:8080}
   tomcat:

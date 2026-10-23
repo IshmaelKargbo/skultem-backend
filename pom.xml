@@ -72,6 +72,14 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- API docs (OpenAPI + Swagger UI) - off unless API_DOCS_ENABLED=true, and behind their own
+             login (see ApiDocsSecurityConfig). -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <!-- Cloudflare R2 (S3-compatible) storage for school branding assets -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
