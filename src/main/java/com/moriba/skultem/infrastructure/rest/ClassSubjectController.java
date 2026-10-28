@@ -54,9 +54,10 @@ public class ClassSubjectController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String classId,
             @RequestParam(required = false) String stream,
+            @RequestParam(required = false) String section,
             @RequestParam(required = true, defaultValue = "1") Integer page,
             @RequestParam(required = true, defaultValue = "10") Integer size) {
-        var res = listClassSubjectByClassUseCase.execute(school, classId, stream, page - 1, size);
+        var res = listClassSubjectByClassUseCase.execute(school, classId, stream, section, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
