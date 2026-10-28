@@ -130,7 +130,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #id)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherView(#school, #id)")
         public ApiResponse<TeacherDTO> listById(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String id,
@@ -168,7 +168,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherView(#school, #teacherId)")
         public ApiResponse<List<TeacherSubjectDTO>> listSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String teacherId) {
@@ -216,7 +216,7 @@ public class TeacherController {
 
         @SectionScoped
         @GetMapping("/subject/detail/{teacherId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacher(#school, #teacherId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') and @sectionScope.teacherView(#school, #teacherId)")
         public ApiResponse<TeacherSubjectDTO> oneSubjectByTeacher(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String teacherId) {

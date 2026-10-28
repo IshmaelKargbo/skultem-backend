@@ -17,7 +17,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.AssessmentApprovalRe
 
 public interface AssessmentApprovalRequestJpaRepository
         extends JpaRepository<AssessmentApprovalRequestEntity, String> {
-    // query matches on subject or teacher name - blank skips it. Checked against '' rather than
+    // query matches on subject or teacher name - blank skips it. classSessionId narrows to one class
+    // (session) the same way - blank skips it. Checked against '' rather than
     // NULL (unlike :status below, a properly-typed enum) - a null String bound into a
     // lower(concat(...)) call leaves Postgres/the JDBC driver unable to infer its type from
     // context and it falls back to bytea ("function lower(bytea) does not exist"), so
@@ -37,6 +38,7 @@ public interface AssessmentApprovalRequestJpaRepository
                   AND ac.id = :academicYearId
                   AND s.clazz.level IN :levels
                   AND cm.endedAt IS NULL
+                  AND (:classSessionId = '' OR s.id = :classSessionId)
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -56,6 +58,7 @@ public interface AssessmentApprovalRequestJpaRepository
                   AND ac.id = :academicYearId
                   AND s.clazz.level IN :levels
                   AND cm.endedAt IS NULL
+                  AND (:classSessionId = '' OR s.id = :classSessionId)
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -67,6 +70,7 @@ public interface AssessmentApprovalRequestJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("status") AssessmentApprovalRequest.Status status,
             @Param("query") String query,
+            @Param("classSessionId") String classSessionId,
             @Param("levels") Collection<Level> levels,
             Pageable pageable);
 
@@ -104,6 +108,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 WHERE aar.schoolId = :schoolId
                   AND ac.id = :academicYearId
                   AND s.clazz.level IN :levels
+                  AND (:classSessionId = '' OR s.id = :classSessionId)
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -121,6 +126,7 @@ public interface AssessmentApprovalRequestJpaRepository
                 WHERE aar.schoolId = :schoolId
                   AND ac.id = :academicYearId
                   AND s.clazz.level IN :levels
+                  AND (:classSessionId = '' OR s.id = :classSessionId)
                   AND (:status IS NULL OR aar.status = :status)
                   AND (:query = ''
                        OR lower(subj.name) LIKE lower(concat('%', :query, '%'))
@@ -132,6 +138,7 @@ public interface AssessmentApprovalRequestJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("status") AssessmentApprovalRequest.Status status,
             @Param("query") String query,
+            @Param("classSessionId") String classSessionId,
             @Param("levels") Collection<Level> levels,
             Pageable pageable);
 

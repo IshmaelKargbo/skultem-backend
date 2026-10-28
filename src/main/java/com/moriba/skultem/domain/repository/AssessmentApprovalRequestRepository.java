@@ -16,7 +16,8 @@ public interface AssessmentApprovalRequestRepository {
 
     // levels: only requests for classes at these levels (see SectionScope) - on every list/count here.
     Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String schoolId,
-            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable);
+            AssessmentApprovalRequest.Status status, String query, String classSessionId, Collection<Level> levels,
+            Pageable pageable);
 
     long countByClassMasterSchoolIdAndStatus(String masterId, String schoolId, AssessmentApprovalRequest.Status status,
             Collection<Level> levels);
@@ -24,7 +25,8 @@ public interface AssessmentApprovalRequestRepository {
     // School-wide, unlike the two above (which are scoped to one class master's teacher id) -
     // backs the admin approval view's default list.
     Page<AssessmentApprovalRequest> findAllBySchool(String schoolId, String academicYearId,
-            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable);
+            AssessmentApprovalRequest.Status status, String query, String classSessionId, Collection<Level> levels,
+            Pageable pageable);
 
     long countBySchoolAndStatus(String schoolId, String academicYearId, AssessmentApprovalRequest.Status status,
             Collection<Level> levels);

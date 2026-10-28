@@ -269,6 +269,18 @@ public class SectionScopeGuard {
         }).orElse(true);
     }
 
+    // Viewing a teacher (profile, subjects): anyone the caller can edit above, plus a teacher who teaches
+    // a subject or is class master in one of the caller's sections this year - matching the list
+    // (TeacherService#search). Editing/deactivating still needs teacher() above.
+    public boolean teacherView(String schoolId, String teacherId) {
+        if (teacher(schoolId, teacherId)) {
+            return true;
+        }
+        var scope = sectionScopeService.current();
+        return teacherRepo.findByIdAndSchoolId(teacherId, schoolId)
+                .map(t -> teacherRepo.teachesAtLevels(t.getId(), scope.queryLevels())).orElse(true);
+    }
+
     // Creating fees: section-limited staff can only create CLASS fees for classes in their sections.
     public boolean createFee(String schoolId, String type, List<String> classIds) {
         var scope = sectionScopeService.current();

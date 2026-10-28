@@ -49,6 +49,9 @@ public interface TeacherJpaRepository
     Page<TeacherEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
             @Param("gender") String gender, Pageable pageable);
 
+    // A section-limited caller's list (principal / section admin): teachers tagged to their sections,
+    // plus anyone teaching a subject or acting as class master in a class at their levels this
+    // academic year - so every teacher actually working in the section shows, tagged or not.
     @Query("""
                 SELECT t
                 FROM TeacherEntity t
@@ -63,16 +66,32 @@ public interface TeacherJpaRepository
                      OR LOWER(t.phone) LIKE LOWER(CONCAT('%', :search, '%'))
                   )
                   AND (:gender = '' OR CAST(t.gender AS string) = :gender)
-                  AND EXISTS (
-                        SELECT 1 FROM StaffManagementSectionEntity sms
-                        WHERE sms.schoolId = t.schoolId
-                          AND sms.userId = u.id
-                          AND sms.role = com.moriba.skultem.domain.vo.Role.TEACHER
-                          AND sms.managementSectionId IN :sectionIds
+                  AND (
+                        EXISTS (
+                            SELECT 1 FROM StaffManagementSectionEntity sms
+                            WHERE sms.schoolId = t.schoolId
+                              AND sms.userId = u.id
+                              AND sms.role = com.moriba.skultem.domain.vo.Role.TEACHER
+                              AND sms.managementSectionId IN :sectionIds
+                        )
+                     OR EXISTS (
+                            SELECT 1 FROM TeacherSubjectEntity ts
+                            WHERE ts.teacher = t
+                              AND ts.session.clazz.level IN :levels
+                              AND ts.session.academicYear.active = true
+                        )
+                     OR EXISTS (
+                            SELECT 1 FROM ClassMasterEntity cm
+                            WHERE cm.teacher = t
+                              AND cm.endedAt IS NULL
+                              AND cm.session.clazz.level IN :levels
+                              AND cm.session.academicYear.active = true
+                        )
                   )
             """)
     Page<TeacherEntity> searchInSections(@Param("schoolId") String schoolId, @Param("search") String search,
             @Param("gender") String gender, @Param("sectionIds") java.util.Collection<String> sectionIds,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
 
     // The owner's "view one section" list: teachers limited to the section AND those with no limit at all
@@ -105,11 +124,47 @@ public interface TeacherJpaRepository
                               AND sms2.userId = u.id
                               AND sms2.role = com.moriba.skultem.domain.vo.Role.TEACHER
                         )
+                     OR EXISTS (
+                            SELECT 1 FROM TeacherSubjectEntity ts
+                            WHERE ts.teacher = t
+                              AND ts.session.clazz.level IN :levels
+                              AND ts.session.academicYear.active = true
+                        )
+                     OR EXISTS (
+                            SELECT 1 FROM ClassMasterEntity cm
+                            WHERE cm.teacher = t
+                              AND cm.endedAt IS NULL
+                              AND cm.session.clazz.level IN :levels
+                              AND cm.session.academicYear.active = true
+                        )
                   )
             """)
     Page<TeacherEntity> searchInSectionsOrUnlimited(@Param("schoolId") String schoolId, @Param("search") String search,
             @Param("gender") String gender, @Param("sectionIds") java.util.Collection<String> sectionIds,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
+
+    // Whether a teacher teaches a subject or is class master in a class at these levels this academic
+    // year - lets a section-limited caller open the profile of a teacher working in their section.
+    @Query("""
+                SELECT CASE WHEN (
+                        EXISTS (
+                            SELECT 1 FROM TeacherSubjectEntity ts
+                            WHERE ts.teacher.id = :teacherId
+                              AND ts.session.clazz.level IN :levels
+                              AND ts.session.academicYear.active = true
+                        )
+                     OR EXISTS (
+                            SELECT 1 FROM ClassMasterEntity cm
+                            WHERE cm.teacher.id = :teacherId
+                              AND cm.endedAt IS NULL
+                              AND cm.session.clazz.level IN :levels
+                              AND cm.session.academicYear.active = true
+                        )
+                    ) THEN true ELSE false END
+            """)
+    boolean teachesAtLevels(@Param("teacherId") String teacherId,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 
     long countBySchoolId(String schoolId);
 

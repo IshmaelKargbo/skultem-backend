@@ -39,14 +39,21 @@ public interface TeacherRepository {
     // gender is the Gender enum's name; null/blank means "any".
     Page<Teacher> search(String value, String gender, String schoolId, Pageable pageable);
 
-    // Only teachers limited (under the TEACHER role) to at least one of these management sections -
-    // what a section-limited admin sees; whole-school teachers aren't in any section, so they're out.
+    // What a section-limited caller (principal / section admin) sees: teachers limited (under the TEACHER
+    // role) to at least one of these management sections, plus any teacher - tagged elsewhere or
+    // whole-school - who teaches a subject or is class master at one of these levels this year.
     Page<Teacher> searchInSections(String value, String gender, String schoolId, java.util.Collection<String> sectionIds,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
 
-    // A section VIEW (owner-level): teachers limited to these sections plus those not limited to any.
+    // A section VIEW (owner-level): teachers limited to these sections, those not limited to any, and
+    // those teaching / class-mastering at these levels this year.
     Page<Teacher> searchInSectionsOrUnlimited(String value, String gender, String schoolId,
-            java.util.Collection<String> sectionIds, Pageable pageable);
+            java.util.Collection<String> sectionIds,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable);
+
+    // Teaches a subject or is class master at one of these levels in the active academic year.
+    boolean teachesAtLevels(String teacherId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 }

@@ -216,10 +216,11 @@ public class AssessmentController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String classId,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.executeForSchool(school, status, query, academicYearId, page,
+        var res = listAssessmentApprovalRequestUseCase.executeForSchool(school, status, query, classId, academicYearId, page,
                 size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
@@ -248,10 +249,11 @@ public class AssessmentController {
             @PathVariable String classMasterId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String classId,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, status, query, academicYearId,
+        var res = listAssessmentApprovalRequestUseCase.execute(school, classMasterId, status, query, classId, academicYearId,
                 page, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
@@ -291,10 +293,11 @@ public class AssessmentController {
             @AuthenticationPrincipal(expression = "userId") String userId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String classId,
             @RequestParam(required = false) String academicYearId,
             @RequestParam(required = true, defaultValue = "10") Integer size,
             @RequestParam(required = true, defaultValue = "1") Integer page) {
-        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, status, query, academicYearId,
+        var res = listAssessmentApprovalRequestUseCase.executeByUser(school, userId, status, query, classId, academicYearId,
                 page, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(

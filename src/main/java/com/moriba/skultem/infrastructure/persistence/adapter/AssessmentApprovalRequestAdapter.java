@@ -30,8 +30,9 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Page<AssessmentApprovalRequest> findAllByClassMasterSchoolId(String masterId, String academicYearId,
-            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable) {
-        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, query, levels, pageable)
+            AssessmentApprovalRequest.Status status, String query, String classSessionId, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.findAllForClassMasterByTeacherId(masterId, academicYearId, status, query, classSessionId, levels, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 
@@ -43,8 +44,9 @@ public class AssessmentApprovalRequestAdapter implements AssessmentApprovalReque
 
     @Override
     public Page<AssessmentApprovalRequest> findAllBySchool(String schoolId, String academicYearId,
-            AssessmentApprovalRequest.Status status, String query, Collection<Level> levels, Pageable pageable) {
-        return repo.findAllBySchool(schoolId, academicYearId, status, query, levels, pageable)
+            AssessmentApprovalRequest.Status status, String query, String classSessionId, Collection<Level> levels,
+            Pageable pageable) {
+        return repo.findAllBySchool(schoolId, academicYearId, status, query, classSessionId, levels, pageable)
                 .map(AssessmentApprovalRequestMapper::toDomain);
     }
 

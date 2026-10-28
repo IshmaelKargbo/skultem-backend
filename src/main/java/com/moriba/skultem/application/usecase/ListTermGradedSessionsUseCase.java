@@ -21,11 +21,17 @@ public class ListTermGradedSessionsUseCase {
     }
 
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public Result execute(String schoolId, String termId) {
         var sessions = new LinkedHashSet<String>();
         var subjects = new LinkedHashSet<String>();
+        // Only classes in the caller's section(s) - whole-school callers get every level.
+        var levels = sectionScopeService.levels();
         for (var cycle : cycleRepo.findAllBySchoolAndTerm(schoolId, termId)) {
+            if (!levels.contains(cycle.getSubject().getSession().getClazz().getLevel())) {
+                continue;
+            }
             subjects.add(cycle.getSubject().getId());
             sessions.add(cycle.getSubject().getSession().getId());
         }

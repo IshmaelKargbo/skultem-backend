@@ -182,10 +182,12 @@ public class TeacherAttendanceService {
         var scope = sectionScopeService.currentOrAll();
         var view = sectionScopeService.view();
         var found = view.isPresent()
-                ? teacherRepo.searchInSectionsOrUnlimited("", null, schoolId, view.get().sectionIds(), Pageable.unpaged())
+                ? teacherRepo.searchInSectionsOrUnlimited("", null, schoolId, view.get().sectionIds(),
+                        view.get().queryLevels(), Pageable.unpaged())
                 : scope.wholeSchool()
                         ? teacherRepo.search("", schoolId, Pageable.unpaged())
-                        : teacherRepo.searchInSections("", null, schoolId, scope.sectionIds(), Pageable.unpaged());
+                        : teacherRepo.searchInSections("", null, schoolId, scope.sectionIds(),
+                                scope.queryLevels(), Pageable.unpaged());
         return found.getContent().stream()
                 .filter(t -> t.getStatus() == Teacher.Status.ACTIVE)
                 .toList();

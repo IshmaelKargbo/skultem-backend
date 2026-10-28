@@ -47,14 +47,14 @@ public class ListAssessmentApprovalRequestUseCase {
         }
 
         public Page<AssessmentApprovalRequestDTO> execute(String schoolId, String masterId, String status,
-                        String query, String academicYearId, int page, int size) {
+                        String query, String classSessionId, String academicYearId, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
-                return list(schoolId, masterId, academicYear.getId(), status, query, page, size);
+                return list(schoolId, masterId, academicYear.getId(), status, query, classSessionId, page, size);
         }
 
         public Page<AssessmentApprovalRequestDTO> executeByUser(String schoolId, String userId, String status,
-                        String query, String academicYearId, int page, int size) {
+                        String query, String classSessionId, String academicYearId, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
                 // findByUserId (not scoped by school) throws IncorrectResultSizeDataAccessException for a
                 // teacher who works at more than one school - findByUserIdAndSchoolId resolves the one for
@@ -62,20 +62,22 @@ public class ListAssessmentApprovalRequestUseCase {
                 var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
-                return list(schoolId, teacher.getId(), academicYear.getId(), status, query, page, size);
+                return list(schoolId, teacher.getId(), academicYear.getId(), status, query, classSessionId, page,
+                                size);
         }
 
         // School-wide, unlike execute()/executeByUser() above (both scoped to one class master) -
         // the admin approval view's default list, so an admin sees everything pending across the
         // school without first having to know which teacher/class to check.
         public Page<AssessmentApprovalRequestDTO> executeForSchool(String schoolId, String status, String query,
-                        String academicYearId, int page, int size) {
+                        String classSessionId, String academicYearId, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
                 AssessmentApprovalRequest.Status parsedStatus = parseStatus(status);
                 Pageable pageable = createPageable(page, size);
 
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllBySchool(schoolId,
-                                academicYear.getId(), parsedStatus, normalizeQuery(query), sectionScopeService.levels(), pageable);
+                                academicYear.getId(), parsedStatus, normalizeQuery(query), normalizeQuery(classSessionId),
+                                sectionScopeService.levels(), pageable);
 
                 var approverFor = approverFor(schoolId);
                 return requests.map(r -> toDTO(r, approverFor));
@@ -133,12 +135,13 @@ public class ListAssessmentApprovalRequestUseCase {
         }
 
         private Page<AssessmentApprovalRequestDTO> list(String schoolId, String masterId, String academicYearId,
-                        String status, String query, int page, int size) {
+                        String status, String query, String classSessionId, int page, int size) {
                 AssessmentApprovalRequest.Status parsedStatus = parseStatus(status);
                 Pageable pageable = createPageable(page, size);
 
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllByClassMasterSchoolId(masterId,
-                                academicYearId, parsedStatus, normalizeQuery(query), sectionScopeService.levels(), pageable);
+                                academicYearId, parsedStatus, normalizeQuery(query), normalizeQuery(classSessionId),
+                                sectionScopeService.levels(), pageable);
 
                 var approverFor = approverFor(schoolId);
                 return requests.map(r -> toDTO(r, approverFor));
@@ -213,6 +216,7 @@ public class ListAssessmentApprovalRequestUseCase {
                 var approver = approverFor.apply(r.getTeacherSubject().getSession().getClazz().getLevel());
                 var teacher = r.getTeacherSubject().getTeacher().getUser();
                 var subject = r.getTeacherSubject().getSubject();
+                var classSession = r.getCycle().getSubject().getSession();
 
                 return new AssessmentApprovalRequestDTO(
                                 r.getId(),
@@ -220,7 +224,10 @@ public class ListAssessmentApprovalRequestUseCase {
                                 subject.getName(),
                                 r.getCycle().getAssessment().getName(),
                                 r.getCycle().getTerm().getName(),
-                                r.getCycle().getSubject().getSession().getClazz().getName(),
+                                // Class + section + stream (e.g. "JSS 1 A Science"), so same-named classes
+                                // in different sections/streams can be told apart in the list.
+                                classSession.getName(),
+                                classSession.getId(),
                                 totalStudents,
                                 passCount,
                                 roundTo2Dp(pass),

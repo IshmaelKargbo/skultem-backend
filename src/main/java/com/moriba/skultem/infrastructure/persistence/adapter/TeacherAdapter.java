@@ -81,24 +81,35 @@ public class TeacherAdapter implements TeacherRepository {
 
     @Override
     public Page<Teacher> searchInSections(String value, String gender, String schoolId,
-            java.util.Collection<String> sectionIds, Pageable pageable) {
+            java.util.Collection<String> sectionIds, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
+            Pageable pageable) {
         var normalizedGender = (gender == null || gender.isBlank()) ? "" : gender.trim().toUpperCase();
         if (sectionIds == null || sectionIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        return repo.searchInSections(schoolId, value, normalizedGender, sectionIds, pageable)
+        return repo.searchInSections(schoolId, value, normalizedGender, sectionIds, levels, pageable)
                 .map(TeacherMapper::toDomain);
     }
 
     @Override
     public Page<Teacher> searchInSectionsOrUnlimited(String value, String gender, String schoolId,
-            java.util.Collection<String> sectionIds, Pageable pageable) {
+            java.util.Collection<String> sectionIds, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
+            Pageable pageable) {
         var normalizedGender = (gender == null || gender.isBlank()) ? "" : gender.trim().toUpperCase();
         if (sectionIds == null || sectionIds.isEmpty()) {
             return search(value, gender, schoolId, pageable);
         }
-        return repo.searchInSectionsOrUnlimited(schoolId, value, normalizedGender, sectionIds, pageable)
+        return repo.searchInSectionsOrUnlimited(schoolId, value, normalizedGender, sectionIds, levels,
+                pageable)
                 .map(TeacherMapper::toDomain);
+    }
+
+    @Override
+    public boolean teachesAtLevels(String teacherId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels) {
+        if (teacherId == null || levels == null || levels.isEmpty()) {
+            return false;
+        }
+        return repo.teachesAtLevels(teacherId, levels);
     }
 
     @Override

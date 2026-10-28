@@ -55,15 +55,18 @@ public class TeacherService {
                 ? PageRequest.of(page, size, sort)
                 : Pageable.unpaged(sort);
 
-        // A section-limited admin sees only the teachers working in their own section(s).
+        // A section-limited caller (principal / section admin) sees the teachers working in their own
+        // section(s): those tagged to them, plus anyone teaching or class-mastering a class there.
         var scope = sectionScopeService.currentOrAll();
         var view = sectionScopeService.view();
         // An owner viewing one section also sees the teachers who work across every section.
         var found = view.isPresent()
-                ? repo.searchInSectionsOrUnlimited(search, gender, schoolId, view.get().sectionIds(), pageable)
+                ? repo.searchInSectionsOrUnlimited(search, gender, schoolId, view.get().sectionIds(),
+                        view.get().queryLevels(), pageable)
                 : scope.wholeSchool()
                         ? repo.search(search, gender, schoolId, pageable)
-                        : repo.searchInSections(search, gender, schoolId, scope.sectionIds(), pageable);
+                        : repo.searchInSections(search, gender, schoolId, scope.sectionIds(),
+                                scope.queryLevels(), pageable);
         return found.map(TeacherMapper::toDTO);
     }
 
