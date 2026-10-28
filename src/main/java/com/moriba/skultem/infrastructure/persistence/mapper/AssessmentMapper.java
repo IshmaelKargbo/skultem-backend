@@ -23,6 +23,7 @@ public class AssessmentMapper {
                 param.getName(),
                 param.getWeight(),
                 param.getPosition(),
+                Assessment.parseTerms(param.getTerms()),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }
@@ -44,6 +45,7 @@ public class AssessmentMapper {
                 .name(param.getName())
                 .weight(param.getWeight())
                 .position(param.getPosition())
+                .terms(Assessment.formatTerms(param.getTerms()))
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

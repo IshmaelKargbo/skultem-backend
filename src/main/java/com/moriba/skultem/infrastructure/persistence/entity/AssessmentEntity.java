@@ -40,6 +40,10 @@ public class AssessmentEntity {
     @Column(nullable = false)
     private int position;
 
+    // Term numbers the test runs in ("1,2"); null = every term.
+    @Column(length = 50)
+    private String terms;
+
     private Instant createdAt;
 
     private Instant updatedAt;

@@ -19,6 +19,9 @@ import com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.De
 import com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.Item;
 import com.moriba.skultem.domain.model.Assessment;
 import com.moriba.skultem.domain.model.AssessmentTemplate;
+import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
+import com.moriba.skultem.domain.model.TeacherSubject;
+import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentScoreRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
@@ -104,5 +107,49 @@ class UpdateAssessmentTemplateUseCaseTest {
         assertThatThrownBy(() -> useCase.execute("s", "t", null,
                 List.of(new Item("a1", "Test 1", 70), new Item("a2", "Exam", 60)), false))
                 .isInstanceOf(RuleException.class).hasMessageContaining("cannot exceed 100");
+    }
+
+    // A cycle of `test` in term `termNumber` for one class subject, still waiting (LOCKED) unless said otherwise.
+    private ClassSubjectAssessmentLifeCycle cycle(Assessment test, int termNumber, ClassSubjectAssessmentLifeCycle.Status status) {
+        var term = mock(Term.class);
+        when(term.getTermNumber()).thenReturn(termNumber);
+        when(term.getId()).thenReturn("term" + termNumber);
+        var subject = mock(TeacherSubject.class);
+        when(subject.getId()).thenReturn("ts");
+        var c = mock(ClassSubjectAssessmentLifeCycle.class);
+        when(c.getTerm()).thenReturn(term);
+        when(c.getAssessment()).thenReturn(test);
+        when(c.getSubject()).thenReturn(subject);
+        when(c.getStatus()).thenReturn(status);
+        return c;
+    }
+
+    @Test
+    void takingATestOutOfATermRemovesItsWaitingTestsThereOnly() {
+        var locked = ClassSubjectAssessmentLifeCycle.Status.LOCKED;
+        var cycles = List.of(
+                cycle(test1, 1, ClassSubjectAssessmentLifeCycle.Status.DRAFT), cycle(exam, 1, locked),
+                cycle(test1, 3, locked), cycle(exam, 3, locked));
+        when(cycleRepo.findAllByTemplate("t")).thenReturn(cycles);
+
+        // Test 1 in term 1 only, the Exam in term 3 only - each term 100%.
+        useCase.execute("s", "t", null, List.of(new Item("a1", "Test 1", 100, java.util.Set.of(1)),
+                new Item("a2", "Exam", 100, java.util.Set.of(3))), false);
+
+        verify(maintenance).deleteAssessmentInTerms("a1", java.util.Set.of(3));
+        verify(maintenance).deleteAssessmentInTerms("a2", java.util.Set.of(1));
+        verify(maintenance, never()).deleteAssessmentCascade(any());
+        assertThat(exam.getTerms()).containsExactly(3);
+    }
+
+    @Test
+    void aTestThatHasOpenedInATermCantBeTakenOutOfIt() {
+        var opened = cycle(test1, 1, ClassSubjectAssessmentLifeCycle.Status.DRAFT);
+        when(cycleRepo.findAllByTemplate("t")).thenReturn(List.of(opened));
+
+        assertThatThrownBy(() -> useCase.execute("s", "t", null, List.of(
+                new Item("a1", "Test 1", 100, java.util.Set.of(2)), new Item("a2", "Exam", 100, java.util.Set.of(3))),
+                false))
+                .isInstanceOf(RuleException.class).hasMessageContaining("already opened in term 1");
     }
 }

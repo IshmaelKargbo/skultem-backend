@@ -133,7 +133,7 @@ public class AssessmentController {
             @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.UpdateAssessmentTemplateDTO param) {
         var items = param.assessments().stream()
                 .map(i -> new com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.Item(i.id(),
-                        i.name(), i.weight()))
+                        i.name(), i.weight(), i.terms() == null ? java.util.Set.of() : java.util.Set.copyOf(i.terms())))
                 .toList();
         var res = updateAssessmentTemplateUseCase.execute(school, templateId,
                 new com.moriba.skultem.application.usecase.UpdateAssessmentTemplateUseCase.Details(param.name(),
@@ -173,7 +173,8 @@ public class AssessmentController {
             @PathVariable String templateId,
             @Valid @RequestBody AssignAssessmentsDTO param) {
         var assignments = param.assignments().stream()
-                .map(item -> new AssignAssessmentsToTemplateUseCase.AssessmentInput(item.name(), item.weight()))
+                .map(item -> new AssignAssessmentsToTemplateUseCase.AssessmentInput(item.name(), item.weight(),
+                        item.terms() == null ? java.util.Set.of() : java.util.Set.copyOf(item.terms())))
                 .toList();
         var res = assignAssessmentsToTemplateUseCase.execute(school, templateId, assignments);
         return new ApiResponse<>("success", 200, "Assessments assigned successfully", res);

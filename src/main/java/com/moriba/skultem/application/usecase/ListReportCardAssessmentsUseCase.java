@@ -31,7 +31,8 @@ public class ListReportCardAssessmentsUseCase {
 
         return assessmentRepo.findAllByTemplateIdAndSchoolId(clazz.getTemplate().getId(), schoolId).stream()
                 .sorted(Comparator.comparingInt(Assessment::getPosition))
-                .map(e -> new ReportCardAssessmentOptionDTO(e.getId(), e.getName(), e.getWeight(), e.getPosition()))
+                .map(e -> new ReportCardAssessmentOptionDTO(e.getId(), e.getName(), e.getWeight(), e.getPosition(),
+                        e.getTerms().stream().sorted().toList()))
                 .toList();
     }
 }

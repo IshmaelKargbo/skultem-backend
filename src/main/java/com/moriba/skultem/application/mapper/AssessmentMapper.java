@@ -14,6 +14,8 @@ public class AssessmentMapper {
                 param.getName(),
                 param.getWeight(),
                 param.getPosition(),
+                // Empty = every term.
+                param.getTerms().stream().sorted().toList(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }

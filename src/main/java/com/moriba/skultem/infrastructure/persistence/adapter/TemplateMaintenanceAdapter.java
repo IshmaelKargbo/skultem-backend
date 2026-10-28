@@ -94,4 +94,38 @@ public class TemplateMaintenanceAdapter implements TemplateMaintenanceRepository
         em.flush();
         em.clear();
     }
+
+    @Override
+    public long markedScoresOf(String assessmentId, java.util.Collection<Integer> termNumbers) {
+        return em.createQuery("""
+                SELECT COUNT(s) FROM AssessmentScoreEntity s
+                WHERE s.cycle.assessment.id = :assessmentId AND s.cycle.term.termNumber IN :terms
+                  AND (s.score > 0 OR s.gradedByUserId IS NOT NULL)
+                """, Long.class)
+                .setParameter("assessmentId", assessmentId).setParameter("terms", termNumbers).getSingleResult();
+    }
+
+    @Override
+    public void deleteAssessmentInTerms(String assessmentId, java.util.Collection<Integer> termNumbers) {
+        List<String> cycleIds = em.createQuery("""
+                SELECT l.id FROM ClassSubjectAssessmentLifeCycleEntity l
+                WHERE l.assessment.id = :assessmentId AND l.term.termNumber IN :terms
+                """, String.class)
+                .setParameter("assessmentId", assessmentId).setParameter("terms", termNumbers).getResultList();
+        if (cycleIds.isEmpty()) {
+            return;
+        }
+        em.createQuery("""
+                DELETE FROM AssessmentCaEntryEntity ce WHERE ce.assessmentScoreId IN (
+                    SELECT s.id FROM AssessmentScoreEntity s WHERE s.cycle.id IN :cycles)
+                """).setParameter("cycles", cycleIds).executeUpdate();
+        em.createQuery("DELETE FROM AssessmentScoreEntity s WHERE s.cycle.id IN :cycles")
+                .setParameter("cycles", cycleIds).executeUpdate();
+        em.createQuery("DELETE FROM AssessmentApprovalRequestEntity r WHERE r.cycle.id IN :cycles")
+                .setParameter("cycles", cycleIds).executeUpdate();
+        em.createQuery("DELETE FROM ClassSubjectAssessmentLifeCycleEntity l WHERE l.id IN :cycles")
+                .setParameter("cycles", cycleIds).executeUpdate();
+        em.flush();
+        em.clear();
+    }
 }

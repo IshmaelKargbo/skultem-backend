@@ -23,4 +23,11 @@ public interface TemplateMaintenanceRepository {
 
     // Removes an assessment with its tests, scores, CA entries and approval requests.
     void deleteAssessmentCascade(String assessmentId);
+
+    // Scores somebody has marked in one assessment, in the given term numbers only.
+    long markedScoresOf(String assessmentId, java.util.Collection<Integer> termNumbers);
+
+    // Removes an assessment's tests, scores, CA entries and approval requests in the given term numbers (the test was
+    // taken out of those terms). The assessment itself stays.
+    void deleteAssessmentInTerms(String assessmentId, java.util.Collection<Integer> termNumbers);
 }

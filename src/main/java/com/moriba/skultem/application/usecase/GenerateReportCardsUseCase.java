@@ -102,8 +102,9 @@ public class GenerateReportCardsUseCase {
                 if (!param.wholeYear() && param.assessmentIds() != null) {
                         selected.addAll(param.assessmentIds());
                 }
-                // Picking every assessment is just the normal full-term card.
-                var allIds = templateAssessments.stream().map(Assessment::getId).collect(Collectors.toSet());
+                // Picking every assessment is just the normal full-term card - every test that runs in this term.
+                var allIds = Assessment.forTerm(templateAssessments, term.getTermNumber()).stream()
+                                .map(Assessment::getId).collect(Collectors.toSet());
                 boolean subset = !selected.isEmpty() && !selected.containsAll(allIds);
 
                 String scopeKey = param.wholeYear() ? "YEAR"

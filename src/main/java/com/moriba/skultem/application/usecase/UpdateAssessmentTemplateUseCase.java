@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 import com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository;
 import com.moriba.skultem.domain.repository.StudentAssessmentRepository;
 import com.moriba.skultem.domain.repository.TemplateMaintenanceRepository;
+import com.moriba.skultem.domain.service.TermWeights;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +47,11 @@ public class UpdateAssessmentTemplateUseCase {
     }
 
     // `id` is null for a test that is new (or when the caller only knows names - then the name is matched).
-    public record Item(String id, String name, Integer weight) {
+    // `terms`: the term numbers the test runs in; empty = every term.
+    public record Item(String id, String name, Integer weight, Set<Integer> terms) {
+        public Item(String id, String name, Integer weight) {
+            this(id, name, weight, Set.of());
+        }
     }
 
     public record Result(AssessmentTemplateDTO template, String summary) {
@@ -106,6 +113,37 @@ public class UpdateAssessmentTemplateUseCase {
             }
         }
 
+        // Kept tests taken out of some terms: their tests in those terms go. Only tests still waiting for their turn
+        // can go; one that has opened is refused, and one with marks needs the same confirmation as a removal.
+        var cyclesBefore = cycleRepo.findAllByTemplate(templateId);
+        Map<String, Set<Integer>> droppedTerms = new LinkedHashMap<>();
+        for (int i = 0; i < wanted.size(); i++) {
+            var match = matches.get(i);
+            if (match == null) {
+                continue;
+            }
+            var item = wanted.get(i);
+            var drop = new TreeSet<Integer>();
+            for (var c : cyclesBefore) {
+                int term = c.getTerm().getTermNumber();
+                if (c.getAssessment().getId().equals(match.getId()) && !runsIn(item.terms(), term)) {
+                    if (c.getStatus() != ClassSubjectAssessmentLifeCycle.Status.LOCKED) {
+                        throw new RuleException(item.name() + " has already opened in term " + term
+                                + ", so it can't be taken out of that term. Finish the term first.");
+                    }
+                    drop.add(term);
+                }
+            }
+            if (drop.isEmpty()) {
+                continue;
+            }
+            if (!force && maintenance.markedScoresOf(match.getId(), drop) > 0) {
+                throw new RuleException(item.name() + " already has marks in term " + joinTerms(drop)
+                        + ", and taking it out of that term deletes them. Confirm to change it anyway.");
+            }
+            droppedTerms.put(match.getId(), drop);
+        }
+
         // Details
         if (details != null && details.name() != null && !details.name().isBlank()) {
             if (details.passMark() == null || details.passMark() < 0 || details.passMark() > 100) {
@@ -118,14 +156,18 @@ public class UpdateAssessmentTemplateUseCase {
 
         int reweighted = 0, added = 0;
         var created = new ArrayList<Assessment>();
-        var cyclesBefore = cycleRepo.findAllByTemplate(templateId);
+        var widened = new ArrayList<Assessment>();
         for (int i = 0; i < wanted.size(); i++) {
             var item = wanted.get(i);
             int position = i + 1;
             var match = matches.get(i);
             if (match != null) {
                 boolean weightChanged = !match.getWeight().equals(item.weight());
-                match.update(item.name(), item.weight(), position);
+                boolean termsChanged = !match.getTerms().equals(item.terms());
+                match.update(item.name(), item.weight(), position, item.terms());
+                if (termsChanged) {
+                    widened.add(match);
+                }
                 assessmentRepo.save(match);
                 if (weightChanged) {
                     maintenance.updateScoreWeight(match.getId(), item.weight());
@@ -133,7 +175,7 @@ public class UpdateAssessmentTemplateUseCase {
                 }
             } else {
                 var fresh = Assessment.create(UUID.randomUUID().toString(), schoolId, template, item.name(),
-                        item.weight(), position);
+                        item.weight(), position, item.terms());
                 assessmentRepo.save(fresh);
                 created.add(fresh);
                 added++;
@@ -144,8 +186,14 @@ public class UpdateAssessmentTemplateUseCase {
             maintenance.deleteAssessmentCascade(gone.getId());
         }
 
+        droppedTerms.forEach(maintenance::deleteAssessmentInTerms);
+
         for (var fresh : created) {
             addToExistingTests(schoolId, cyclesBefore, fresh);
+        }
+        // A kept test that now runs in more terms appears in those terms too.
+        for (var test : widened) {
+            addToExistingTests(schoolId, cyclesBefore, test);
         }
 
         var list = assessmentRepo.findAllByTemplateIdAndSchoolId(templateId, schoolId).stream()
@@ -157,13 +205,22 @@ public class UpdateAssessmentTemplateUseCase {
         return new Result(AssessmentTemplateMapper.toDTO(template, list), summary);
     }
 
-    // A new test appears, locked, for every class subject and term that already has tests from this template.
+    // A test appears, locked, for every class subject and term that already has tests from this template - in the
+    // terms the test runs in, where it isn't there yet.
     private void addToExistingTests(String schoolId, List<ClassSubjectAssessmentLifeCycle> cyclesBefore,
             Assessment fresh) {
         Map<String, ClassSubjectAssessmentLifeCycle> groups = new LinkedHashMap<>();
+        var present = new HashSet<String>();
         for (var c : cyclesBefore) {
-            groups.putIfAbsent(c.getSubject().getId() + "|" + c.getTerm().getId(), c);
+            var key = c.getSubject().getId() + "|" + c.getTerm().getId();
+            if (c.getAssessment().getId().equals(fresh.getId())) {
+                present.add(key);
+            }
+            if (fresh.runsInTerm(c.getTerm().getTermNumber())) {
+                groups.putIfAbsent(key, c);
+            }
         }
+        present.forEach(groups::remove);
 
         var cycles = new ArrayList<ClassSubjectAssessmentLifeCycle>();
         var scores = new ArrayList<AssessmentScore>();
@@ -191,7 +248,6 @@ public class UpdateAssessmentTemplateUseCase {
         }
         var clean = new ArrayList<Item>();
         var names = new HashSet<String>();
-        int total = 0;
         for (var item : items) {
             if (item == null || item.name() == null || item.name().isBlank()) {
                 throw new RuleException("Every assessment needs a name");
@@ -203,12 +259,30 @@ public class UpdateAssessmentTemplateUseCase {
             if (!names.add(name.toLowerCase(Locale.ROOT))) {
                 throw new RuleException("Duplicate assessment: " + name);
             }
-            total += item.weight();
-            clean.add(new Item(item.id(), name, item.weight()));
+            var terms = new TreeSet<Integer>();
+            if (item.terms() != null) {
+                for (var t : item.terms()) {
+                    if (t == null || t < 1 || t > Assessment.MAX_TERM) {
+                        throw new RuleException("A test can only run in terms 1 to " + Assessment.MAX_TERM);
+                    }
+                    terms.add(t);
+                }
+            }
+            clean.add(new Item(item.id(), name, item.weight(), terms));
         }
-        if (total > 100) {
-            throw new RuleException("Total assessment weight cannot exceed 100%");
+        var overweight = TermWeights.overweight(clean.stream()
+                .map(i -> new TermWeights.Line(i.name(), i.weight(), i.terms())).toList());
+        if (overweight != null) {
+            throw new RuleException(overweight);
         }
         return clean;
+    }
+
+    private static boolean runsIn(Set<Integer> terms, int term) {
+        return terms == null || terms.isEmpty() || terms.contains(term);
+    }
+
+    private static String joinTerms(Set<Integer> terms) {
+        return terms.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(", "));
     }
 }

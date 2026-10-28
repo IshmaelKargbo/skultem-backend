@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.moriba.skultem.domain.model.Assessment;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -67,11 +68,10 @@ public class GetActiveAssessmentCycleUseCase {
                         template.getDescription(), List.of(), 0, false);
             }
 
-            var assessments = assessmentRepository
-                    .findAllByTemplateIdAndSchoolId(template.getId(), schoolId)
-                    .stream()
-                    .sorted(Comparator.comparingInt(a -> a.getPosition()))
-                    .toList();
+            // The tests that run in the active term (a template can limit tests to some terms).
+            var assessments = Assessment.forTerm(
+                    assessmentRepository.findAllByTemplateIdAndSchoolId(template.getId(), schoolId),
+                    activeTerm.termNumber());
 
             // Only this class's own cycles - sections advance separately, so another section sharing the template can
             // be on a different assessment.
@@ -164,6 +164,10 @@ public class GetActiveAssessmentCycleUseCase {
         final String cycleStatus = activeTerm != null
                 ? ACTIVE_STATUS
                 : PENDING_TERM_STATUS;
+
+        if (activeTerm != null) {
+            selectedAssessments = Assessment.forTerm(selectedAssessments, activeTerm.termNumber());
+        }
 
         List<AssessmentCycleDTO> assessments = selectedAssessments.stream()
                 .sorted(Comparator.comparingInt(a -> a.getPosition()))

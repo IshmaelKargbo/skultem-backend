@@ -58,7 +58,10 @@ public class GetAssessmentCycleOverviewUseCase {
                                 "No template assigned");
                     }
 
-                    var assessments = assessmentRepository.findAllByTemplateIdAndSchoolId(template.getId(), schoolId);
+                    var allAssessments = assessmentRepository.findAllByTemplateIdAndSchoolId(template.getId(), schoolId);
+                    // Weights are checked for the active term's own tests.
+                    var assessments = activeTerm == null ? allAssessments
+                            : com.moriba.skultem.domain.model.Assessment.forTerm(allAssessments, activeTerm.termNumber());
                     int totalWeight = assessments.stream()
                             .mapToInt(item -> item.getWeight() == null ? 0 : item.getWeight())
                             .sum();

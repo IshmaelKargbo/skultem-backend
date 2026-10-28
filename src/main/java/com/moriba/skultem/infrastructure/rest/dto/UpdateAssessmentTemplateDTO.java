@@ -13,6 +13,7 @@ public record UpdateAssessmentTemplateDTO(
         // Change it even though tests were already submitted, or drop a test that has marks.
         Boolean force) {
 
-    public record Item(String id, String name, Integer weight) {
+    // terms: the term numbers the test runs in; empty or missing = every term.
+    public record Item(String id, String name, Integer weight, List<Integer> terms) {
     }
 }

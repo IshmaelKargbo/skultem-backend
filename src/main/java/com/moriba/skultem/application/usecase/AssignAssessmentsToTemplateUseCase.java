@@ -15,6 +15,7 @@ import com.moriba.skultem.application.mapper.AssessmentMapper;
 import com.moriba.skultem.application.mapper.AssessmentTemplateMapper;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Assessment;
+import com.moriba.skultem.domain.service.TermWeights;
 import com.moriba.skultem.domain.repository.AssessmentRepository;
 import com.moriba.skultem.domain.repository.AssessmentTemplateRepository;
 
@@ -35,9 +36,10 @@ public class AssignAssessmentsToTemplateUseCase {
 
         var sanitized = sanitize(assignments);
 
-        double totalWeight = sanitized.stream().mapToDouble(AssessmentInput::weight).sum();
-        if (totalWeight > 100.0) {
-            throw new RuleException("Total assessment weight cannot exceed 100%");
+        var overweight = TermWeights.overweight(sanitized.stream()
+                .map(a -> new TermWeights.Line(a.name(), a.weight(), a.terms())).toList());
+        if (overweight != null) {
+            throw new RuleException(overweight);
         }
 
         assessmentRepo.deleteAllByTemplateIdAndSchoolId(templateId, schoolId);
@@ -46,7 +48,7 @@ public class AssignAssessmentsToTemplateUseCase {
         int position = 1;
         for (AssessmentInput assignment : sanitized) {
             records.add(Assessment.create(UUID.randomUUID().toString(), schoolId, template, assignment.name(),
-                    assignment.weight(), position));
+                    assignment.weight(), position, assignment.terms()));
             position++;
         }
 
@@ -78,12 +80,28 @@ public class AssignAssessmentsToTemplateUseCase {
                 throw new RuleException("Duplicate assessment session: " + cleanName);
             }
 
-            sanitized.add(new AssessmentInput(cleanName, assignment.weight()));
+            sanitized.add(new AssessmentInput(cleanName, assignment.weight(), cleanTerms(assignment.terms())));
         }
 
         return sanitized;
     }
 
-    public record AssessmentInput(String name, Integer weight) {
+    private static java.util.Set<Integer> cleanTerms(java.util.Set<Integer> terms) {
+        if (terms == null) {
+            return java.util.Set.of();
+        }
+        for (var t : terms) {
+            if (t == null || t < 1 || t > Assessment.MAX_TERM) {
+                throw new RuleException("A test can only run in terms 1 to " + Assessment.MAX_TERM);
+            }
+        }
+        return terms;
+    }
+
+    // terms: the term numbers the test runs in; empty = every term.
+    public record AssessmentInput(String name, Integer weight, java.util.Set<Integer> terms) {
+        public AssessmentInput(String name, Integer weight) {
+            this(name, weight, java.util.Set.of());
+        }
     }
 }

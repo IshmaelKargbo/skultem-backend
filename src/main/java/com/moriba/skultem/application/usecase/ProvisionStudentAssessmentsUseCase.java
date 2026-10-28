@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.model.Assessment;
 import com.moriba.skultem.domain.model.AssessmentScore;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.ClassSubjectAssessmentLifeCycle;
@@ -102,6 +103,12 @@ public class ProvisionStudentAssessmentsUseCase {
             if (term.getTermNumber() < firstTerm) {
                 continue;
             }
+            // Only the tests that run in this term (a template can sit an Exam alone in term 3).
+            var termAssessments = Assessment.forTerm(assessments, term.getTermNumber());
+            if (termAssessments.isEmpty()) {
+                continue;
+            }
+            int firstPosition = termAssessments.get(0).getPosition();
             for (var subject : subjects) {
 
                 var teacherSubjectRes = teacherSubjectRepo
@@ -129,11 +136,11 @@ public class ProvisionStudentAssessmentsUseCase {
 
                 var cycles = new ArrayList<>(cycleRepo.findAllBySubjectAndTerm(teacherSubject.getId(), term.getId()));
                 if (cycles.isEmpty()) {
-                    for (var assessment : assessments) {
+                    for (var assessment : termAssessments) {
                         // The first assessment of the first term opens at once. A class joining later starts on its
                         // first term's first assessment only if that term is already running; otherwise it opens
                         // with the term, like everyone else's.
-                        boolean opensNow = assessment.getPosition() == 1 && (term.getTermNumber() == 1
+                        boolean opensNow = assessment.getPosition() == firstPosition && (term.getTermNumber() == 1
                                 || (term.getTermNumber() == firstTerm && term.getStatus() == Term.Status.ACTIVE));
                         var status = opensNow
                                 ? ClassSubjectAssessmentLifeCycle.Status.DRAFT
