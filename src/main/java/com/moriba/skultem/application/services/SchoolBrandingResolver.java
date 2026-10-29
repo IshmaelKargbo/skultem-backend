@@ -55,7 +55,8 @@ public class SchoolBrandingResolver {
                 dto.gradingScale(), b.logo(), dto.motto(), b.principalName(), b.principalSignature(),
                 dto.primaryColor(), dto.secondaryColor(), dto.attendanceThreshold(), dto.genderComposition(),
                 dto.testSchool(), dto.managementModel(), dto.createdAt(), dto.updatedAt(), b.phone(),
-                dto.attendanceWindowDays(), dto.attendanceMinDays(), dto.attendanceStreakDays(), dto.gradeApprover());
+                dto.attendanceWindowDays(), dto.attendanceMinDays(), dto.attendanceStreakDays(), dto.gradeApprover(),
+                dto.roundAssessmentScores());
     }
 
     public EffectiveBranding forSchool(School school) {

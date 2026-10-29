@@ -22,8 +22,14 @@ public class TimetableAdapter implements TimetableRepository {
     }
 
     @Override
-    public Optional<Timetable> findByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId) {
-        return repo.findByPeriodIdAndDayIdAndSchoolId(period, day, schoolId).map(TimetableMapper::toDomain);
+    public List<Timetable> findAllByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId) {
+        return repo.findByPeriodIdAndDayIdAndSchoolIdOrderByCreatedAtAsc(period, day, schoolId).stream()
+                .map(TimetableMapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<Timetable> findByIdAndSchoolId(String id, String schoolId) {
+        return repo.findByIdAndSchoolId(id, schoolId).map(TimetableMapper::toDomain);
     }
 
     @Override

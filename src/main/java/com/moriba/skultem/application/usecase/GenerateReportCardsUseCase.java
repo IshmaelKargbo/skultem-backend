@@ -162,7 +162,7 @@ public class GenerateReportCardsUseCase {
 
                         List<ReportCardSubjectDTO> subjects = new ArrayList<>();
                         for (var entry : rowsBySubject.entrySet()) {
-                                List<Integer> termScores = new ArrayList<>();
+                                List<Double> termScores = new ArrayList<>();
                                 List<ReportCardAssessmentScoreDTO> assessments = new ArrayList<>();
                                 List<ReportCardTermScoreDTO> termScoreRows = new ArrayList<>();
 
@@ -178,9 +178,10 @@ public class GenerateReportCardsUseCase {
                                         // A chosen subset is marked out of just those assessments' weights, so
                                         // "First Test only" reads as a percentage, not as 20/100.
                                         double termScore = subset && possible > 0 ? earned / possible * 100 : earned;
-                                        termScores.add((int) Math.round(termScore));
+                                        double shownTermScore = roundScore(school, termScore);
+                                        termScores.add(shownTermScore);
                                         termScoreRows.add(new ReportCardTermScoreDTO(terms.get(termIndex).getName(),
-                                                        (int) Math.round(termScore)));
+                                                        shownTermScore));
 
                                         String prefix = terms.size() > 1 ? terms.get(termIndex).getName() + " · " : "";
                                         // A whole-year card shows term totals and the final, not every assessment.
@@ -195,15 +196,15 @@ public class GenerateReportCardsUseCase {
                                                                                         ? r.level() : 0))));
                                 }
 
-                                int subjectScore = (int) Math.round(termScores.stream().mapToInt(Integer::intValue)
-                                                .average().orElse(0));
+                                double subjectScore = roundScore(school, termScores.stream()
+                                                .mapToDouble(Double::doubleValue).average().orElse(0));
                                 subjects.add(new ReportCardSubjectDTO(entry.getKey(),
                                                 teacherBySubject.get(entry.getKey()), subjectScore, 100, subjectScore,
                                                 resolveGrade(school, subjectScore), assessments,
                                                 param.wholeYear() ? termScoreRows : null));
                         }
 
-                        double average = subjects.stream().mapToInt(e -> e.score()).average().orElse(0);
+                        double average = subjects.stream().mapToDouble(e -> e.score()).average().orElse(0);
                         pending.add(new Pending(student, subjects, average));
                 }
 
@@ -299,8 +300,21 @@ public class GenerateReportCardsUseCase {
                 if (school == null) {
                         return "N/A";
                 }
-                String grade = school.resolveGrade((int) Math.round(average));
+                // Grade bands are whole numbers (e.g. 40-49, 50-59). Rounding schools look up the rounded score,
+                // as before. Otherwise the decimal decides: 49.6 hasn't reached 50, so it stays in 40-49 - the
+                // same way pass/fail already compares the unrounded average.
+                int bandScore = rounds(school) ? (int) Math.round(average) : (int) Math.floor(average);
+                String grade = school.resolveGrade(bandScore);
                 return grade != null ? grade : "N/A";
+        }
+
+        // Whole number, or one decimal place, per the school's "Round assessment scores" setting.
+        private double roundScore(School school, double value) {
+                return rounds(school) ? Math.round(value) : Math.round(value * 10.0) / 10.0;
+        }
+
+        private boolean rounds(School school) {
+                return school == null || school.isRoundAssessmentScores();
         }
 
         private Double computeAttendancePercentage(String enrollmentId, String schoolId, LocalDate start,

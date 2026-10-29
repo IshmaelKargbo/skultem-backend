@@ -6,6 +6,7 @@ import com.moriba.skultem.application.mapper.*;
 import com.moriba.skultem.application.usecase.AssignTimingLevelUseCase;
 import com.moriba.skultem.application.usecase.CreatePeriodUseCase;
 import com.moriba.skultem.application.usecase.CreateTimetableUseCase;
+import com.moriba.skultem.application.usecase.DeleteTimetableEntryUseCase;
 import com.moriba.skultem.application.usecase.DeletePeriodUseCase;
 import com.moriba.skultem.application.usecase.DeleteTimingUseCase;
 import com.moriba.skultem.application.usecase.ManageRoomUseCase;
@@ -51,6 +52,7 @@ public class TimetableService {
     private final AssignTimingLevelUseCase assignTimingLevelUseCase;
     private final ManageRoomUseCase manageRoomUsecase;
     private final CreateTimetableUseCase timetableUseCase;
+    private final DeleteTimetableEntryUseCase deleteTimetableEntryUseCase;
     private final CreatePeriodUseCase createPeriodUseCase;
     private final SetWorkingDayUseCase setWorkingDayUseCase;
     private final DeletePeriodUseCase deletePeriodUseCase;
@@ -76,16 +78,16 @@ public class TimetableService {
 
     public PeriodDTO createPeriod(String schoolId, String session) {
         var domain = createPeriodUseCase.execute(schoolId, session);
-        var subjects = getSubjects(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
+        var subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         return PeriodMapper.toDTO(domain, subjects);
     }
 
     public PeriodDTO createBreak(String schoolId, String session) {
         var domain = createPeriodUseCase.executeBreak(schoolId, session);
-        List<TimetableDTO> subjects = new ArrayList<>();
+        List<List<TimetableDTO>> subjects = new ArrayList<>();
 
         if (!domain.isBreak() && !domain.isLunch()) {
-            subjects = getSubjects(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
+            subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 
         return PeriodMapper.toDTO(domain, subjects);
@@ -93,29 +95,33 @@ public class TimetableService {
 
     public PeriodDTO createLunch(String schoolId, String session) {
         var domain = createPeriodUseCase.executeLunch(schoolId, session);
-        List<TimetableDTO> subjects = new ArrayList<>();
+        List<List<TimetableDTO>> subjects = new ArrayList<>();
         if (!domain.isBreak() && !domain.isLunch()) {
-            subjects = getSubjects(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
+            subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 
         return PeriodMapper.toDTO(domain, subjects);
     }
 
     public TimetableDTO createTimetable(String schoolId, String periodId, String subject, Day day, String roomId,
-            String color) {
-        var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color);
+            String color, String entryId) {
+        var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color, entryId);
         return TimetableMapper.toDTO(domain);
+    }
+
+    public TimetableDTO deleteTimetableEntry(String schoolId, String id) {
+        return TimetableMapper.toDTO(deleteTimetableEntryUseCase.execute(schoolId, id));
     }
 
     public List<PeriodDTO> getTimeTable(String session) {
         return periodRepo.findAllBySessionId(session).stream().map((e) -> {
-            List<TimetableDTO> subjects = new ArrayList<>();
+            List<List<TimetableDTO>> slots = new ArrayList<>();
 
             if (!e.isBreak() && !e.isLunch()) {
-                subjects = getSubjects(e.getSchoolId(), e.getId(), session);
+                slots = getSlots(e.getSchoolId(), e.getId(), session);
             }
 
-            return PeriodMapper.toDTO(e, subjects);
+            return PeriodMapper.toDTO(e, slots);
         }).toList();
     }
 
@@ -192,10 +198,10 @@ public class TimetableService {
     // ClassSession, so this can only ever affect that one class's timetable.
     public PeriodDTO updatePeriod(String schoolId, String id, LocalTime startTime, LocalTime endTime) {
         var domain = updatePeriodUseCase.execute(schoolId, id, startTime, endTime);
-        List<TimetableDTO> subjects = new ArrayList<>();
+        List<List<TimetableDTO>> subjects = new ArrayList<>();
 
         if (!domain.isBreak() && !domain.isLunch()) {
-            subjects = getSubjects(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
+            subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 
         return PeriodMapper.toDTO(domain, subjects);
@@ -245,9 +251,9 @@ public class TimetableService {
         return setWorkingDayUseCase.execute(schoolId, timingId, days).stream().map(WorkingDayMapper::toDTO).toList();
     }
 
-    private List<TimetableDTO> getSubjects(String school, String period, String sessionId) {
+    private List<List<TimetableDTO>> getSlots(String school, String period, String sessionId) {
         var days = listWorkingDaysBySession(school, sessionId);
-        List<TimetableDTO> list = new ArrayList<>();
+        List<List<TimetableDTO>> list = new ArrayList<>();
 
         for (WorkingDayDTO day : days) {
 
@@ -255,16 +261,8 @@ public class TimetableService {
                 continue;
             }
 
-            var timetable = timetableRepo
-                    .findByPeriodIdAndDayIdAndSchoolId(period, day.id(), school)
-                    .orElse(null);
-
-            if (timetable == null) {
-                list.add(null);
-                continue;
-            }
-
-            list.add(TimetableMapper.toDTO(timetable));
+            list.add(timetableRepo.findAllByPeriodIdAndDayIdAndSchoolId(period, day.id(), school).stream()
+                    .map(TimetableMapper::toDTO).toList());
         }
 
         return list;

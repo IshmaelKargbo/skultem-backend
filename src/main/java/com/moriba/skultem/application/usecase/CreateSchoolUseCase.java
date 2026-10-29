@@ -150,7 +150,7 @@ public class CreateSchoolUseCase {
                 school.isTestSchool(), school.getManagementModel(), school.getCreatedAt(),
                 school.getUpdatedAt(), school.getPhone(),
                 school.getAttendanceWindowDays(), school.getAttendanceMinDays(), school.getAttendanceStreakDays(),
-                school.getGradeApprover());
+                school.getGradeApprover(), school.isRoundAssessmentScores());
     }
 
     private void sendWelcomeEmail(School school, String password) {

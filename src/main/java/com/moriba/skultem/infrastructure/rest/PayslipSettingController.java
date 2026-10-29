@@ -28,7 +28,7 @@ public class PayslipSettingController {
     private final SavePayslipSettingUseCase savePayslipSettingUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPayslipSettingUseCase.execute(school);
@@ -36,7 +36,7 @@ public class PayslipSettingController {
     }
 
     @PutMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<PayslipSettingDTO> save(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SavePayslipSettingDTO param) {

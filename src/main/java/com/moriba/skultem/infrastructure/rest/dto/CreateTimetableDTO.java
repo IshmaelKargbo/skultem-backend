@@ -16,5 +16,7 @@ public record CreateTimetableDTO(
         String color,
 
         @NotBlank(message = "room is required")
-        String room
+        String room,
+        // Set to edit that entry; leave out to add a subject (or another option) to the slot.
+        String entry
 ) {}

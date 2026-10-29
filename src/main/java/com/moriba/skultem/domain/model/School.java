@@ -36,6 +36,8 @@ public class School extends AggregateRoot<String> {
     private int attendanceMinDays;
     private int attendanceStreakDays;
     private GradeApprover gradeApprover;
+    // Show assessment scores and averages as whole numbers (true) or keep one decimal place (false).
+    private boolean roundAssessmentScores;
     private String primaryColor;
     private String secondaryColor;
     private Double attendanceThreshold;
@@ -82,7 +84,7 @@ public class School extends AggregateRoot<String> {
             String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
             GenderComposition genderComposition, boolean testSchool, ManagementModel managementModel,
             String phone, int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
-            GradeApprover gradeApprover, Instant createdAt, Instant updatedAt) {
+            GradeApprover gradeApprover, boolean roundAssessmentScores, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -109,6 +111,7 @@ public class School extends AggregateRoot<String> {
         this.attendanceStreakDays = attendanceStreakDays > 0 ? attendanceStreakDays
                 : AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS;
         this.gradeApprover = gradeApprover != null ? gradeApprover : GradeApprover.CLASS_MASTER;
+        this.roundAssessmentScores = roundAssessmentScores;
         touch(updatedAt);
     }
 
@@ -118,7 +121,7 @@ public class School extends AggregateRoot<String> {
                 null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD,
                 GenderComposition.MIXED, false, ManagementModel.UNIFIED, null,
                 AttendanceAttentionCalculator.DEFAULT_WINDOW_DAYS, AttendanceAttentionCalculator.DEFAULT_MIN_DAYS,
-                AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS, GradeApprover.CLASS_MASTER, now, now);
+                AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS, GradeApprover.CLASS_MASTER, true, now, now);
     }
 
     public void setManagementModel(ManagementModel managementModel) {
@@ -170,6 +173,14 @@ public class School extends AggregateRoot<String> {
     public void updateGradeApprover(GradeApprover gradeApprover) {
         if (gradeApprover != null) {
             this.gradeApprover = gradeApprover;
+            touch(Instant.now());
+        }
+    }
+
+    // Null keeps what the school already has.
+    public void updateRoundAssessmentScores(Boolean roundAssessmentScores) {
+        if (roundAssessmentScores != null) {
+            this.roundAssessmentScores = roundAssessmentScores;
             touch(Instant.now());
         }
     }

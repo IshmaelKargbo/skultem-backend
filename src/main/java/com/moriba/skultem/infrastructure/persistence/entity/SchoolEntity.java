@@ -77,6 +77,9 @@ public class SchoolEntity {
     @Column(name = "grade_approver", nullable = false)
     private com.moriba.skultem.domain.vo.GradeApprover gradeApprover;
 
+    @Column(name = "round_assessment_scores", nullable = false)
+    private boolean roundAssessmentScores;
+
     @Column(name = "primary_color")
     private String primaryColor;
 

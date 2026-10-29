@@ -12,7 +12,7 @@ public class PeriodMapper {
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm");
 
-    public static PeriodDTO toDTO(Period param, List<TimetableDTO> subjects) {
+    public static PeriodDTO toDTO(Period param, List<List<TimetableDTO>> slots) {
         if (param == null) {
             return null;
         }
@@ -24,9 +24,10 @@ public class PeriodMapper {
                 param.getEndTime().format(TIME_FORMAT),
                 param.isBreak(),
                 param.isLunch(),
-                subjects,
+                slots.stream().map(s -> s.isEmpty() ? null : s.get(0)).toList(),
                 param.getCreatedAt(),
-                param.getUpdatedAt()
+                param.getUpdatedAt(),
+                slots
         );
     }
 }

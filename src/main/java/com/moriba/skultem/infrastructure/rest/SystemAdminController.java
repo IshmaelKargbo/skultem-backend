@@ -115,7 +115,8 @@ public class SystemAdminController {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(schoolId, param.name(), param.domain(), address,
                 param.attendanceThreshold(), param.genderComposition(), param.attendanceWindowDays(),
-                param.attendanceMinDays(), param.attendanceStreakDays(), param.gradeApprover());
+                param.attendanceMinDays(), param.attendanceStreakDays(), param.gradeApprover(),
+                param.roundAssessmentScores());
         return new ApiResponse<SchoolDTO>("success", 200, "School updated successfully", res);
     }
 

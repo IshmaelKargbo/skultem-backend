@@ -40,14 +40,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/payroll")
 @RequiredArgsConstructor
-@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+@PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
 public class PayrollController {
 
     private final PayrollService payrollService;
     
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<PayslipDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -57,7 +57,7 @@ public class PayrollController {
 
     @SectionNeutral
     @GetMapping("/me/payslip/{runId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<PayslipDTO> myPayslip(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

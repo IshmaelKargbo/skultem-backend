@@ -8,7 +8,11 @@ import java.util.Optional;
 public interface TimetableRepository {
     void save(Timetable domain);
 
-    Optional<Timetable> findByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId);
+    // Every subject in one period/day slot, oldest first. Usually one; more when students split
+    // between options (e.g. PHE or RME).
+    List<Timetable> findAllByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId);
+
+    Optional<Timetable> findByIdAndSchoolId(String id, String schoolId);
 
     List<Timetable> findAllByPeriodId(String period);
 

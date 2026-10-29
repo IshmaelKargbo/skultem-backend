@@ -1,6 +1,7 @@
 package com.moriba.skultem.application.usecase;
 
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.*;
 import com.moriba.skultem.domain.model.WorkingDay.Day;
@@ -24,7 +25,10 @@ public class CreateTimetableUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "TIMETABLE_CREATED")
-    public Timetable execut(String schoolId, String periodId, String subject, Day day, String roomId, String color) {
+    // entryId set: edit that entry. Not set: add a subject to the slot - the only one, or another option when
+    // students split between subjects in the same period (e.g. PHE or RME).
+    public Timetable execut(String schoolId, String periodId, String subject, Day day, String roomId, String color,
+            String entryId) {
         var period = periodRepo.findById(periodId)
                 .orElseThrow(() -> new NotFoundException("no period found"));
 
@@ -44,13 +48,24 @@ public class CreateTimetableUseCase {
         var room = roomRepo.findByIdAndSchoolId(roomId, schoolId)
                 .orElseThrow(() -> new NotFoundException("no room found"));
 
-        var domain = repo.findByPeriodIdAndDayIdAndSchoolId(periodId, workingDay.getId(), schoolId).orElse(null);
+        var slot = repo.findAllByPeriodIdAndDayIdAndSchoolId(periodId, workingDay.getId(), schoolId);
+        var others = slot.stream().filter(t -> !t.getId().equals(entryId)).toList();
 
-        if (domain == null) {
-            var id = UUID.randomUUID().toString();
-            domain = Timetable.create(id, schoolId, period, teacherSubject, workingDay, room, color);
-        } else {
+        // Options in one slot run side by side, so the same subject can't be in it twice. Sharing a room is
+        // allowed (a school may have only one) - the form warns about it instead.
+        String subjectId = teacherSubject.getSubject().getId();
+        if (others.stream().anyMatch(t -> t.getTeacherSubject().getSubject().getId().equals(subjectId))) {
+            throw new RuleException(teacherSubject.getSubject().getName() + " is already in this period");
+        }
+
+        Timetable domain;
+        if (entryId != null && !entryId.isBlank()) {
+            domain = slot.stream().filter(t -> t.getId().equals(entryId)).findFirst()
+                    .orElseThrow(() -> new NotFoundException("timetable entry not found"));
             domain.update(teacherSubject, room, color);
+        } else {
+            domain = Timetable.create(UUID.randomUUID().toString(), schoolId, period, teacherSubject, workingDay,
+                    room, color);
         }
         repo.save(domain);
 

@@ -39,8 +39,17 @@ public class TimetableController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateTimetableDTO param) {
         var res = timetableSvc.createTimetable(school, param.period(), param.subject(), Day.valueOf(param.day()),
-                param.room(), param.color());
+                param.room(), param.color(), param.entry());
         return new ApiResponse<>("success", 200, "Timetable created successfully", res);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<TimetableDTO> deleteEntry(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = timetableSvc.deleteTimetableEntry(school, id);
+        return new ApiResponse<>("success", 200, "Subject removed from timetable", res);
     }
 
     @PostMapping("/room")

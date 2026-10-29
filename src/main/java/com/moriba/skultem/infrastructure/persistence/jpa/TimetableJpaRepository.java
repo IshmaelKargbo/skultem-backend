@@ -9,7 +9,9 @@ import java.util.Optional;
 public interface TimetableJpaRepository extends JpaRepository<TimetableEntity, String> {
     boolean existsByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId);
 
-    Optional<TimetableEntity> findByPeriodIdAndDayIdAndSchoolId(String period, String day, String schoolId);
+    List<TimetableEntity> findByPeriodIdAndDayIdAndSchoolIdOrderByCreatedAtAsc(String period, String day, String schoolId);
+
+    Optional<TimetableEntity> findByIdAndSchoolId(String id, String schoolId);
 
     List<TimetableEntity> findByPeriodId(String periodId);
 }

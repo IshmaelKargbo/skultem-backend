@@ -33,6 +33,9 @@ public record UpdateSchoolDTO(
         @Min(value = 2, message = "Consecutive absences must be at least 2") @Max(value = 10, message = "Consecutive absences cannot exceed 10") Integer attendanceStreakDays,
 
         // CLASS_MASTER or ADMIN - who approves grades; null keeps the school's current choice.
-        String gradeApprover
+        String gradeApprover,
+
+        // Show assessment scores as whole numbers (true) or with one decimal (false); null keeps the current choice.
+        Boolean roundAssessmentScores
 ) {
 }

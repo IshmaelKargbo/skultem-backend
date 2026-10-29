@@ -11,6 +11,6 @@ public class SchoolMapper {
                 param.getSecondaryColor(), param.getAttendanceThreshold(), param.getGenderComposition(),
                 param.isTestSchool(), param.getManagementModel(), param.getCreatedAt(), param.getUpdatedAt(), param.getPhone(),
                 param.getAttendanceWindowDays(), param.getAttendanceMinDays(), param.getAttendanceStreakDays(),
-                param.getGradeApprover());
+                param.getGradeApprover(), param.isRoundAssessmentScores());
     }
 }

@@ -21,11 +21,13 @@ public class UpdateSchoolUseCase {
 
     public SchoolDTO execute(String schoolId, String name, String domain, Address address,
             Double attendanceThreshold, String genderComposition, Integer attendanceWindowDays,
-            Integer attendanceMinDays, Integer attendanceStreakDays, String gradeApprover) {
+            Integer attendanceMinDays, Integer attendanceStreakDays, String gradeApprover,
+            Boolean roundAssessmentScores) {
         var school = repo.findById(schoolId).orElseThrow(() -> new NotFoundException("school not found"));
         school.update(name, domain, address, attendanceThreshold, parseGenderComposition(genderComposition));
         school.updateAttendanceRules(attendanceWindowDays, attendanceMinDays, attendanceStreakDays);
         school.updateGradeApprover(parseGradeApprover(gradeApprover));
+        school.updateRoundAssessmentScores(roundAssessmentScores);
         repo.save(school);
         return SchoolMapper.toDTO(school);
     }

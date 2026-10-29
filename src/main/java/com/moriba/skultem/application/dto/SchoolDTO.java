@@ -15,6 +15,6 @@ public record SchoolDTO(String id, String name, String domain, Address address, 
         String primaryColor, String secondaryColor, Double attendanceThreshold, GenderComposition genderComposition,
         boolean testSchool, ManagementModel managementModel, Instant createdAt, Instant updatedAt, String phone,
         int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
-        com.moriba.skultem.domain.vo.GradeApprover gradeApprover) {
+        com.moriba.skultem.domain.vo.GradeApprover gradeApprover, boolean roundAssessmentScores) {
 
 }
