@@ -103,7 +103,7 @@ public class TeacherController {
 
         @SectionNeutral
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN')")
         public ApiResponse<List<TeacherDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,

@@ -70,6 +70,10 @@ public enum FeatureModule {
             "Stock, sell, and hand out school materials such as books and uniforms.",
             false),
 
+    LIBRARY("Library", ModuleCategory.OPERATIONS,
+            "Catalog the school library, issue books to students and teachers, and follow up on overdue loans.",
+            false),
+
     ANALYTICS("Analytics & Reports", ModuleCategory.INSIGHTS,
             "Academic, financial, and demographic reports and charts.",
             false);

@@ -112,7 +112,7 @@ public class SchoolController {
 
     @SectionNeutral
     @GetMapping("/structure")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolStructureDTO> structure(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getSchoolStructureUseCase.execute(school);
@@ -198,7 +198,7 @@ public class SchoolController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = schoolSvc.get(school);
         return new ApiResponse<>("success", 200, "School fetched successfully", res);
@@ -209,7 +209,7 @@ public class SchoolController {
     // card's PDF export when it tries to draw those images onto a canvas).
     @SectionNeutral
     @GetMapping("/branding/assets")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
     public ApiResponse<SchoolBrandingAssetsDTO> getBrandingAssets(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) Level level,
@@ -226,7 +226,7 @@ public class SchoolController {
     // photo on the ID card, which needs the same same-origin swap right before PDF/print capture.
     @SectionNeutral
     @GetMapping("/asset-as-data-uri")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
     public ApiResponse<AssetDataUriDTO> getAssetAsDataUri(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String url) {

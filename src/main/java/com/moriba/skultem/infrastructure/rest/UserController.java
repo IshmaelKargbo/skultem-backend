@@ -90,7 +90,7 @@ public class UserController {
 
     @SectionNeutral
     @PostMapping("/reset-password")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
     public ApiResponse<UserDTO> resetPassword(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

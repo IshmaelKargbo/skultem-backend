@@ -68,7 +68,7 @@ public class TransactionController {
 
     @SectionNeutral
     @GetMapping("/active")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'PARENT')")
     public ApiResponse<TermDTO> getActive(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getActiveTermUseCase.execute(school);
@@ -77,7 +77,7 @@ public class TransactionController {
 
     @SectionNeutral
     @GetMapping("/academic-year/{academicYearId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'PARENT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'PARENT', 'TEACHER')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String academicYearId,
