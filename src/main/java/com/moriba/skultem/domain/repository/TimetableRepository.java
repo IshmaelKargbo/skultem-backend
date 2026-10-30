@@ -16,6 +16,9 @@ public interface TimetableRepository {
 
     List<Timetable> findAllByPeriodId(String period);
 
+    // Every slot for one subject in one academic year (Library Attendance's scheduled sessions).
+    List<Timetable> findAllBySubjectAndAcademicYear(String subjectId, String academicYearId, String schoolId);
+
     boolean existsByPeriodAndDayAndSchoolId(String period, String day, String schoolId);
 
     void delete(Timetable domain);

@@ -55,6 +55,15 @@ public class StudentPurgeAdapter implements StudentPurgeRepository {
         jdbc.update("DELETE FROM supplies WHERE student_id = ? AND school_id = ?", studentId, schoolId);
         jdbc.update("DELETE FROM material_sales WHERE student_id = ? AND school_id = ?", studentId, schoolId);
 
+        // Library Attendance: corrections point at the register row, so they go first. The session itself stays -
+        // it belongs to the class, not to this student.
+        jdbc.update("DELETE FROM library_attendance_corrections WHERE student_id = ? AND school_id = ?", studentId,
+                schoolId);
+        jdbc.update("DELETE FROM library_roster_changes WHERE student_id = ? AND school_id = ?", studentId, schoolId);
+        jdbc.update("DELETE FROM library_session_records WHERE student_id = ? AND school_id = ?", studentId,
+                schoolId);
+        jdbc.update("DELETE FROM library_visits WHERE student_id = ? AND school_id = ?", studentId, schoolId);
+
         jdbc.update("DELETE FROM report_cards WHERE student_id = ? AND school_id = ?", studentId, schoolId);
         jdbc.update("DELETE FROM student_parents WHERE student_id = ?", studentId);
         int enrollments = jdbc.update("DELETE FROM enrollments WHERE student_id = ? AND school_id = ?", studentId,

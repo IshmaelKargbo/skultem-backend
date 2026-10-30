@@ -5,6 +5,16 @@
 - First-deploy bootstrap (infra, secrets, first school, first `SYSTEM_ADMIN`):
   `docs/PRODUCTION_BOOTSTRAP.md`
 
+## Library Attendance
+
+- Requirements, decisions and how it was built: `docs/LIBRARY_ATTENDANCE.md`
+- Base path `/api/v1/library/attendance` (Library module). Samples: `docs/library_attendance.http`
+  - Visits: `POST /visits/check-in`, `POST /visits/{id}/check-out`, `POST /visits/{id}/resolve`, `GET /visits`
+  - Class sessions: `GET /sessions?from&to`, `POST /sessions/open`, `PUT /sessions/{id}/marks`,
+    `POST /sessions/{id}/roster`, `POST /sessions/{id}/finalize`, `POST /sessions/{id}/cancel`,
+    `POST /sessions/cancel`, `POST /sessions/{id}/records/{recordId}/correct`
+  - Reports: `GET /overview`, `GET /totals`, `GET /students/{id}/history`, `GET /export/*`
+
 ## Class And Stream Subject Selection
 
 - `GET /api/v1/class/subject/{classId}`

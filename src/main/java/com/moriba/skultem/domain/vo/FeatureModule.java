@@ -71,7 +71,7 @@ public enum FeatureModule {
             false),
 
     LIBRARY("Library", ModuleCategory.OPERATIONS,
-            "Catalog the school library, issue books to students and teachers, and follow up on overdue loans.",
+            "Catalog the school library, issue books to students and teachers, follow up on overdue loans, and take library attendance.",
             false),
 
     ANALYTICS("Analytics & Reports", ModuleCategory.INSIGHTS,
