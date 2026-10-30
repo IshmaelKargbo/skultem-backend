@@ -23,7 +23,6 @@ import com.moriba.skultem.application.dto.LibraryAttendanceTotalsDTO;
 import com.moriba.skultem.application.dto.LibraryCheckInResultDTO;
 import com.moriba.skultem.application.dto.LibrarySessionDTO;
 import com.moriba.skultem.application.dto.LibrarySessionDetailDTO;
-import com.moriba.skultem.application.dto.LibrarySettingDTO;
 import com.moriba.skultem.application.dto.LibraryStudentHistoryDTO;
 import com.moriba.skultem.application.dto.LibraryVisitDTO;
 import com.moriba.skultem.application.error.BadRequestException;
@@ -63,8 +62,6 @@ public class LibraryAttendanceController {
     private static final String VIEW = "@permissionService.hasAnySchoolRole(#school, 'LIBRARIAN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'ADMIN')";
     private static final String SUPERVISE = "@permissionService.hasAnySchoolRole(#school, 'LIBRARIAN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN')";
     private static final String CORRECT = "@permissionService.hasAnySchoolRole(#school, 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN')";
-    // Choosing the Library subject is set-up, like the rest of Library Settings.
-    private static final String CONFIGURE = "@permissionService.hasAnySchoolRole(#school, 'LIBRARIAN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'ADMIN')";
 
     private final LibraryAttendanceService service;
     private final LibraryAttendanceExporter exporter;
@@ -74,21 +71,6 @@ public class LibraryAttendanceController {
     public ApiResponse<LibraryAttendanceOverviewDTO> overview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         return ok("Library attendance overview fetched successfully", service.overview(school));
-    }
-
-    @GetMapping("/subjects")
-    @PreAuthorize(CONFIGURE)
-    public ApiResponse<List<LibraryAttendanceService.SubjectOption>> subjects(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
-        return ok("Subjects fetched successfully", service.subjects(school));
-    }
-
-    @PutMapping("/subject")
-    @PreAuthorize(CONFIGURE)
-    public ApiResponse<LibrarySettingDTO> setLibrarySubject(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestBody LibraryAttendanceRequests.SetLibrarySubject param) {
-        return ok("Library subject saved successfully", service.setLibrarySubject(school, param.subjectId()));
     }
 
     // Independent visits

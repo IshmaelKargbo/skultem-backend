@@ -104,8 +104,8 @@ public class TimetableService {
     }
 
     public TimetableDTO createTimetable(String schoolId, String periodId, String subject, Day day, String roomId,
-            String color, String entryId) {
-        var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color, entryId);
+            String color, String entryId, com.moriba.skultem.domain.model.Timetable.Kind kind) {
+        var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color, entryId, kind);
         return TimetableMapper.toDTO(domain);
     }
 

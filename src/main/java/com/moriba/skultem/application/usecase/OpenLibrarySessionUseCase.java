@@ -53,7 +53,7 @@ public class OpenLibrarySessionUseCase {
         LibraryAttendanceSupport.saveUnique(() -> sessionRepo.save(session),
                 "Someone else has just opened this session. Reload the page to see it.");
 
-        var records = rosterResolver.roster(schoolId, classSession, slot.subjectId()).stream()
+        var records = rosterResolver.roster(schoolId, classSession).stream()
                 .map(e -> LibrarySessionRecord.onRoster(schoolId, session.getId(), e.getStudent().getId(),
                         e.getStudent().getName(), LibraryAttendanceSupport.className(e), false))
                 .toList();

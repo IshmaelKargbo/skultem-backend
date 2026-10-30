@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -22,26 +21,23 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 
+import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Holiday;
-import com.moriba.skultem.domain.model.LibrarySetting;
 import com.moriba.skultem.domain.model.Period;
 import com.moriba.skultem.domain.model.Room;
-import com.moriba.skultem.domain.model.Subject;
-import com.moriba.skultem.domain.model.TeacherSubject;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.Timetable;
 import com.moriba.skultem.domain.model.WorkingDay;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
-import com.moriba.skultem.domain.repository.LibrarySettingRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.repository.TimetableRepository;
 
-// B-1 to B-6: sessions come from the school's own timetable - the Library subject's teaching periods, on their
-// weekday, inside a term, never on a holiday.
+// B-1 to B-6: sessions come from the school's own timetable - its Library periods, on their weekday, inside a
+// term, never on a holiday.
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class LibrarySessionScheduleTest {
@@ -49,8 +45,6 @@ class LibrarySessionScheduleTest {
     // Mon 2 Nov 2026 .. Sun 15 Nov 2026
     private static final LocalDate MON = LocalDate.of(2026, 11, 2);
 
-    @Mock
-    private LibrarySettingRepository settingRepo;
     @Mock
     private AcademicYearRepository academicYearRepo;
     @Mock
@@ -64,8 +58,6 @@ class LibrarySessionScheduleTest {
 
     @BeforeEach
     void setUp() {
-        var setting = new LibrarySetting("set", "school", 2, 5, true, 14, "sub-lib", Instant.now(), Instant.now());
-        when(settingRepo.findBySchool("school")).thenReturn(Optional.of(setting));
         var year = mock(AcademicYear.class);
         when(year.getId()).thenReturn("year");
         when(academicYearRepo.findActiveBySchool("school")).thenReturn(Optional.of(year));
@@ -90,24 +82,20 @@ class LibrarySessionScheduleTest {
         var day = mock(WorkingDay.class);
         when(day.getDay()).thenReturn(weekday);
         when(day.isState()).thenReturn(dayOn);
-        var subject = mock(Subject.class);
-        when(subject.getId()).thenReturn("sub-lib");
-        when(subject.getName()).thenReturn("Library");
-        var teacherSubject = mock(TeacherSubject.class);
-        when(teacherSubject.getSubject()).thenReturn(subject);
         var room = mock(Room.class);
         when(room.getName()).thenReturn("Library Room");
         var entry = mock(Timetable.class);
         when(entry.getId()).thenReturn(id);
         when(entry.getPeriod()).thenReturn(period);
         when(entry.getDay()).thenReturn(day);
-        when(entry.getTeacherSubject()).thenReturn(teacherSubject);
+        when(entry.label()).thenReturn("Library");
+        when(entry.isLibrary()).thenReturn(true);
         when(entry.getRoom()).thenReturn(room);
         return entry;
     }
 
     private void timetable(Timetable... entries) {
-        when(timetableRepo.findAllBySubjectAndAcademicYear("sub-lib", "year", "school")).thenReturn(List.of(entries));
+        when(timetableRepo.findAllLibraryByAcademicYear("year", "school")).thenReturn(List.of(entries));
     }
 
     @Test
@@ -120,6 +108,7 @@ class LibrarySessionScheduleTest {
         assertThat(slots).extracting(s -> s.date()).containsExactly(MON.plusDays(1), MON.plusDays(8));
         assertThat(slots.get(0).className()).isEqualTo("JSS 2 A");
         assertThat(slots.get(0).roomName()).isEqualTo("Library Room");
+        assertThat(slots.get(0).subjectName()).isEqualTo("Library");
         assertThat(slots.get(0).termEndDate()).isEqualTo(MON.plusDays(11));
     }
 
@@ -145,13 +134,19 @@ class LibrarySessionScheduleTest {
     }
 
     @Test
-    void noLibrarySubjectMeansNoSessions() {
-        var setting = LibrarySetting.defaults("school");
-        when(settingRepo.findBySchool("school")).thenReturn(Optional.of(setting));
+    void noLibraryPeriodsOnTheTimetableMeansNoSessions() {
+        timetable();
+
+        assertThat(schedule.slotsBetween(schedule.load("school").orElseThrow(), MON, MON.plusDays(6))).isEmpty();
+        assertThatThrownBy(() -> schedule.slotFor("school", "e1", MON)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void noActiveAcademicYearMeansNoSessions() {
+        when(academicYearRepo.findActiveBySchool("school")).thenReturn(Optional.empty());
 
         assertThat(schedule.load("school")).isEmpty();
-        assertThatThrownBy(() -> schedule.slotFor("school", "e1", MON)).isInstanceOf(RuleException.class)
-                .hasMessageContaining("Library subject");
+        assertThatThrownBy(() -> schedule.slotFor("school", "e1", MON)).isInstanceOf(RuleException.class);
     }
 
     @Test

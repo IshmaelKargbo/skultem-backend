@@ -19,9 +19,6 @@ public final class LibraryAttendanceRequests {
     private LibraryAttendanceRequests() {
     }
 
-    public record SetLibrarySubject(String subjectId) {
-    }
-
     public record CheckIn(
             @NotEmpty(message = "Select at least one student") @Size(max = 100, message = "Check in at most 100 students at a time") List<String> studentIds,
             Boolean eligibleOnly) {

@@ -25,7 +25,6 @@ public class LibrarySettingAdapter implements LibrarySettingRepository {
                 .maxTeacherLoans(d.getMaxTeacherLoans())
                 .blockWhenOverdue(d.isBlockWhenOverdue())
                 .defaultLoanDays(d.getDefaultLoanDays())
-                .librarySubjectId(d.getLibrarySubjectId())
                 .createdAt(d.getCreatedAt())
                 .updatedAt(d.getUpdatedAt())
                 .build());
@@ -35,6 +34,6 @@ public class LibrarySettingAdapter implements LibrarySettingRepository {
     public Optional<LibrarySetting> findBySchool(String schoolId) {
         return repo.findBySchoolId(schoolId).map(e -> new LibrarySetting(e.getId(), e.getSchoolId(),
                 e.getMaxStudentLoans(), e.getMaxTeacherLoans(), e.isBlockWhenOverdue(), e.getDefaultLoanDays(),
-                e.getLibrarySubjectId(), e.getCreatedAt(), e.getUpdatedAt()));
+                e.getCreatedAt(), e.getUpdatedAt()));
     }
 }

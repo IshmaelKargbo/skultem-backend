@@ -11,9 +11,6 @@ import lombok.Getter;
 /**
  * A school's borrowing rules: how many books a student or teacher may hold at once, whether an
  * overdue book stops them borrowing more, and how long a book is lent for by default.
- * <p>
- * Also names the school's Library subject: timetable entries for that subject are the scheduled
- * library sessions Library Attendance takes a register for. Null = not chosen yet, so no sessions.
  */
 @Getter
 public class LibrarySetting extends AggregateRoot<String> {
@@ -25,25 +22,22 @@ public class LibrarySetting extends AggregateRoot<String> {
     private int maxTeacherLoans;
     private boolean blockWhenOverdue;
     private int defaultLoanDays;
-    private String librarySubjectId;
 
     public LibrarySetting(String id, String schoolId, int maxStudentLoans, int maxTeacherLoans,
-            boolean blockWhenOverdue, int defaultLoanDays, String librarySubjectId, Instant createdAt,
-            Instant updatedAt) {
+            boolean blockWhenOverdue, int defaultLoanDays, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.maxStudentLoans = maxStudentLoans;
         this.maxTeacherLoans = maxTeacherLoans;
         this.blockWhenOverdue = blockWhenOverdue;
         this.defaultLoanDays = defaultLoanDays;
-        this.librarySubjectId = librarySubjectId;
         touch(updatedAt);
     }
 
     /** The rules a school uses until it saves its own. */
     public static LibrarySetting defaults(String schoolId) {
         Instant now = Instant.now();
-        return new LibrarySetting(UUID.randomUUID().toString(), schoolId, 2, 5, true, 14, null, now, now);
+        return new LibrarySetting(UUID.randomUUID().toString(), schoolId, 2, 5, true, 14, now, now);
     }
 
     public void update(int maxStudentLoans, int maxTeacherLoans, boolean blockWhenOverdue, int defaultLoanDays) {
@@ -58,12 +52,6 @@ public class LibrarySetting extends AggregateRoot<String> {
         this.maxTeacherLoans = maxTeacherLoans;
         this.blockWhenOverdue = blockWhenOverdue;
         this.defaultLoanDays = defaultLoanDays;
-        touch(Instant.now());
-    }
-
-    /** Null clears it: the school then has no scheduled library sessions until it picks one again. */
-    public void changeLibrarySubject(String subjectId) {
-        this.librarySubjectId = subjectId == null || subjectId.isBlank() ? null : subjectId;
         touch(Instant.now());
     }
 

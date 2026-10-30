@@ -8,9 +8,12 @@ public class TimetableMapper {
         var period = PeriodMapper.toDomain(param.getPeriod());
         var day = WorkingDayMapper.toDomain(param.getDay());
         var room = RoomMapper.toDomain(param.getRoom());
-        var teacherSubject = TeacherSubjectMapper.toDomain(param.getTeacherSubject());
+        // A Library period has no subject or teacher.
+        var teacherSubject = param.getTeacherSubject() == null ? null
+                : TeacherSubjectMapper.toDomain(param.getTeacherSubject());
 
-        return new Timetable(param.getId(), param.getSchoolId(), period, teacherSubject, day, room, param.getColor(), param.getCreatedAt(), param.getUpdatedAt());
+        return new Timetable(param.getId(), param.getSchoolId(), period, param.getKind(), teacherSubject, day, room,
+                param.getColor(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static TimetableEntity toEntity(Timetable param) {
@@ -19,7 +22,9 @@ public class TimetableMapper {
                 .color(param.getColor())
                 .day(WorkingDayMapper.toEntity(param.getDay()))
                 .period(PeriodMapper.toEntity(param.getPeriod()))
-                .teacherSubject(TeacherSubjectMapper.toEntity(param.getTeacherSubject()))
+                .kind(param.getKind())
+                .teacherSubject(param.getTeacherSubject() == null ? null
+                        : TeacherSubjectMapper.toEntity(param.getTeacherSubject()))
                 .room(RoomMapper.toEntity(param.getRoom()))
                 .schoolId(param.getSchoolId())
                 .createdAt(param.getCreatedAt())

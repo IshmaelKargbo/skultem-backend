@@ -2,16 +2,16 @@
 @BaseURL=http://localhost:8080/api/v1/library/attendance
 @Token=<access token from POST /api/v1/auth/login>
 
-### Overview figures (and whether a Library subject is chosen)
+### Overview figures (libraryPeriods = Library periods on this year's timetable)
 GET {{BaseURL}}/overview
 Authorization: Bearer {{Token}}
 
-### Choose the school's Library subject
-PUT {{BaseURL}}/subject
+### Add a Library period to the timetable (the school does this; no subject or teacher)
+POST http://localhost:8080/api/v1/timetable
 Authorization: Bearer {{Token}}
 Content-Type: application/json
 
-{ "subjectId": "SUB-2026-0001" }
+{ "period": "<periodId>", "day": "FRIDAY", "room": "<roomId>", "color": "bg-primary/5 border-primary/20", "kind": "LIBRARY" }
 
 ### Check in one or more students (all or nothing unless eligibleOnly is true)
 POST {{BaseURL}}/visits/check-in

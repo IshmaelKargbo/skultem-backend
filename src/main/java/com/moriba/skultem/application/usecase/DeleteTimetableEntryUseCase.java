@@ -31,7 +31,7 @@ public class DeleteTimetableEntryUseCase {
                 ActivityType.SCHOOL,
                 "Subject removed from timetable",
                 (session != null ? session.getName() + ": " : "") + "removed "
-                        + entry.getTeacherSubject().getSubject().getName() + " from " + entry.getPeriod().getName()
+                        + entry.label() + " from " + entry.getPeriod().getName()
                         + " on " + entry.getDay().getDay(),
                 null,
                 entry.getId());

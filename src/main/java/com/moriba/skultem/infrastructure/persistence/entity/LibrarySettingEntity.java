@@ -36,8 +36,6 @@ public class LibrarySettingEntity {
     @Column(nullable = false)
     private int defaultLoanDays;
 
-    private String librarySubjectId;
-
     private Instant createdAt;
     private Instant updatedAt;
 }

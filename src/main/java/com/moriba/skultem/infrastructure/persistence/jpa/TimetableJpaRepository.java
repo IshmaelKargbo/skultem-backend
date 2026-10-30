@@ -1,5 +1,6 @@
 package com.moriba.skultem.infrastructure.persistence.jpa;
 
+import com.moriba.skultem.domain.model.Timetable;
 import com.moriba.skultem.infrastructure.persistence.entity.TimetableEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,13 +18,13 @@ public interface TimetableJpaRepository extends JpaRepository<TimetableEntity, S
 
     List<TimetableEntity> findByPeriodId(String periodId);
 
-    // Every slot for one subject in one academic year - Library Attendance's scheduled sessions.
+    // Every entry of one kind in one academic year - LIBRARY: Library Attendance's scheduled sessions.
     @Query("""
                 select t from TimetableEntity t
                 where t.schoolId = :schoolId
-                and t.teacherSubject.subject.id = :subjectId
+                and t.kind = :kind
                 and t.period.session.academicYear.id = :academicYearId
             """)
-    List<TimetableEntity> findBySubjectAndAcademicYear(@Param("subjectId") String subjectId,
+    List<TimetableEntity> findByKindAndAcademicYear(@Param("kind") Timetable.Kind kind,
             @Param("academicYearId") String academicYearId, @Param("schoolId") String schoolId);
 }

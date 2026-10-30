@@ -19,6 +19,8 @@ import com.moriba.skultem.infrastructure.rest.mapper.MetaMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+
+import com.moriba.skultem.domain.model.Timetable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +41,8 @@ public class TimetableController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateTimetableDTO param) {
         var res = timetableSvc.createTimetable(school, param.period(), param.subject(), Day.valueOf(param.day()),
-                param.room(), param.color(), param.entry());
+                param.room(), param.color(), param.entry(),
+                "LIBRARY".equals(param.kind()) ? Timetable.Kind.LIBRARY : Timetable.Kind.SUBJECT);
         return new ApiResponse<>("success", 200, "Timetable created successfully", res);
     }
 

@@ -20,7 +20,6 @@ import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.Timetable;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
-import com.moriba.skultem.domain.repository.LibrarySettingRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.repository.TimetableRepository;
 
@@ -30,8 +29,8 @@ import lombok.RequiredArgsConstructor;
  * Works out the scheduled library sessions from the school's own timetable - there is no separate
  * library timetable (docs/LIBRARY_ATTENDANCE.md, B-1 to B-8).
  * <p>
- * A Library timetable entry (an entry for the school's chosen Library subject, in a teaching period)
- * has a session on a date when the date's weekday is the entry's working day, that day is switched on,
+ * A Library period on the timetable (an entry of kind LIBRARY, which the school adds to any class's period like a
+ * lesson) has a session on a date when the date's weekday is the entry's working day, that day is switched on,
  * the date falls in a term of the active academic year, and it isn't a holiday. Sessions on holidays
  * are not shown at all.
  */
@@ -42,28 +41,23 @@ public class LibrarySessionSchedule {
     /** Longest date range listed in one go. */
     public static final int MAX_DAYS = 92;
 
-    private final LibrarySettingRepository settingRepo;
     private final AcademicYearRepository academicYearRepo;
     private final TermRepository termRepo;
     private final HolidayRepository holidayRepo;
     private final TimetableRepository timetableRepo;
 
     /** Everything needed to work out a school's sessions, loaded once. */
-    public record Calendar(String subjectId, List<Timetable> entries, List<Term> terms, Set<LocalDate> holidays) {
+    public record Calendar(List<Timetable> entries, List<Term> terms, Set<LocalDate> holidays) {
     }
 
-    /** Empty when the school hasn't chosen a Library subject or has no active academic year. */
+    /** Empty when the school has no active academic year. */
     public Optional<Calendar> load(String schoolId) {
-        var subjectId = settingRepo.findBySchool(schoolId).map(s -> s.getLibrarySubjectId()).orElse(null);
-        if (subjectId == null) {
-            return Optional.empty();
-        }
         var year = academicYearRepo.findActiveBySchool(schoolId);
         if (year.isEmpty()) {
             return Optional.empty();
         }
         String yearId = year.get().getId();
-        var entries = timetableRepo.findAllBySubjectAndAcademicYear(subjectId, yearId, schoolId).stream()
+        var entries = timetableRepo.findAllLibraryByAcademicYear(yearId, schoolId).stream()
                 .filter(t -> t.getPeriod() != null && t.getPeriod().getType() == Period.Type.PERIOD)
                 .toList();
         var terms = termRepo.findByAcademicYearIdAndSchool(yearId, schoolId);
@@ -72,7 +66,7 @@ public class LibrarySessionSchedule {
                 .getContent().stream()
                 .map(Holiday::getDate)
                 .collect(Collectors.toSet());
-        return Optional.of(new Calendar(subjectId, entries, terms, holidays));
+        return Optional.of(new Calendar(entries, terms, holidays));
     }
 
     public List<Slot> slotsBetween(Calendar calendar, LocalDate from, LocalDate to) {
@@ -89,7 +83,7 @@ public class LibrarySessionSchedule {
     /** The session for one Library entry on one date, or a refusal saying why there isn't one. */
     public Slot slotFor(String schoolId, String timetableEntryId, LocalDate date) {
         var calendar = load(schoolId)
-                .orElseThrow(() -> new RuleException("Choose the school's Library subject in Library Settings first"));
+                .orElseThrow(() -> new RuleException("There is no active academic year"));
         var entry = calendar.entries().stream()
                 .filter(t -> t.getId().equals(timetableEntryId))
                 .findFirst()
@@ -115,9 +109,8 @@ public class LibrarySessionSchedule {
         }
         var period = entry.getPeriod();
         var session = period.getSession();
-        var subject = entry.getTeacherSubject().getSubject();
-        return Optional.of(new Slot(entry.getId(), date, session.getId(), session.getName(), subject.getId(),
-                subject.getName(), period.getName(), period.getStartTime(), period.getEndTime(),
+        return Optional.of(new Slot(entry.getId(), date, session.getId(), session.getName(), null,
+                entry.label(), period.getName(), period.getStartTime(), period.getEndTime(),
                 entry.getRoom() == null ? null : entry.getRoom().getName(), term.get().getId(),
                 term.get().getEndDate()));
     }

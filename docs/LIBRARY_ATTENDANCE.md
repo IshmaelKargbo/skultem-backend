@@ -175,8 +175,9 @@ Rules:
 - **P-7** Librarians are not limited to a management section in the MVP (D-19). Library
   Attendance is not section-scoped, so a section-limited admin can't open it at all. That
   matches the rest of the Library module today.
-- **P-8** Choosing the Library subject (B-1) is set-up, like the rest of Library Settings: the
-  librarian and every management role, including plain `ADMIN`, can do it.
+- **P-8** Library periods are added and removed on the timetable, so the existing timetable
+  permissions apply: `ADMIN`, `PRINCIPAL`, `SUPER_ADMIN`, `OWNER` and `PROPRIETOR`. The
+  librarian doesn't edit the timetable; they see and start the sessions it produces.
 
 ---
 
@@ -250,24 +251,19 @@ Rules:
 
 ### 6.1 Identifying library periods
 
-- **B-1** A scheduled library session comes from a timetable entry whose subject is the
-  school's designated **Library subject**. Each school picks one of its existing subjects as its
-  Library subject in the library settings (D-7). Until a school picks one, it has no scheduled
-  library sessions, and the session screen tells the user to set one. Changing the setting
-  affects only sessions that have not been opened yet.
-- **B-2** There is no separate library timetable. Library periods are created and edited
-  only through the existing timetable screens and permissions.
-- **B-3** Only `Period.type = PERIOD` entries can be library sessions. Breaks and lunch never can.
-- **B-4** The timetable is not changed (D-8). As with any subject, a school puts a Library
-  period on the timetable by assigning a teacher (any teacher, e.g. the class master) to the
-  Library subject for that class. That teacher is a placeholder for the timetable only. They
-  get **no** Library Attendance access through it (P-2), and the librarian takes the attendance.
-  Teacher-facing timetable views will show that teacher's name against Library periods. That
-  is a known side effect.
-- **B-5** Roster scope (D-9): if the Library subject is assigned to the class or stream as
-  **mandatory** (`ClassSubject.mandatory` / `StreamSubject.mandatory`), the roster is the whole
-  class session. If it is **optional**, the roster is only the students with an
-  `EnrollmentSubject` for the Library subject.
+- **B-1** A scheduled library session comes from a **Library period** on the school's timetable
+  (D-7, revised 2026-10-30). On the timetable, the school clicks a class's period and chooses
+  "Library period" instead of a lesson: for example Class 1 after lunch on Friday, or Class 2 on
+  Tuesday. Each Library period then shows up every week in the librarian's Class Sessions list.
+  A school with no Library periods has no class sessions, and the screen says so.
+- **B-2** There is no separate library timetable. Library periods are created, moved and removed
+  only through the existing timetable screen and its permissions (P-8).
+- **B-3** Only `Period.type = PERIOD` entries can be Library periods. Breaks and lunch never can.
+- **B-4** A Library period has **no subject and no teacher** (D-8, revised). The librarian runs
+  it. The timetable shows it as "Library" with "Librarian" in place of a teacher.
+- **B-5** A Library period takes the whole period for the class (D-9, revised). It can't sit
+  beside subject options in the same slot, and a subject can't be added to a slot that holds one.
+  The roster is therefore always the whole class session.
 
 ### 6.2 Session instances
 
@@ -320,8 +316,7 @@ Rules:
 ### 6.4 Roster
 
 - **B-12** When a session is opened, the roster is copied from the students with an `ACTIVE`
-  enrollment in the session's class session (class + section + stream + academic year), filtered
-  per D-9. Each roster row stores the student ID plus their name and class at that moment.
+  enrollment in the session's class session (class + section + stream + academic year). Each roster row stores the student ID plus their name and class at that moment.
 - **B-13** The roster snapshot is the session's permanent historical roster. Later class
   changes, withdrawals or promotions never add, remove or change its rows.
 - **B-14** Library attendance rows are **not** deleted by `ChangeEnrollmentClassUseCase` (which
@@ -352,6 +347,9 @@ Rules:
 - **B-18** A session with any `UNMARKED` row cannot be finalized. This is enforced on the server,
   not just in the UI.
 - **B-19** Finalizing records the finalizing user and timestamp, and it is all-or-nothing.
+- **B-19a** Finalizing also checks out every student on the roster who still has an open
+  independent visit checked in on the session's date, using the finalize time and user. Open
+  visits from earlier days are left alone, to be resolved as forgotten check-outs (§5.3).
 - **B-20** No per-student check-in or check-out times are recorded for scheduled sessions in
   the MVP.
 - **B-21** "Late" is not a status in the MVP (D-17). A late student is marked `PRESENT`.
@@ -451,9 +449,9 @@ Report rules:
 | D-3 | Who resolves forgotten check-outs | Librarian and principal-level roles; reason required; no check-out time entered. See §5.3 |
 | D-4 | When a visit becomes unresolved | At the end of the school day (`Timing.endTime` for the student's level). See §5.3 |
 | D-6 | Cancelling sessions | Librarian and principal-level roles; reason required; Upcoming or In progress only; no undo. See §6.3 |
-| D-7 | Identifying the Library subject | Per-school setting naming one existing subject. See B-1 |
-| D-8 | Teacher requirement on timetable entries | Timetable unchanged; schools assign any teacher as a placeholder; that teacher gets no access. See B-4 |
-| D-9 | Roster when Library shares a slot | Mandatory subject → whole class session; optional → only students enrolled in it. See B-5 |
+| D-7 | Identifying Library periods | **Revised 2026-10-30:** the school marks a period as a "Library period" directly on the timetable. (Was: a per-school Library-subject setting, now removed.) See B-1 |
+| D-8 | Teacher requirement on timetable entries | **Revised 2026-10-30:** a Library period has no subject or teacher. (Was: any teacher as a placeholder.) See B-4 |
+| D-9 | Roster when Library shares a slot | **Revised 2026-10-30:** a Library period takes the whole slot, so the roster is always the whole class. See B-5 |
 | D-15 | Adjusting an open session's roster | Allowed for the librarian until finalization; reason required; every change recorded. See B-15a |
 
 ### 11.2 Approved (2026-10-30)
@@ -478,12 +476,12 @@ Report rules:
 
 Blocking for technical design (approved 2026-10-29):
 
-- [x] D-7 Library subject identification
+- [x] D-7 Library periods marked on the timetable
 - [x] D-8 Teacher requirement for Library periods
 - [x] D-1 Recording and correction roles
 - [x] D-3 / D-4 Forgotten check-out policy
 - [x] D-6 Cancellation rules
-- [x] D-9 Roster rule for optional-subject slots
+- [x] D-9 Whole-class roster (Library period takes the whole slot)
 - [x] D-15 Roster adjustment rule
 
 Required before release:
@@ -514,8 +512,8 @@ against a test database (§14). The web screens haven't been clicked through yet
 | AC-3 | A student cannot have two active independent visits at the same school, including under simultaneous requests. | AR-1, AR-6 |
 | AC-4 | Check-in and check-out timestamps give accurate visit durations; resolved visits are not counted as measured durations. | A-3, A-5, AR-3 |
 | AC-5 | Forgotten check-outs stay visible and can be resolved without erasing history; each resolution is audited. | A-7, A-8, AR-4, §5.3 |
-| AC-6 | Timetable entries for the designated Library subject produce the expected sessions on the expected dates. | B-1, B-3, B-6 |
-| AC-7 | An opened session shows the correct roster (whole class for a mandatory Library subject, enrolled students only for an optional one), frozen as a snapshot. Roster adjustments before finalization need a reason and are recorded; none are possible after. | B-5, B-12, B-13, B-15, B-15a |
+| AC-6 | Library periods on the timetable produce the expected sessions on the expected dates. | B-1, B-3, B-6 |
+| AC-7 | An opened session shows the whole class as its roster, frozen as a snapshot. Roster adjustments before finalization need a reason and are recorded; none are possible after. | B-5, B-12, B-13, B-15, B-15a |
 | AC-8 | Rows start as `UNMARKED`; only `PRESENT`, `ABSENT`, `EXCUSED` are final; `UNMARKED` is never a final outcome. | §6.5, C-5 |
 | AC-9 | A session with any `UNMARKED` student cannot be finalized (server-enforced). | B-17, B-18 |
 | AC-10 | Cancelled sessions add nothing to absence or status totals. | B-9, R-2 |
@@ -535,13 +533,13 @@ against a test database (§14). The web screens haven't been clicked through yet
 
 | Layer | Files |
 |---|---|
-| Schema | `db/migration/V113__library_attendance.sql`: `library_visits`, `library_sessions`, `library_session_records`, `library_roster_changes`, `library_attendance_corrections`, and `library_settings.library_subject_id` |
+| Schema | `V113__library_attendance.sql`: `library_visits`, `library_sessions`, `library_session_records`, `library_roster_changes`, `library_attendance_corrections`. `V114__timetable_library_periods.sql`: `timetables.kind` (`SUBJECT` / `LIBRARY`), teacher-subject optional for Library periods, one Library period per slot; drops V113's `library_settings.library_subject_id` |
 | Domain | `LibraryVisit`, `LibrarySession`, `LibrarySessionRecord`, `LibraryRosterChange`, `LibraryAttendanceCorrection` (rules live here) |
-| Use cases | `CheckInLibraryVisitorsUseCase`, `CheckOutLibraryVisitUseCase`, `ResolveLibraryVisitUseCase`, `OpenLibrarySessionUseCase`, `MarkLibrarySessionUseCase`, `AdjustLibraryRosterUseCase`, `FinalizeLibrarySessionUseCase`, `CancelLibrarySessionUseCase`, `CorrectLibraryAttendanceUseCase`, `SetLibrarySubjectUseCase` |
-| Reads | `LibraryAttendanceService`; `LibrarySessionSchedule` (sessions from the timetable); `LibraryRosterResolver` (D-9) |
+| Use cases | `CheckInLibraryVisitorsUseCase`, `CheckOutLibraryVisitUseCase`, `ResolveLibraryVisitUseCase`, `OpenLibrarySessionUseCase`, `MarkLibrarySessionUseCase`, `AdjustLibraryRosterUseCase`, `FinalizeLibrarySessionUseCase`, `CancelLibrarySessionUseCase`, `CorrectLibraryAttendanceUseCase`; Library periods are saved by the existing `CreateTimetableUseCase` |
+| Reads | `LibraryAttendanceService`; `LibrarySessionSchedule` (sessions from the timetable); `LibraryRosterResolver` (whole class) |
 | API | `LibraryAttendanceController`, `/api/v1/library/attendance` (samples: `docs/library_attendance.http`) |
 | Exports | `LibraryAttendanceExporter` (CSV / PDF through `ReportExportUtil`) |
-| Web app | `/library/attendance` (visits), `/library/attendance/sessions` and `/sessions/[id]` (registers), `/library/attendance/reports`; Library subject on `/library/settings` |
+| Web app | `/library/attendance` (visits), `/library/attendance/sessions` and `/sessions/[id]` (registers), `/library/attendance/reports`; Library periods are added in the timetable's add/edit dialog ("This period is: A lesson / Library period") |
 
 ### How the hard rules are enforced
 
@@ -556,7 +554,7 @@ against a test database (§14). The web screens haven't been clicked through yet
 - **History**: a session keeps its own copy of class, period, time and room. Deleting the
   timetable entry only clears the link (`ON DELETE SET NULL`).
 
-Audit actions: `LIBRARY_SUBJECT_SET`, `LIBRARY_VISIT_CHECKED_IN`, `LIBRARY_VISIT_CHECKED_OUT`,
+Audit actions: `LIBRARY_VISIT_CHECKED_IN`, `LIBRARY_VISIT_CHECKED_OUT`,
 `LIBRARY_VISIT_RESOLVED`, `LIBRARY_SESSION_OPENED`, `LIBRARY_SESSION_MARKED`,
 `LIBRARY_ROSTER_STUDENT_ADDED`, `LIBRARY_ROSTER_STUDENT_REMOVED`, `LIBRARY_SESSION_FINALIZED`,
 `LIBRARY_SESSION_CANCELLED`, `LIBRARY_ATTENDANCE_CORRECTED`. Business refusals are logged as
@@ -564,12 +562,14 @@ Audit actions: `LIBRARY_SUBJECT_SET`, `LIBRARY_VISIT_CHECKED_IN`, `LIBRARY_VISIT
 
 ### How it was checked (2026-10-30)
 
-- 43 new unit tests: domain rules, check-in (all-or-nothing, eligible-only, race, warning),
-  corrections, the session schedule and the roster rule. The full backend suite passes apart
+- 48 new unit tests: domain rules, check-in (all-or-nothing, eligible-only, race, warning),
+  corrections, the session schedule, the roster rule and the timetable's Library-period rules. The full backend suite passes apart
   from 5 failures that existed before this work.
 - The backend ran against a fresh test database. These were driven through the API:
-  - Library subject set; sessions listed from the timetable (switched-off day, break and other
-    subjects left out)
+  - Library periods added through the timetable API (Class 1 after lunch on Friday, Class 2 on
+    Tuesday) and listed for the librarian every week; refused on a lunch break, beside a lesson,
+    and a lesson refused beside a Library period; the timetable grid shows "Library" with no
+    teacher; the Class 1 session opened with the whole class
   - Bulk, all-or-nothing and eligible-only check-in; five simultaneous check-ins for one student
     gave one visit and four refusals
   - Check-out with duration; follow-up refused during the school day and accepted after it
@@ -583,7 +583,7 @@ Audit actions: `LIBRARY_SUBJECT_SET`, `LIBRARY_VISIT_CHECKED_IN`, `LIBRARY_VISIT
 
 ### Known behaviour to be aware of
 
-- When a school first picks its Library subject mid-term, every earlier Library period this
+- When a school first adds Library periods mid-term, every earlier Library period this
   term that nobody opened shows as **incomplete**. That follows B-10: nothing is marked absent,
   and they stay listed for follow-up. They can be cancelled, with a reason, or opened late (up
   to the end of the term).

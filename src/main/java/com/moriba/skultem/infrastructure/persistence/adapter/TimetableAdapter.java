@@ -38,8 +38,8 @@ public class TimetableAdapter implements TimetableRepository {
     }
 
     @Override
-    public List<Timetable> findAllBySubjectAndAcademicYear(String subjectId, String academicYearId, String schoolId) {
-        return repo.findBySubjectAndAcademicYear(subjectId, academicYearId, schoolId).stream()
+    public List<Timetable> findAllLibraryByAcademicYear(String academicYearId, String schoolId) {
+        return repo.findByKindAndAcademicYear(Timetable.Kind.LIBRARY, academicYearId, schoolId).stream()
                 .map(TimetableMapper::toDomain).toList();
     }
 

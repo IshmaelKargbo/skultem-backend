@@ -27,8 +27,11 @@ public class CreateTimetableUseCase {
     @AuditLogAnnotation(action = "TIMETABLE_CREATED")
     // entryId set: edit that entry. Not set: add a subject to the slot - the only one, or another option when
     // students split between subjects in the same period (e.g. PHE or RME).
+    // kind LIBRARY: a Library period instead of a subject - no subject or teacher (the librarian runs it), and it
+    // takes the whole slot for the class, so it can't sit beside options.
     public Timetable execut(String schoolId, String periodId, String subject, Day day, String roomId, String color,
-            String entryId) {
+            String entryId, Timetable.Kind kind) {
+        boolean library = kind == Timetable.Kind.LIBRARY;
         var period = periodRepo.findById(periodId)
                 .orElseThrow(() -> new NotFoundException("no period found"));
 
@@ -41,28 +44,52 @@ public class CreateTimetableUseCase {
         var workingDay = dayRepo.findByDayAndTimingId(day, timing.getId())
                 .orElseThrow(() -> new NotFoundException("no working day found"));
 
-        var teacherSubject = teacherSubjectRepo
-                .findById(subject)
-                .orElseThrow(() -> new NotFoundException("no subject found"));
-                
+        if (period.isBreak() || period.isLunch()) {
+            throw new RuleException("Breaks and lunch can't hold a lesson or a Library period");
+        }
+
+        if (!library && (subject == null || subject.isBlank())) {
+            throw new RuleException("Subject is required");
+        }
+        var teacherSubject = library ? null
+                : teacherSubjectRepo.findById(subject).orElseThrow(() -> new NotFoundException("no subject found"));
+
         var room = roomRepo.findByIdAndSchoolId(roomId, schoolId)
                 .orElseThrow(() -> new NotFoundException("no room found"));
 
         var slot = repo.findAllByPeriodIdAndDayIdAndSchoolId(periodId, workingDay.getId(), schoolId);
         var others = slot.stream().filter(t -> !t.getId().equals(entryId)).toList();
 
-        // Options in one slot run side by side, so the same subject can't be in it twice. Sharing a room is
-        // allowed (a school may have only one) - the form warns about it instead.
-        String subjectId = teacherSubject.getSubject().getId();
-        if (others.stream().anyMatch(t -> t.getTeacherSubject().getSubject().getId().equals(subjectId))) {
-            throw new RuleException(teacherSubject.getSubject().getName() + " is already in this period");
+        if (library) {
+            if (!others.isEmpty()) {
+                throw new RuleException("This period already has "
+                        + String.join(", ", others.stream().map(Timetable::label).toList())
+                        + ". A Library period takes the whole period for the class - remove "
+                        + (others.size() == 1 ? "it" : "them") + " first.");
+            }
+        } else {
+            if (others.stream().anyMatch(Timetable::isLibrary)) {
+                throw new RuleException("This is a Library period for the class. Remove it before adding a subject.");
+            }
+            // Options in one slot run side by side, so the same subject can't be in it twice. Sharing a room is
+            // allowed (a school may have only one) - the form warns about it instead.
+            String subjectId = teacherSubject.getSubject().getId();
+            if (others.stream().anyMatch(t -> t.getTeacherSubject().getSubject().getId().equals(subjectId))) {
+                throw new RuleException(teacherSubject.getSubject().getName() + " is already in this period");
+            }
         }
 
         Timetable domain;
         if (entryId != null && !entryId.isBlank()) {
             domain = slot.stream().filter(t -> t.getId().equals(entryId)).findFirst()
                     .orElseThrow(() -> new NotFoundException("timetable entry not found"));
-            domain.update(teacherSubject, room, color);
+            if (library) {
+                domain.updateAsLibrary(room, color);
+            } else {
+                domain.update(teacherSubject, room, color);
+            }
+        } else if (library) {
+            domain = Timetable.createLibrary(UUID.randomUUID().toString(), schoolId, period, workingDay, room, color);
         } else {
             domain = Timetable.create(UUID.randomUUID().toString(), schoolId, period, teacherSubject, workingDay,
                     room, color);
@@ -75,7 +102,7 @@ public class CreateTimetableUseCase {
                 schoolId,
                 ActivityType.SCHOOL,
                 "Period  created",
-                session.getName() + " set " + teacherSubject.getSubject().getName() + " for " + day,
+                session.getName() + " set " + domain.label() + " for " + day,
                 null,
                 domain.getId());
 

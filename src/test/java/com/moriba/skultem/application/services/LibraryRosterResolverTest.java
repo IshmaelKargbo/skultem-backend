@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,28 +20,18 @@ import org.springframework.data.domain.PageImpl;
 
 import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.ClassSession;
-import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.Section;
-import com.moriba.skultem.domain.repository.ClassSubjectRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
-import com.moriba.skultem.domain.repository.EnrollmentSubjectRepository;
-import com.moriba.skultem.domain.repository.StreamSubjectRepository;
 
-// D-9: a required Library subject puts the whole class on the roster; an optional one only those who take it.
+// B-5 / B-12: a Library period takes the whole period for the class, so its roster is the whole class.
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class LibraryRosterResolverTest {
 
     @Mock
     private EnrollmentRepository enrollmentRepo;
-    @Mock
-    private ClassSubjectRepository classSubjectRepo;
-    @Mock
-    private StreamSubjectRepository streamSubjectRepo;
-    @Mock
-    private EnrollmentSubjectRepository enrollmentSubjectRepo;
     @InjectMocks
     private LibraryRosterResolver resolver;
 
@@ -85,33 +74,8 @@ class LibraryRosterResolverTest {
         return e;
     }
 
-    private void libraryIs(boolean mandatory) {
-        var assignment = mock(ClassSubject.class);
-        when(assignment.getMandatory()).thenReturn(mandatory);
-        when(classSubjectRepo.findByClassIdAndSubjectIdAndSchoolId("class-1", "lib", "school"))
-                .thenReturn(Optional.of(assignment));
-    }
-
     @Test
-    void aRequiredLibrarySubjectPutsTheWholeSectionOnTheRoster() {
-        libraryIs(true);
-
-        assertThat(resolver.roster("school", session, "lib")).extracting(Enrollment::getId)
-                .containsExactly("e1", "e2");
-    }
-
-    @Test
-    void anOptionalLibrarySubjectPutsOnlyItsStudentsOnTheRoster() {
-        libraryIs(false);
-        when(enrollmentSubjectRepo.existsByEnrollmentIdAndSubjectIdAndSchoolId("e2", "lib", "school"))
-                .thenReturn(true);
-
-        assertThat(resolver.roster("school", session, "lib")).extracting(Enrollment::getId).containsExactly("e2");
-    }
-
-    @Test
-    void withNoSubjectAssignmentTheWholeSectionIsOnTheRoster() {
-        assertThat(resolver.roster("school", session, "lib")).extracting(Enrollment::getId)
-                .containsExactly("e1", "e2");
+    void theWholeSectionIsOnTheRosterLeaversAndOtherSectionsAreNot() {
+        assertThat(resolver.roster("school", session)).extracting(Enrollment::getId).containsExactly("e1", "e2");
     }
 }

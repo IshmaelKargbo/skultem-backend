@@ -23,7 +23,6 @@ import com.moriba.skultem.application.dto.LibraryAttendanceTotalsDTO;
 import com.moriba.skultem.application.dto.LibraryCheckInResultDTO;
 import com.moriba.skultem.application.dto.LibrarySessionDTO;
 import com.moriba.skultem.application.dto.LibrarySessionDetailDTO;
-import com.moriba.skultem.application.dto.LibrarySettingDTO;
 import com.moriba.skultem.application.dto.LibraryStudentHistoryDTO;
 import com.moriba.skultem.application.dto.LibraryVisitDTO;
 import com.moriba.skultem.application.error.BadRequestException;
@@ -39,7 +38,6 @@ import com.moriba.skultem.application.usecase.MarkLibrarySessionUseCase;
 import com.moriba.skultem.application.usecase.MarkLibrarySessionUseCase.Mark;
 import com.moriba.skultem.application.usecase.OpenLibrarySessionUseCase;
 import com.moriba.skultem.application.usecase.ResolveLibraryVisitUseCase;
-import com.moriba.skultem.application.usecase.SetLibrarySubjectUseCase;
 import com.moriba.skultem.domain.model.LibrarySession;
 import com.moriba.skultem.domain.model.LibrarySessionRecord;
 import com.moriba.skultem.domain.model.LibrarySessionRecord.Status;
@@ -48,11 +46,9 @@ import com.moriba.skultem.domain.repository.LibraryAttendanceCorrectionRepositor
 import com.moriba.skultem.domain.repository.LibraryRosterChangeRepository;
 import com.moriba.skultem.domain.repository.LibrarySessionRecordRepository;
 import com.moriba.skultem.domain.repository.LibrarySessionRepository;
-import com.moriba.skultem.domain.repository.LibrarySettingRepository;
 import com.moriba.skultem.domain.repository.LibraryVisitRepository;
 import com.moriba.skultem.domain.repository.LibraryVisitRepository.Filter;
 import com.moriba.skultem.domain.repository.StudentRepository;
-import com.moriba.skultem.domain.repository.SubjectRepository;
 import com.moriba.skultem.domain.shared.SchoolTimeZone;
 
 import lombok.RequiredArgsConstructor;
@@ -75,13 +71,10 @@ public class LibraryAttendanceService {
     private final LibrarySessionRecordRepository recordRepo;
     private final LibraryRosterChangeRepository changeRepo;
     private final LibraryAttendanceCorrectionRepository correctionRepo;
-    private final LibrarySettingRepository settingRepo;
-    private final SubjectRepository subjectRepo;
     private final StudentRepository studentRepo;
     private final LibrarySessionSchedule schedule;
     private final LibraryAttendanceSupport support;
 
-    private final SetLibrarySubjectUseCase setSubjectUseCase;
     private final CheckInLibraryVisitorsUseCase checkInUseCase;
     private final CheckOutLibraryVisitUseCase checkOutUseCase;
     private final ResolveLibraryVisitUseCase resolveUseCase;
@@ -96,10 +89,6 @@ public class LibraryAttendanceService {
 
     @Transactional(readOnly = true)
     public LibraryAttendanceOverviewDTO overview(String schoolId) {
-        String subjectId = settingRepo.findBySchool(schoolId).map(s -> s.getLibrarySubjectId()).orElse(null);
-        String subjectName = subjectId == null ? null
-                : subjectRepo.findByIdAndSchoolId(subjectId, schoolId).map(s -> s.getName()).orElse(null);
-
         Instant now = support.now();
         LocalDate today = support.today();
         long visitsToday = visitRepo.search(schoolId, startOf(today), startOf(today.plusDays(1)), null, null,
@@ -119,24 +108,10 @@ public class LibraryAttendanceService {
                         .filter(LibrarySessionDTO::incomplete).count())
                 .orElse(0);
 
-        return new LibraryAttendanceOverviewDTO(subjectId, subjectName, visitRepo.countOpen(schoolId),
+        int libraryPeriods = schedule.load(schoolId).map(c -> c.entries().size()).orElse(0);
+
+        return new LibraryAttendanceOverviewDTO(libraryPeriods, visitRepo.countOpen(schoolId),
                 visitRepo.countUnresolved(schoolId, now), visitsToday, sessionsToday, incomplete);
-    }
-
-    /** The school's subjects, for choosing the Library subject (the general subject list isn't open to librarians). */
-    @Transactional(readOnly = true)
-    public List<SubjectOption> subjects(String schoolId) {
-        return subjectRepo.findBySchool(schoolId, Pageable.unpaged()).stream()
-                .map(s -> new SubjectOption(s.getId(), s.getName(), s.getCode()))
-                .sorted(Comparator.comparing(SubjectOption::name, Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-    }
-
-    public record SubjectOption(String id, String name, String code) {
-    }
-
-    public LibrarySettingDTO setLibrarySubject(String schoolId, String subjectId) {
-        return setSubjectUseCase.execute(schoolId, subjectId);
     }
 
     // Workflow A - independent visits
