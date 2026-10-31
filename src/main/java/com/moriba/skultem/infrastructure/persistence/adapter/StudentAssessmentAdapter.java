@@ -28,7 +28,7 @@ public class StudentAssessmentAdapter implements StudentAssessmentRepository {
 
     @Override
     public void deleteByEnrollmentIdAndSubjectIdAndSchoolId(String enrollmentId, String subjectId, String schoolId) {
-        repo.deleteByEnrollment_IdAndTeacherSubject_IdAndSchoolId(enrollmentId, subjectId, schoolId);
+        repo.deleteByEnrollment_IdAndTeacherSubject_Subject_IdAndSchoolId(enrollmentId, subjectId, schoolId);
     }
 
     @Override

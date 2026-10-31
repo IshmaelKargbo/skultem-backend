@@ -19,7 +19,9 @@ public interface StudentAssessmentJpaRepository extends JpaRepository<StudentAss
     @Query("DELETE FROM StudentAssessmentEntity a WHERE a.enrollment.id = :enrollmentId AND a.schoolId = :schoolId")
     void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId, @Param("schoolId") String schoolId);
 
-    void deleteByEnrollment_IdAndTeacherSubject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
+    // Matches on the teacher assignment's *subject* - callers pass a subject id. (This used to
+    // match TeacherSubject_Id, so a subject id never matched and nothing was ever deleted.)
+    void deleteByEnrollment_IdAndTeacherSubject_Subject_IdAndSchoolId(String enrollmentId, String subjectId, String schoolId);
 
     List<StudentAssessmentEntity> findAllByTeacherSubject_Id(String teacherId);
 

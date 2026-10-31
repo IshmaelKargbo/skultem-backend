@@ -46,6 +46,7 @@ public class AssignSubjectsToStreamUseCase {
         private final EnrollmentSubjectRepository enrollmentSubjectRepo;
         private final StudentAssessmentRepository studentAssessmentRepo;
         private final TeacherSubjectRepository teacherSubjectRepo;
+        private final com.moriba.skultem.application.services.TeacherSubjectUsageService teacherSubjectUsage;
         private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
         private final ReferenceGeneratorUsecase rg;
         private final LogActivityUseCase logActivityUseCase;
@@ -142,6 +143,11 @@ public class AssignSubjectsToStreamUseCase {
                 // Delete removed StreamSubjects + TeacherSubject cleanup
                 for (var ss : existing) {
                         if (!incomingSubjectIds.contains(ss.getSubject().getId())) {
+                                // Its teacher assignments are deleted below, and other tables point
+                                // at them - refuse if in use, otherwise clear their empty records.
+                                teacherSubjectUsage.prepareSubjectRemoval(schoolId, null, streamId,
+                                                ss.getSubject().getId(), ss.getSubject().getName(), "stream");
+
                                 repo.delete(ss);
 
                                 // Delete teacher assignments for this removed subject

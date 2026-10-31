@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.services.TeacherSubjectUsageService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.ClassSubject;
 import com.moriba.skultem.domain.model.EnrollmentSubject;
@@ -46,6 +47,7 @@ public class AssignSubjectsToClassUseCase {
     private final StudentAssessmentRepository studentAssessmentRepo;
     private final AssessmentScoreRepository assessmentScoreRepository;
     private final TeacherSubjectRepository teacherSubjectRepository;
+    private final TeacherSubjectUsageService teacherSubjectUsage;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
@@ -183,6 +185,11 @@ public class AssignSubjectsToClassUseCase {
                 }
 
                 String subjectId = cs.getSubject().getId();
+
+                // Its teacher assignments are deleted next, and other tables point at them - refuse
+                // if they're in use, otherwise clear their empty records so the delete goes through.
+                teacherSubjectUsage.prepareSubjectRemoval(schoolId, clazz.getId(),
+                        stream != null ? stream.getId() : null, subjectId, cs.getSubject().getName(), "class");
 
                 // Remove teacher assignment - keyed by the Clazz (via the session), same as above,
                 // but narrowed to this stream when there is one so removing the subject from Art

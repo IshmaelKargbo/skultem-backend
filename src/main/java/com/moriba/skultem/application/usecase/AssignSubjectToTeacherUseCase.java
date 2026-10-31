@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.application.services.TeacherSubjectUsageService;
 import com.moriba.skultem.domain.model.Teacher.Status;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Enrollment;
@@ -40,6 +41,7 @@ public class AssignSubjectToTeacherUseCase {
     private final ReferenceGeneratorUsecase referenceGenerator;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
     private final LogActivityUseCase logActivityUseCase;
+    private final TeacherSubjectUsageService usageService;
 
     @AuditLogAnnotation(action = "ASSIGNED_SUBJECT_TO_TEACHER")
     public void execute(String schoolId, String sessionId, List<SubjectAssignment> assignments) {
@@ -67,6 +69,18 @@ public class AssignSubjectToTeacherUseCase {
                 .collect(Collectors.toMap(a -> a.getId(), ts -> ts));
 
         Set<String> incomingIds = new HashSet<>();
+
+        // Rows the request no longer keeps, per subject. Swapping a subject's teacher (A out, B in)
+        // reuses A's row for B instead of deleting it, so the timetable slots and assessment
+        // records hanging off it move to the new teacher rather than blocking the change.
+        Set<String> keptIds = assignments.stream().map(SubjectAssignment::id).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<String, Deque<TeacherSubject>> reusableBySubject = new HashMap<>();
+        for (TeacherSubject ts : existingList) {
+            if (!keptIds.contains(ts.getId())) {
+                reusableBySubject.computeIfAbsent(ts.getSubject().getId(), k -> new ArrayDeque<>()).add(ts);
+            }
+        }
 
         for (SubjectAssignment assignment : assignments) {
 
@@ -98,6 +112,12 @@ public class AssignSubjectToTeacherUseCase {
                 repo.save(existing);
                 incomingIds.add(existing.getId());
                 teacherSubject = existing;
+            } else if (!reusableBySubject.getOrDefault(assignment.subjectId(), new ArrayDeque<>()).isEmpty()) {
+                var reused = reusableBySubject.get(assignment.subjectId()).poll();
+                reused.changeTeacher(teacher);
+                repo.save(reused);
+                incomingIds.add(reused.getId());
+                teacherSubject = reused;
             } else {
                 var subject = subjectRepo.findByIdAndSchoolId(assignment.subjectId(), schoolId)
                         .orElseThrow(() -> new NotFoundException("Subject not found"));
@@ -107,35 +127,37 @@ public class AssignSubjectToTeacherUseCase {
                 repo.save(teacherSubject);
                 incomingIds.add(id);
             }
-
-            var enrollments = enrollmentRepo.findAllByClassAndSchoolId(
-                    session.getClazz().getId(),
-                    schoolId,
-                    Pageable.unpaged()).getContent();
-
-            for (Enrollment enrollment : enrollments) {
-                try {
-                    provisionStudentAssessmentsUseCase.execute(enrollment);
-                } catch (Exception e) {
-                    continue;
-                }
-            }
         }
 
         for (TeacherSubject existing : existingList) {
             if (!incomingIds.contains(existing.getId())) {
+                // Timetable slots, assessments and approval requests reference this exact row. The
+                // delete only reaches the database at commit (after any catch here could run), so
+                // check up front and refuse with a message instead of a constraint error.
+                usageService.prepareAssignmentRemoval(existing.getId(),
+                        existing.getTeacher().getUser().getName(), existing.getSubject().getName());
                 try {
                     repo.delete(existing);
                 } catch (DataIntegrityViolationException e) {
-                    // Removing one of a subject's several teachers is now a routine edit (not just
-                    // "the subject was dropped from the curriculum"), so this is no longer a rare
-                    // edge case - assessments/scores/timetable slots reference this exact row and
-                    // block the delete rather than silently orphaning them.
                     throw new RuleException(
                             "Cannot remove " + existing.getTeacher().getUser().getName() + " from "
-                                    + existing.getSubject().getName()
-                                    + " - they already have assessment records for this subject");
+                                    + existing.getSubject().getName() + " - it is still in use");
                 }
+            }
+        }
+
+        // Provision once, after removals: done inside the loop it ran once per assignment, and could
+        // create records for an assignment that was about to be removed.
+        var enrollments = enrollmentRepo.findAllByClassAndSchoolId(
+                session.getClazz().getId(),
+                schoolId,
+                Pageable.unpaged()).getContent();
+
+        for (Enrollment enrollment : enrollments) {
+            try {
+                provisionStudentAssessmentsUseCase.execute(enrollment);
+            } catch (Exception e) {
+                continue;
             }
         }
 
