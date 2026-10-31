@@ -118,6 +118,13 @@ public class TeacherSubjectAdapter implements TeacherSubjectRepository {
     }
 
     @Override
+    public void deleteByClassIdAndStreamIdAndSubjectIdAndSchoolId(String classId, String streamId, String subjectId,
+            String schoolId) {
+        repo.deleteBySession_Clazz_IdAndSession_Stream_IdAndSubject_IdAndSchoolId(classId, streamId, subjectId,
+                schoolId);
+    }
+
+    @Override
     public void deleteByStreamIdAndSubjectIdAndSchoolId(String streamId, String subjectId, String schoolId) {
         repo.deleteBySession_Stream_IdAndSubject_IdAndSchoolId(streamId, subjectId, schoolId);
     }

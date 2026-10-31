@@ -38,6 +38,9 @@ public interface TeacherSubjectJpaRepository
 
         void deleteBySession_Stream_IdAndSubject_IdAndSchoolId(String streamId, String subjectId, String schoolId);
 
+        void deleteBySession_Clazz_IdAndSession_Stream_IdAndSubject_IdAndSchoolId(String classId, String streamId,
+                        String subjectId, String schoolId);
+
         Page<TeacherSubjectEntity> findAllByTeacherId(String teacherId, Pageable pageable);
 
         Page<TeacherSubjectEntity> findAllBySubjectId(String subjectId, Pageable pageable);

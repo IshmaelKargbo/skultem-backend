@@ -21,6 +21,10 @@ public interface TeacherSubjectRepository {
 
         void deleteByStreamIdAndSubjectIdAndSchoolId(String streamId, String subjectId, String schoolId);
 
+        // One class's stream only (e.g. SSS1 Science) - not every class sharing that stream.
+        void deleteByClassIdAndStreamIdAndSubjectIdAndSchoolId(String classId, String streamId, String subjectId,
+                        String schoolId);
+
         Optional<TeacherSubject> findById(String id);
 
         Optional<TeacherSubject> findByUser(String id, String schoolId);

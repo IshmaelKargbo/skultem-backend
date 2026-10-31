@@ -195,7 +195,10 @@ public class AssignSubjectsToClassUseCase {
                 // but narrowed to this stream when there is one so removing the subject from Art
                 // doesn't also unassign the teacher teaching it in Science.
                 if (stream != null) {
-                    teacherSubjectRepository.deleteByStreamIdAndSubjectIdAndSchoolId(
+                    // This class's stream only - the stream-wide delete also wiped the subject's
+                    // teachers in every other class on the same stream (SSS2 Science, ...).
+                    teacherSubjectRepository.deleteByClassIdAndStreamIdAndSubjectIdAndSchoolId(
+                            clazz.getId(),
                             stream.getId(),
                             subjectId,
                             schoolId);
