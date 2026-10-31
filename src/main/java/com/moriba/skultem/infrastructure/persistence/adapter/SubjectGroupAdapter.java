@@ -27,6 +27,11 @@ public class SubjectGroupAdapter implements SubjectGroupRepository {
     }
 
     @Override
+    public void delete(SubjectGroup domain) {
+        repo.deleteById(domain.getId());
+    }
+
+    @Override
     public Page<SubjectGroup> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolId(schoolId, pageable).map(SubjectGroupMapper::toDomain);
     }
@@ -34,7 +39,9 @@ public class SubjectGroupAdapter implements SubjectGroupRepository {
     @Override
     public Page<SubjectGroup> search(String schoolId, String classId, String query,
             java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
-        return repo.search(schoolId, classId, query, levels, pageable).map(SubjectGroupMapper::toDomain);
+        boolean includeStreams = levels.stream().anyMatch(com.moriba.skultem.domain.vo.Level::isStreamed);
+        return repo.search(schoolId, classId, query, levels, includeStreams, pageable)
+                .map(SubjectGroupMapper::toDomain);
     }
 
     @Override

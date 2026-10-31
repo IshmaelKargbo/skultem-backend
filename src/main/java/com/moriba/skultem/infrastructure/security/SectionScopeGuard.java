@@ -23,6 +23,7 @@ import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.ReportCardRepository;
 import com.moriba.skultem.domain.repository.StaffManagementSectionRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
+import com.moriba.skultem.domain.repository.SubjectGroupRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 import com.moriba.skultem.domain.repository.TeacherSubjectRepository;
 import com.moriba.skultem.domain.vo.Level;
@@ -51,6 +52,7 @@ public class SectionScopeGuard {
     private final StaffManagementSectionRepository staffSectionRepo;
     private final NoticeRepository noticeRepo;
     private final CalendarEventRepository calendarEventRepo;
+    private final SubjectGroupRepository subjectGroupRepo;
 
     public boolean wholeSchool() {
         return sectionScopeService.current().wholeSchool();
@@ -132,6 +134,19 @@ public class SectionScopeGuard {
             return true;
         }
         return scope.levels().stream().anyMatch(Level::isStreamed);
+    }
+
+    // A group sits on a class (checked by its level) or a stream (streamed levels only).
+    public boolean subjectGroup(String schoolId, String groupId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || groupId == null) {
+            return true;
+        }
+        return subjectGroupRepo.findByIdAndSchoolId(groupId, schoolId)
+                .map(g -> g.getClazz() != null
+                        ? scope.allows(g.getClazz().getLevel())
+                        : scope.levels().stream().anyMatch(Level::isStreamed))
+                .orElse(true);
     }
 
     public boolean classSession(String schoolId, String sessionId) {

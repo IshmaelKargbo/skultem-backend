@@ -12,6 +12,8 @@ import com.moriba.skultem.domain.model.SubjectGroup;
 public interface SubjectGroupRepository {
     void save(SubjectGroup domain);
 
+    void delete(SubjectGroup domain);
+
     Optional<SubjectGroup> findByIdAndSchoolId(String id, String schoolId);
 
     Optional<SubjectGroup> findByIdAndStreamAndSchoolId(String id, String streamId, String schoolId);

@@ -28,6 +28,14 @@ public class SubjectGroup extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    // The class/stream a group belongs to is fixed - its subjects are already linked to the group
+    // inside that class or stream - so only the name and how many subjects to pick can change.
+    public void update(String name, int totalSelection) {
+        this.name = name;
+        this.totalSelection = totalSelection;
+        touch(Instant.now());
+    }
+
     public static SubjectGroup create(String id, String schoolId, String name, Clazz clazz,
             Stream stream, int totalSelection) {
         Instant now = Instant.now();

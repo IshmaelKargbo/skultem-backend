@@ -21,16 +21,20 @@ public interface SubjectGroupJpaRepository extends JpaRepository<SubjectGroupEnt
     // ListSubjectGroupBySchoolUseCase.
     @Query("""
                 select g from SubjectGroupEntity g
+                left join g.clazz c
                 where g.schoolId = :schoolId
-                and (:classId = '' or g.clazz.id = :classId)
-                and g.clazz.level in :levels
+                and (:classId = '' or c.id = :classId)
+                and ((c is null and :includeStreams = true) or c.level in :levels)
                 and (:query = '' or lower(g.name) like lower(concat('%', :query, '%')))
             """)
+    // Left join: stream-based groups (SSS) have no class, so an inner join on g.clazz would drop
+    // them. They're included when the caller's scope covers a streamed level.
     Page<SubjectGroupEntity> search(
             @Param("schoolId") String schoolId,
             @Param("classId") String classId,
             @Param("query") String query,
             @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
+            @Param("includeStreams") boolean includeStreams,
             Pageable pageable);
 
     Page<SubjectGroupEntity> findAllByStream_IdAndSchoolIdOrderByClazz_LevelOrderAsc(String streamId, String schoolId, Pageable pageable);
