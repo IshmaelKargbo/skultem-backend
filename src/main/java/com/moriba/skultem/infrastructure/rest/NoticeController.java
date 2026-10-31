@@ -67,7 +67,7 @@ public class NoticeController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<NoticeDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -77,7 +77,7 @@ public class NoticeController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<List<NoticeDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

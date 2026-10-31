@@ -15,5 +15,6 @@ public enum ActivityType {
     PAYMENT,
     SCHOOL,
     SETTINGS,
-    LIBRARY
+    LIBRARY,
+    HEALTH_CARE
 }

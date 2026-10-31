@@ -147,7 +147,7 @@ public class AcademicYearController {
 
     @SectionNeutral
     @GetMapping("/terms")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'PARENT', 'TEACHER', 'PRINCIPAL')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'PARENT', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId) {

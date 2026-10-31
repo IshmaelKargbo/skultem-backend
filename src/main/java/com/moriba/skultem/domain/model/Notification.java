@@ -29,7 +29,9 @@ public class Notification extends AggregateRoot<String> {
         ASSESSMENT,
         // A material was actually handed over - fee-entitled or bought outright, since both now
         // collect through the same Supply mechanism. See SupplyMaterialUseCase.
-        SUPPLY
+        SUPPLY,
+        // Health care: a child sent home or referred, or an alert to the principal (docs/HEALTH_CARE.md §6.5, §7).
+        HEALTH
     }
 
     public Notification(String id, String schoolId, User owner, Type type,

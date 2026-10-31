@@ -74,6 +74,10 @@ public enum FeatureModule {
             "Catalog the school library, issue books to students and teachers, follow up on overdue loans, and take library attendance.",
             false),
 
+    HEALTH_CARE("Health Care", ModuleCategory.OPERATIONS,
+            "Record sick bay visits, set how often students may visit, and tell parents when a child is sent home or referred.",
+            false),
+
     ANALYTICS("Analytics & Reports", ModuleCategory.INSIGHTS,
             "Academic, financial, and demographic reports and charts.",
             false);

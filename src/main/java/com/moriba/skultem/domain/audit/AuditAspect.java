@@ -44,14 +44,18 @@ public class AuditAspect {
 
         try {
             Object result = joinPoint.proceed();
-            details = generateDetails(joinPoint, result);
+            details = auditAnnotation.includeDetails()
+                    ? generateDetails(joinPoint, result)
+                    : "Method: " + joinPoint.getSignature().getName();
             return result;
 
         } catch (Throwable ex) {
             // A rule saying no (duplicate, not found, not allowed) is the system working - only anything else is a
             // failure worth an alert (PlatformOperationsService counts FAILURE only).
             status = isRejection(ex) ? Status.REJECTED : Status.FAILURE;
-            details = truncate(ex.getMessage(), MAX_DETAILS_LENGTH);
+            // A refusal's message can quote what was entered, so it's left out too when details are off.
+            details = auditAnnotation.includeDetails() ? truncate(ex.getMessage(), MAX_DETAILS_LENGTH)
+                    : "Method: " + joinPoint.getSignature().getName() + " | " + ex.getClass().getSimpleName();
             throw ex;
 
         } finally {

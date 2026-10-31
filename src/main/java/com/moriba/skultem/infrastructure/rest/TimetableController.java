@@ -190,8 +190,8 @@ public class TimetableController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<PeriodDTO> deletePeriod(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @Valid @PathVariable String id) {
-        var res = timetableSvc.deletePeriod(id);
-        return new ApiResponse<>("success", 200, "period delete successfully", res);
+        var res = timetableSvc.deletePeriod(school, id);
+        return new ApiResponse<>("success", 200, "Period deleted", res);
     }
 
     @PatchMapping("/period/{id}")

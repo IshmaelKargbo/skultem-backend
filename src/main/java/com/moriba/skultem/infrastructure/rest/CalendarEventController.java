@@ -56,7 +56,7 @@ public class CalendarEventController {
 
     @SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<CalendarEventDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -66,7 +66,7 @@ public class CalendarEventController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'PARENT', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<List<CalendarEventDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

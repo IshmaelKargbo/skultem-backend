@@ -31,7 +31,7 @@ public class NotificationController {
     // Despite the use case's name, notifications aren't parent-specific at the
     // data level — `owner` is any User — so this is open to every portal role.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'TEACHER', 'PARENT')")
     public ApiResponse<List<NotificationDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -49,7 +49,7 @@ public class NotificationController {
     }
 
     @GetMapping("/open/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> open(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable(required = true) String id) {
         service.openNotification(school, id);

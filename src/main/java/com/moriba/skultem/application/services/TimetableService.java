@@ -189,8 +189,8 @@ public class TimetableService {
     }
 
     // deletePeriod
-    public PeriodDTO deletePeriod(String id) {
-        var domain = deletePeriodUseCase.execute(id);
+    public PeriodDTO deletePeriod(String schoolId, String id) {
+        var domain = deletePeriodUseCase.execute(schoolId, id);
         return PeriodMapper.toDTO(domain, null);
     }
 

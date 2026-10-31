@@ -42,7 +42,7 @@ public class PermissionService {
     // need it added. Teacher- and parent-only gates stay closed: those are about the caller being
     // that teacher or parent, not about seniority.
     private static final Set<Role> SUPER_ADMIN_COVERS = EnumSet.of(Role.ADMIN, Role.OWNER, Role.PROPRIETOR, Role.PRINCIPAL,
-            Role.ACCOUNTANT, Role.LIBRARIAN);
+            Role.ACCOUNTANT, Role.LIBRARIAN, Role.NURSE);
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();

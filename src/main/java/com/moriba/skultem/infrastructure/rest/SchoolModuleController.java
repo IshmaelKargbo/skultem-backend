@@ -31,7 +31,7 @@ public class SchoolModuleController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'TEACHER', 'PARENT')")
     public ApiResponse<List<SchoolModuleDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listSchoolModulesUseCase.execute(school);

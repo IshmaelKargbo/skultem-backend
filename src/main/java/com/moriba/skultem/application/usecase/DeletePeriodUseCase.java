@@ -21,9 +21,11 @@ public class DeletePeriodUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "PERIOD_DELETED")
-    public Period execute(String id) {
+    public Period execute(String schoolId, String id) {
 
+        // Only this school's periods: another school's id answers "not found", as UpdatePeriodUseCase does.
         Period period = periodRepo.findById(id)
+                .filter(p -> p.getSchoolId().equals(schoolId))
                 .orElseThrow(() -> new NotFoundException("No period found"));
 
         // Delete all timetable entries linked to this period
