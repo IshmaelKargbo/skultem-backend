@@ -64,8 +64,10 @@ public class SalaryStructure extends AggregateRoot<String> {
 
         Instant now = Instant.now();
 
-        return new SalaryStructure(id, schoolId, teacher, templateId, templateName, basicSalary, allowances,
-                deductions, now, now);
+        var structure = new SalaryStructure(id, schoolId, teacher, templateId, templateName, basicSalary,
+                allowances, deductions, now, now);
+        structure.ensureNetNotNegative();
+        return structure;
     }
 
     public void update(String templateId, String templateName, BigDecimal basicSalary,
@@ -76,9 +78,21 @@ public class SalaryStructure extends AggregateRoot<String> {
         this.basicSalary = basicSalary;
         this.allowances = allowances;
         this.deductions = deductions;
+        ensureNetNotNegative();
 
         touch(Instant.now());
     }
+
+    // Deductions larger than gross pay would mean a negative payslip (and a negative total on
+    // the payroll run) - refuse it here so every save path is covered.
+    private void ensureNetNotNegative() {
+        if (netSalary().compareTo(BigDecimal.ZERO) < 0) {
+            throw new com.moriba.skultem.application.error.BadRequestException(
+                    "Deductions (" + totalDeductions().toPlainString() + ") are more than gross pay ("
+                            + grossSalary().toPlainString() + ") - net pay can't be negative");
+        }
+    }
+
 
     public BigDecimal totalAllowances() {
         return allowances.stream().map(a -> a.resolve(basicSalary)).reduce(BigDecimal.ZERO, BigDecimal::add);

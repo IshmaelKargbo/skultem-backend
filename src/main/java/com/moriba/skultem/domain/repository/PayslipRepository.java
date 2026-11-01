@@ -10,6 +10,8 @@ public interface PayslipRepository {
 
     void saveAll(List<Payslip> domains);
 
+    void deleteAllByPayrollRunId(String payrollRunId);
+
     Optional<Payslip> findByIdAndSchoolId(String id, String schoolId);
 
     Optional<Payslip> findByPayrollRunIdAndTeacherId(String payrollRunId, String teacherId);

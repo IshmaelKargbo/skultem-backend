@@ -152,7 +152,8 @@ public class ConfigureNextAcademicYearUseCase {
                     sourceFee.isAllowInstallment(),
                     sourceFee.isNewStudentsOnly(),
                     sourceFee.isOldStudentsOnly(),
-                    sourceFee.getGender());
+                    sourceFee.getGender(),
+                    sourceFee.getStream());
 
             feeStructureRepo.save(copy);
             copied++;

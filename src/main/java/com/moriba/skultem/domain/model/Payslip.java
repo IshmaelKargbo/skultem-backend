@@ -2,9 +2,12 @@ package com.moriba.skultem.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.domain.shared.AggregateRoot;
+import com.moriba.skultem.domain.vo.PayslipLine;
+
 import lombok.Getter;
 
 // A frozen snapshot of one teacher's compensation within a single PayrollRun. Values are copied
@@ -20,6 +23,9 @@ public class Payslip extends AggregateRoot<String> {
     private BigDecimal allowances;
     private BigDecimal deductions;
     private boolean included;
+    // Frozen copies of each line (empty for payslips created before lines were kept).
+    private List<PayslipLine> allowanceLines;
+    private List<PayslipLine> deductionLines;
 
     public Payslip(
             String id,
@@ -30,10 +36,14 @@ public class Payslip extends AggregateRoot<String> {
             BigDecimal allowances,
             BigDecimal deductions,
             boolean included,
+            List<PayslipLine> allowanceLines,
+            List<PayslipLine> deductionLines,
             Instant createdAt,
             Instant updatedAt) {
 
         super(id, createdAt);
+        this.allowanceLines = allowanceLines == null ? List.of() : allowanceLines;
+        this.deductionLines = deductionLines == null ? List.of() : deductionLines;
         this.schoolId = schoolId;
         this.payrollRunId = payrollRunId;
         this.teacher = teacher;
@@ -61,8 +71,16 @@ public class Payslip extends AggregateRoot<String> {
                 structure.totalAllowances(),
                 structure.totalDeductions(),
                 true,
+                lines(structure.getAllowances(), structure.getBasicSalary()),
+                lines(structure.getDeductions(), structure.getBasicSalary()),
                 now,
                 now);
+    }
+
+    private static List<PayslipLine> lines(List<com.moriba.skultem.domain.vo.PayComponent> items,
+            BigDecimal basicSalary) {
+        if (items == null) return List.of();
+        return items.stream().map(i -> new PayslipLine(i.name(), i.resolve(basicSalary))).toList();
     }
 
     public void setIncluded(boolean included, PayrollRun run) {

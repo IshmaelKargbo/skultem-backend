@@ -17,9 +17,13 @@ import com.moriba.skultem.infrastructure.rest.dto.SavePayslipSettingDTO;
 import com.moriba.skultem.infrastructure.security.RequiresModule;
 
 import jakarta.validation.Valid;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.PAYROLL)
+// Payroll is school-wide (staff aren't split by section), so a section-limited user with a
+// payroll role - e.g. a Primary School principal - still manages the whole school's payroll.
+@SectionNeutral
 @RestController
 @RequestMapping("/api/v1/payslip-setting")
 @RequiredArgsConstructor
@@ -28,7 +32,7 @@ public class PayslipSettingController {
     private final SavePayslipSettingUseCase savePayslipSettingUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<PayslipSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPayslipSettingUseCase.execute(school);

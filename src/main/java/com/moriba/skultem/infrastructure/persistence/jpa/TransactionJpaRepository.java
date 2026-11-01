@@ -66,4 +66,23 @@ public interface TransactionJpaRepository
 
                 return findAll(spec, pageable);
         }
+
+        @org.springframework.data.jpa.repository.Query("""
+                        SELECT COALESCE(SUM(CASE WHEN t.direction = com.moriba.skultem.domain.model.Transaction.Direction.DEBIT
+                                                 THEN t.amount ELSE -t.amount END), 0)
+                        FROM TransactionEntity t
+                        WHERE t.schoolId = :schoolId AND t.referenceId = :referenceId
+                        AND t.referenceType = com.moriba.skultem.domain.model.Transaction.ReferenceType.PAYROLL
+                        """)
+        java.math.BigDecimal netPayrollAmount(@org.springframework.data.repository.query.Param("schoolId") String schoolId,
+                        @org.springframework.data.repository.query.Param("referenceId") String referenceId);
+
+        @org.springframework.data.jpa.repository.Query("""
+                        SELECT COUNT(t) FROM TransactionEntity t
+                        WHERE t.schoolId = :schoolId AND t.referenceId = :referenceId
+                        AND t.referenceType = com.moriba.skultem.domain.model.Transaction.ReferenceType.PAYROLL
+                        AND t.direction = com.moriba.skultem.domain.model.Transaction.Direction.CREDIT
+                        """)
+        long countPayrollCorrections(@org.springframework.data.repository.query.Param("schoolId") String schoolId,
+                        @org.springframework.data.repository.query.Param("referenceId") String referenceId);
 }

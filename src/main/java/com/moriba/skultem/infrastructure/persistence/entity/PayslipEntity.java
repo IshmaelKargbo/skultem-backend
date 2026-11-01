@@ -3,7 +3,12 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -43,6 +48,16 @@ public class PayslipEntity {
 
     @Column(nullable = false)
     private BigDecimal deductions;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "payslip_allowance_lines", joinColumns = @JoinColumn(name = "payslip_id"))
+    @Builder.Default
+    private List<PayslipLineEmbeddable> allowanceLines = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "payslip_deduction_lines", joinColumns = @JoinColumn(name = "payslip_id"))
+    @Builder.Default
+    private List<PayslipLineEmbeddable> deductionLines = new ArrayList<>();
 
     @Column(nullable = false)
     private boolean included;

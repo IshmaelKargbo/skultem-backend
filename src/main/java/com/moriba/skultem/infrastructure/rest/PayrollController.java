@@ -37,6 +37,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.PAYROLL)
+// Payroll is school-wide (staff aren't split by section), so a section-limited user with a
+// payroll role - e.g. a Primary School principal - still manages the whole school's payroll.
+@SectionNeutral
 @RestController
 @RequestMapping("/api/v1/payroll")
 @RequiredArgsConstructor
@@ -47,7 +50,7 @@ public class PayrollController {
     
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<List<PayslipDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -57,7 +60,7 @@ public class PayrollController {
 
     @SectionNeutral
     @GetMapping("/me/payslip/{runId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<PayslipDTO> myPayslip(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -164,6 +167,15 @@ public class PayrollController {
             @Valid @RequestBody CreatePayrollRunDTO param) {
         return new ApiResponse<>("success", 200, "Payroll run created successfully",
                 payrollService.createRun(school, param.period(), param.payDate()));
+    }
+
+    // Drafts only - see DeletePayrollRunUseCase.
+    @DeleteMapping("/run/{runId}")
+    public ApiResponse<Void> deleteRun(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String runId) {
+        payrollService.deleteRun(school, runId);
+        return new ApiResponse<>("success", 200, "Payroll run deleted successfully", null);
     }
 
     @GetMapping("/run")

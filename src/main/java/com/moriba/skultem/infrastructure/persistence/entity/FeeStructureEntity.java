@@ -49,6 +49,10 @@ public class FeeStructureEntity {
     private List<FeeStructureSupplyItemEntity> supplyItems = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stream_id")
+    private StreamEntity stream;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
     private TermEntity term;
 

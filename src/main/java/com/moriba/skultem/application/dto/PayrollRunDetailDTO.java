@@ -10,5 +10,9 @@ public record PayrollRunDetailDTO(
         BigDecimal deductionTotal,
         BigDecimal netTotal,
         long includedCount,
-        long totalCount) {
+        long totalCount,
+        // What this run put through the school's transactions (null while still a draft - nothing
+        // is recorded until it is generated), and how many correcting entries adjusted it.
+        BigDecimal transactionsAmount,
+        long transactionCorrections) {
 }

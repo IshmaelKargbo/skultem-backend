@@ -71,11 +71,18 @@ public class CreateTeacherUseCase {
             userRepo.save(user);
         }
 
-        if (repo.existsByStaffIdAndSchool(schoolId, staffId)) {
+        // An existing account (matched by email) may already be on staff here - e.g. a principal
+        // put on payroll from Users. A second record would pay them twice and break their clock-in.
+        repo.findByUserIdAndSchoolId(user.getId(), schoolId).ifPresent(existing -> {
+            throw new AlreadyExistsException(email + " is already on staff in this school (staff ID "
+                    + existing.getStaffId() + ") - give them the Teacher role from Users instead of adding them again");
+        });
+
+        if (repo.existsByStaffIdAndSchool(staffId, schoolId)) {
             throw new AlreadyExistsException("staffId already exist in this school");
         }
 
-        if (repo.existsByPhoneAndSchool(schoolId, phone)) {
+        if (repo.existsByPhoneAndSchool(phone, schoolId)) {
             throw new AlreadyExistsException("phone already exist in this school");
         }
 

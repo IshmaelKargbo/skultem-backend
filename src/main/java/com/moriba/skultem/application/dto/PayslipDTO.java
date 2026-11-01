@@ -8,6 +8,7 @@ public record PayslipDTO(
         String schoolId,
         String payrollRunId,
         String payrollRunPeriod,
+        java.time.LocalDate payDate,
         TeacherDTO teacher,
         BigDecimal basicSalary,
         BigDecimal allowances,
@@ -15,6 +16,8 @@ public record PayslipDTO(
         BigDecimal grossSalary,
         BigDecimal netSalary,
         boolean included,
+        java.util.List<PayslipLineDTO> allowanceLines,
+        java.util.List<PayslipLineDTO> deductionLines,
         Instant createdAt,
         Instant updatedAt) {
 }

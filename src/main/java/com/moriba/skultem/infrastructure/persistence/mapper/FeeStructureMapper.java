@@ -44,7 +44,8 @@ public class FeeStructureMapper {
         return new FeeStructure(param.getId(), param.getSchoolId(), param.getType(), clazz, term, category, academicYear,
                 param.isAllowInstallment(), toDomainItems(param.getSupplyItems()), param.isHasSupply(),
                 param.getDueDate(), param.getAmount(), param.getDescription(), param.isSystem(),
-                param.isNewStudentsOnly(), param.isOldStudentsOnly(), param.getGender(), param.getCreatedAt(),
+                param.isNewStudentsOnly(), param.isOldStudentsOnly(), param.getGender(),
+                param.getStream() != null ? StreamMapper.toDomain(param.getStream()) : null, param.getCreatedAt(),
                 param.getUpdatedAt());
     }
 
@@ -89,6 +90,7 @@ public class FeeStructureMapper {
                 .newStudentsOnly(param.isNewStudentsOnly())
                 .oldStudentsOnly(param.isOldStudentsOnly())
                 .gender(param.getGender())
+                .stream(param.getStream() != null ? StreamMapper.toEntity(param.getStream()) : null)
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

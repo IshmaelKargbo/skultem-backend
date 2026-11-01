@@ -48,12 +48,14 @@ public class PayrollService {
     private final PayrollRunRepository runRepo;
     private final PayslipRepository payslipRepo;
     private final TeacherRepository teacherRepo;
+    private final com.moriba.skultem.domain.repository.TransactionRepository transactionRepo;
 
     private final SetSalaryStructureUseCase setSalaryStructureUseCase;
     private final CreatePayrollRunUseCase createPayrollRunUseCase;
     private final TogglePayslipIncludedUseCase togglePayslipIncludedUseCase;
     private final GeneratePayrollRunUseCase generatePayrollRunUseCase;
     private final PublishPayrollRunUseCase publishPayrollRunUseCase;
+    private final com.moriba.skultem.application.usecase.DeletePayrollRunUseCase deletePayrollRunUseCase;
     private final CreateSalaryTemplateUseCase createSalaryTemplateUseCase;
     private final UpdateSalaryTemplateUseCase updateSalaryTemplateUseCase;
     private final GetSalaryTemplateUseCase getSalaryTemplateUseCase;
@@ -129,7 +131,7 @@ public class PayrollService {
     public List<PayslipDTO> getMySalaryHistory(String schoolId, String userId) {
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException(
-                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
 
         return payslipHistory(schoolId, teacher.getId(), true);
     }
@@ -151,14 +153,19 @@ public class PayrollService {
                 .filter(p -> {
                     if (!publishedOnly) return true;
                     var run = runsById.get(p.getPayrollRunId());
-                    return run != null && run.getStatus() == PayrollRun.Status.PUBLISHED;
+                    // Self-service: published runs only, and only where they were actually paid.
+                    return run != null && run.getStatus() == PayrollRun.Status.PUBLISHED && p.isIncluded();
                 })
                 .map(p -> PayslipMapper.toDTO(p, runsById.get(p.getPayrollRunId())))
                 .toList();
     }
 
     public PayrollSummaryDTO summary(String schoolId) {
-        var structures = salaryRepo.findAllBySchoolId(schoolId);
+        // Active staff only - matches who a new payroll run actually includes.
+        var structures = salaryRepo.findAllBySchoolId(schoolId).stream()
+                .filter(s -> s.getTeacher() != null
+                        && s.getTeacher().getStatus() == com.moriba.skultem.domain.model.Teacher.Status.ACTIVE)
+                .toList();
 
         BigDecimal totalGross = structures.stream()
                 .map(SalaryStructure::grossSalary)
@@ -223,8 +230,11 @@ public class PayrollService {
 
         var payslipDTOs = payslips.stream().map(p -> PayslipMapper.toDTO(p, run)).toList();
 
+        BigDecimal recorded = run.isDraft() ? null : transactionRepo.netPayrollAmount(schoolId, runId);
+        long corrections = run.isDraft() ? 0 : transactionRepo.countPayrollCorrections(schoolId, runId);
+
         return new PayrollRunDetailDTO(PayrollRunMapper.toDTO(run), payslipDTOs, gross, deductions, net,
-                included.size(), payslips.size());
+                included.size(), payslips.size(), recorded, corrections);
     }
 
     public PayslipDTO getPayslip(String schoolId, String runId, String teacherId) {
@@ -242,7 +252,7 @@ public class PayrollService {
     public PayslipDTO getMyPayslip(String schoolId, String userId, String runId) {
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException(
-                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
 
         var run = runRepo.findByIdAndSchoolId(runId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Payroll run not found"));
@@ -252,6 +262,7 @@ public class PayrollService {
         }
 
         var payslip = payslipRepo.findByPayrollRunIdAndTeacherId(runId, teacher.getId())
+                .filter(com.moriba.skultem.domain.model.Payslip::isIncluded)
                 .orElseThrow(() -> new NotFoundException("Payslip not found"));
 
         return PayslipMapper.toDTO(payslip, run);
@@ -263,6 +274,10 @@ public class PayrollService {
 
     public PayrollRunDTO generateRun(String schoolId, String runId) {
         return generatePayrollRunUseCase.execute(schoolId, runId);
+    }
+
+    public void deleteRun(String schoolId, String runId) {
+        deletePayrollRunUseCase.execute(schoolId, runId);
     }
 
     public PayrollRunDTO publishRun(String schoolId, String runId) {

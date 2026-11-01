@@ -29,6 +29,9 @@ public class FeeStructureMapper {
         return new FeeStructureDTO(param.getId(), param.getType(), clazz, term, category, param.isAllowInstallment(),
                 param.isHasSupply(), supplyItems, param.getDueDate(),
                 academicYear, param.getAmount(), param.getDescription(), param.isSystem(), param.isNewStudentsOnly(),
-                param.isOldStudentsOnly(), param.getGender(), param.getCreatedAt(), param.getUpdatedAt());
+                param.isOldStudentsOnly(), param.getGender(),
+                param.getStream() != null ? param.getStream().getId() : null,
+                param.getStream() != null ? param.getStream().getName() : null,
+                param.getCreatedAt(), param.getUpdatedAt());
     }
 }

@@ -42,4 +42,14 @@ public class PayrollRunAdapter implements PayrollRunRepository {
     public Optional<PayrollRun> findLatestBySchoolId(String schoolId) {
         return repo.findFirstBySchoolIdOrderByCreatedAtDesc(schoolId).map(PayrollRunMapper::toDomain);
     }
+
+    @Override
+    public boolean existsFinalizedForPeriod(String schoolId, String period) {
+        return repo.existsFinalizedForPeriod(schoolId, period);
+    }
+
+    @Override
+    public void deleteById(String id) {
+        repo.deleteById(id);
+    }
 }

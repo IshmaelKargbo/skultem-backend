@@ -48,6 +48,7 @@ public class CreateFeeStructureUseCase {
 
         private final FeeCategoryRepository feeCategoryRepo;
         private final ClassRepository classRepo;
+        private final com.moriba.skultem.domain.repository.StreamRepository streamRepo;
         private final TermRepository termRepo;
         private final MaterialRepository materialRepo;
         private final FeeStructureRepository repo;
@@ -86,6 +87,11 @@ public class CreateFeeStructureUseCase {
                         }
                 }
 
+                var stream = param.streamId() != null
+                                ? streamRepo.findByIdAndSchoolId(param.streamId(), param.schoolId())
+                                                .orElseThrow(() -> new NotFoundException("Stream not found"))
+                                : null;
+
                 List<String> classIds = param.classIds() != null && !param.classIds().isEmpty()
                                 ? param.classIds()
                                 : java.util.Collections.singletonList(null);
@@ -93,14 +99,16 @@ public class CreateFeeStructureUseCase {
                 List<FeeStructureDTO> created = new ArrayList<>();
 
                 for (String classId : classIds) {
-                        created.add(createForClass(param, term, academicYear, category, resolvedSupplyItems, classId));
+                        created.add(createForClass(param, term, academicYear, category, resolvedSupplyItems, classId,
+                                        stream));
                 }
 
                 return created;
         }
 
         private FeeStructureDTO createForClass(StructureRecord param, Term term, AcademicYear academicYear,
-                        FeeCategory category, List<ResolvedSupplyItem> resolvedSupplyItems, String classId) {
+                        FeeCategory category, List<ResolvedSupplyItem> resolvedSupplyItems, String classId,
+                        com.moriba.skultem.domain.model.Stream stream) {
 
                 var clazz = classId != null
                                 ? classRepo.findByIdAndSchool(classId, param.schoolId())
@@ -114,10 +122,12 @@ public class CreateFeeStructureUseCase {
                 // are each a deliberate partition allowed to coexist - see existsOverlappingFeeStructure.
                 if (clazz != null && repo.existsOverlappingFeeStructure(param.schoolId(), academicYear.getId(),
                                 term.getId(), clazz.getId(), category.getId(), param.newStudentsOnly(),
-                                param.oldStudentsOnly(), param.gender())) {
+                                param.oldStudentsOnly(), param.gender(), stream != null ? stream.getId() : null)) {
                         throw new AlreadyExistsException(category.getName() + " already has a fee structure for "
-                                        + clazz.getName() + " in " + term.getName()
+                                        + clazz.getName() + (stream != null ? " " + stream.getName() : "")
+                                        + " in " + term.getName()
                                         + (param.newStudentsOnly() || param.oldStudentsOnly() || param.gender() != null
+                                                        || stream != null
                                                         ? " that overlaps this one"
                                                         : ""));
                 }
@@ -142,7 +152,8 @@ public class CreateFeeStructureUseCase {
                                 param.allowInstallment(),
                                 param.newStudentsOnly(),
                                 param.oldStudentsOnly(),
-                                param.gender());
+                                param.gender(),
+                                stream);
 
                 repo.save(fee);
 
@@ -196,6 +207,13 @@ public class CreateFeeStructureUseCase {
                 if (param.gender() != null && !hasExplicitStudents) {
                         enrollments = enrollments.stream()
                                         .filter(e -> e.getStudent().getGender() == param.gender())
+                                        .toList();
+                }
+
+                // A stream fee (SSS 1 Science) only reaches that stream's students.
+                if (stream != null && !hasExplicitStudents) {
+                        enrollments = enrollments.stream()
+                                        .filter(e -> e.getStream() != null && stream.getId().equals(e.getStream().getId()))
                                         .toList();
                 }
 
@@ -253,7 +271,7 @@ public class CreateFeeStructureUseCase {
                 }
 
                 String target = clazz != null
-                                ? clazz.getName()
+                                ? clazz.getName() + (stream != null ? " " + stream.getName() : "")
                                 : hasExplicitStudents
                                                 ? "Selected students"
                                                 : "All classes";
@@ -291,6 +309,7 @@ public class CreateFeeStructureUseCase {
                         List<FeeStructureSupplyItemInputDTO> supplyItems,
                         boolean newStudentsOnly,
                         boolean oldStudentsOnly,
-                        Gender gender) {
+                        Gender gender,
+                        String streamId) {
         }
 }

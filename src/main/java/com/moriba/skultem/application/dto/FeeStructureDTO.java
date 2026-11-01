@@ -12,5 +12,5 @@ public record FeeStructureDTO(String id, Type type, ClassDTO clazz, TermDTO term
         boolean allowInstallment, boolean hasSupply, List<FeeStructureSupplyItemDTO> supplyItems, LocalDate dueDate,
         AcademicYearDTO academicYear, BigDecimal amount,
         String description, boolean isSystem, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender,
-        Instant createdAt, Instant updatedAt) {
+        String streamId, String streamName, Instant createdAt, Instant updatedAt) {
 }

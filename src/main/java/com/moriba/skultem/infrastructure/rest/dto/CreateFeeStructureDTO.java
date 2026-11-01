@@ -65,6 +65,10 @@ public record CreateFeeStructureDTO(
         @Pattern(regexp = "MALE|FEMALE", message = "Gender must be MALE or FEMALE")
         String gender,
 
+        // Optional, CLASS only: narrows the fee to one stream of a streamed class (e.g. SSS 1
+        // Science priced differently from SSS 1 Art). Null charges every stream in the class.
+        String streamId,
+
         boolean hasSupply,
 
         @NotBlank(message = "Type is required")
@@ -88,6 +92,11 @@ public record CreateFeeStructureDTO(
     public CreateFeeStructureDTO {
         description = normalize(description);
         gender = normalize(gender);
+        streamId = normalize(streamId);
+
+        if (streamId != null && !"CLASS".equals(type)) {
+            throw new IllegalArgumentException("A stream can only be set when type is CLASS");
+        }
 
         switch (type) {
 

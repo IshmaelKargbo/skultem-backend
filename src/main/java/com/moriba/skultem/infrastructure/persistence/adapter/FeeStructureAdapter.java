@@ -42,9 +42,10 @@ public class FeeStructureAdapter implements FeeStructureRepository {
 
     @Override
     public boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId,
-            String classId, String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender) {
+            String classId, String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender,
+            String streamId) {
         return repo.existsOverlappingFeeStructure(schoolId, academicYearId, termId, classId, categoryId,
-                newStudentsOnly, oldStudentsOnly, gender);
+                newStudentsOnly, oldStudentsOnly, gender, streamId);
     }
 
     @Override
@@ -99,8 +100,9 @@ public class FeeStructureAdapter implements FeeStructureRepository {
     }
 
     @Override
-    public List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId) {
-        return repo.findApplicableFees(schoolId, academicYearId, classId).stream().map(FeeStructureMapper::toDomain)
+    public List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId,
+            String streamId) {
+        return repo.findApplicableFees(schoolId, academicYearId, classId, streamId).stream().map(FeeStructureMapper::toDomain)
                 .toList();
     }
 

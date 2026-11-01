@@ -200,8 +200,10 @@ public class ChangeEnrollmentClassUseCase {
     private void assertNothingRecorded(String schoolId, Enrollment enrollment) {
         String enrollmentId = enrollment.getId();
 
+        // Refused, like behaviour and scores below - this used to delete the attendance silently,
+        // losing the student's register history.
         if (attendanceRepo.findByEnrollmentAndSchoolId(enrollmentId, schoolId, Pageable.ofSize(1)).hasContent()) {
-            attendanceRepo.deleteAllByEnrollmentIdAndSchoolId(enrollmentId, schoolId);
+            throw new RuleException("Attendance has already been recorded for this student in the current class");
         }
 
         if (behaviourRepo.existsByEnrollmentIdAndSchoolId(enrollmentId, schoolId)) {

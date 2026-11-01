@@ -48,4 +48,9 @@ public class PayslipAdapter implements PayslipRepository {
         return repo.findAllByTeacher_IdAndSchoolIdOrderByCreatedAtDesc(teacherId, schoolId).stream()
                 .map(PayslipMapper::toDomain).toList();
     }
+
+    @Override
+    public void deleteAllByPayrollRunId(String payrollRunId) {
+        repo.deleteAllByPayrollRunId(payrollRunId);
+    }
 }

@@ -62,7 +62,8 @@ public class FinanceReportUseCase {
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
                 var fees = feeRepo
-                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId());
+                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId(),
+                                                enrollment.getStream() != null ? enrollment.getStream().getId() : null);
 
                 LocalDate today = LocalDate.now();
 
@@ -108,7 +109,8 @@ public class FinanceReportUseCase {
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
                 var fees = feeRepo
-                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId());
+                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId(),
+                                                enrollment.getStream() != null ? enrollment.getStream().getId() : null);
 
                 LocalDate today = LocalDate.now();
 

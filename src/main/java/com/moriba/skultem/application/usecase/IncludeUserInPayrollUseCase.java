@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class IncludeUserInPayrollUseCase {
     private final UserRepository userRepo;
     private final TeacherRepository teacherRepo;
+    private final com.moriba.skultem.domain.repository.SchoolUserRepository schoolUserRepo;
     private final ReferenceGeneratorUsecase rg;
     private final LogActivityUseCase logActivityUseCase;
 
@@ -36,7 +37,15 @@ public class IncludeUserInPayrollUseCase {
             String city, String gender, String title, String designation) {
         User user = userRepo.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (teacherRepo.findByUserId(userId).isPresent()) {
+        // Only people who belong to this school can go on its payroll.
+        if (schoolUserRepo.findAllByUser_IdAndSchoolId(userId, schoolId).isEmpty()) {
+            throw new NotFoundException("User not found");
+        }
+
+        // Per school: someone on staff at another school still needs their own record here
+        // (clock-in and payslips look up this school's record only). The old unscoped check
+        // refused them as "already on payroll" while they had no record in this school at all.
+        if (teacherRepo.findByUserIdAndSchoolId(userId, schoolId).isPresent()) {
             throw new AlreadyExistsException("This user is already on payroll");
         }
 
@@ -46,11 +55,11 @@ public class IncludeUserInPayrollUseCase {
                     "Staff ID, phone, street, city, gender and title are required to include this user in payroll");
         }
 
-        if (teacherRepo.existsByStaffIdAndSchool(schoolId, staffId)) {
+        if (teacherRepo.existsByStaffIdAndSchool(staffId, schoolId)) {
             throw new AlreadyExistsException("staffId already exist in this school");
         }
 
-        if (teacherRepo.existsByPhoneAndSchool(schoolId, phone)) {
+        if (teacherRepo.existsByPhoneAndSchool(phone, schoolId)) {
             throw new AlreadyExistsException("phone already exist in this school");
         }
 

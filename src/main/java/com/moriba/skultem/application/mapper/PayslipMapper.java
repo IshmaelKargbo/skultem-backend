@@ -15,6 +15,7 @@ public class PayslipMapper {
                 param.getSchoolId(),
                 param.getPayrollRunId(),
                 run != null ? run.getPeriod() : null,
+                run != null ? run.getPayDate() : null,
                 TeacherMapper.toDTO(param.getTeacher()),
                 param.getBasicSalary(),
                 param.getAllowances(),
@@ -22,6 +23,10 @@ public class PayslipMapper {
                 param.grossSalary(),
                 param.netSalary(),
                 param.isIncluded(),
+                param.getAllowanceLines().stream()
+                        .map(l -> new com.moriba.skultem.application.dto.PayslipLineDTO(l.name(), l.amount())).toList(),
+                param.getDeductionLines().stream()
+                        .map(l -> new com.moriba.skultem.application.dto.PayslipLineDTO(l.name(), l.amount())).toList(),
                 param.getCreatedAt(),
                 param.getUpdatedAt());
     }

@@ -12,8 +12,10 @@ import lombok.RequiredArgsConstructor;
 public class GetUserPayrollStatusUseCase {
     private final TeacherRepository teacherRepo;
 
-    public UserPayrollStatusDTO execute(String userId) {
-        return teacherRepo.findByUserId(userId)
+    // Per school, same lookup clock-in and payslips use - a staff record at another school
+    // doesn't count here (and an unscoped lookup errors for someone on staff at two schools).
+    public UserPayrollStatusDTO execute(String schoolId, String userId) {
+        return teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .map(t -> new UserPayrollStatusDTO(true, t.getId(), t.getStaffId(), t.getDesignation(),
                         t.isTeaching()))
                 .orElse(new UserPayrollStatusDTO(false, null, null, null, false));

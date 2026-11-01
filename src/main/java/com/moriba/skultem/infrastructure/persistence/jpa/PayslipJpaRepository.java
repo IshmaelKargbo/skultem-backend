@@ -14,5 +14,7 @@ public interface PayslipJpaRepository extends JpaRepository<PayslipEntity, Strin
 
     List<PayslipEntity> findAllByPayrollRunIdOrderByCreatedAtAsc(String payrollRunId);
 
+    void deleteAllByPayrollRunId(String payrollRunId);
+
     List<PayslipEntity> findAllByTeacher_IdAndSchoolIdOrderByCreatedAtDesc(String teacherId, String schoolId);
 }

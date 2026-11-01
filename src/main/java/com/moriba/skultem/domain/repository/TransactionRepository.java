@@ -14,6 +14,11 @@ public interface TransactionRepository {
 
         Optional<Transaction> findTopBySchoolId(String schoolId);
 
+        // What a payroll run put through the transactions: its expense minus any corrections.
+        java.math.BigDecimal netPayrollAmount(String schoolId, String runId);
+
+        long countPayrollCorrections(String schoolId, String runId);
+
         Page<Transaction> findAllByAcademicYearAndSchool(String academicYearId, String schoolId,
                         Pageable pageable);
 

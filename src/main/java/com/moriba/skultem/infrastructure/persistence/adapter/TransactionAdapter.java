@@ -53,4 +53,14 @@ public class TransactionAdapter implements TransactionRepository {
         return repo.findTopBySchoolIdOrderByCreatedAtDesc(schoolId).map(TransactionMapper::toDomain);
     }
 
+
+    @Override
+    public java.math.BigDecimal netPayrollAmount(String schoolId, String runId) {
+        return repo.netPayrollAmount(schoolId, runId);
+    }
+
+    @Override
+    public long countPayrollCorrections(String schoolId, String runId) {
+        return repo.countPayrollCorrections(schoolId, runId);
+    }
 }

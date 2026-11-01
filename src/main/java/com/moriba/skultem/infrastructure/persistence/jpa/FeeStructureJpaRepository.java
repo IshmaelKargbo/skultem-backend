@@ -40,6 +40,7 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
                      OR (:newStudentsOnly = false AND :oldStudentsOnly = false)
                 )
                 AND (:gender IS NULL OR f.gender IS NULL OR f.gender = :gender)
+                AND (:streamId IS NULL OR f.stream IS NULL OR f.stream.id = :streamId)
             """)
     boolean existsOverlappingFeeStructure(
             @Param("schoolId") String schoolId,
@@ -49,7 +50,8 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
             @Param("categoryId") String categoryId,
             @Param("newStudentsOnly") boolean newStudentsOnly,
             @Param("oldStudentsOnly") boolean oldStudentsOnly,
-            @Param("gender") Gender gender);
+            @Param("gender") Gender gender,
+            @Param("streamId") String streamId);
 
     boolean existsByCategory_IdAndSchoolId(String categoryId, String schoolId);
 
@@ -73,11 +75,15 @@ public interface FeeStructureJpaRepository extends JpaRepository<FeeStructureEnt
                         f.clazz.id = :classId
                      OR f.clazz IS NULL
                 )
+                AND (f.stream IS NULL OR f.stream.id = :streamId)
             """)
+    // A stream-specific fee (SSS 1 Science) only reaches students enrolled in that stream; a
+    // student with no stream (streamId null) only gets fees with no stream.
     List<FeeStructureEntity> findApplicableFees(
             @Param("schoolId") String schoolId,
             @Param("academicYearId") String academicYearId,
-            @Param("classId") String classId);
+            @Param("classId") String classId,
+            @Param("streamId") String streamId);
 
     Page<FeeStructureEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 

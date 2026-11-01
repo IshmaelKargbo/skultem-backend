@@ -22,7 +22,10 @@ public class TogglePayslipIncludedUseCase {
         var run = runRepo.findByIdAndSchoolId(runId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Payroll run not found"));
 
+        // Must belong to this run - otherwise passing a draft run's id would let a payslip in an
+        // already generated/published run be switched in or out.
         var payslip = payslipRepo.findByIdAndSchoolId(payslipId, schoolId)
+                .filter(p -> runId.equals(p.getPayrollRunId()))
                 .orElseThrow(() -> new NotFoundException("Payslip not found"));
 
         payslip.setIncluded(included, run);

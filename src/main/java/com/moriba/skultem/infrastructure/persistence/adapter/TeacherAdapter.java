@@ -54,7 +54,15 @@ public class TeacherAdapter implements TeacherRepository {
 
     @Override
     public Optional<Teacher> findByUserIdAndSchoolId(String userId, String schoolId) {
-        return repo.findByUserIdAndSchoolId(userId, schoolId).map(TeacherMapper::toDomain);
+        var records = repo.findAllByUserIdAndSchoolId(userId, schoolId);
+        if (records.size() > 1) {
+            // Creating staff no longer allows this, but existing data can still have it.
+            throw new com.moriba.skultem.application.error.RuleException(
+                    "This account has " + records.size() + " staff records in this school (staff IDs "
+                            + records.stream().map(r -> r.getStaffId()).collect(java.util.stream.Collectors.joining(", "))
+                            + ") - an admin needs to merge them into one");
+        }
+        return records.stream().findFirst().map(TeacherMapper::toDomain);
     }
 
     @Override

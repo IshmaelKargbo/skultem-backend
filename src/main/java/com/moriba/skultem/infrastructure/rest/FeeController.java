@@ -144,7 +144,7 @@ public class FeeController {
                                 param.studentIds(), param.feeCategory(), param.termId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
                                 param.hasSupply(), param.supplyItems(), param.newStudentsOnly(),
-                                param.oldStudentsOnly(), gender);
+                                param.oldStudentsOnly(), gender, param.streamId());
                 var res = createFeeStructureUseCase.execute(payload);
                 String message = res.size() > 1
                                 ? "Fee structure created for " + res.size() + " classes successfully"

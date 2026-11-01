@@ -33,13 +33,26 @@ public class CreatePayrollRunUseCase {
 
     @AuditLogAnnotation(action = "PAYROLL_RUN_CREATED")
     public PayrollRunDTO execute(String schoolId, String period, LocalDate payDate) {
-        var structures = salaryRepo.findAllBySchoolId(schoolId);
-
-        if (structures.isEmpty()) {
-            throw new BadRequestException("No salary structures set up yet - add at least one before running payroll");
+        // A period already generated/published has been paid (and recorded in the ledger) -
+        // running it again would pay everyone twice.
+        if (runRepo.existsFinalizedForPeriod(schoolId, period)) {
+            throw new BadRequestException("Payroll for " + period.trim()
+                    + " has already been generated - open that run instead of starting a new one");
         }
 
-        var run = PayrollRun.create(UUID.randomUUID().toString(), schoolId, period, payDate);
+        // Only active staff - someone deactivated or removed keeps their salary record, but
+        // shouldn't land on a new run.
+        var structures = salaryRepo.findAllBySchoolId(schoolId).stream()
+                .filter(s -> s.getTeacher() != null
+                        && s.getTeacher().getStatus() == com.moriba.skultem.domain.model.Teacher.Status.ACTIVE)
+                .toList();
+
+        if (structures.isEmpty()) {
+            throw new BadRequestException(
+                    "No active staff with a salary set up yet - add at least one before running payroll");
+        }
+
+        var run = PayrollRun.create(UUID.randomUUID().toString(), schoolId, period.trim(), payDate);
         runRepo.save(run);
 
         var payslips = structures.stream()

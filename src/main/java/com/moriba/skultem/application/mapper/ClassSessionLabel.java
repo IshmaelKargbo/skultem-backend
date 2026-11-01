@@ -11,7 +11,8 @@ public final class ClassSessionLabel {
 
     public static String of(Enrollment enrollment) {
         if (enrollment == null || enrollment.getClazz() == null) return null;
-        var label = new StringBuilder(enrollment.getClazz().getName());
+        // A class with no name gives "" rather than a crash (StringBuilder(null) throws).
+        var label = new StringBuilder(enrollment.getClazz().getName() == null ? "" : enrollment.getClazz().getName());
         if (enrollment.getSection() != null && enrollment.getSection().getName() != null) {
             label.append(" · ").append(enrollment.getSection().getName());
         }

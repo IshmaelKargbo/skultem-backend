@@ -70,7 +70,7 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
         String schoolId = enrollment.getSchoolId();
 
         List<FeeStructure> fees = feeStructureRepo.findApplicableFees(schoolId, enrollment.getAcademicYear().getId(),
-                enrollment.getClazz().getId());
+                enrollment.getClazz().getId(), enrollment.getStream() != null ? enrollment.getStream().getId() : null);
 
         boolean isNewlyEnrolling = student.getEnrollmentType() == EnrollmentType.NEW
                 || student.getEnrollmentType() == EnrollmentType.TRANSFER;

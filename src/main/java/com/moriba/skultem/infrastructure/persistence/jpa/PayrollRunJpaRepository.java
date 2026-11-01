@@ -28,4 +28,12 @@ public interface PayrollRunJpaRepository extends JpaRepository<PayrollRunEntity,
             """)
     Page<PayrollRunEntity> search(@Param("schoolId") String schoolId, @Param("search") String search,
             @Param("status") PayrollRun.Status status, Pageable pageable);
+
+    @Query("""
+                SELECT COUNT(r) > 0 FROM PayrollRunEntity r
+                WHERE r.schoolId = :schoolId
+                AND lower(trim(r.period)) = lower(trim(:period))
+                AND r.status <> com.moriba.skultem.domain.model.PayrollRun.Status.DRAFT
+            """)
+    boolean existsFinalizedForPeriod(@Param("schoolId") String schoolId, @Param("period") String period);
 }

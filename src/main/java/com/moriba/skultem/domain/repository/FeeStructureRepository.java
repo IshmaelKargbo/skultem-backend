@@ -20,13 +20,13 @@ public interface FeeStructureRepository {
 
     Optional<FeeStructure> findByIdAndSchoolId(String id, String schoolId);
 
-    List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId);
+    List<FeeStructure> findApplicableFees(String schoolId, String academicYearId, String classId, String streamId);
 
     // See FeeStructureJpaRepository.existsOverlappingFeeStructure - a plain fee overlaps everything
     // for the same class/term/category/year, while newStudentsOnly/oldStudentsOnly and different
     // genders are each a deliberate partition that's allowed to coexist.
     boolean existsOverlappingFeeStructure(String schoolId, String academicYearId, String termId, String classId,
-            String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender);
+            String categoryId, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender, String streamId);
 
     boolean existsByCategoryAndSchool(String categoryId, String schoolId);
 

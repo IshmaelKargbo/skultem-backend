@@ -24,7 +24,9 @@ public interface TeacherJpaRepository
 
     Optional<TeacherEntity> findByUserId(String userId);
 
-    Optional<TeacherEntity> findByUserIdAndSchoolId(String userId, String schoolId);
+    // A list, not Optional: older data can hold two records for one person in one school (see
+    // TeacherAdapter.findByUserIdAndSchoolId).
+    java.util.List<TeacherEntity> findAllByUserIdAndSchoolId(String userId, String schoolId);
 
     Optional<TeacherEntity> findByIdAndSchoolId(String id, String schoolId);
 

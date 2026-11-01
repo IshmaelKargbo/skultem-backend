@@ -32,6 +32,7 @@ class EndpointAuthorizationCoverageTest {
             // the contact form is the one thing it can send. Also the public school directory it reads.
             "PublicMarketingController#testimonials", "PublicMarketingController#posts",
             "PublicMarketingController#post", "PublicMarketingController#contact", "PublicMarketingController#settings",
+            "PublicMarketingController#videos",
             "SchoolController#listPublic");
 
     @Test

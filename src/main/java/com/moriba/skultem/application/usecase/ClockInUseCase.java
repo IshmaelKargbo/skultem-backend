@@ -42,7 +42,7 @@ public class ClockInUseCase {
         // teacher who works at more than one school. See CurriculumService for the same fix.
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException(
-                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
 
         String ip = getClientIp();
 

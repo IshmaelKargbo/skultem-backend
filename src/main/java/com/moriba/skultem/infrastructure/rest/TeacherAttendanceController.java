@@ -48,12 +48,12 @@ public class TeacherAttendanceController {
     private final GenerateTermTeacherAttendanceSummaryUseCase generateTermTeacherAttendanceSummaryUseCase;
     private final GenerateTeacherManagementReportUseCase generateTeacherManagementReportUseCase;
 
-    // Self-service - overrides the class-level admin-only restriction for just these three.
-    // Any staff role can clock themselves in/out, not just teachers - actually succeeding still
+    // Self-service - overrides the class-level admin-only restriction for just these four.
+    // Every staff role clocks itself in/out except OWNER (and PARENT, not staff), not just teachers - actually succeeding still
     // requires a Teacher (staff/payroll) record though, see ClockInUseCase.
     @SectionNeutral
     @PostMapping("/clock-in")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<ClockInResponseDTO> clockIn(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -65,7 +65,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @PostMapping("/clock-out")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<ClockOutResponseDTO> clockOut(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -77,7 +77,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @GetMapping("/me/today")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<MyAttendanceTodayDTO> myToday(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -123,7 +123,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
     public ApiResponse<List<TeacherAttendanceDayDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

@@ -63,6 +63,14 @@ public class FeeStructure extends AggregateRoot<String> {
     private Gender gender;
 
     /**
+     * Null reaches every stream of the class. Set on a CLASS fee for a streamed class to charge only
+     * that stream's students (e.g. SSS 1 Science priced differently from SSS 1 Art) - a partition
+     * like gender: a Science fee and an Art fee for the same class/term/category coexist. Like the
+     * class itself, not editable after creation (see {@link #update}).
+     */
+    private Stream stream;
+
+    /**
      * The materials this fee bundles when {@link #hasSupply} is true - a Uniform fee might carry
      * the Uniform itself, a House Colour, and a Necktie as three separate lines, each with its own
      * quantity, instead of being limited to one material. Empty when hasSupply is false. See
@@ -79,8 +87,9 @@ public class FeeStructure extends AggregateRoot<String> {
             AcademicYear academicYear, boolean allowInstallment, List<FeeStructureSupplyItem> supplyItems,
             boolean hasSuppy, LocalDate dueDate,
             BigDecimal amount, String description, boolean system, boolean newStudentsOnly, boolean oldStudentsOnly,
-            Gender gender, Instant createdAt, Instant updatedAt) {
+            Gender gender, Stream stream, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
+        this.stream = stream;
         this.schoolId = schoolId;
         this.amount = amount;
         this.academicYear = academicYear;
@@ -103,12 +112,18 @@ public class FeeStructure extends AggregateRoot<String> {
     public static FeeStructure create(String schoolId, Type type, Clazz clazz, boolean hasSuppy,
             List<FeeStructureSupplyItem> supplyItems, Term term, FeeCategory category, AcademicYear academicYear,
             LocalDate dueDate, BigDecimal amount, String description, boolean allowInstallment,
-            boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender) {
+            boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender, Stream stream) {
+        if (stream != null && (type != Type.CLASS || clazz == null)) {
+            throw new RuleException("A stream can only be set on a class fee");
+        }
+        if (stream != null && !clazz.getLevel().isStreamed()) {
+            throw new RuleException(clazz.getName() + " has no streams - leave the stream empty for it");
+        }
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         return new FeeStructure(id, schoolId, type, clazz, term, category, academicYear, allowInstallment,
                 supplyItems, hasSuppy, dueDate, amount, description, false, newStudentsOnly, oldStudentsOnly, gender,
-                now, now);
+                stream, now, now);
     }
 
     /**
@@ -120,7 +135,7 @@ public class FeeStructure extends AggregateRoot<String> {
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         return new FeeStructure(id, schoolId, Type.ALL, null, term, category, academicYear, false, List.of(), false,
-                dueDate, amount, description, true, false, false, null, now, now);
+                dueDate, amount, description, true, false, false, null, null, now, now);
     }
 
     /**

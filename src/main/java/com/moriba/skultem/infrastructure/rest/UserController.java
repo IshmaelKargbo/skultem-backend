@@ -177,7 +177,7 @@ public class UserController {
     public ApiResponse<UserPayrollStatusDTO> payrollStatus(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
-        var res = getUserPayrollStatusUseCase.execute(id);
+        var res = getUserPayrollStatusUseCase.execute(school, id);
         return new ApiResponse<>("success", 200, "Payroll status fetched successfully", res);
     }
 

@@ -111,11 +111,15 @@ public class CreateUserUseCase {
                     "Staff ID, phone, street, city, gender and title are required to include this user in payroll");
         }
 
-        if (teacherRepo.existsByStaffIdAndSchool(schoolId, staffId)) {
+        if (teacherRepo.findByUserIdAndSchoolId(user.getId(), schoolId).isPresent()) {
+            throw new AlreadyExistsException("This person is already on payroll in this school");
+        }
+
+        if (teacherRepo.existsByStaffIdAndSchool(staffId, schoolId)) {
             throw new AlreadyExistsException("staffId already exist in this school");
         }
 
-        if (teacherRepo.existsByPhoneAndSchool(schoolId, phone)) {
+        if (teacherRepo.existsByPhoneAndSchool(phone, schoolId)) {
             throw new AlreadyExistsException("phone already exist in this school");
         }
 

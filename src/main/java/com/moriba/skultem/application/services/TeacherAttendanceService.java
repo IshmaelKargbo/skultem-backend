@@ -69,7 +69,7 @@ public class TeacherAttendanceService {
         // teacher who works at more than one school.
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException(
-                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
 
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId,
                 LocalDate.now(SchoolTimeZone.ZONE));
@@ -124,7 +124,7 @@ public class TeacherAttendanceService {
     public List<TeacherAttendanceDayDTO> myHistory(String schoolId, String userId, LocalDate from, LocalDate to) {
         var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException(
-                        "You haven't been added to staff/payroll records yet - ask your admin to include you from your profile"));
+                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
 
         return forTeacher(schoolId, teacher.getId(), from, to);
     }
