@@ -50,6 +50,7 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
                 AND (:subjectId IS NULL OR s.subject.id = :subjectId)
                 AND (:sessionId IS NULL OR s.session.id = :sessionId)
                 AND (:termId IS NULL OR s.term.id = :termId)
+                AND s.session.clazz.level IN :levels
                 AND (
                     :hasProgressFilter = false
                     OR (:matchCompleted = true
@@ -72,6 +73,7 @@ public interface SchemeOfWorkJpaRepository extends JpaRepository<SchemeOfWorkEnt
             @Param("matchCompleted") boolean matchCompleted,
             @Param("matchNotStarted") boolean matchNotStarted,
             @Param("matchInProgress") boolean matchInProgress,
+            @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
             Pageable pageable);
 
     @Query("""

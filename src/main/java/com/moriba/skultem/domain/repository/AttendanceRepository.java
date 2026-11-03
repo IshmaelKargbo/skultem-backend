@@ -29,7 +29,9 @@ public interface AttendanceRepository {
             String academicYear, String schoolId,
             Pageable pageable);
 
-    Page<Attendance> findBySchoolId(String schoolId, Pageable pageable);
+    // levels: the caller's management-section levels (every level for whole-school staff).
+    Page<Attendance> findBySchoolId(String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels,
+            Pageable pageable);
 
     Page<Attendance> findByEnrollmentAndSchoolId(String enrollmentId, String schoolId, Pageable pageable);
 

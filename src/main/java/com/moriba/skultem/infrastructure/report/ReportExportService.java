@@ -61,6 +61,7 @@ public class ReportExportService {
         private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
         private static final DateTimeFormatter DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+        private final com.moriba.skultem.application.services.ReportAccessPolicy reportAccessPolicy;
         private final AttendanceReportUseCase attendanceReportUseCase;
         private final ListBehaviourBySchoolUseCase listBehaviourBySchoolUseCase;
         private final StudentReportUseCase studentReportUseCase;
@@ -304,6 +305,7 @@ public class ReportExportService {
                                                 e.values()))
                                 .toList();
 
+                reportAccessPolicy.check(schoolId, type, filters);
                 filters = scopeReportToAcademicYearUseCase.execute(schoolId, type, filters, academicYearId);
 
                 var report = new ReportBuilderDTO(schoolId, param.entity(), filters);
@@ -503,6 +505,7 @@ public class ReportExportService {
                                                 e.values()))
                                 .toList();
 
+                reportAccessPolicy.check(schoolId, type, filters);
                 filters = scopeReportToAcademicYearUseCase.execute(schoolId, type, filters, academicYearId);
 
                 var report = new ReportBuilderDTO(schoolId, param.entity(), filters);

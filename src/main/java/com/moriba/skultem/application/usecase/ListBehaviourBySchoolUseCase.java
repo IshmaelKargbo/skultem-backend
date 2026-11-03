@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class ListBehaviourBySchoolUseCase {
     private final BehaviourRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public Page<BehaviourDTO> execute(String schoolId, String classId, String academicYearId, int page, int size) {
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
@@ -27,11 +28,12 @@ public class ListBehaviourBySchoolUseCase {
         }
 
         if (classId == null || classId.isEmpty()) {
-            return repo.findAllAcademicYearAndSchoolId(academicYear.getId(), schoolId, pageable)
+            return repo.findAllAcademicYearAndSchoolId(academicYear.getId(), schoolId, sectionScopeService.levels(), pageable)
                     .map(BehaviourMapper::toDTO);
         }
 
-        return repo.findAllAcademicYearAndClassIdAndSchoolId(academicYear.getId(), classId, schoolId, pageable)
+        return repo.findAllAcademicYearAndClassIdAndSchoolId(academicYear.getId(), classId, schoolId,
+                sectionScopeService.levels(), pageable)
                 .map(BehaviourMapper::toDTO);
     }
 }

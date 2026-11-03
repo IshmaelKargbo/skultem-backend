@@ -70,8 +70,9 @@ public class AttendanceController {
     private final GetAttendanceMarkingComplianceUseCase getAttendanceMarkingComplianceUseCase;
     private final GenerateClassAttendanceSummaryUseCase generateClassAttendanceSummaryUseCase;
 
+    @SectionScoped
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.attendance(#school, #id)")
     public ApiResponse<AttendanceDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -79,6 +80,7 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Attendance fetched successfully", res);
     }
 
+    @SectionScoped
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER')")
     public ApiResponse<List<AttendanceDTO>> list(
@@ -97,8 +99,9 @@ public class AttendanceController {
         return new ApiResponse<>("success", 200, "Attendance fetched successfully", list, meta);
     }
 
+    @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER') and @sectionScope.attendance(#school, #id)")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

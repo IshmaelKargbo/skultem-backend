@@ -42,8 +42,18 @@ class HealthCareTrendsTest {
     private AcademicYearRepository academicYearRepo;
     @Mock
     private TermRepository termRepo;
+    // Whole-school caller: every visit is in scope.
+    @Mock
+    private SectionStudentScope studentScope;
+
     @InjectMocks
     private HealthCareService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void everyStudentInScope() {
+        org.mockito.Mockito.when(studentScope.filter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.any())).thenAnswer(inv -> inv.getArgument(1));
+    }
 
     private static final Complaint HEADACHE = new Complaint("HEADACHE", "Headache", false);
     private static final Complaint FEVER = new Complaint("FEVER", "Fever / feeling hot", false);

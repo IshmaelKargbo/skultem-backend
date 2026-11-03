@@ -18,6 +18,8 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
 
+// The audit trail covers the whole school.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/audit")
 @RequiredArgsConstructor

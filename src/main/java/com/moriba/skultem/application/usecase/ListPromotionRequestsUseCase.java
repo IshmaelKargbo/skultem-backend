@@ -22,14 +22,15 @@ public class ListPromotionRequestsUseCase {
 
     private final PromotionRequestRepository promotionRequestRepo;
     private final TeacherRepository teacherRepo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public Page<PromotionRequestDTO> execute(String schoolId, String status, int page, int size) {
         Pageable pageable = createPageable(page, size);
 
         Page<PromotionRequest> requests = status == null || status.isBlank()
-                ? promotionRequestRepo.findBySchoolId(schoolId, pageable)
+                ? promotionRequestRepo.findBySchoolId(schoolId, sectionScopeService.levels(), pageable)
                 : promotionRequestRepo.findBySchoolIdAndStatus(schoolId, PromotionRequest.Status.valueOf(status),
-                        pageable);
+                        sectionScopeService.levels(), pageable);
 
         return requests.map(PromotionRequestMapper::toDTO);
     }

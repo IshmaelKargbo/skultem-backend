@@ -35,6 +35,7 @@ public interface LibraryVisitJpaRepository extends JpaRepository<LibraryVisitEnt
                 and v.checkedInAt >= :from and v.checkedInAt < :to
                 and v.schoolDayEndsAt <= :endsBy
                 and (:studentId = '' or v.studentId = :studentId)
+                and (:anyStudent = true or v.studentId in :studentIds)
                 and (lower(v.studentName) like lower(concat('%', :query, '%'))
                     or lower(coalesce(v.studentClass, '')) like lower(concat('%', :query, '%')))
                 order by v.checkedInAt desc
@@ -45,12 +46,15 @@ public interface LibraryVisitJpaRepository extends JpaRepository<LibraryVisitEnt
                 and v.checkedInAt >= :from and v.checkedInAt < :to
                 and v.schoolDayEndsAt <= :endsBy
                 and (:studentId = '' or v.studentId = :studentId)
+                and (:anyStudent = true or v.studentId in :studentIds)
                 and (lower(v.studentName) like lower(concat('%', :query, '%'))
                     or lower(coalesce(v.studentClass, '')) like lower(concat('%', :query, '%')))
             """)
     Page<LibraryVisitEntity> search(@Param("schoolId") String schoolId, @Param("statuses") Collection<Status> statuses,
             @Param("from") Instant from, @Param("to") Instant to, @Param("endsBy") Instant endsBy,
-            @Param("studentId") String studentId, @Param("query") String query, Pageable pageable);
+            @Param("studentId") String studentId, @Param("query") String query,
+            @Param("anyStudent") boolean anyStudent, @Param("studentIds") Collection<String> studentIds,
+            Pageable pageable);
 
     long countBySchoolIdAndStatus(String schoolId, Status status);
 

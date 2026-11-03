@@ -18,6 +18,8 @@ import com.moriba.skultem.infrastructure.rest.dto.GoLiveDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+// School-wide summary.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/playground")
 @RequiredArgsConstructor

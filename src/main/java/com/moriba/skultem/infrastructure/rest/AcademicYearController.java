@@ -38,6 +38,8 @@ import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+// Academic years are the school's, not a section's.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping({"/api/v1/academic_year", "/api/v1/academic-year"})
 @RequiredArgsConstructor
@@ -67,7 +69,7 @@ public class AcademicYearController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER', 'PRINCIPAL')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER', 'PRINCIPAL', 'EXAM_OFFICER')")
     public ApiResponse<List<AcademicYearDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -147,7 +149,7 @@ public class AcademicYearController {
 
     @SectionNeutral
     @GetMapping("/terms")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'PARENT', 'TEACHER', 'PRINCIPAL')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER', 'PARENT', 'TEACHER', 'PRINCIPAL')")
     public ApiResponse<List<TermDTO>> listByAcademicYear(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId) {

@@ -54,6 +54,7 @@ public interface HealthCareVisitJpaRepository extends JpaRepository<HealthCareVi
                 and (:complaint = '' or v.complaintCodes like concat('%,', :complaint, ',%'))
                 and (:overLimitOnly = false or v.overLimit is not null)
                 and (:studentId = '' or v.studentId = :studentId)
+                and (:anyStudent = true or v.studentId in :studentIds)
                 and (lower(v.studentName) like lower(concat('%', :query, '%'))
                     or lower(coalesce(v.studentClass, '')) like lower(concat('%', :query, '%')))
                 order by v.arrivedAt desc
@@ -67,6 +68,7 @@ public interface HealthCareVisitJpaRepository extends JpaRepository<HealthCareVi
                 and (:complaint = '' or v.complaintCodes like concat('%,', :complaint, ',%'))
                 and (:overLimitOnly = false or v.overLimit is not null)
                 and (:studentId = '' or v.studentId = :studentId)
+                and (:anyStudent = true or v.studentId in :studentIds)
                 and (lower(v.studentName) like lower(concat('%', :query, '%'))
                     or lower(coalesce(v.studentClass, '')) like lower(concat('%', :query, '%')))
             """)
@@ -75,5 +77,6 @@ public interface HealthCareVisitJpaRepository extends JpaRepository<HealthCareVi
             @Param("outcomes") Collection<Outcome> outcomes, @Param("from") Instant from, @Param("to") Instant to,
             @Param("endsBy") Instant endsBy, @Param("complaint") String complaint,
             @Param("overLimitOnly") boolean overLimitOnly, @Param("studentId") String studentId,
-            @Param("query") String query, Pageable pageable);
+            @Param("query") String query, @Param("anyStudent") boolean anyStudent,
+            @Param("studentIds") Collection<String> studentIds, Pageable pageable);
 }

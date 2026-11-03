@@ -22,7 +22,7 @@ public interface UserRepository {
     // login (see LoginUseCase). Phones live on those per-school records, not on the User.
     List<String> findIdsByPhoneInSchool(String schoolId, String phoneDigitsSuffix);
 
-    Page<User> findBySchool(String school, Pageable pageable);
+    Page<User> findBySchool(String school, String query, Role role, String status, Pageable pageable);
 
     // Unscoped by school - matches on email/given name/family name, for
     // SearchUsersAcrossSchoolsUseCase's cross-tenant lookup.

@@ -33,6 +33,10 @@ public interface AttendanceJpaRepository
 
     Page<AttendanceEntity> findAllBySchoolId(String schoolId, Pageable pageable);
 
+    Page<AttendanceEntity> findAllBySchoolIdAndEnrollment_Clazz_LevelIn(String schoolId,
+
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
+
     Page<AttendanceEntity> findAllByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId,
             Pageable pageable);
 

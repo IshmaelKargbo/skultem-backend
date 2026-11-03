@@ -53,7 +53,7 @@ public class TeacherAttendanceController {
     // requires a Teacher (staff/payroll) record though, see ClockInUseCase.
     @SectionNeutral
     @PostMapping("/clock-in")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<ClockInResponseDTO> clockIn(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -65,7 +65,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @PostMapping("/clock-out")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<ClockOutResponseDTO> clockOut(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -77,7 +77,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @GetMapping("/me/today")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<MyAttendanceTodayDTO> myToday(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -123,7 +123,7 @@ public class TeacherAttendanceController {
 
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<List<TeacherAttendanceDayDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

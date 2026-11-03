@@ -22,7 +22,9 @@ public interface HealthCareVisitRepository {
      * {@code complaint} a complaint code.
      */
     record Search(Instant from, Instant to, Filter filter, Outcome outcome, String complaint, boolean overLimitOnly,
-            String studentId, String query, Instant now) {
+            String studentId, String query, Instant now,
+            // The students the caller may see (section-limited staff); null = every student.
+            java.util.Collection<String> studentIds) {
     }
 
     /**

@@ -37,6 +37,8 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
     private Instant caSubmittedAt;
     // The CA recording slots (1 = "Week 1") that are locked: completed for every student and closed to editing.
     private final java.util.TreeSet<Integer> caLockedWeeks = new java.util.TreeSet<>();
+    // Slots an administrator has re-opened after they were locked - history for the approver, never cleared.
+    private final java.util.TreeSet<Integer> caUnlockedWeeks = new java.util.TreeSet<>();
 
     public enum Status {
         DRAFT,
@@ -175,6 +177,24 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
                 : caLockedWeeks.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
     }
 
+    public void restoreUnlockedWeeks(String text) {
+        caUnlockedWeeks.clear();
+        if (text != null && !text.isBlank()) {
+            for (var part : text.split(",")) {
+                caUnlockedWeeks.add(Integer.parseInt(part.trim()));
+            }
+        }
+    }
+
+    public String unlockedWeeksAsText() {
+        return caUnlockedWeeks.isEmpty() ? null
+                : caUnlockedWeeks.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
+    }
+
+    public java.util.Set<Integer> getCaUnlockedWeeks() {
+        return java.util.Collections.unmodifiableSet(caUnlockedWeeks);
+    }
+
     public java.util.Set<Integer> getCaLockedWeeks() {
         return java.util.Collections.unmodifiableSet(caLockedWeeks);
     }
@@ -203,6 +223,7 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         if (!caLockedWeeks.remove(week)) {
             throw new com.moriba.skultem.application.error.RuleException("Recording no. " + week + " is not locked");
         }
+        caUnlockedWeeks.add(week);
         this.caSubmittedAt = null;
         touch(Instant.now());
     }

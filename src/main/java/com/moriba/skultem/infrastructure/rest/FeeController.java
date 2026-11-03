@@ -277,7 +277,8 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "create fee discount successfully", null);
         }
 
-        @DeleteMapping("/discount/{discountId}")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @DeleteMapping("/discount/{discountId}")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<Object> deleteDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -287,7 +288,8 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Fee discount deleted successfully", null);
         }
 
-        @GetMapping("/discount")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/discount")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<FeeDiscountDTO>> listAllDiscount(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -322,7 +324,8 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Class fee details fetch successfully", res);
         }
 
-        @GetMapping("/discount/report")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/discount/report")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<FeeDiscountReportDTO> calculateDiscountReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
@@ -359,6 +362,7 @@ public class FeeController {
                                 meta);
         }
 
+        @com.moriba.skultem.infrastructure.security.SectionNeutral
         @PostMapping("/ledger/recompute")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
         public ApiResponse<RecomputeStudentLedgerBalancesUseCase.Result> recomputeLedgerBalances(
@@ -371,7 +375,8 @@ public class FeeController {
                                 res);
         }
 
-        @GetMapping("/ledger/report")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/ledger/report")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<StudentLedgerReportDTO> calculateLedgerReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -384,7 +389,8 @@ public class FeeController {
 
         // The platform fee (Skultem's, collected by the school on its behalf) - kept off the student
         // ledger above so the two are never mistaken for each other.
-        @GetMapping("/platform/report")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/platform/report")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<PlatformFeeReportDTO> platformFeeReport(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
@@ -394,7 +400,8 @@ public class FeeController {
                 return new ApiResponse<>("success", 200, "Platform fee report fetched successfully", res);
         }
 
-        @GetMapping("/platform/entries")
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/platform/entries")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
         public ApiResponse<List<StudentLedgerDTO>> platformFeeEntries(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,

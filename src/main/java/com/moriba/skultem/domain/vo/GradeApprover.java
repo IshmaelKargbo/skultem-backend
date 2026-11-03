@@ -6,5 +6,7 @@ package com.moriba.skultem.domain.vo;
 // school, and a management section can override it (see GradeApprovalResolver).
 public enum GradeApprover {
     CLASS_MASTER,
-    ADMIN
+    ADMIN,
+    // The school's exam officer (Role.EXAM_OFFICER); an admin, proprietor or owner can still step in.
+    EXAM_OFFICER
 }

@@ -31,6 +31,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.BEHAVIOUR)
+// Behaviour records follow the caller's management sections (see ListBehaviourBySchoolUseCase).
+@com.moriba.skultem.infrastructure.security.SectionScoped
 @RestController
 @RequestMapping("/api/v1/behaviours")
 @RequiredArgsConstructor

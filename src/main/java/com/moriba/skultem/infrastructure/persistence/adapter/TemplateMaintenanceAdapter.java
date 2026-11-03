@@ -96,6 +96,52 @@ public class TemplateMaintenanceAdapter implements TemplateMaintenanceRepository
     }
 
     @Override
+    public int deleteClassAssessments(String classId, String academicYearId) {
+        List<String> cycleIds = em.createQuery("""
+                SELECT l.id FROM ClassSubjectAssessmentLifeCycleEntity l
+                WHERE l.subject.session.clazz.id = :classId AND l.subject.session.academicYear.id = :yearId
+                """, String.class)
+                .setParameter("classId", classId).setParameter("yearId", academicYearId).getResultList();
+        List<String> saIds = em.createQuery("""
+                SELECT sa.id FROM StudentAssessmentEntity sa
+                WHERE sa.enrollment.clazz.id = :classId AND sa.enrollment.academicYear.id = :yearId
+                """, String.class)
+                .setParameter("classId", classId).setParameter("yearId", academicYearId).getResultList();
+
+        if (!cycleIds.isEmpty() || !saIds.isEmpty()) {
+            // Scores hang off both a test (cycle) and a student assessment - clear either side.
+            var cycles = cycleIds.isEmpty() ? List.of("-") : cycleIds;
+            var sas = saIds.isEmpty() ? List.of("-") : saIds;
+            em.createQuery("""
+                    DELETE FROM AssessmentCaEntryEntity ce WHERE ce.assessmentScoreId IN (
+                        SELECT s.id FROM AssessmentScoreEntity s
+                        WHERE s.cycle.id IN :cycles OR s.studentAssessment.id IN :sas)
+                    """).setParameter("cycles", cycles).setParameter("sas", sas).executeUpdate();
+            em.createQuery("""
+                    DELETE FROM AssessmentScoreEntity s WHERE s.cycle.id IN :cycles OR s.studentAssessment.id IN :sas
+                    """).setParameter("cycles", cycles).setParameter("sas", sas).executeUpdate();
+            em.createQuery("DELETE FROM AssessmentApprovalRequestEntity r WHERE r.cycle.id IN :cycles")
+                    .setParameter("cycles", cycles).executeUpdate();
+            em.createQuery("DELETE FROM ClassSubjectAssessmentLifeCycleEntity l WHERE l.id IN :cycles")
+                    .setParameter("cycles", cycles).executeUpdate();
+            em.createQuery("DELETE FROM StudentAssessmentEntity sa WHERE sa.id IN :sas")
+                    .setParameter("sas", sas).executeUpdate();
+        }
+        em.flush();
+        em.clear();
+        return saIds.size();
+    }
+
+    @Override
+    public List<String> classIdsUsing(String schoolId, String templateId) {
+        return em.createQuery("""
+                SELECT c.id FROM ClassEntity c
+                WHERE c.schoolId = :schoolId AND c.template.id = :templateId AND c.status = 'ACTIVE'
+                """, String.class)
+                .setParameter("schoolId", schoolId).setParameter("templateId", templateId).getResultList();
+    }
+
+    @Override
     public long markedScoresOf(String assessmentId, java.util.Collection<Integer> termNumbers) {
         return em.createQuery("""
                 SELECT COUNT(s) FROM AssessmentScoreEntity s

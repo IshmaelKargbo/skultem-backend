@@ -35,6 +35,7 @@ public class PermissionService {
     private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
     private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
     private final com.moriba.skultem.application.services.PlatformAccessService platformAccess;
+    private final com.moriba.skultem.domain.repository.LeaveRequestRepository leaveRequestRepo;
 
     // SUPER_ADMIN is a staff member with the whole school portal - everything the management and
     // finance roles can do, without being the owner/proprietor. Any gate naming one of these roles
@@ -42,7 +43,7 @@ public class PermissionService {
     // need it added. Teacher- and parent-only gates stay closed: those are about the caller being
     // that teacher or parent, not about seniority.
     private static final Set<Role> SUPER_ADMIN_COVERS = EnumSet.of(Role.ADMIN, Role.OWNER, Role.PROPRIETOR, Role.PRINCIPAL,
-            Role.ACCOUNTANT, Role.LIBRARIAN, Role.NURSE);
+            Role.ACCOUNTANT, Role.LIBRARIAN, Role.NURSE, Role.EXAM_OFFICER);
 
     public static AuthUser getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -230,6 +231,15 @@ public class PermissionService {
         return parent.isPresent() && parent.get().getId().equals(student.get().getParent().getId());
     }
 
+    // A leave request carries the staff member's reason (often medical), so besides the people who review
+    // leave, only the person who asked can open it.
+    public boolean ownsLeaveRequest(String schoolId, String leaveRequestId) {
+        var request = leaveRequestRepo.findByIdAndSchoolId(leaveRequestId, schoolId);
+        return request.isPresent() && request.get().getTeacher() != null
+                && request.get().getTeacher().getUser() != null
+                && currentUserId().equals(request.get().getTeacher().getUser().getId());
+    }
+
     public boolean isParentOfReportCard(String schoolId, String reportCardId) {
         var card = reportCardRepo.findByIdAndSchoolId(reportCardId, schoolId);
         return card.isPresent() && isParentOfStudent(schoolId, card.get().getStudentId());
@@ -263,7 +273,7 @@ public class PermissionService {
     // master of this class (any of its sessions) can't generate, list, open or remark its cards,
     // even though the endpoints are role-gated to TEACHER.
     public boolean canManageReportCardsForClass(String schoolId, String classId) {
-        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN", "PROPRIETOR")) {
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN", "PROPRIETOR", "EXAM_OFFICER")) {
             return true;
         }
 
@@ -312,6 +322,20 @@ public class PermissionService {
 
         if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PROPRIETOR")) {
             return true;
+        }
+
+        // The exam officer reviews where the school (or this class's section) routes grades to the exam office -
+        // never grades they submitted themselves as a subject teacher.
+        if (hasRole(Role.EXAM_OFFICER)) {
+            var request = assessmentApprovalRequestRepo.findByIdAndSchoolId(approvalRequestId, schoolId);
+            var school = schoolRepo.findById(schoolId);
+            if (request.isEmpty() || school.isEmpty()) {
+                return false;
+            }
+            var level = request.get().getTeacherSubject().getSession().getClazz().getLevel();
+            var submitter = request.get().getTeacherSubject().getTeacher().getUser();
+            return gradeApprovalResolver.forLevel(school.get(), level) == com.moriba.skultem.domain.vo.GradeApprover.EXAM_OFFICER
+                    && (submitter == null || !currentUserId().equals(submitter.getId()));
         }
 
         if (!hasRole(Role.TEACHER)) {

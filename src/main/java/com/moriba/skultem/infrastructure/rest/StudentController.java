@@ -211,6 +211,7 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student photo updated successfully", res);
         }
 
+        @com.moriba.skultem.infrastructure.security.SectionNeutral
         @PostMapping("/photos/reprocess")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
         public ApiResponse<ReprocessStudentPhotosUseCase.Summary> reprocessPhotos(
@@ -221,7 +222,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
         public ApiResponse<List<StudentDTO>> listBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -246,7 +247,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/rank/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.student(#school, #studentId)")
+        @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
         public ApiResponse<Object> rankStudent(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(required = true) String studentId,
@@ -257,7 +258,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/cycle/{sessionId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #sessionId)")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #sessionId)")
         public ApiResponse<ActiveCycleDTO> activeCycle(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable(name = "sessionId") String sessionId,
@@ -268,7 +269,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/fee/{studentId}")
-        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'PARENT') and @sectionScope.student(#school, #studentId)")
+        @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
         public ApiResponse<List<StudentFeeDTO>> listStudentFees(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String studentId,
@@ -285,7 +286,7 @@ public class StudentController {
 
         @SectionScoped
         @GetMapping("/{id}")
-        @PreAuthorize("@permissionService.canAccessSchool(#school) and @sectionScope.student(#school, #id)")
+        @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER') or @permissionService.isParentOfStudent(#school, #id)) and @sectionScope.student(#school, #id)")
         public ApiResponse<StudentDTO> get(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
                         @PathVariable String id,
                         @RequestParam(required = false) String academicYearId) {

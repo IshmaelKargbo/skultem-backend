@@ -19,7 +19,9 @@ public interface SchemeOfWorkRepository {
 
     Page<SchemeOfWork> findAllByTeacherIdAndSchoolId(String teacherId, String school, Pageable pageable);
 
-    Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable);
+    // levels: only schemes for classes at these levels (the caller's management sections).
+    Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     Page<SchemeOfWork> searchByTeacher(String teacherId, String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable);
 

@@ -55,4 +55,45 @@ public class GradeApprovalResolver {
         }
         return result;
     }
+
+    // The levels whose grades go to this approver - lets a queue show only what one approver acts on.
+    public java.util.Set<Level> levelsRoutedTo(School school, GradeApprover approver) {
+        var result = java.util.EnumSet.noneOf(Level.class);
+        var overrides = forAllLevels(school);
+        for (var l : schoolLevelRepo.findBySchoolId(school.getId())) {
+            if (overrides.getOrDefault(l.getLevel(), school.getGradeApprover()) == approver) {
+                result.add(l.getLevel());
+            }
+        }
+        return result;
+    }
+
+    public com.moriba.skultem.application.dto.GradeApprovalRoutingDTO routing(School school) {
+        var routes = new java.util.ArrayList<com.moriba.skultem.application.dto.GradeApprovalRoutingDTO.Route>();
+        var levels = schoolLevelRepo.findBySchoolId(school.getId());
+        boolean sectionBased = school.getManagementModel() == ManagementModel.SECTION_BASED;
+
+        if (!sectionBased) {
+            routes.add(new com.moriba.skultem.application.dto.GradeApprovalRoutingDTO.Route(null, "Whole school",
+                    levels.stream().map(l -> l.getLevel()).sorted().toList(), school.getGradeApprover(), false));
+        } else {
+            var sections = managementSectionRepo.findBySchoolId(school.getId()).stream()
+                    .sorted(java.util.Comparator.comparingInt(s -> s.getDisplayOrder())).toList();
+            for (var s : sections) {
+                var own = levels.stream().filter(l -> s.getId().equals(l.getManagementSectionId()))
+                        .map(l -> l.getLevel()).sorted().toList();
+                var approver = s.getGradeApprover() != null ? s.getGradeApprover() : school.getGradeApprover();
+                routes.add(new com.moriba.skultem.application.dto.GradeApprovalRoutingDTO.Route(s.getId(),
+                        s.getName(), own, approver, s.getGradeApprover() != null));
+            }
+            var loose = levels.stream().filter(l -> l.getManagementSectionId() == null).map(l -> l.getLevel())
+                    .sorted().toList();
+            if (!loose.isEmpty()) {
+                routes.add(new com.moriba.skultem.application.dto.GradeApprovalRoutingDTO.Route(null, "Other levels",
+                        loose, school.getGradeApprover(), false));
+            }
+        }
+        return new com.moriba.skultem.application.dto.GradeApprovalRoutingDTO(school.getGradeApprover(),
+                sectionBased, routes);
+    }
 }

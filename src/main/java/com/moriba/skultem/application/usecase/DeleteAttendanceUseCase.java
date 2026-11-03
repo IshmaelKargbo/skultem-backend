@@ -17,9 +17,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DeleteAttendanceUseCase {
     private final AttendanceRepository repo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public void execute(String schoolId, String id) {
+        // A record from a class outside the caller's sections is treated as not there.
         var attendance = repo.findByIdAndSchoolId(id, schoolId)
+                .filter(a -> a.getEnrollment() == null || a.getEnrollment().getClazz() == null
+                        || sectionScopeService.levels().contains(a.getEnrollment().getClazz().getLevel()))
                 .orElseThrow(() -> new NotFoundException("Attendance not found"));
         repo.delete(attendance);
     }

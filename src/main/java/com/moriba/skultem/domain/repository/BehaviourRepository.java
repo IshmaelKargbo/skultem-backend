@@ -13,10 +13,12 @@ public interface BehaviourRepository {
 
     boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);
 
-    List<KindCount> countByKindForClassOrAll(String academicYearId, String schoolId, String classId);
+    List<KindCount> countByKindForClassOrAll(String academicYearId, String schoolId, String classId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 
-    Page<Behaviour> findAllAcademicYearAndSchoolId(String academicYearId, String schoolId, Pageable pageable);
+    Page<Behaviour> findAllAcademicYearAndSchoolId(String academicYearId, String schoolId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     Page<Behaviour> findAllAcademicYearAndClassIdAndSchoolId(String academicYearId, String classId, String schoolId,
-            Pageable pageable);
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 }

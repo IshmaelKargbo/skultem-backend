@@ -167,10 +167,12 @@ public interface PaymentJpaRepository
             where p.schoolId = :schoolId
             and p.fee.system = false
             and p.paidAt >= :start and p.paidAt < :end
+            and (:anyStudent = true or p.student.id in :studentIds)
             group by p.method
             """)
     List<Object[]> sumSchoolPaymentsByMethodAndDateRange(@Param("schoolId") String schoolId,
-            @Param("start") Instant start, @Param("end") Instant end);
+            @Param("start") Instant start, @Param("end") Instant end, @Param("anyStudent") boolean anyStudent,
+            @Param("studentIds") java.util.Collection<String> studentIds);
 
     // The school's own payments (platform fee excluded), narrowed by whichever of these are given -
     // backs the Payment History and Daily Collection transaction tables. Class is matched through a
@@ -179,7 +181,7 @@ public interface PaymentJpaRepository
     // Art" never get merged into one row.
     default Page<PaymentEntity> searchSchoolPayments(String schoolId, Instant from, Instant to,
             String academicYearId, String termId, String classId, String sectionId, String streamId,
-            String studentId, PaymentMethod method, String recordedByUserId, Pageable pageable) {
+            String studentId, PaymentMethod method, String recordedByUserId, java.util.Collection<String> studentIds, Pageable pageable) {
         Specification<PaymentEntity> spec = (root, query, cb) -> cb.and(
                 cb.equal(root.get("schoolId"), schoolId),
                 cb.isFalse(root.get("fee").get("system")));
@@ -205,6 +207,11 @@ public interface PaymentJpaRepository
         }
         if (studentId != null && !studentId.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("student").get("id"), studentId));
+        }
+        // Section-limited staff: only their sections' students (null = everyone).
+        if (studentIds != null) {
+            var ids = studentIds.isEmpty() ? java.util.List.of("-") : studentIds;
+            spec = spec.and((root, query, cb) -> root.get("student").get("id").in(ids));
         }
         if (classId != null && !classId.isBlank()) {
             String academicYear = academicYearId;

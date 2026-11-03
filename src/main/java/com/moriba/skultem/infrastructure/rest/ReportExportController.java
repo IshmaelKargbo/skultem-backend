@@ -79,6 +79,7 @@ public class ReportExportController {
                 academicYearId));
     }
 
+@com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/fee-balances")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportStudentFeeBalances(
@@ -93,6 +94,7 @@ public class ReportExportController {
                 classSessionId, status, feeCategoryId));
     }
 
+@com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/fee-payment-history")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'ACCOUNTANT')")
     public ResponseEntity<byte[]> exportFeePaymentHistory(

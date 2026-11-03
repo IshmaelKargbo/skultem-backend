@@ -17,6 +17,8 @@ import com.moriba.skultem.infrastructure.rest.dto.SaveReceiptSettingDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+// One receipt design for the school.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/receipt-setting")
 @RequiredArgsConstructor

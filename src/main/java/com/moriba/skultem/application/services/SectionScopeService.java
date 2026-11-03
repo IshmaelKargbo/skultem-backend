@@ -35,7 +35,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SectionScopeService {
 
-    public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER, Role.PRINCIPAL);
+    public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER, Role.PRINCIPAL,
+            Role.EXAM_OFFICER);
 
     private static final String REQUEST_ATTRIBUTE = SectionScopeService.class.getName() + ".scope";
     private static final String VIEW_ATTRIBUTE = SectionScopeService.class.getName() + ".view";
@@ -157,6 +158,13 @@ public class SectionScopeService {
 
         Set<String> sectionIds = new HashSet<>();
         assigned.forEach(a -> sectionIds.add(a.getManagementSectionId()));
+
+        // Someone given every section manages the whole school - treat them that way, so school-wide screens
+        // (finance, settings) don't refuse them.
+        var allSections = managementSectionRepo.findBySchoolId(schoolId);
+        if (!allSections.isEmpty() && allSections.stream().allMatch(s -> sectionIds.contains(s.getId()))) {
+            return SectionScope.all();
+        }
 
         Set<Level> levels = EnumSet.noneOf(Level.class);
         schoolLevelRepo.findBySchoolId(schoolId).stream()

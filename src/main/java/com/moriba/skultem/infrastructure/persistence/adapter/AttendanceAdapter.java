@@ -55,8 +55,9 @@ public class AttendanceAdapter implements AttendanceRepository {
     }
 
     @Override
-    public Page<Attendance> findBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findAllBySchoolId(schoolId, pageable).map(AttendanceMapper::toDomain);
+    public Page<Attendance> findBySchoolId(String schoolId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.findAllBySchoolIdAndEnrollment_Clazz_LevelIn(schoolId, levels, pageable).map(AttendanceMapper::toDomain);
     }
 
     @Override

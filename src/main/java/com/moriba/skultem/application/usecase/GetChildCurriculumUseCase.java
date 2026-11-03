@@ -54,7 +54,8 @@ public class GetChildCurriculumUseCase {
 
         var sessionId = student.getSession().getId();
 
-        var schemes = schemeRepo.search(schoolId, null, sessionId, termId, null, Pageable.unpaged())
+        var schemes = schemeRepo.search(schoolId, null, sessionId, termId, null,
+                java.util.EnumSet.allOf(com.moriba.skultem.domain.vo.Level.class), Pageable.unpaged())
                 .getContent()
                 .stream()
                 .filter(s -> s.getState() == SchemeOfWork.State.PUBLISH)

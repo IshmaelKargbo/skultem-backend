@@ -31,6 +31,9 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
 
+// School fee reports follow the caller's management sections (LoadSchoolFeeRowsUseCase and the payment reports filter
+// by class level / student).
+@com.moriba.skultem.infrastructure.security.SectionScoped
 @RestController
 @RequestMapping("/api/v1/fee/report")
 @RequiredArgsConstructor

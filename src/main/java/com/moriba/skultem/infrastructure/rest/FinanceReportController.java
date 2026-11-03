@@ -29,6 +29,7 @@ public class FinanceReportController {
     private final SearchTransactionsUseCase searchTransactionsUseCase;
 
     // The Transactions page's list, narrowed by type / direction / what it relates to / date range.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/transactions")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<List<TransactionDTO>> transactions(
@@ -54,6 +55,7 @@ public class FinanceReportController {
         return new ApiResponse<>("success", 200, "Transactions fetched successfully", res.getContent(), meta);
     }
 
+@com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/total")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
     public ApiResponse<Object> totalCollected(@AuthenticationPrincipal(expression = "activeSchoolId") String school) {
@@ -61,8 +63,9 @@ public class FinanceReportController {
         return new ApiResponse<>("success", 200, "Total fees collected fetched successfully", total);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @GetMapping("/outstanding")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<OutstandingBalanceDTO>> outstanding(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,
@@ -72,8 +75,9 @@ public class FinanceReportController {
                 res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @GetMapping("/outstanding/list")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<OutstandingBalanceDTO>> outstandingList(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,
@@ -83,8 +87,9 @@ public class FinanceReportController {
                 res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @GetMapping("/payments")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<PaymentDTO>> paymentHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true) String studentId,

@@ -44,14 +44,15 @@ public class PromotionRequestAdapter implements PromotionRequestRepository {
 
     @Override
     public Page<PromotionRequest> findBySchoolIdAndStatus(String schoolId, PromotionRequest.Status status,
-            Pageable pageable) {
-        return repo.findBySchoolIdAndStatusOrderByCreatedAtDesc(schoolId, status, pageable)
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.findBySchoolIdAndStatusAndSession_Clazz_LevelInOrderByCreatedAtDesc(schoolId, status, levels, pageable)
                 .map(PromotionRequestMapper::toDomain);
     }
 
     @Override
-    public Page<PromotionRequest> findBySchoolId(String schoolId, Pageable pageable) {
-        return repo.findBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(PromotionRequestMapper::toDomain);
+    public Page<PromotionRequest> findBySchoolId(String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.findBySchoolIdAndSession_Clazz_LevelInOrderByCreatedAtDesc(schoolId, levels, pageable)
+                .map(PromotionRequestMapper::toDomain);
     }
 
     @Override

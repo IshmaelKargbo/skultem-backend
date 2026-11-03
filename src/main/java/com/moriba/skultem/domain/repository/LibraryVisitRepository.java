@@ -32,8 +32,9 @@ public interface LibraryVisitRepository {
      * Null bounds mean "no limit"; an empty query and a null student mean "everyone". The query matches the
      * student's name or class.
      */
+    // studentIds: the students the caller may see (section-limited staff); null = every student.
     Page<LibraryVisit> search(String schoolId, Instant from, Instant to, String studentId, String query,
-            Filter filter, Instant now, Pageable pageable);
+            Filter filter, Instant now, java.util.Collection<String> studentIds, Pageable pageable);
 
     long countOpen(String schoolId);
 

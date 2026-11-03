@@ -121,15 +121,17 @@ public class PaymentAdapter implements PaymentRepository {
     }
 
     @Override
-    public List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end) {
-        return repo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end);
+    public List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end,
+            java.util.Collection<String> studentIds) {
+        return repo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end, studentIds == null,
+                studentIds == null || studentIds.isEmpty() ? java.util.List.of("-") : studentIds);
     }
 
     @Override
     public Page<Payment> searchSchoolPayments(String schoolId, Instant from, Instant to, String academicYearId,
             String termId, String classId, String sectionId, String streamId, String studentId,
-            Payment.PaymentMethod method, String recordedByUserId, Pageable pageable) {
+            Payment.PaymentMethod method, String recordedByUserId, java.util.Collection<String> studentIds, Pageable pageable) {
         return repo.searchSchoolPayments(schoolId, from, to, academicYearId, termId, classId, sectionId, streamId,
-                studentId, method, recordedByUserId, pageable).map(PaymentMapper::toDomain);
+                studentId, method, recordedByUserId, studentIds, pageable).map(PaymentMapper::toDomain);
     }
 }

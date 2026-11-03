@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 // Design of the downloadable timetable PDF. Everyone who can download a timetable (admins, teachers,
 // parents) reads it; only management saves it.
 @RequiresModule(FeatureModule.TIMETABLE)
+// Timetable settings are school-wide.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/timetable-setting")
 @RequiredArgsConstructor

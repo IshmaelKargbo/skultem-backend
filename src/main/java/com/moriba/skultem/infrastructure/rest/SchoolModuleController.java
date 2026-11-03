@@ -31,7 +31,7 @@ public class SchoolModuleController {
 
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER', 'TEACHER', 'PARENT')")
     public ApiResponse<List<SchoolModuleDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = listSchoolModulesUseCase.execute(school);
@@ -53,6 +53,7 @@ public class SchoolModuleController {
         return new ApiResponse<>("success", 200, "Module installed successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PutMapping("/{key}/disable")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<SchoolModuleDTO>> disable(

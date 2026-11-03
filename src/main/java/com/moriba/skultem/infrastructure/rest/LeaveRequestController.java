@@ -31,6 +31,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.STAFF_HR)
+// Staff leave is managed school-wide.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/leave")
 @RequiredArgsConstructor
@@ -40,7 +42,7 @@ public class LeaveRequestController {
 
     @SectionNeutral
     @PostMapping("/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<LeaveRequestDTO> createForMe(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -52,7 +54,7 @@ public class LeaveRequestController {
 
     @SectionNeutral
     @GetMapping("/me")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<List<LeaveRequestDTO>> listMine(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -99,7 +101,7 @@ public class LeaveRequestController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') or @permissionService.ownsLeaveRequest(#school, #id)")
     public ApiResponse<LeaveRequestDTO> getById(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

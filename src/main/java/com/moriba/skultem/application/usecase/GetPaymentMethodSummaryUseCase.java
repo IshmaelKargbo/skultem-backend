@@ -26,6 +26,10 @@ import lombok.RequiredArgsConstructor;
 public class GetPaymentMethodSummaryUseCase {
 
     private final PaymentRepository paymentRepo;
+
+    // Section-limited staff see only their sections' students' payments.
+
+    private final com.moriba.skultem.application.services.SectionStudentScope studentScope;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final TermRepository termRepo;
 
@@ -51,7 +55,8 @@ public class GetPaymentMethodSummaryUseCase {
         Instant start = rangeFrom.atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant end = rangeTo.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        var byMethod = paymentRepo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end);
+        var byMethod = paymentRepo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end,
+                studentScope.studentIds(schoolId));
         var totals = PaymentMethodRowMapper.totals(byMethod);
         var methodRows = PaymentMethodRowMapper.toRows(byMethod, totals.amount());
 

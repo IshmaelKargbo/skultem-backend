@@ -33,6 +33,8 @@ import com.moriba.skultem.infrastructure.rest.dto.SubmitPromotionRequestDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdatePromotionConfigDTO;
 
 import jakarta.validation.Valid;
+import com.moriba.skultem.infrastructure.security.SectionScoped;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -50,8 +52,9 @@ public class PromotionController {
     private final GetPromotionConfigUseCase getPromotionConfigUseCase;
     private final UpdatePromotionConfigUseCase updatePromotionConfigUseCase;
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @GetMapping("/requests/session/{sessionId}/roster")
-    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId)")
+    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId) and @sectionScope.classSession(#school, #sessionId)")
     public ApiResponse<PromotionRosterDTO> promotionRoster(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String sessionId) {
@@ -59,8 +62,9 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion roster fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @PostMapping("/requests/session/{sessionId}")
-    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId)")
+    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId) and @sectionScope.classSession(#school, #sessionId)")
     public ApiResponse<PromotionRequestDTO> submitPromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String sessionId,
@@ -69,8 +73,9 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion submitted for review", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @GetMapping("/requests/session/{sessionId}/current")
-    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId)")
+    @PreAuthorize("@permissionService.canPromoteClassSession(#school, #sessionId) and @sectionScope.classSession(#school, #sessionId)")
     public ApiResponse<PromotionRequestDTO> currentPromotionRequestForSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String sessionId) {
@@ -78,6 +83,7 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion request fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/requests/mine")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<Object> myPromotionRequests(
@@ -91,6 +97,7 @@ public class PromotionController {
 
     // --- Admin / proprietor: review queue ---
 
+    @SectionScoped
     @GetMapping("/requests")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<Object> listPromotionRequests(
@@ -102,8 +109,9 @@ public class PromotionController {
         return listResponse(res);
     }
 
+    @SectionScoped
     @GetMapping("/requests/{id}")
-    @PreAuthorize("@permissionService.canManagePromotionRequest(#school, #id)")
+    @PreAuthorize("@permissionService.canManagePromotionRequest(#school, #id) and @sectionScope.promotionRequest(#school, #id)")
     public ApiResponse<PromotionRequestDTO> getPromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -111,8 +119,9 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion request fetched successfully", res);
     }
 
+    @SectionScoped
     @PostMapping("/requests/{id}/return")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.promotionRequest(#school, #id)")
     public ApiResponse<PromotionRequestDTO> returnPromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -121,8 +130,9 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion request returned to the class master", res);
     }
 
+    @SectionScoped
     @PostMapping("/requests/{id}/approve")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER') and @sectionScope.promotionRequest(#school, #id)")
     public ApiResponse<PromotionRequestDTO> approvePromotionRequest(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -131,6 +141,7 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion approved and students moved", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/progress")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionProgressDTO> promotionProgress(
@@ -139,6 +150,7 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion progress fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/close-year")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<Object> closeAcademicYear(
@@ -149,6 +161,7 @@ public class PromotionController {
 
     // --- Admin / proprietor: promotion rules ---
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/config")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER', 'TEACHER')")
     public ApiResponse<PromotionConfigDTO> promotionConfig(
@@ -157,6 +170,7 @@ public class PromotionController {
         return new ApiResponse<>("success", 200, "Promotion rules fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/config")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'OWNER')")
     public ApiResponse<PromotionConfigDTO> updatePromotionConfig(

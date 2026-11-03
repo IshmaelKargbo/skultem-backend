@@ -90,7 +90,7 @@ public class UserController {
 
     @SectionNeutral
     @PostMapping("/reset-password")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER', 'TEACHER', 'PARENT')")
     public ApiResponse<UserDTO> resetPassword(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -100,6 +100,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "User reset password successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/{id}/reset-password")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<AdminResetPasswordResultDTO> adminResetPassword(
@@ -110,14 +111,18 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Temporary password generated successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<UserDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
-            @RequestParam(required = true, defaultValue = "1") Integer page) {
+            @RequestParam(required = true, defaultValue = "1") Integer page,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) String status) {
 
-        var res = listUserBySchoolUseCase.execute(school, page - 1, size);
+        var res = listUserBySchoolUseCase.execute(school, query, role, status, page - 1, size);
         var list = res.getContent();
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
@@ -128,6 +133,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Users fetched successfully", list, meta);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PatchMapping("/{id}/access")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<UserDTO> setAccess(
@@ -142,6 +148,7 @@ public class UserController {
 
     // Revoke one specific role from a user at this school (e.g. they keep Teacher but no longer
     // need Accountant) - the removal counterpart to /assign. See RemoveRoleUseCase.
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @DeleteMapping("/{id}/role")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @permissionService.canGrantRole(#school, #role) and @permissionService.canManageUser(#school, #id)")
     public ApiResponse<UserDTO> removeRole(
@@ -163,8 +170,11 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Users notification successfully", res);
     }
 
+    // Another person's account (email, roles, status) is for the people who manage accounts - everyone
+    // reads their own through /me.
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN')")
     public ApiResponse<UserDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -172,6 +182,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "User fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/{id}/payroll-status")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<UserPayrollStatusDTO> payrollStatus(
@@ -181,6 +192,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "Payroll status fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/{id}/include-in-payroll")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<UserPayrollStatusDTO> includeInPayroll(
@@ -192,6 +204,7 @@ public class UserController {
         return new ApiResponse<>("success", 200, "User included in payroll successfully", res);
     }
     
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PatchMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<UserDTO> updatePhoto(
@@ -215,6 +228,7 @@ public class UserController {
     }
 
     // Which staff are limited to which management sections (anyone not listed is whole-school).
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/management-sections")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<List<StaffScopeDTO>> listManagementSections(

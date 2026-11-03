@@ -61,6 +61,7 @@ public class ClassSessionController {
         return new ApiResponse<>("success", 200, "Class removed successfully", null);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/setup-all")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
     public ApiResponse<Object> setupAll(
@@ -72,7 +73,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId,
@@ -107,7 +108,7 @@ public class ClassSessionController {
 
     @SectionScoped
     @GetMapping({"/unassign", "/unassigned"})
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<List<ClassSessionDTO>> listUnassign(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,

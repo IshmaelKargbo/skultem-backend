@@ -9,6 +9,6 @@ public record AssessmentApprovalRequestDTO(String id, String teacher, String sub
         String teacherSubjectId, String assessmentId, String termId,
         // The class master taught this subject themselves, so an admin/proprietor/owner reviews it instead.
         boolean requiresAdminReview,
-        // CLASS_MASTER or ADMIN - who approves grades for this class (see GradeApprovalResolver).
+        // CLASS_MASTER, ADMIN or EXAM_OFFICER - who approves grades for this class (see GradeApprovalResolver).
         String approver) {
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.domain.repository.UserRepository;
+import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.persistence.jpa.UserJpaRepository;
 import com.moriba.skultem.infrastructure.persistence.mapper.UserMapper;
@@ -47,8 +48,12 @@ public class UserAdapter implements UserRepository {
     }
 
     @Override
-    public Page<User> findBySchool(String school, Pageable pageable) {
-        return repo.findAllBySchoolId(school, Role.PARENT, pageable).map(UserMapper::toDomain);
+    public Page<User> findBySchool(String school, String query, Role role, String status, Pageable pageable) {
+        String q = query == null ? "" : query.trim().toLowerCase();
+        String s = status == null ? "" : status.trim().toUpperCase();
+        // role is never null in the query - an unused placeholder keeps Postgres from guessing its type.
+        return repo.findAllBySchoolId(school, Role.PARENT, q, role == null, role == null ? Role.PARENT : role, s,
+                SchoolUser.Status.ACTIVE, pageable).map(UserMapper::toDomain);
     }
 
     @Override

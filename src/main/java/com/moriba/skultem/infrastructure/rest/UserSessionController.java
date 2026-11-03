@@ -20,6 +20,8 @@ import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
 
+// Account sessions are school-wide.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/session")
 @RequiredArgsConstructor

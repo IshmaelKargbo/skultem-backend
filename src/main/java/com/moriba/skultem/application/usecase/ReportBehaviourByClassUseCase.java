@@ -16,10 +16,11 @@ import lombok.RequiredArgsConstructor;
 public class ReportBehaviourByClassUseCase {
     private final BehaviourRepository repo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public List<KindCount> execute(String schoolId, String classId, String academicYearId, int page, int size) {
         var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
 
-        return repo.countByKindForClassOrAll(academicYear.getId(), schoolId, classId);
+        return repo.countByKindForClassOrAll(academicYear.getId(), schoolId, classId, sectionScopeService.levels());
     }
 }

@@ -28,6 +28,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.ATHLETIC_HOUSES)
+// Athletic houses span the whole school.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/house")
 @RequiredArgsConstructor

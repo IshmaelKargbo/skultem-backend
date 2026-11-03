@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 @RequiresModule(FeatureModule.TIMETABLE)
+// Rooms, timings and working days are shared across the school; a class's own timetable (periods) follows the caller's
+// sections - see the period guards below.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/timetable")
 @RequiredArgsConstructor
@@ -178,8 +181,9 @@ public class TimetableController {
         return new ApiResponse<>("success", 200, "Working days set successfully", res);
     }
 
+    // {id} is the class session whose timetable this is.
     @GetMapping("/period/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #id)")
     public ApiResponse<List<PeriodDTO>> getTimetable(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @Valid @PathVariable String id) {
         var res = timetableSvc.getTimeTable(id);
@@ -187,7 +191,7 @@ public class TimetableController {
     }
 
     @DeleteMapping("/period/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.timetablePeriod(#school, #id)")
     public ApiResponse<PeriodDTO> deletePeriod(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @Valid @PathVariable String id) {
         var res = timetableSvc.deletePeriod(school, id);
@@ -195,7 +199,7 @@ public class TimetableController {
     }
 
     @PatchMapping("/period/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.timetablePeriod(#school, #id)")
     public ApiResponse<PeriodDTO> updatePeriod(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

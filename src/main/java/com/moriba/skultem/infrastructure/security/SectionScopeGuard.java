@@ -53,6 +53,12 @@ public class SectionScopeGuard {
     private final NoticeRepository noticeRepo;
     private final CalendarEventRepository calendarEventRepo;
     private final SubjectGroupRepository subjectGroupRepo;
+    private final com.moriba.skultem.domain.repository.ExamScheduleRepository examScheduleRepo;
+    private final com.moriba.skultem.domain.repository.AttendanceRepository attendanceRepo;
+    private final com.moriba.skultem.domain.repository.PromotionRequestRepository promotionRequestRepo;
+    private final com.moriba.skultem.domain.repository.PeriodRepository periodRepo;
+    private final com.moriba.skultem.domain.repository.HealthCareVisitRepository healthVisitRepo;
+    private final com.moriba.skultem.application.services.SectionStudentScope sectionStudentScope;
 
     public boolean wholeSchool() {
         return sectionScopeService.current().wholeSchool();
@@ -184,6 +190,56 @@ public class SectionScopeGuard {
         }
         return approvalRequestRepo.findByIdAndSchoolId(approvalRequestId, schoolId)
                 .map(r -> scope.allows(r.getTeacherSubject().getSession().getClazz().getLevel())).orElse(true);
+    }
+
+    // An exam timetable paper belongs to the class sitting it.
+    public boolean examSchedule(String schoolId, String scheduleId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || scheduleId == null) {
+            return true;
+        }
+        return examScheduleRepo.findByIdAndSchoolId(scheduleId, schoolId)
+                .map(e -> clazz(schoolId, e.getClassId())).orElse(true);
+    }
+
+    // A sick bay visit follows the student's section (by their enrolment this year).
+    public boolean healthVisit(String schoolId, String visitId) {
+        if (sectionScopeService.current().wholeSchool() || visitId == null) {
+            return true;
+        }
+        return healthVisitRepo.findByIdAndSchool(visitId, schoolId)
+                .map(v -> sectionStudentScope.allows(schoolId, v.getStudentId())).orElse(true);
+    }
+
+    // A timetable period belongs to one class session's timetable.
+    public boolean timetablePeriod(String schoolId, String periodId) {
+        if (sectionScopeService.current().wholeSchool() || periodId == null) {
+            return true;
+        }
+        return periodRepo.findById(periodId)
+                .filter(p -> schoolId.equals(p.getSchoolId()))
+                .map(p -> p.getSession() == null || classSession(schoolId, p.getSession().getId())).orElse(true);
+    }
+
+    // A promotion request is for one class session.
+    public boolean promotionRequest(String schoolId, String requestId) {
+        if (sectionScopeService.current().wholeSchool() || requestId == null) {
+            return true;
+        }
+        return promotionRequestRepo.findByIdAndSchoolId(requestId, schoolId)
+                .map(r -> r.getSession() == null || classSession(schoolId, r.getSession().getId())).orElse(true);
+    }
+
+    // An attendance mark belongs to the student's class that day.
+    public boolean attendance(String schoolId, String attendanceId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || attendanceId == null) {
+            return true;
+        }
+        return attendanceRepo.findByIdAndSchoolId(attendanceId, schoolId)
+                .map(a -> a.getEnrollment() == null || a.getEnrollment().getClazz() == null
+                        || scope.allows(a.getEnrollment().getClazz().getLevel()))
+                .orElse(true);
     }
 
     // A report card records the class (Clazz) it was generated for.

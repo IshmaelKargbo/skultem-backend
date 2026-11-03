@@ -50,7 +50,7 @@ public class PayrollController {
     
     @SectionNeutral
     @GetMapping("/me/history")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<List<PayslipDTO>> myHistory(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {
@@ -60,7 +60,7 @@ public class PayrollController {
 
     @SectionNeutral
     @GetMapping("/me/payslip/{runId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<PayslipDTO> myPayslip(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

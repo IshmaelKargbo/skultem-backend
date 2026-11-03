@@ -52,10 +52,11 @@ public class SchemeOfWorkAdapter implements SchemeOfWorkRepository {
     }
 
     @Override
-    public Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress, Pageable pageable) {
+    public Page<SchemeOfWork> search(String school, String subjectId, String sessionId, String termId, Week.State progress,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
         return repo.search(school, subjectId, sessionId, termId,
                 progress != null, progress == Week.State.COMPLETED, progress == Week.State.NOT_STARTED, progress == Week.State.IN_PROGRESS,
-                pageable).map(SchemeOfWorkMapper::toDomain);
+                levels, pageable).map(SchemeOfWorkMapper::toDomain);
     }
 
     @Override

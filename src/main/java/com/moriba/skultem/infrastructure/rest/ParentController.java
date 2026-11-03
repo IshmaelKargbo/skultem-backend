@@ -88,7 +88,8 @@ public class ParentController {
                 return new ApiResponse<>("success", 200, "Parents fetched successfully", list, meta);
         }
 
-        @GetMapping("/students")
+@com.moriba.skultem.infrastructure.security.SectionScoped
+    @GetMapping("/students")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'PARENT', 'ACCOUNTANT')")
         public ApiResponse<List<StudentDTO>> listStudentBySchool(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,

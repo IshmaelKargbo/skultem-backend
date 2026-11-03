@@ -26,7 +26,12 @@ public enum PlaygroundDataCategory {
     ASSESSMENTS(List.of()),
     ATTENDANCE(List.of()),
     BEHAVIOUR(List.of()),
-    STUDENTS(List.of(FEES, ASSESSMENTS, ATTENDANCE, BEHAVIOUR, MATERIALS)),
+    // Book loans, walk-in visits and class library sessions. The book catalogue is setup and stays.
+    LIBRARY(List.of()),
+    // Sick bay visits and students turned away. The sick bay settings stay.
+    HEALTH_CARE(List.of()),
+    // Library and sick bay records point at students, so they go with them.
+    STUDENTS(List.of(FEES, ASSESSMENTS, ATTENDANCE, BEHAVIOUR, MATERIALS, LIBRARY, HEALTH_CARE)),
     // Class subjects, stream subjects, teacher assignments, subject groups and timetable entries.
     SUBJECT_SETUP(List.of(ASSESSMENTS)),
     // Classes, sections and streams - and everything bound to a class (see above).

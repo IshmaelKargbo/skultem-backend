@@ -32,21 +32,24 @@ public class BehaviourAdapter implements BehaviourRepository {
     }
 
     @Override
-    public Page<Behaviour> findAllAcademicYearAndSchoolId(String academicYearId, String schoolId, Pageable pageable) {
+    public Page<Behaviour> findAllAcademicYearAndSchoolId(String academicYearId, String schoolId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
         return repo
-                .findAllByEnrollment_AcademicYear_IdAndSchoolIdOrderByCreatedAtAsc(academicYearId, schoolId, pageable)
+                .findAllByEnrollment_AcademicYear_IdAndSchoolIdAndEnrollment_Clazz_LevelInOrderByCreatedAtAsc(academicYearId,
+                        schoolId, levels, pageable)
                 .map(BehaviourMapper::toDomain);
     }
 
     @Override
     public Page<Behaviour> findAllAcademicYearAndClassIdAndSchoolId(String academicYearId, String classId,
-            String schoolId, Pageable pageable) {
-        return repo.findAllByEnrollment_AcademicYear_IdAndEnrollment_Clazz_IdAndSchoolIdOrderByCreatedAtAsc(academicYearId,
-                classId, schoolId, pageable).map(BehaviourMapper::toDomain);
+            String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable) {
+        return repo.findAllByEnrollment_AcademicYear_IdAndEnrollment_Clazz_IdAndSchoolIdAndEnrollment_Clazz_LevelInOrderByCreatedAtAsc(
+                academicYearId, classId, schoolId, levels, pageable).map(BehaviourMapper::toDomain);
     }
 
     @Override
-    public List<KindCount> countByKindForClassOrAll(String academicYearId, String schoolId, String classId) {
-        return repo.countByKindForClassOrAll(academicYearId, schoolId, classId);
+    public List<KindCount> countByKindForClassOrAll(String academicYearId, String schoolId, String classId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels) {
+        return repo.countByKindForClassOrAll(academicYearId, schoolId, classId, levels);
     }
 }

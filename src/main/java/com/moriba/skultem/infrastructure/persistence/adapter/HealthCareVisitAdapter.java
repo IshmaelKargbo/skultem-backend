@@ -93,7 +93,9 @@ public class HealthCareVisitAdapter implements HealthCareVisitRepository {
         List<Outcome> outcomes = anyOutcome ? List.of(Outcome.values()) : List.of(s.outcome());
         return repo.search(schoolId, statuses, anyOutcome, outcomes, s.from() == null ? EARLIEST : s.from(),
                 s.to() == null ? LATEST : s.to(), endsBy, blank(s.complaint()), s.overLimitOnly(),
-                blank(s.studentId()), blank(s.query()), pageable).map(HealthCareMapper::toDomain);
+                blank(s.studentId()), blank(s.query()), s.studentIds() == null,
+                s.studentIds() == null || s.studentIds().isEmpty() ? List.of("-") : s.studentIds(), pageable)
+                .map(HealthCareMapper::toDomain);
     }
 
     @Override

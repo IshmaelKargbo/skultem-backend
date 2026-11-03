@@ -71,6 +71,7 @@ public class ClassController {
     private final GetClassOverviewUseCase getClassOverviewUseCase;
     private final ComputeClassAttentionUseCase computeClassAttentionUseCase;
     private final ListClassesNeedingAttentionUseCase listClassesNeedingAttentionUseCase;
+    private final com.moriba.skultem.application.usecase.GetAssessmentCoverageUseCase getAssessmentCoverageUseCase;
     private final GetCurrentClassMasterUseCase getCurrentClassMasterUseCase;
     private final GetClassMasterBySessionUseCase getClassMasterBySessionUseCase;
     private final RemoveTeacherFromClassUseCase removeTeacherFromClassUseCase;
@@ -108,9 +109,19 @@ public class ClassController {
         return new ApiResponse<>("success", 200, "Next class set successfully", res);
     }
 
+    // Academics > Assessment Check: classes whose students are missing assessments, and why.
+    @SectionScoped
+    @GetMapping("/assessment-coverage")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<com.moriba.skultem.application.dto.AssessmentCoverageDTO> assessmentCoverage(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        var res = getAssessmentCoverageUseCase.execute(school);
+        return new ApiResponse<>("success", 200, "Assessment coverage fetched successfully", res);
+    }
+
     @SectionScoped
     @GetMapping("/attention-summary")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<ClassAttentionSummaryDTO> attentionSummary(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String academicYearId) {
@@ -120,7 +131,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER')")
     public ApiResponse<List<ClassDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = true, defaultValue = "10") Integer size,
@@ -138,7 +149,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/subject/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<ClassSubjectResponse> listClassSubject(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -149,7 +160,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/master/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassMasterDTO>> getClassMasterByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -160,7 +171,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/master/session/{sessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.classSession(#school, #sessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.classSession(#school, #sessionId)")
     public ApiResponse<List<ClassMasterDTO>> getClassMasterBySession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String sessionId) {
@@ -170,7 +181,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/section/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassSectionDTO>> getClassSectionsByClass(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,
@@ -188,7 +199,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/streams/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ClassStreamDTO>> listStreams(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId) {
@@ -196,8 +207,9 @@ public class ClassController {
         return new ApiResponse<>("success", 200, "Class streams fetched successfully", list);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @PostMapping("/master/remove/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PRINCIPAL', 'TEACHER')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER')")
     public ApiResponse<Object> removeAsClassMaster(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -217,7 +229,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/{id}/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #id)")
     public ApiResponse<ClassOverviewDTO> overview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -228,7 +240,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/{id}/sss/overview")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'ACCOUNTANT', 'TEACHER') and @sectionScope.clazz(#school, #id)")
     public ApiResponse<ClassStreamOverviewDTO> sssOverview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -241,7 +253,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/{id}/attention")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.clazz(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'TEACHER') and @sectionScope.clazz(#school, #id)")
     public ApiResponse<ClassAttentionDTO> attention(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
@@ -260,6 +272,7 @@ public class ClassController {
         return new ApiResponse<>("success", 200, "Class deleted successfully", null);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionScoped
     @PutMapping("/reorder")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR')")
     public ApiResponse<Void> reorder(
@@ -294,7 +307,7 @@ public class ClassController {
     @SectionScoped
     @PutMapping("/{id}/template")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.clazz(#school, #id)")
-    public ApiResponse<ClassDTO> updateTemplate(
+    public ApiResponse<com.moriba.skultem.application.usecase.UpdateClassTemplateUseCase.Result> updateTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
             @Valid @RequestBody UpdateClassTemplateDTO param) {

@@ -23,7 +23,8 @@ import lombok.RequiredArgsConstructor;
  * could not be created and why, instead of failing silently.
  */
 @Service
-@Transactional
+// A refusal (no template, no active year) is reported to the caller, not a reason to undo the caller's own save.
+@Transactional(dontRollbackOn = { RuleException.class, NotFoundException.class })
 @RequiredArgsConstructor
 public class SyncClassAssessmentsUseCase {
 
@@ -32,8 +33,11 @@ public class SyncClassAssessmentsUseCase {
     private final EnrollmentRepository enrollmentRepository;
     private final ProvisionStudentAssessmentsUseCase provisionStudentAssessmentsUseCase;
 
+    // studentsWithoutSubjects: students with no subjects to assess (the class has none assigned).
+    // startsInTerm: the template's first graded term - before it, students have no assessments on purpose.
     public record Result(int students, int studentsUpdated, int assessmentsCreated,
-            Set<String> subjectsWithoutTeacher, int failed, String firstError) {
+            Set<String> subjectsWithoutTeacher, int failed, String firstError, int studentsWithoutSubjects,
+            int startsInTerm) {
     }
 
     @AuditLogAnnotation(action = "CLASS_ASSESSMENTS_SYNCED")
@@ -53,7 +57,7 @@ public class SyncClassAssessmentsUseCase {
                 .filter(e -> e.getStatus() == Enrollment.Status.ACTIVE)
                 .toList();
 
-        int updated = 0, created = 0, failed = 0;
+        int updated = 0, created = 0, failed = 0, withoutSubjects = 0;
         String firstError = null;
         Set<String> noTeacher = new LinkedHashSet<>();
 
@@ -61,6 +65,9 @@ public class SyncClassAssessmentsUseCase {
             try {
                 var r = provisionStudentAssessmentsUseCase.execute(enrollment);
                 noTeacher.addAll(r.subjectsWithoutTeacher());
+                if (r.noSubjects()) {
+                    withoutSubjects++;
+                }
                 if (r.created() > 0) {
                     updated++;
                     created += r.created();
@@ -73,6 +80,7 @@ public class SyncClassAssessmentsUseCase {
             }
         }
 
-        return new Result(enrollments.size(), updated, created, noTeacher, failed, firstError);
+        return new Result(enrollments.size(), updated, created, noTeacher, failed, firstError, withoutSubjects,
+                Math.max(1, clazz.getTemplate().getStartsInTerm()));
     }
 }

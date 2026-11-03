@@ -65,6 +65,7 @@ public class CurriculumService {
     private final GetTeacherProgressDetailUseCase getTeacherProgressDetailUseCase;
     private final GetChildCurriculumUseCase getChildCurriculumUseCase;
     private final UpdateSchemeStateUseCase updateSchemeStateUseCase;
+    private final SectionScopeService sectionScopeService;
 
     public List<ChildSchemeOfWorkDTO> getChildCurriculum(String schoolId, String parentUserId, String studentId, String termId) {
         return getChildCurriculumUseCase.execute(schoolId, parentUserId, studentId, blankToNull(termId));
@@ -76,7 +77,9 @@ public class CurriculumService {
 
     public Page<SchemeOfWorkDTO> searchScheme(int page, int size, String school, String subjectId, String sessionId, String termId, String progress) {
         Pageable pageable = PageableMapper.toPage(page, size);
-        var schemes = repo.search(school, blankToNull(subjectId), blankToNull(sessionId), blankToNull(termId), parseProgress(progress), pageable);
+        // Section-limited staff see only their sections' classes.
+        var schemes = repo.search(school, blankToNull(subjectId), blankToNull(sessionId), blankToNull(termId),
+                parseProgress(progress), sectionScopeService.levels(), pageable);
         return mapWithProgress(schemes);
     }
 

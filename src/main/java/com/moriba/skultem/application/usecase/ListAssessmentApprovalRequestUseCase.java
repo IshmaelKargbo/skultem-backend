@@ -71,28 +71,48 @@ public class ListAssessmentApprovalRequestUseCase {
         // school without first having to know which teacher/class to check.
         public Page<AssessmentApprovalRequestDTO> executeForSchool(String schoolId, String status, String query,
                         String classSessionId, String academicYearId, int page, int size) {
+                return executeForSchool(schoolId, status, query, classSessionId, academicYearId, null, page, size);
+        }
+
+        // approver (CLASS_MASTER / ADMIN / EXAM_OFFICER, or null for everyone): only classes whose grades go to
+        // that approver - e.g. the exam officer's own queue.
+        public Page<AssessmentApprovalRequestDTO> executeForSchool(String schoolId, String status, String query,
+                        String classSessionId, String academicYearId, String approver, int page, int size) {
                 var academicYear = resolveAcademicYearUseCase.execute(schoolId, academicYearId);
                 AssessmentApprovalRequest.Status parsedStatus = parseStatus(status);
                 Pageable pageable = createPageable(page, size);
 
+                var levels = levelsFor(schoolId, approver);
+                if (levels.isEmpty()) {
+                        return Page.empty(pageable);
+                }
+
                 Page<AssessmentApprovalRequest> requests = requestRepo.findAllBySchool(schoolId,
                                 academicYear.getId(), parsedStatus, normalizeQuery(query), normalizeQuery(classSessionId),
-                                sectionScopeService.levels(), pageable);
+                                levels, pageable);
 
                 var approverFor = approverFor(schoolId);
                 return requests.map(r -> toDTO(r, approverFor));
         }
 
         public AssessmentApprovalSummaryDTO summaryForSchool(String schoolId) {
+                return summaryForSchool(schoolId, null);
+        }
+
+        public AssessmentApprovalSummaryDTO summaryForSchool(String schoolId, String approver) {
                 var academicYear = academicYearRepo.findActiveBySchool(schoolId)
                                 .orElseThrow(() -> new NotFoundException("Active academic year not found"));
 
+                var levels = levelsFor(schoolId, approver);
+                if (levels.isEmpty()) {
+                        return new AssessmentApprovalSummaryDTO(0, 0, 0);
+                }
                 long pending = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.PENDING_REVIEW, sectionScopeService.levels());
+                                AssessmentApprovalRequest.Status.PENDING_REVIEW, levels);
                 long approved = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.APPROVED, sectionScopeService.levels());
+                                AssessmentApprovalRequest.Status.APPROVED, levels);
                 long returned = requestRepo.countBySchoolAndStatus(schoolId, academicYear.getId(),
-                                AssessmentApprovalRequest.Status.RETURNED, sectionScopeService.levels());
+                                AssessmentApprovalRequest.Status.RETURNED, levels);
 
                 return new AssessmentApprovalSummaryDTO(pending, approved, returned);
         }
@@ -145,6 +165,25 @@ public class ListAssessmentApprovalRequestUseCase {
 
                 var approverFor = approverFor(schoolId);
                 return requests.map(r -> toDTO(r, approverFor));
+        }
+
+        // The caller's section levels, narrowed to the levels routed to one approver when asked.
+        private java.util.Collection<com.moriba.skultem.domain.vo.Level> levelsFor(String schoolId, String approver) {
+                var scope = sectionScopeService.levels();
+                if (approver == null || approver.isBlank()) {
+                        return scope;
+                }
+                com.moriba.skultem.domain.vo.GradeApprover wanted;
+                try {
+                        wanted = com.moriba.skultem.domain.vo.GradeApprover.valueOf(approver.trim().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                        throw new com.moriba.skultem.application.error.RuleException(
+                                        "Approver must be CLASS_MASTER, ADMIN or EXAM_OFFICER");
+                }
+                var school = schoolRepo.findById(schoolId)
+                                .orElseThrow(() -> new NotFoundException("School not found"));
+                var routed = gradeApprovalResolver.levelsRoutedTo(school, wanted);
+                return scope.stream().filter(routed::contains).toList();
         }
 
         private AssessmentApprovalRequest.Status parseStatus(String status) {
@@ -244,7 +283,7 @@ public class ListAssessmentApprovalRequestUseCase {
                                 r.getCycle().getTerm().getId(),
                                 // An admin reviews when the class master taught the subject themselves, or when
                                 // grades here are approved by an admin rather than the class master.
-                                approver == com.moriba.skultem.domain.vo.GradeApprover.ADMIN || r.isSelfReview(),
+                                approver != com.moriba.skultem.domain.vo.GradeApprover.CLASS_MASTER || r.isSelfReview(),
                                 approver.name());
         }
 

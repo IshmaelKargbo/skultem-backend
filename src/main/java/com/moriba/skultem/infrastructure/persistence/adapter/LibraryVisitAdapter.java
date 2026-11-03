@@ -49,7 +49,7 @@ public class LibraryVisitAdapter implements LibraryVisitRepository {
 
     @Override
     public Page<LibraryVisit> search(String schoolId, Instant from, Instant to, String studentId, String query,
-            Filter filter, Instant now, Pageable pageable) {
+            Filter filter, Instant now, java.util.Collection<String> studentIds, Pageable pageable) {
         List<Status> statuses = List.of(Status.OPEN, Status.CHECKED_OUT, Status.RESOLVED);
         Instant endsBy = LATEST;
 
@@ -66,7 +66,8 @@ public class LibraryVisitAdapter implements LibraryVisitRepository {
         }
 
         return repo.search(schoolId, statuses, from == null ? EARLIEST : from, to == null ? LATEST : to, endsBy,
-                studentId == null ? "" : studentId, query == null ? "" : query, pageable)
+                studentId == null ? "" : studentId, query == null ? "" : query, studentIds == null,
+                studentIds == null || studentIds.isEmpty() ? List.of("-") : studentIds, pageable)
                 .map(LibraryAttendanceMapper::toDomain);
     }
 

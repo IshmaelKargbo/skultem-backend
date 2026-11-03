@@ -51,7 +51,11 @@ public class ProvisionStudentAssessmentsUseCase {
 
     // created: how many student/term/subject assessment sets were made. subjectsWithoutTeacher: subjects
     // that could not be provisioned yet because no teacher is assigned to them in the class.
-    public record Result(int created, java.util.Set<String> subjectsWithoutTeacher) {
+    // noSubjects: the student has no subjects to assess (none chosen, none on their stream, none on the class).
+    public record Result(int created, java.util.Set<String> subjectsWithoutTeacher, boolean noSubjects) {
+        public Result(int created, java.util.Set<String> subjectsWithoutTeacher) {
+            this(created, subjectsWithoutTeacher, false);
+        }
     }
 
     public Result execute(Enrollment enrollment) {
@@ -91,6 +95,9 @@ public class ProvisionStudentAssessmentsUseCase {
 
         List<Term> terms = resolveTerms(enrollment);
         List<Subject> subjects = resolveSubjects(enrollment);
+        if (subjects.isEmpty()) {
+            return new Result(0, withoutTeacher, true);
+        }
 
         List<StudentAssessment> studentAssessmentsToSave = new ArrayList<>();
         List<AssessmentScore> scoresToSave = new ArrayList<>();

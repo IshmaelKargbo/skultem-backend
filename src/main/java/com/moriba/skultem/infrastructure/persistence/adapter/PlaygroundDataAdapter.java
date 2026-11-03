@@ -3,6 +3,8 @@ package com.moriba.skultem.infrastructure.persistence.adapter;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.ASSESSMENTS;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.ATTENDANCE;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.BEHAVIOUR;
+import static com.moriba.skultem.domain.model.PlaygroundDataCategory.HEALTH_CARE;
+import static com.moriba.skultem.domain.model.PlaygroundDataCategory.LIBRARY;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.CLASS_SETUP;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.COMMUNICATION;
 import static com.moriba.skultem.domain.model.PlaygroundDataCategory.EXPENSES;
@@ -64,6 +66,13 @@ public class PlaygroundDataAdapter implements PlaygroundDataRepository {
         result.put(MATERIALS, counts(schoolId,
                 "Sales", "SELECT count(*) FROM material_sales WHERE school_id = :schoolId",
                 "Issues", "SELECT count(*) FROM supplies WHERE school_id = :schoolId"));
+        result.put(LIBRARY, counts(schoolId,
+                "Book loans", "SELECT count(*) FROM library_loans WHERE school_id = :schoolId",
+                "Library visits", "SELECT count(*) FROM library_visits WHERE school_id = :schoolId",
+                "Class library sessions", "SELECT count(*) FROM library_sessions WHERE school_id = :schoolId"));
+        result.put(HEALTH_CARE, counts(schoolId,
+                "Sick bay visits", "SELECT count(*) FROM health_care_visits WHERE school_id = :schoolId",
+                "Turned away", "SELECT count(*) FROM health_care_turned_away WHERE school_id = :schoolId"));
         result.put(EXPENSES, counts(schoolId,
                 "Expenses", "SELECT count(*) FROM expenses WHERE school_id = :schoolId"));
         result.put(PAYROLL, counts(schoolId,
@@ -132,6 +141,26 @@ public class PlaygroundDataAdapter implements PlaygroundDataRepository {
         if (categories.contains(EXPENSES)) {
             exec(schoolId, "DELETE FROM expenses WHERE school_id = :schoolId");
             exec(schoolId, "DELETE FROM transactions WHERE school_id = :schoolId AND reference_type = 'EXPENSE'");
+        }
+
+        if (categories.contains(LIBRARY)) {
+            // Session children first (they point at library_sessions), then sessions, visits and loans.
+            exec(schoolId, "DELETE FROM library_attendance_corrections WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM library_roster_changes WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM library_session_records WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM library_sessions WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM library_visits WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM library_loans WHERE school_id = :schoolId");
+            // With every loan gone, every copy is back on the shelf.
+            exec(schoolId, "UPDATE library_books SET available_copies = total_copies, updated_at = now()"
+                    + " WHERE school_id = :schoolId");
+        }
+
+        if (categories.contains(HEALTH_CARE)) {
+            // A visit can continue an earlier one (continues_visit_id) - break those links first.
+            exec(schoolId, "UPDATE health_care_visits SET continues_visit_id = NULL WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM health_care_visits WHERE school_id = :schoolId");
+            exec(schoolId, "DELETE FROM health_care_turned_away WHERE school_id = :schoolId");
         }
 
         if (categories.contains(BEHAVIOUR)) {

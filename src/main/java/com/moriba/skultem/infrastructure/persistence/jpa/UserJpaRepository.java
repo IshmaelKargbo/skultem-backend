@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.moriba.skultem.domain.model.SchoolUser;
 import com.moriba.skultem.domain.vo.Role;
 import com.moriba.skultem.infrastructure.persistence.entity.UserEntity;
 
@@ -39,14 +40,33 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, String> {
     // "order by createdAt" would sort by school_users.created_at while only users.* is selected,
     // which fails outright under SELECT DISTINCT (Postgres requires ORDER BY expressions to
     // appear in the select list). Callers should pass an unsorted Pageable for this method.
+    //
+    // The filters run here (not on the loaded page) so a search finds users on every page.
+    // :query is lower-cased by the caller; '' means no text filter. anyRole/role and status
+    // ('' / 'ACTIVE' / 'INACTIVE') mirror the list's filter drawer. A user counts as ACTIVE
+    // if any of their memberships at the school is ACTIVE - same rule as ListUserBySchoolUseCase.
     @Query("""
                 select distinct su.user
                 from SchoolUserEntity su
                 where su.schoolId = :schoolId
                 and su.role <> :excludedRole
+                and (:query = ''
+                     or lower(concat(su.user.givenName, ' ', su.user.familyName)) like concat('%', :query, '%')
+                     or lower(su.user.email) like concat('%', :query, '%'))
+                and (:anyRole = true or exists (
+                     select 1 from SchoolUserEntity r
+                     where r.user = su.user and r.schoolId = :schoolId and r.role = :role))
+                and (:status = ''
+                     or (:status = 'ACTIVE' and exists (
+                         select 1 from SchoolUserEntity a
+                         where a.user = su.user and a.schoolId = :schoolId and a.status = :activeStatus))
+                     or (:status = 'INACTIVE' and not exists (
+                         select 1 from SchoolUserEntity a
+                         where a.user = su.user and a.schoolId = :schoolId and a.status = :activeStatus)))
                 order by su.user.createdAt desc
             """)
-    Page<UserEntity> findAllBySchoolId(String schoolId, Role excludedRole, Pageable pageable);
+    Page<UserEntity> findAllBySchoolId(String schoolId, Role excludedRole, String query, boolean anyRole,
+            Role role, String status, SchoolUser.Status activeStatus, Pageable pageable);
 
     @Query("""
                 select u from UserEntity u

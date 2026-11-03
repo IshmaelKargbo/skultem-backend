@@ -71,7 +71,7 @@ public class ReportCardController {
     @SectionScoped
     // A class master has to name one of their own classes; management can list across the school.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)")
     public ApiResponse<List<ReportCardSummaryDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -99,7 +99,7 @@ public class ReportCardController {
     // by guessing/enumerating a studentId.
     @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<ReportCardSummaryDTO>> byStudent(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId) {
@@ -118,8 +118,9 @@ public class ReportCardController {
         return new ApiResponse<>("success", 200, "Assessments fetched successfully", res);
     }
 
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/stats")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<ReportCardStatsDTO> stats(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardStatsUseCase.execute(school);

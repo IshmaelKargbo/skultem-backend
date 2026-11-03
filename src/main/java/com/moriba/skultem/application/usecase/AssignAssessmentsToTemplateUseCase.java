@@ -28,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 public class AssignAssessmentsToTemplateUseCase {
     private final AssessmentTemplateRepository templateRepo;
     private final AssessmentRepository assessmentRepo;
+    private final com.moriba.skultem.domain.repository.TemplateMaintenanceRepository maintenance;
+    private final SyncClassAssessmentsUseCase syncClassAssessmentsUseCase;
 
     @AuditLogAnnotation(action = "ASSIGNED_ASSESSMENT_TO_TEMPLATE")
     public AssessmentTemplateDTO execute(String schoolId, String templateId, List<AssessmentInput> assignments) {
@@ -42,6 +44,15 @@ public class AssignAssessmentsToTemplateUseCase {
             throw new RuleException(overweight);
         }
 
+        // Replacing every test wholesale would orphan the tests classes already have - once a template is in use it
+        // is changed through the edit (UpdateAssessmentTemplateUseCase), which carries changes through safely.
+        if (maintenance.usage(schoolId, templateId).submittedTests() > 0
+                || !assessmentRepo.findAllByTemplateIdAndSchoolId(templateId, schoolId).isEmpty()
+                        && !maintenance.classIdsUsing(schoolId, templateId).isEmpty()) {
+            throw new RuleException("Classes already use this template. Edit the template instead so their tests "
+                    + "are updated too.");
+        }
+
         assessmentRepo.deleteAllByTemplateIdAndSchoolId(templateId, schoolId);
 
         List<Assessment> records = new ArrayList<>();
@@ -53,6 +64,15 @@ public class AssignAssessmentsToTemplateUseCase {
         }
 
         assessmentRepo.saveAll(records);
+
+        // Classes given this template before it had any tests have no assessments yet - create them now.
+        for (var classId : maintenance.classIdsUsing(schoolId, templateId)) {
+            try {
+                syncClassAssessmentsUseCase.execute(schoolId, classId);
+            } catch (RuleException | NotFoundException e) {
+                // e.g. no active year yet - the class's own sync (or enrolment) will create them later.
+            }
+        }
 
         var list = records.stream().map(AssessmentMapper::toDTO).toList();
         return AssessmentTemplateMapper.toDTO(template, list);

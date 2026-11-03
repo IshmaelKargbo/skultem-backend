@@ -44,7 +44,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AcademicReportController {
 
-    private static final String MANAGEMENT_ROLES = "'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PROPRIETOR', 'PRINCIPAL'";
+    private static final String MANAGEMENT_ROLES = "'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PROPRIETOR', 'PRINCIPAL', 'EXAM_OFFICER'";
 
     private final GetClassAcademicPerformanceUseCase getClassAcademicPerformanceUseCase;
     private final GetStudentPerformanceTrendUseCase getStudentPerformanceTrendUseCase;

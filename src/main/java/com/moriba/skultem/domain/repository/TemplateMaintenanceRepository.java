@@ -30,4 +30,12 @@ public interface TemplateMaintenanceRepository {
     // Removes an assessment's tests, scores, CA entries and approval requests in the given term numbers (the test was
     // taken out of those terms). The assessment itself stays.
     void deleteAssessmentInTerms(String assessmentId, java.util.Collection<Integer> termNumbers);
+
+    // Removes every test, student assessment, score, CA entry and approval request of a class in one academic
+    // year - used when the class switches template before grading has started, so the new template's tests
+    // replace the old ones. Returns how many student assessments went.
+    int deleteClassAssessments(String classId, String academicYearId);
+
+    // Classes currently using the template (active ones), by id.
+    java.util.List<String> classIdsUsing(String schoolId, String templateId);
 }

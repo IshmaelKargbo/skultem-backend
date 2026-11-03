@@ -100,6 +100,12 @@ public class AssessmentScoreAdapter implements AssessmentScoreRepository {
     }
 
     @Override
+    public boolean existsGradeActivityByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
+            String schoolId) {
+        return repo.hasGradeActivityByClassAndYear(classId, academicYearId, schoolId, STARTED);
+    }
+
+    @Override
     public boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId,
             String schoolId) {
         return repo.hasGradeActivityByClassAndSubject(classId, subjectId, schoolId, STARTED);

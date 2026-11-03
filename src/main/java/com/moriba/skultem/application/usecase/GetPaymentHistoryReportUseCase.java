@@ -31,6 +31,10 @@ import lombok.RequiredArgsConstructor;
 public class GetPaymentHistoryReportUseCase {
 
     private final PaymentRepository paymentRepo;
+
+    // Section-limited staff see only their sections' students' payments.
+
+    private final com.moriba.skultem.application.services.SectionStudentScope studentScope;
     private final ClassSessionRepository classSessionRepo;
     private final EnrollmentRepository enrollmentRepo;
     private final UserRepository userRepo;
@@ -56,7 +60,7 @@ public class GetPaymentHistoryReportUseCase {
         Pageable pageable = size > 0 ? PageRequest.of(page, size, sort) : Pageable.unpaged(sort);
 
         var payments = paymentRepo.searchSchoolPayments(schoolId, from, to, academicYearId, termId, classId,
-                sectionId, streamId, studentId, method, recordedByUserId, pageable);
+                sectionId, streamId, studentId, method, recordedByUserId, studentScope.studentIds(schoolId), pageable);
 
         Map<String, String> recorderCache = new HashMap<>();
         Map<String, String> classNameCache = new HashMap<>();

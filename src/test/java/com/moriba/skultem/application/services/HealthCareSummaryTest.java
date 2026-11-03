@@ -33,8 +33,18 @@ class HealthCareSummaryTest {
     private HealthCareVisitRepository visitRepo;
     @Mock
     private HealthCareTurnedAwayRepository turnedAwayRepo;
+    // Whole-school caller: every visit is in scope.
+    @Mock
+    private SectionStudentScope studentScope;
+
     @InjectMocks
     private HealthCareService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void everyStudentInScope() {
+        org.mockito.Mockito.when(studentScope.filter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.any())).thenAnswer(inv -> inv.getArgument(1));
+    }
 
     private static HealthCareVisit visit(String student, String cls, String arrived, Outcome outcome, int minutes,
             boolean urgent) {

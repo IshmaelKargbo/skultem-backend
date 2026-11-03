@@ -39,7 +39,8 @@ class UpdateAssessmentTemplateUseCaseTest {
     private final StudentAssessmentRepository studentAssessmentRepo = mock(StudentAssessmentRepository.class);
     private final TemplateMaintenanceRepository maintenance = mock(TemplateMaintenanceRepository.class);
     private final UpdateAssessmentTemplateUseCase useCase = new UpdateAssessmentTemplateUseCase(templateRepo,
-            assessmentRepo, scoreRepo, cycleRepo, studentAssessmentRepo, maintenance);
+            assessmentRepo, scoreRepo, cycleRepo, studentAssessmentRepo, maintenance,
+            mock(SyncClassAssessmentsUseCase.class));
 
     private AssessmentTemplate template;
     private Assessment test1;

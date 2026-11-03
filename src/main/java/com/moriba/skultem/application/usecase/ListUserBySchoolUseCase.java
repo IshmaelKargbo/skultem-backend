@@ -26,11 +26,15 @@ public class ListUserBySchoolUseCase {
     private final SchoolUserRepository schoolUserRepo;
 
     public Page<UserDTO> execute(String school, int page, int size) {
+        return execute(school, null, null, null, page, size);
+    }
+
+    public Page<UserDTO> execute(String school, String query, Role role, String status, int page, int size) {
         // Unsorted - findAllBySchoolId bakes its own ORDER BY into the query itself. See that
         // method for why an externally-supplied Sort can't be used here.
         Pageable pageable = size > 0 ? PageRequest.of(page, size) : Pageable.unpaged();
 
-        return repo.findBySchool(school, pageable)
+        return repo.findBySchool(school, query, role, status, pageable)
                 .map(user -> {
                     var memberships = schoolUserRepo.findAllByUser_IdAndSchoolId(user.getId(), school);
                     List<Role> roles = memberships.stream().map(e -> e.getRole()).toList();

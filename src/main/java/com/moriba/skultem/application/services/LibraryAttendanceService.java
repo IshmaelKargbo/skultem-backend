@@ -67,6 +67,8 @@ public class LibraryAttendanceService {
     }
 
     private final LibraryVisitRepository visitRepo;
+    // Section-limited staff see only their sections' students and classes (the librarian sees everything).
+    private final SectionStudentScope studentScope;
     private final LibrarySessionRepository sessionRepo;
     private final LibrarySessionRecordRepository recordRepo;
     private final LibraryRosterChangeRepository changeRepo;
@@ -92,7 +94,7 @@ public class LibraryAttendanceService {
         Instant now = support.now();
         LocalDate today = support.today();
         long visitsToday = visitRepo.search(schoolId, startOf(today), startOf(today.plusDays(1)), null, null,
-                Filter.ALL, now, PageRequest.of(0, 1)).getTotalElements();
+                Filter.ALL, now, studentScope.studentIds(schoolId), PageRequest.of(0, 1)).getTotalElements();
 
         var todayRows = sessionRows(schoolId, today, today);
         int sessionsToday = (int) todayRows.stream().filter(r -> !"CANCELLED".equals(r.status())).count();
@@ -136,7 +138,7 @@ public class LibraryAttendanceService {
         Instant now = support.now();
         return visitRepo.search(schoolId, from == null ? null : startOf(from),
                 to == null ? null : startOf(to.plusDays(1)), blankToNull(studentId), trim(search), filter, now,
-                pageable(page, size))
+                studentScope.studentIds(schoolId), pageable(page, size))
                 .map(v -> LibraryAttendanceDtoMapper.toDTO(v, now));
     }
 
@@ -147,6 +149,10 @@ public class LibraryAttendanceService {
             SessionFilter filter) {
         requireRange(from, to);
         var rows = sessionRows(schoolId, from, to).stream();
+        var allowedClasses = studentScope.classSessionIds(schoolId);
+        if (allowedClasses != null) {
+            rows = rows.filter(r -> allowedClasses.contains(r.classSessionId()));
+        }
         if (classSessionId != null && !classSessionId.isBlank()) {
             rows = rows.filter(r -> classSessionId.equals(r.classSessionId()));
         }
@@ -160,7 +166,9 @@ public class LibraryAttendanceService {
 
     @Transactional(readOnly = true)
     public LibrarySessionDetailDTO session(String schoolId, String sessionId) {
+        var allowedClasses = studentScope.classSessionIds(schoolId);
         var session = sessionRepo.findByIdAndSchool(sessionId, schoolId)
+                .filter(s -> allowedClasses == null || allowedClasses.contains(s.getClassSessionId()))
                 .orElseThrow(() -> new NotFoundException("Library session not found"));
         return LibraryAttendanceDtoMapper.toDetail(session, recordRepo.findBySession(sessionId, schoolId),
                 changeRepo.findBySession(sessionId, schoolId), correctionRepo.findBySession(sessionId, schoolId),
@@ -213,9 +221,10 @@ public class LibraryAttendanceService {
     @Transactional(readOnly = true)
     public LibraryStudentHistoryDTO studentHistory(String schoolId, String studentId) {
         var student = studentRepo.findByIdAndSchoolId(studentId, schoolId)
+                .filter(s -> studentScope.allows(schoolId, s.getId()))
                 .orElseThrow(() -> new NotFoundException("Student not found"));
         Instant now = support.now();
-        var visits = visitRepo.search(schoolId, null, null, studentId, "", Filter.ALL, now, Pageable.unpaged())
+        var visits = visitRepo.search(schoolId, null, null, studentId, "", Filter.ALL, now, null, Pageable.unpaged())
                 .map(v -> LibraryAttendanceDtoMapper.toDTO(v, now)).getContent();
 
         var records = recordRepo.findByStudent(studentId, schoolId).stream()

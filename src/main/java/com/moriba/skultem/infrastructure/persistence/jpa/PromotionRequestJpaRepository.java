@@ -16,10 +16,12 @@ public interface PromotionRequestJpaRepository extends JpaRepository<PromotionRe
     Optional<PromotionRequestEntity> findFirstBySession_IdAndAcademicYear_IdAndSchoolIdAndStatusInOrderByCreatedAtDesc(
             String sessionId, String academicYearId, String schoolId, List<PromotionRequest.Status> statuses);
 
-    Page<PromotionRequestEntity> findBySchoolIdAndStatusOrderByCreatedAtDesc(String schoolId,
-            PromotionRequest.Status status, Pageable pageable);
+    // levels: the caller's management-section levels (every level for whole-school staff).
+    Page<PromotionRequestEntity> findBySchoolIdAndStatusAndSession_Clazz_LevelInOrderByCreatedAtDesc(String schoolId,
+            PromotionRequest.Status status, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
-    Page<PromotionRequestEntity> findBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
+    Page<PromotionRequestEntity> findBySchoolIdAndSession_Clazz_LevelInOrderByCreatedAtDesc(String schoolId,
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     Page<PromotionRequestEntity> findByMaster_Teacher_IdAndSchoolIdOrderByCreatedAtDesc(String teacherId,
             String schoolId, Pageable pageable);

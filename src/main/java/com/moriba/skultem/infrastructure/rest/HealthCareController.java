@@ -65,6 +65,9 @@ import lombok.RequiredArgsConstructor;
  * SUPER_ADMIN passes any gate naming NURSE (PermissionService.SUPER_ADMIN_COVERS).
  */
 @RequiresModule(FeatureModule.HEALTH_CARE)
+// The sick bay serves the whole school; a section-limited principal sees only their sections' students
+// (HealthCareService filters by student, and the visit actions check the visit's student).
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/health-care")
 @RequiredArgsConstructor
@@ -197,7 +200,7 @@ public class HealthCareController {
     }
 
     @PostMapping("/visits/{id}/follow-up")
-    @PreAuthorize(VIEW)
+    @PreAuthorize(VIEW + " and @sectionScope.healthVisit(#school, #id)")
     public ApiResponse<HealthCareVisitDTO> followUp(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -207,7 +210,7 @@ public class HealthCareController {
     }
 
     @PostMapping("/visits/{id}/notes")
-    @PreAuthorize(VIEW)
+    @PreAuthorize(VIEW + " and @sectionScope.healthVisit(#school, #id)")
     public ApiResponse<HealthCareVisitDTO> addNote(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -217,7 +220,7 @@ public class HealthCareController {
     }
 
     @PostMapping("/visits/{id}/void")
-    @PreAuthorize(VIEW)
+    @PreAuthorize(VIEW + " and @sectionScope.healthVisit(#school, #id)")
     public ApiResponse<HealthCareVisitDTO> voidVisit(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,

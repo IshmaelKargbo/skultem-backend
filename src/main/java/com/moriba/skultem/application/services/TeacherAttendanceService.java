@@ -67,9 +67,13 @@ public class TeacherAttendanceService {
     public MyAttendanceTodayDTO myTodayStatus(String schoolId, String userId) {
         // Scoped by school - an unscoped findByUserId throws NonUniqueResultException for a
         // teacher who works at more than one school.
-        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
-                .orElseThrow(() -> new NotFoundException(
-                        "You're not on this school's staff/payroll records yet - ask an admin to add you in Users > your account > Payroll"));
+        // Not on the staff/payroll records (or deactivated): no clock-in for them - say so instead of failing.
+        var found = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
+                .filter(t -> t.getStatus() == com.moriba.skultem.domain.model.Teacher.Status.ACTIVE);
+        if (found.isEmpty()) {
+            return MyAttendanceTodayDTO.notOnPayroll();
+        }
+        var teacher = found.get();
 
         var existing = attendanceRepo.findByTeacherIdAndSchoolIdAndDate(teacher.getId(), schoolId,
                 LocalDate.now(SchoolTimeZone.ZONE));

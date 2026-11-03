@@ -71,6 +71,19 @@ public interface AssessmentScoreJpaRepository
                         @Param("subjectId") String subjectId, @Param("schoolId") String schoolId,
                         @Param("started") java.util.Collection<ClassSubjectAssessmentLifeCycle.Status> started);
 
+        // Same as hasGradeActivityByClass, but only this academic year - last year's marks don't stop the class
+        // changing its template this year.
+        @Query("""
+                        select count(s) > 0 from AssessmentScoreEntity s
+                        where s.schoolId = :schoolId
+                          and s.studentAssessment.enrollment.clazz.id = :classId
+                          and s.studentAssessment.enrollment.academicYear.id = :academicYearId
+                          and (s.score > 0 or s.gradedByUserId is not null or s.cycle.status in :started)
+                        """)
+        boolean hasGradeActivityByClassAndYear(@Param("classId") String classId,
+                        @Param("academicYearId") String academicYearId, @Param("schoolId") String schoolId,
+                        @Param("started") java.util.Collection<ClassSubjectAssessmentLifeCycle.Status> started);
+
         @Query("""
                         select count(s) > 0 from AssessmentScoreEntity s
                         where s.schoolId = :schoolId

@@ -50,7 +50,7 @@ public class UpdateSchoolUseCase {
         try {
             return com.moriba.skultem.domain.vo.GradeApprover.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new com.moriba.skultem.application.error.RuleException("Grade approver must be CLASS_MASTER or ADMIN");
+            throw new com.moriba.skultem.application.error.RuleException("Grade approver must be CLASS_MASTER, ADMIN or EXAM_OFFICER");
         }
     }
 }

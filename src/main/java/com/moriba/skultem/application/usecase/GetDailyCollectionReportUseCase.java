@@ -21,6 +21,10 @@ public class GetDailyCollectionReportUseCase {
 
     private final PaymentRepository paymentRepo;
 
+    // Section-limited staff see only their sections' students' payments.
+
+    private final com.moriba.skultem.application.services.SectionStudentScope studentScope;
+
     public DailyCollectionReportDTO execute(String schoolId, LocalDate from, LocalDate to) {
         LocalDate resolvedFrom = from != null ? from : LocalDate.now();
         LocalDate resolvedTo = to != null ? to : resolvedFrom;
@@ -28,7 +32,8 @@ public class GetDailyCollectionReportUseCase {
         Instant start = resolvedFrom.atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant end = resolvedTo.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        var byMethod = paymentRepo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end);
+        var byMethod = paymentRepo.sumSchoolPaymentsByMethodAndDateRange(schoolId, start, end,
+                studentScope.studentIds(schoolId));
         var totals = PaymentMethodRowMapper.totals(byMethod);
         var methodRows = PaymentMethodRowMapper.toRows(byMethod, totals.amount());
 

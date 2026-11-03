@@ -34,6 +34,10 @@ public interface AssessmentScoreRepository {
 
     boolean existsGradeActivityByClassIdAndSchoolId(String classId, String schoolId);
 
+    // Grading started in this class this academic year (marks entered, or a test past open-for-entry).
+    boolean existsGradeActivityByClassIdAndAcademicYearIdAndSchoolId(String classId, String academicYearId,
+            String schoolId);
+
     boolean existsGradeActivityByClassIdAndSubjectIdAndSchoolId(String classId, String subjectId, String schoolId);
 
     /**

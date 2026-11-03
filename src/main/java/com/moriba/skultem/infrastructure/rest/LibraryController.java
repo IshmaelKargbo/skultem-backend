@@ -38,6 +38,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.LIBRARY)
+// The school library is shared by every section.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/library")
 @RequiredArgsConstructor

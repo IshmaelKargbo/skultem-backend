@@ -18,12 +18,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListAttendanceBySchoolUseCase {
     private final AttendanceRepository repo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public Page<AttendanceDTO> execute(String schoolId, int page, int size) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
             pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         }
-        return repo.findBySchoolId(schoolId, pageable).map(AttendanceMapper::toDTO);
+        return repo.findBySchoolId(schoolId, sectionScopeService.levels(), pageable).map(AttendanceMapper::toDTO);
     }
 }

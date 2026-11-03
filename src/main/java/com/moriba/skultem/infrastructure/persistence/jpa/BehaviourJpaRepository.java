@@ -22,15 +22,18 @@ public interface BehaviourJpaRepository extends JpaRepository<BehaviourEntity, S
           WHERE e.academicYear.id = :yearId
             AND e.schoolId = :schoolId
             AND (NULLIF(:classId, '') IS NULL OR e.clazz.id = :classId)
+            AND e.clazz.level IN :levels
           GROUP BY b.kind
       """)
   List<KindCount> countByKindForClassOrAll(@Param("yearId") String academicYearId,
       @Param("schoolId") String schoolId,
-      @Param("classId") String classId);
+      @Param("classId") String classId,
+      @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 
-  Page<BehaviourEntity> findAllByEnrollment_AcademicYear_IdAndSchoolIdOrderByCreatedAtAsc(String academicYearId,
-      String schoolId, Pageable pageable);
+  // levels: the caller's management-section levels (every level for whole-school staff).
+  Page<BehaviourEntity> findAllByEnrollment_AcademicYear_IdAndSchoolIdAndEnrollment_Clazz_LevelInOrderByCreatedAtAsc(
+      String academicYearId, String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
-  Page<BehaviourEntity> findAllByEnrollment_AcademicYear_IdAndEnrollment_Clazz_IdAndSchoolIdOrderByCreatedAtAsc(
-      String academicYearId, String classId, String schoolId, Pageable pageable);
+  Page<BehaviourEntity> findAllByEnrollment_AcademicYear_IdAndEnrollment_Clazz_IdAndSchoolIdAndEnrollment_Clazz_LevelInOrderByCreatedAtAsc(
+      String academicYearId, String classId, String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 }

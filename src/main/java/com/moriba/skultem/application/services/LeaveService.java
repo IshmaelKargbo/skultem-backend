@@ -38,7 +38,7 @@ public class LeaveService {
     public LeaveRequestDTO createForMe(String schoolId, String userId, LeaveRequest.Type type, LocalDate startDate,
             LocalDate endDate, String reason) {
         var teacher = teacherRepo.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("Teacher profile not found for this account"));
+                .orElseThrow(() -> new NotFoundException("No staff record for this account yet - ask the school office to add you to staff"));
 
         return createLeaveRequestUseCase.execute(schoolId, teacher.getId(), type, startDate, endDate, reason);
     }
@@ -58,7 +58,7 @@ public class LeaveService {
 
     public Page<LeaveRequestDTO> listMine(String schoolId, String userId, int page, int size) {
         var teacher = teacherRepo.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("Teacher profile not found for this account"));
+                .orElseThrow(() -> new NotFoundException("No staff record for this account yet - ask the school office to add you to staff"));
 
         Pageable pageable = size > 0 ? PageRequest.of(page - 1, size) : Pageable.unpaged();
         return repo.findAllByTeacherIdAndSchoolId(teacher.getId(), schoolId, pageable).map(LeaveRequestMapper::toDTO);

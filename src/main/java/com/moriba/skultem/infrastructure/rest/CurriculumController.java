@@ -42,6 +42,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.CURRICULUM)
+// Schemes of work follow the caller's management sections (CurriculumService.searchScheme, teacher progress).
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/curriculum")
 @RequiredArgsConstructor

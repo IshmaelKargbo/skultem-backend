@@ -45,7 +45,9 @@ public record AssessmentScoreDTO(String id, String name, String assessment, Stri
                         java.util.List<Integer> lockedWeeks,
                         // Named, weighted CA parts (recording n is part n) and the formal part's name - both empty/null
                         // when the CA is plain equal recordings.
-                        java.util.List<Component> caComponents, String formalLabel) {
+                        java.util.List<Component> caComponents, String formalLabel,
+                        // Recordings an administrator unlocked after they were locked (changed after closing).
+                        java.util.List<Integer> unlockedWeeks) {
         }
 
         public record Component(String name, int weight, String source) {

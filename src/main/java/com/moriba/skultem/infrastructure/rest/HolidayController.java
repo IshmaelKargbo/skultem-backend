@@ -30,6 +30,8 @@ import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+// Holidays apply to the whole school.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/holiday")
 @RequiredArgsConstructor
@@ -91,7 +93,7 @@ public class HolidayController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {

@@ -75,6 +75,8 @@ public class HealthCareService {
     private final AcademicYearRepository academicYearRepo;
     private final TermRepository termRepo;
     private final HealthCareSupport support;
+    // A principal limited to a section sees only that section's students' visits (the nurse sees all of them).
+    private final SectionStudentScope studentScope;
 
     public HealthCareSettingDTO settings(String schoolId) {
         var saved = settingRepo.findBySchool(schoolId);
@@ -84,12 +86,14 @@ public class HealthCareService {
     public Overview overview(String schoolId) {
         var setting = support.settings(schoolId);
         Instant now = support.now();
-        var open = visitRepo.findOpen(schoolId).stream().map(v -> HealthCareDtoMapper.toDTO(v, setting, now)).toList();
+        var open = studentScope.filter(schoolId, visitRepo.findOpen(schoolId), HealthCareVisit::getStudentId).stream()
+                .map(v -> HealthCareDtoMapper.toDTO(v, setting, now)).toList();
         var today = support.today();
         Instant from = startOf(today);
         Instant to = startOf(today.plusDays(1));
-        var visits = visitRepo.findBetween(schoolId, from, to).stream().filter(v -> !v.isVoided()).toList();
-        long turnedAway = turnedAwayRepo.findBetween(schoolId, from, to).size();
+        var visits = studentScope.filter(schoolId, visitRepo.findBetween(schoolId, from, to), HealthCareVisit::getStudentId)
+                .stream().filter(v -> !v.isVoided()).toList();
+        long turnedAway = turnedAways(schoolId, from, to).size();
         var counts = new Today(visits.size(), visits.stream().filter(HealthCareVisit::isOpen).count(),
                 outcome(visits, Outcome.RETURNED_TO_CLASS), outcome(visits, Outcome.SENT_HOME),
                 outcome(visits, Outcome.REFERRED), turnedAway);
@@ -107,13 +111,15 @@ public class HealthCareService {
         Instant now = support.now();
         var search = new HealthCareVisitRepository.Search(from == null ? null : startOf(from),
                 to == null ? null : startOf(to.plusDays(1)), filter, outcome, complaint, overLimitOnly, studentId,
-                query, now);
+                query, now, studentScope.studentIds(schoolId));
         return visitRepo.search(schoolId, search, PageRequest.of(Math.max(0, page - 1), Math.min(Math.max(1, size), 100)))
                 .map(v -> HealthCareDtoMapper.toDTO(v, setting, now));
     }
 
     public HealthCareVisitDTO visit(String schoolId, String id) {
-        var visit = visitRepo.findByIdAndSchool(id, schoolId).orElseThrow(() -> new NotFoundException("Visit not found"));
+        var visit = visitRepo.findByIdAndSchool(id, schoolId)
+                .filter(v -> studentScope.allows(schoolId, v.getStudentId()))
+                .orElseThrow(() -> new NotFoundException("Visit not found"));
         return HealthCareDtoMapper.toDTO(visit, support.settings(schoolId), support.now());
     }
 
@@ -194,7 +200,8 @@ public class HealthCareService {
     public List<HealthCareVisitDTO> dailyLog(String schoolId, LocalDate date) {
         var setting = support.settings(schoolId);
         Instant now = support.now();
-        return visitRepo.findBetween(schoolId, startOf(date), startOf(date.plusDays(1))).stream()
+        return studentScope.filter(schoolId, visitRepo.findBetween(schoolId, startOf(date), startOf(date.plusDays(1))),
+                HealthCareVisit::getStudentId).stream()
                 .filter(v -> !v.isVoided())
                 .sorted(Comparator.comparing(HealthCareVisit::getArrivedAt))
                 .map(v -> HealthCareDtoMapper.toDTO(v, setting, now)).toList();
@@ -203,7 +210,7 @@ public class HealthCareService {
     public Summary summary(String schoolId, LocalDate from, LocalDate to) {
         requireRange(from, to);
         var visits = counted(schoolId, from, to);
-        long turnedAway = turnedAwayRepo.findBetween(schoolId, startOf(from), startOf(to.plusDays(1))).size();
+        long turnedAway = turnedAways(schoolId, startOf(from), startOf(to.plusDays(1))).size();
 
         Map<String, Count> byComplaint = new LinkedHashMap<>();
         for (var v : visits) {
@@ -279,13 +286,14 @@ public class HealthCareService {
         Instant now = support.now();
         var overLimit = counted(schoolId, from, to).stream().filter(v -> v.getOverLimit() != null)
                 .map(v -> HealthCareDtoMapper.toDTO(v, setting, now)).toList();
-        var turnedAway = turnedAwayRepo.findBetween(schoolId, startOf(from), startOf(to.plusDays(1))).stream()
+        var turnedAway = turnedAways(schoolId, startOf(from), startOf(to.plusDays(1))).stream()
                 .map(HealthCareDtoMapper::toDTO).toList();
         return new Limits(from, to, overLimit, turnedAway);
     }
 
     public StudentHistory studentHistory(String schoolId, String studentId) {
         var student = studentRepo.findByIdAndSchoolId(studentId, schoolId)
+                .filter(s -> studentScope.allows(schoolId, s.getId()))
                 .orElseThrow(() -> new NotFoundException("Student not found"));
         var setting = support.settings(schoolId);
         Instant now = support.now();
@@ -398,7 +406,7 @@ public class HealthCareService {
         }
 
         var visits = counted(schoolId, from, to);
-        var turnedAway = turnedAwayRepo.findBetween(schoolId, startOf(from), startOf(to.plusDays(1)));
+        var turnedAway = turnedAways(schoolId, startOf(from), startOf(to.plusDays(1)));
 
         // Each visit to the first bucket holding its date; anything else (holidays between terms) to "Outside terms".
         // Only the dated buckets: "Outside terms", added below, has no dates and takes whatever none of them hold.
@@ -513,8 +521,15 @@ public class HealthCareService {
     }
 
     private List<HealthCareVisit> counted(String schoolId, LocalDate from, LocalDate to) {
-        return visitRepo.findBetween(schoolId, startOf(from), startOf(to.plusDays(1))).stream()
+        return studentScope.filter(schoolId, visitRepo.findBetween(schoolId, startOf(from), startOf(to.plusDays(1))),
+                HealthCareVisit::getStudentId).stream()
                 .filter(v -> !v.isVoided()).toList();
+    }
+
+    // Students turned away, limited to the caller's sections like the visits.
+    private List<com.moriba.skultem.domain.model.HealthCareTurnedAway> turnedAways(String schoolId, Instant from, Instant to) {
+        return studentScope.filter(schoolId, turnedAwayRepo.findBetween(schoolId, from, to),
+                com.moriba.skultem.domain.model.HealthCareTurnedAway::getStudentId);
     }
 
     private static List<Count> sorted(java.util.Collection<Count> counts) {

@@ -34,6 +34,8 @@ public class LoadSchoolFeeRowsUseCase {
 
     private final StudentFeeRepository studentFeeRepo;
     private final PaymentRepository paymentRepo;
+    // Section-limited staff (an accountant for one section) see only their sections' classes.
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public List<SchoolFeeRowDTO> execute(String schoolId, String academicYearId, String termId) {
         var fees = studentFeeRepo.findSchoolFeeRows(schoolId, academicYearId, termId);
@@ -43,12 +45,16 @@ public class LoadSchoolFeeRowsUseCase {
             paidByStudentAndFee.put(row[0] + "|" + row[1], (BigDecimal) row[2]);
         }
 
+        var scope = sectionScopeService.current();
         List<SchoolFeeRowDTO> rows = new ArrayList<>();
         for (var studentFee : fees) {
             var fee = studentFee.getFee();
             var student = studentFee.getStudent();
             var enrollment = studentFee.getEnrollment();
             var clazz = enrollment.getClazz();
+            if (!scope.wholeSchool() && !scope.allows(clazz.getLevel())) {
+                continue;
+            }
             var section = enrollment.getSection();
             var stream = enrollment.getStream();
 

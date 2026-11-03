@@ -62,10 +62,12 @@ public interface PaymentRepository {
     List<Object[]> sumSchoolPaymentsGroupedByStudentAndFee(String schoolId, String academicYearId, String termId);
 
     /** School-fee payments in [start, end), grouped by method - row shape [method, totalAmount, count]. */
-    List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end);
+    // studentIds: only these students' payments (section-limited staff); null = everyone.
+    List<Object[]> sumSchoolPaymentsByMethodAndDateRange(String schoolId, Instant start, Instant end,
+            java.util.Collection<String> studentIds);
 
     /** The school's own payments (platform fee excluded), narrowed by whichever of these are given. */
     Page<Payment> searchSchoolPayments(String schoolId, Instant from, Instant to, String academicYearId,
             String termId, String classId, String sectionId, String streamId, String studentId,
-            PaymentMethod method, String recordedByUserId, Pageable pageable);
+            PaymentMethod method, String recordedByUserId, java.util.Collection<String> studentIds, Pageable pageable);
 }

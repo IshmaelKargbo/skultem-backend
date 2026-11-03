@@ -61,6 +61,7 @@ public class ClassSubjectAssessmentLifeCycleEntity {
     @Column(columnDefinition = "TEXT")
     private String caComponentsText;
     private String formalLabel;
+    private String caUnlockedWeeks;
 
     private Instant createdAt;
 

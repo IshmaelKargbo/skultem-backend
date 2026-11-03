@@ -28,6 +28,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.EXPENSES)
+// Expenses are the school's, not a section's - the same for every finance user.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/expense")
 @RequiredArgsConstructor

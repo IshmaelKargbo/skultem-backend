@@ -53,6 +53,8 @@ import lombok.RequiredArgsConstructor;
  * of the library.
  */
 @RequiresModule(FeatureModule.LIBRARY)
+// Library visits and sessions belong to the shared school library.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/library/attendance")
 @RequiredArgsConstructor

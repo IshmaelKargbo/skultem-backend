@@ -20,10 +20,11 @@ public interface PromotionRequestRepository {
     Optional<PromotionRequest> findOpenBySessionIdAndAcademicYearIdAndSchoolId(String sessionId,
             String academicYearId, String schoolId);
 
+    // levels: only requests for classes at these levels (the caller's management sections).
     Page<PromotionRequest> findBySchoolIdAndStatus(String schoolId, PromotionRequest.Status status,
-            Pageable pageable);
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
-    Page<PromotionRequest> findBySchoolId(String schoolId, Pageable pageable);
+    Page<PromotionRequest> findBySchoolId(String schoolId, java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Pageable pageable);
 
     Page<PromotionRequest> findByMasterTeacherIdAndSchoolId(String teacherId, String schoolId, Pageable pageable);
 

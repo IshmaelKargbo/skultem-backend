@@ -28,12 +28,18 @@ public class GetTeacherProgressUseCase {
     private final TeacherSubjectRepository teacherSubjectRepo;
     private final SchemeOfWorkRepository schemeRepo;
     private final WeekRepository weekRepo;
+    private final com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
 
     public List<TeacherProgressDTO> execute(String schoolId) {
         var teachers = teacherRepo.search("", schoolId, Pageable.unpaged()).getContent();
 
+        // Section-limited staff see the teachers who teach in their sections.
+        var scope = sectionScopeService.current();
         return teachers.stream()
                 .filter(t -> t.getStatus() == Teacher.Status.ACTIVE)
+                .filter(t -> scope.wholeSchool() || teacherSubjectRepo.findByTeacherIdAndSchoolId(t.getId(), schoolId).stream()
+                        .anyMatch(ts -> ts.getSession() != null && ts.getSession().getClazz() != null
+                                && scope.allows(ts.getSession().getClazz().getLevel())))
                 .map(t -> build(schoolId, t))
                 .toList();
     }

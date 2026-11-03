@@ -32,7 +32,7 @@ public class PayslipSettingController {
     private final SavePayslipSettingUseCase savePayslipSettingUseCase;
 
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'ACCOUNTANT', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")
     public ApiResponse<PayslipSettingDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getPayslipSettingUseCase.execute(school);

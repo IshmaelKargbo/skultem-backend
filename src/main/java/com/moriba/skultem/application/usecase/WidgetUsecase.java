@@ -42,6 +42,7 @@ public class WidgetUsecase {
     private final TeacherReportUseCase teacherReportUseCase;
     private final ScopeReportToAcademicYearUseCase scopeReportToAcademicYearUseCase;
     private final SectionScopeService sectionScopeService;
+    private final com.moriba.skultem.application.services.ReportAccessPolicy reportAccessPolicy;
 
     public WidgetResponse<?> runAnalytics(String schoolId, Widget request, int page, int size) {
         return runAnalytics(schoolId, request, page, size, null);
@@ -52,6 +53,8 @@ public class WidgetUsecase {
         if (request == null || request.metrics() == null || request.metrics().isEmpty()) {
             throw new IllegalArgumentException("Invalid widget request");
         }
+
+        reportAccessPolicy.check(schoolId, request.entity(), request.filters());
 
         var filters = scopeReportToAcademicYearUseCase.execute(schoolId, request.entity(), request.filters(),
                 academicYearId);

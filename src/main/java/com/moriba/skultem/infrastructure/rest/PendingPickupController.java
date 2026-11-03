@@ -19,6 +19,8 @@ import com.moriba.skultem.infrastructure.security.RequiresModule;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.MATERIALS_AND_SUPPLIES)
+// Pickups from the shared materials store.
+@com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/materials/pending-pickups")
 @RequiredArgsConstructor

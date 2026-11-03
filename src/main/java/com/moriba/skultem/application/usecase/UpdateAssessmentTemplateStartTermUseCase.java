@@ -25,6 +25,8 @@ public class UpdateAssessmentTemplateStartTermUseCase {
     private final AcademicYearRepository academicYearRepo;
     private final TermRepository termRepo;
     private final EarlierTermAssessmentCleanupRepository cleanupRepo;
+    private final com.moriba.skultem.domain.repository.TemplateMaintenanceRepository maintenance;
+    private final SyncClassAssessmentsUseCase syncClassAssessmentsUseCase;
 
     @AuditLogAnnotation(action = "ASSESSMENT_TEMPLATE_START_TERM_CHANGED")
     public int execute(String schoolId, String templateId, int termNumber) {
@@ -37,11 +39,24 @@ public class UpdateAssessmentTemplateStartTermUseCase {
             throw new RuleException("Choose a term from 1 to " + Math.max(terms, 1));
         }
 
+        int before = Math.max(1, template.getStartsInTerm());
         template.changeStartsInTerm(termNumber);
         templateRepo.save(template);
 
         if (year != null && termNumber > 1) {
             cleanupRepo.deleteUngradedBeforeTerm(schoolId, templateId, year.getId(), termNumber);
+        }
+
+        // Moved earlier (term 2 -> term 1): the students now need the earlier terms' assessments too - create them for
+        // every class on the template. Students' existing assessments are left as they are.
+        if (year != null && termNumber < before) {
+            for (var classId : maintenance.classIdsUsing(schoolId, templateId)) {
+                try {
+                    syncClassAssessmentsUseCase.execute(schoolId, classId);
+                } catch (RuleException | NotFoundException e) {
+                    // Reported on Academics > Assessment Check; the class can be fixed from there.
+                }
+            }
         }
         return termNumber;
     }

@@ -38,7 +38,7 @@ public class AssessmentConfigurationController {
     // Read-only for teachers. A section-limited caller only gets their own sections' (filtered in the use case).
     @SectionNeutral
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL', 'EXAM_OFFICER')")
     public ApiResponse<List<AssessmentConfigurationDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         return new ApiResponse<>("success", 200, "Assessment configuration fetched successfully",
@@ -49,7 +49,7 @@ public class AssessmentConfigurationController {
     // (no sectionId) stays with whole-school staff (@sectionScope.managementSection).
     @SectionNeutral
     @GetMapping("/templates/{templateId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'OWNER', 'TEACHER', 'PRINCIPAL', 'EXAM_OFFICER')")
     public ApiResponse<AssessmentConfigurationDTO> forTemplate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @org.springframework.web.bind.annotation.PathVariable String templateId) {

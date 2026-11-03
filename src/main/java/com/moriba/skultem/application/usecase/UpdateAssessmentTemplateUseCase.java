@@ -67,6 +67,7 @@ public class UpdateAssessmentTemplateUseCase {
     private final ClassSubjectAssessmentLifeCycleRepository cycleRepo;
     private final StudentAssessmentRepository studentAssessmentRepo;
     private final TemplateMaintenanceRepository maintenance;
+    private final SyncClassAssessmentsUseCase syncClassAssessmentsUseCase;
 
     @AuditLogAnnotation(action = "ASSESSMENT_TEMPLATE_UPDATED")
     public Result execute(String schoolId, String templateId, Details details, List<Item> items, boolean force) {
@@ -194,6 +195,16 @@ public class UpdateAssessmentTemplateUseCase {
         // A kept test that now runs in more terms appears in those terms too.
         for (var test : widened) {
             addToExistingTests(schoolId, cyclesBefore, test);
+        }
+
+        // A class given this template while it had no tests (or whose students were never set up) has nothing to
+        // carry the change into - fill those gaps too. Students who already have their tests are left alone.
+        for (var classId : maintenance.classIdsUsing(schoolId, templateId)) {
+            try {
+                syncClassAssessmentsUseCase.execute(schoolId, classId);
+            } catch (RuleException | NotFoundException e) {
+                // No active year yet, say - enrolment or the class's own sync will create them later.
+            }
         }
 
         var list = assessmentRepo.findAllByTemplateIdAndSchoolId(templateId, schoolId).stream()
