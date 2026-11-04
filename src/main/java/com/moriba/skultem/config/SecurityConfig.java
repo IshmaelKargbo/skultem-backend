@@ -90,6 +90,11 @@ public class SecurityConfig {
                                 new Rule("admin-login", HttpMethod.POST, "/api/v1/auth/system-admin-login",
                                                 loginPerMinute, 60, false),
                                 new Rule("refresh", HttpMethod.POST, "/api/v1/auth/refresh", 30, 60, false),
+                                // Forgot password: each request can send an email; links are only guessable by brute force.
+                                new Rule("password-reset-request", HttpMethod.POST, "/api/v1/auth/password-reset/request",
+                                                5, 600, false),
+                                new Rule("password-reset-confirm", HttpMethod.POST, "/api/v1/auth/password-reset/confirm",
+                                                20, 600, false),
                                 new Rule("bootstrap", HttpMethod.POST, "/api/v1/system/bootstrap", 5, 3600, false),
                                 // Website forms - spam.
                                 new Rule("contact", HttpMethod.POST, "/api/v1/public/contact", 5, 600, false),

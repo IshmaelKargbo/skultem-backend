@@ -147,6 +147,17 @@ public class User extends AggregateRoot<String> {
     // into RESET_PASSWORD, exactly like a freshly created account (see create()), so the admin
     // can hand the plaintext temp password to them and they're forced through /reset-password
     // the next time they log in.
+    // Self-service "forgot password": the person proved they own the email, so the new password replaces whatever was
+    // there (a temporary one included) and the account is ready to use.
+    public void setNewPassword(String passwordHash) {
+        this.password = passwordHash;
+        this.hint = "";
+        if (status == Status.RESET_PASSWORD) {
+            this.status = Status.ACTIVE;
+        }
+        touch(Instant.now());
+    }
+
     public void issueTemporaryPassword(String passwordHash, String hint) {
         this.password = passwordHash;
         this.hint = hint;

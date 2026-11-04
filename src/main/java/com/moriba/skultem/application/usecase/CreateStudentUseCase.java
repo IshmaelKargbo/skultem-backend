@@ -158,10 +158,15 @@ public class CreateStudentUseCase {
         // access to grant until an admin adds one later via AddParentEmailUseCase.
         var parentEmail = student.getParent().getUser().getEmail();
         if (parentEmail != null && !parentEmail.isBlank()) {
-            if (param.parentId().isBlank())
-                sendWelcomeEmail(school, student);
-            else
-                sendLinkEmail(school, student);
+            // A mail provider problem must not roll back the whole enrollment (student, parent, fees).
+            try {
+                if (param.parentId().isBlank())
+                    sendWelcomeEmail(school, student);
+                else
+                    sendLinkEmail(school, student);
+            } catch (Exception e) {
+                log.error("Failed to send parent email for new student {}: {}", student.getId(), e.getMessage(), e);
+            }
         }
 
         logActivityUseCase.log(

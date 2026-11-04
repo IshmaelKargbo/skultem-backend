@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.LoginResponse;
+import com.moriba.skultem.application.services.PasswordResetService;
 import com.moriba.skultem.application.dto.SchoolDTO;
 import com.moriba.skultem.application.usecase.GetSchoolUseCase;
 import com.moriba.skultem.application.usecase.LoginUseCase;
@@ -17,6 +18,8 @@ import com.moriba.skultem.application.usecase.LogoutUseCase;
 import com.moriba.skultem.application.usecase.RefreshTokenUseCase;
 import com.moriba.skultem.application.usecase.SystemAdminLoginUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
+import com.moriba.skultem.infrastructure.rest.dto.ForgotPasswordDTO;
+import com.moriba.skultem.infrastructure.rest.dto.SetNewPasswordDTO;
 import com.moriba.skultem.infrastructure.rest.dto.LoginDTO;
 import com.moriba.skultem.infrastructure.rest.dto.RefreshTokenRequest;
 import com.moriba.skultem.infrastructure.rest.dto.SystemAdminLoginDTO;
@@ -40,6 +43,7 @@ public class AuthController {
     private final LogoutUseCase logoutUseCase;
     private final GetSchoolUseCase getSchoolUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
+    private final PasswordResetService passwordResetService;
 
     private final Parser uaParser = new Parser();
 
@@ -128,6 +132,21 @@ public class AuthController {
         LoginResponse res = refreshTokenUseCase.execute(param.refreshToken());
 
         return new ApiResponse<>("success", 200, "Token refreshed", res);
+    }
+
+    // "Forgot password" on a school's site. Always the same answer, whether or not the email has an account there.
+    @PostMapping("/password-reset/request")
+    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody ForgotPasswordDTO param) {
+        passwordResetService.request(param.domain(), param.email());
+        return new ApiResponse<>("success", 200,
+                "If that email belongs to an account at this school, a reset link is on its way.", null);
+    }
+
+    // Sets a new password from the emailed link. Public - the token is the proof.
+    @PostMapping("/password-reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody SetNewPasswordDTO param) {
+        passwordResetService.reset(param.token(), param.password());
+        return new ApiResponse<>("success", 200, "Your password has been changed. You can sign in now.", null);
     }
 
     @GetMapping("/tenant")

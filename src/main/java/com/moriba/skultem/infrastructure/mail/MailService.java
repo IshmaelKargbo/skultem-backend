@@ -57,6 +57,9 @@ public class MailService {
         @Value("${mailtrap.template.user_welcome}")
         private String userWelcomeTemplate;
 
+        @Value("${mailtrap.template.password_reset}")
+        private String passwordResetTemplate;
+
         @PostConstruct
         public void init() {
                 MailtrapConfig.Builder builder = new MailtrapConfig.Builder()
@@ -224,6 +227,13 @@ public class MailService {
                                                 "login_link", payload.link,
                                                 "year", String.valueOf(Year.now().getValue()),
                                                 "school_name", payload.schoolName));
+        }
+
+        // "Forgot password" - the Mailtrap template takes the reset link and the year.
+        public void sendPasswordResetEmail(String to, String resetLink) {
+                sendTemplateEmail(to, passwordResetTemplate,
+                                Map.of("reset_link", resetLink,
+                                                "year", String.valueOf(Year.now().getValue())));
         }
 
         public record WelcomeUserPayload(String to, String userName, String password,

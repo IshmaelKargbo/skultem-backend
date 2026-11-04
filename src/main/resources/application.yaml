@@ -8,6 +8,7 @@ mailtrap:
   template:
     parent_assign: ${PARENT_ASSIGN_TEMPLATE:1064324c-e842-4abf-9ad6-6f491e4f7f66}
     parent_welcome: ${PARENT_WELCOME_TEMPLATE:50aa30b3-e0da-4037-afd2-e4e7b9424b63}
+    password_reset: ${PASSWORD_RESET_TEMPLATE:145e61a4-c552-421f-9999-2f3a441b1e9f}
     teacher_welcome: ${TEACHER_WELCOME_TEMPLATE:8308f89c-8216-4810-ae52-5773d1ba38c7}
     user_assign: ${USER_ASSIGN_TEMPLATE:8cdaf0fc-48a1-4ae7-8aa1-2d78252cfa87}
     user_welcome: ${USER_WELCOME_TEMPLATE:0afe1b36-2da6-42b6-833e-e5f90d7fd6de}
@@ -20,6 +21,10 @@ email-validation:
   dns-timeout-ms: ${EMAIL_DNS_TIMEOUT_MS:2000}
   dns-retries: ${EMAIL_DNS_RETRIES:1}
   cache-minutes: ${EMAIL_DOMAIN_CACHE_MINUTES:30}
+password-reset:
+  token-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:30}
+  resend-cooldown-seconds: ${PASSWORD_RESET_COOLDOWN_SECONDS:60}
+  max-per-hour: ${PASSWORD_RESET_MAX_PER_HOUR:5}
 email-verification:
   token-ttl-minutes: ${EMAIL_VERIFICATION_TTL_MINUTES:30}
   resend-cooldown-seconds: ${EMAIL_VERIFICATION_COOLDOWN_SECONDS:60}

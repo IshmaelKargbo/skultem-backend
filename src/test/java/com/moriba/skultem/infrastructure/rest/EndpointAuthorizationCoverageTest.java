@@ -25,6 +25,9 @@ class EndpointAuthorizationCoverageTest {
             // Sign-in / session flow: there is no signed-in user yet (or it is the user's own session).
             "AuthController#login", "AuthController#systemAdminLogin", "AuthController#refresh",
             "AuthController#tenant", "AuthController#logout",
+            // Forgot password: requesting a link (same answer whether or not the account exists; rate-limited),
+            // and setting a new password from that link - the token in it is the proof.
+            "AuthController#requestPasswordReset", "AuthController#confirmPasswordReset",
             // Marketing site / onboarding, before any account exists.
             "RequestDemoController#create", "SchoolController#create", "SchoolController#count",
             "SystemAdminController#bootstrap",
