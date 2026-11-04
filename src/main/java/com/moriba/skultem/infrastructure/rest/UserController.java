@@ -55,6 +55,7 @@ public class UserController {
 
     private final CreateUserUseCase createUserUseCase;
     private final ListUserBySchoolUseCase listUserBySchoolUseCase;
+    private final com.moriba.skultem.application.services.EmailVerificationService emailVerificationService;
     private final ResetPasswordUseCase resetPasswordUseCase;
     private final AdminResetPasswordUseCase adminResetPasswordUseCase;
     private final UserService svc;
@@ -247,6 +248,18 @@ public class UserController {
             @Valid @RequestBody AssignStaffSectionsDTO param) {
         var res = assignStaffManagementSectionsUseCase.execute(school, id, param.role(), param.sectionIds());
         return new ApiResponse<>("success", 200, "Management access updated successfully", res);
+    }
+
+    // An admin sends a verification link to an account they manage (a parent or staff member) - same rules as the
+    // person sending it themselves, and the link goes only to the account's own address.
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @PostMapping("/{id}/email-verification")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @permissionService.canManageUser(#school, #id)")
+    public ApiResponse<com.moriba.skultem.application.dto.EmailVerificationStatusDTO> sendEmailVerification(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = emailVerificationService.send(id, school);
+        return new ApiResponse<>("success", 200, "Verification email sent", res);
     }
 
     @GetMapping("/me")

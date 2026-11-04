@@ -25,6 +25,12 @@ public class User extends AggregateRoot<String> {
     // uploaded, and can be added or replaced any time after the account is created.
     private String photo;
 
+    // Whether the person has proved they own `email` (by opening a verification link sent to it), and when. Belongs to
+    // the address, not the person: any change of email clears it. Accounts that existed before verification are
+    // simply unverified - they keep full access.
+    private boolean emailVerified;
+    private Instant emailVerifiedAt;
+
     public enum Status {
         ACTIVE,
         RESET_PASSWORD,
@@ -84,6 +90,7 @@ public class User extends AggregateRoot<String> {
         }
 
         this.email = email;
+        clearEmailVerification();
         touch(Instant.now());
     }
 
@@ -94,8 +101,33 @@ public class User extends AggregateRoot<String> {
             throw new RuleException("Email can't be empty");
         }
 
+        if (this.email == null || !this.email.equalsIgnoreCase(email)) {
+            // A new address hasn't been proved yet - verifying the old one says nothing about it.
+            clearEmailVerification();
+        }
         this.email = email;
         touch(Instant.now());
+    }
+
+    // Loading from storage.
+    public void restoreEmailVerification(boolean verified, Instant verifiedAt) {
+        this.emailVerified = verified;
+        this.emailVerifiedAt = verified ? verifiedAt : null;
+    }
+
+    // The person opened a verification link sent to `verifiedEmail`. Only counts if it is still their address.
+    public void markEmailVerified(String verifiedEmail, Instant at) {
+        if (this.email == null || verifiedEmail == null || !this.email.equalsIgnoreCase(verifiedEmail)) {
+            throw new RuleException("This link was sent to a different email address");
+        }
+        this.emailVerified = true;
+        this.emailVerifiedAt = at;
+        touch(at);
+    }
+
+    private void clearEmailVerification() {
+        this.emailVerified = false;
+        this.emailVerifiedAt = null;
     }
 
     public void resetPassword(String password) {

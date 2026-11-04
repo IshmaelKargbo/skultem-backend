@@ -34,6 +34,8 @@ public class AddParentEmailUseCase {
 
     private final ParentRepository parentRepo;
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final StudentRepository studentRepo;
     private final SchoolRepository schoolRepo;
     private final MailService mailService;
@@ -45,7 +47,10 @@ public class AddParentEmailUseCase {
                 .orElseThrow(() -> new NotFoundException("Parent not found"));
 
         var user = parent.getUser();
-        String normalized = email.trim();
+        String normalized = emailValidation.requireAcceptable(email);
+        if (normalized == null) {
+            throw new com.moriba.skultem.application.error.RuleException("Email is required");
+        }
 
         if (userRepo.existsByEmail(normalized)) {
             throw new AlreadyExistsException("Email already in use by another account");

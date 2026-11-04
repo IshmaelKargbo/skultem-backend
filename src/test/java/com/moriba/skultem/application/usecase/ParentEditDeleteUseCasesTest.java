@@ -54,7 +54,11 @@ class ParentEditDeleteUseCasesTest {
         user = User.create("Fatmata", "Sesay", "fatmata@example.com", "hash", "pw");
         parent = Parent.create(SCHOOL, "+23276000001", "12 Main Street", "Freetown", user);
         lenient().when(parentRepo.findByIdAndSchoolId(parent.getId(), SCHOOL)).thenReturn(Optional.of(parent));
-        edit = new EditParentUseCase(parentRepo, userRepo, schoolUserRepo, logActivityUseCase);
+        edit = new EditParentUseCase(parentRepo, userRepo,
+                // Every domain accepts mail here - the DNS side has its own tests.
+                new com.moriba.skultem.application.services.EmailValidationService(
+                        domain -> com.moriba.skultem.application.services.MailDomainLookup.Result.ACCEPTS_MAIL, true, 30),
+                schoolUserRepo, logActivityUseCase);
         delete = new DeleteParentPermanentlyUseCase(parentRepo, purgeRepo, logActivityUseCase);
     }
 

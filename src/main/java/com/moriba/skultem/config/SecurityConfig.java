@@ -61,6 +61,10 @@ public class SecurityConfig {
                                                 // without a logged-in caller.
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/system/bootstrap")
                                                 .permitAll()
+                                                // Email field checks (public forms too) and opening a verification
+                                                // link from an email - see EmailVerificationController.
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/email-verification/check",
+                                                                "/api/v1/email-verification/confirm").permitAll()
                                                 .requestMatchers("/ws/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
@@ -90,6 +94,14 @@ public class SecurityConfig {
                                 // Website forms - spam.
                                 new Rule("contact", HttpMethod.POST, "/api/v1/public/contact", 5, 600, false),
                                 new Rule("demo", HttpMethod.POST, "/api/v1/demos", 5, 600, false),
+                                // Email checks hit DNS; verification links are only guessable by brute force. Sending
+                                // also has its own per-account cooldown (EmailVerificationService).
+                                new Rule("email-check", HttpMethod.POST, "/api/v1/email-verification/check", 30, 60, true),
+                                new Rule("email-confirm", HttpMethod.POST, "/api/v1/email-verification/confirm", 20, 600,
+                                                false),
+                                new Rule("email-send", HttpMethod.POST, "/api/v1/email-verification/send", 10, 3600, true),
+                                new Rule("email-resend", HttpMethod.POST, "/api/v1/email-verification/resend", 10, 3600,
+                                                true),
                                 // Everything else: per user when logged in, per IP otherwise.
                                 new Rule("api", null, "/api/", apiPerMinute, 60, true));
         }

@@ -11,7 +11,7 @@ public class UserMapper {
         return new UserDTO(param.getId(), param.getName(), param.getGivenNames(), param.getFamilyName(),
                 param.getEmail(),
                 param.getStatus().toString(), null, param.getPhoto(), null, param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(), param.isEmailVerified(), param.getEmailVerifiedAt());
     }
 
     public static UserDTO toDTO(User user, List<Role> roles) {
@@ -21,6 +21,6 @@ public class UserMapper {
     public static UserDTO toDTO(User user, List<Role> roles, String schoolStatus) {
         return new UserDTO(user.getId(), user.getName(), user.getGivenNames(), user.getFamilyName(), user.getEmail(),
                 user.getStatus().toString(), schoolStatus, user.getPhoto(), roles,
-                user.getCreatedAt(), user.getUpdatedAt());
+                user.getCreatedAt(), user.getUpdatedAt(), user.isEmailVerified(), user.getEmailVerifiedAt());
     }
 }

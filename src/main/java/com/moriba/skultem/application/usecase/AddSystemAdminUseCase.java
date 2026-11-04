@@ -30,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 public class AddSystemAdminUseCase {
 
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final PasswordEncoder passwordEncoder;
 
@@ -45,6 +47,7 @@ public class AddSystemAdminUseCase {
             }
         } else {
             var passwordHash = passwordEncoder.encode(password);
+            email = emailValidation.requireAcceptable(email);
             user = User.create(givenNames, familyName, email, passwordHash, "");
             user.resetPassword(passwordHash);
             userRepo.save(user);

@@ -10,6 +10,8 @@ public record UserDTO(String id, String name, String givenNames, String familyNa
                 // scoped to* - distinct from status above (the account itself, shared across every
                 // school it belongs to). Null wherever the caller hasn't resolved a school context.
                 String schoolStatus,
-                String photo, List<Role> roles, Instant createdAt, Instant updatedAt) {
+                String photo, List<Role> roles, Instant createdAt, Instant updatedAt,
+                // The person proved they own `email` (opened a verification link sent to it), and when.
+                boolean emailVerified, Instant emailVerifiedAt) {
 
 }

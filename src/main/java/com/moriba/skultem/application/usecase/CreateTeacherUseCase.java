@@ -1,5 +1,6 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.EmailValidationService;
 import java.security.SecureRandom;
 
 import org.slf4j.Logger;
@@ -42,6 +43,8 @@ public class CreateTeacherUseCase {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final TeacherRepository repo;
     private final ClassSessionRepository classSessionRepo;
@@ -63,18 +66,19 @@ public class CreateTeacherUseCase {
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("no school found"));
 
         User user;
-        if (userRepo.existsByEmail(email)) {
-            user = userRepo.findByEmail(email).orElseThrow();
+        final String address = EmailValidationService.normalize(email);
+        if (userRepo.existsByEmail(address)) {
+            user = userRepo.findByEmail(address).orElseThrow();
         } else {
             var passwordHash = passwordEncoder.encode(password);
-            user = User.create(givenNames, familyName, email, passwordHash, password);
+            user = User.create(givenNames, familyName, emailValidation.requireAcceptable(address), passwordHash, password);
             userRepo.save(user);
         }
 
         // An existing account (matched by email) may already be on staff here - e.g. a principal
         // put on payroll from Users. A second record would pay them twice and break their clock-in.
         repo.findByUserIdAndSchoolId(user.getId(), schoolId).ifPresent(existing -> {
-            throw new AlreadyExistsException(email + " is already on staff in this school (staff ID "
+            throw new AlreadyExistsException(address + " is already on staff in this school (staff ID "
                     + existing.getStaffId() + ") - give them the Teacher role from Users instead of adding them again");
         });
 

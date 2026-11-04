@@ -33,7 +33,10 @@ class EndpointAuthorizationCoverageTest {
             "PublicMarketingController#testimonials", "PublicMarketingController#posts",
             "PublicMarketingController#post", "PublicMarketingController#contact", "PublicMarketingController#settings",
             "PublicMarketingController#videos",
-            "SchoolController#listPublic");
+            "SchoolController#listPublic",
+            // Email: the check behind email fields (public forms use it too; rate-limited, says nothing about
+            // accounts), and opening a verification link from an email - the token in it is the proof.
+            "EmailVerificationController#check", "EmailVerificationController#confirm");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {

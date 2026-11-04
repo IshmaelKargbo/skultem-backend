@@ -31,6 +31,8 @@ public class CreateParentUseCase {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final ParentRepository repo;
     private final PasswordEncoder passwordEncoder;
@@ -111,6 +113,8 @@ public class CreateParentUseCase {
 
         var password = generatePassword();
         var passwordHash = passwordEncoder.encode(password);
+        // Optional for parents - only checked when given.
+        email = emailValidation.requireAcceptable(email);
         var user = User.create(param.givenNames(), param.familyName(), email, passwordHash, password);
         userRepo.save(user);
         return user;

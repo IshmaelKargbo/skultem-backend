@@ -1,9 +1,12 @@
 package com.moriba.skultem.application.usecase;
 
+import com.moriba.skultem.application.services.EmailValidationService;
 import java.security.SecureRandom;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
@@ -34,11 +37,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateUserUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(CreateUserUseCase.class);
+
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
     private static final int PASSWORD_LENGTH = 12;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserRepository repo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final SchoolRepository schoolRepo;
     private final TeacherRepository teacherRepo;
@@ -61,10 +68,12 @@ public class CreateUserUseCase {
 
         var password = generatePassword();
 
+        email = EmailValidationService.normalize(email);
         if (repo.existsByEmail(email)) {
             user = repo.findByEmail(email).orElseThrow();
         } else {
             var passwordHash = passwordEncoder.encode(password);
+            email = emailValidation.requireAcceptable(email);
             user = User.create(givenNames, familyName, email, passwordHash, password);
             repo.save(user);
         }
@@ -147,6 +156,11 @@ public class CreateUserUseCase {
         var link = "https://" + subdomain + "/login";
         var param = new WelcomeUserPayload(user.getEmail(), user.getName(), password, link, school.getName(), role,
                 subdomain);
-        mailService.sendWelcomeUserEmail(param);
+        // The user/role is already saved - a mail provider problem must not report the whole request as failed.
+        try {
+            mailService.sendWelcomeUserEmail(param);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to user {}: {}", user.getId(), e.getMessage(), e);
+        }
     }
 }

@@ -47,6 +47,14 @@ public class UserEntity {
 
     private String photo;
 
+    // See User#emailVerified - defaults to false for every existing account.
+    @Column(name = "email_verified", nullable = false)
+    @lombok.Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

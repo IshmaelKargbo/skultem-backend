@@ -12,7 +12,22 @@ mailtrap:
     user_assign: ${USER_ASSIGN_TEMPLATE:8cdaf0fc-48a1-4ae7-8aa1-2d78252cfa87}
     user_welcome: ${USER_WELCOME_TEMPLATE:0afe1b36-2da6-42b6-833e-e5f90d7fd6de}
     welcome: ${WELCOME_TEMPLATE:1cc5734e-936a-417b-b4a5-fcaeb92224e5}
-  token: ${EMAIL_API_KEY:7875f35e476e8d34b7f79d32e72480b9}
+  token: ${EMAIL_API_KEY}
+# Email checks and verification - see EmailValidationService / EmailVerificationService.
+email-validation:
+  # DNS check of an address's domain (MX, else A/AAAA). A failed lookup never blocks saving.
+  domain-check: ${EMAIL_DOMAIN_CHECK:true}
+  dns-timeout-ms: ${EMAIL_DNS_TIMEOUT_MS:2000}
+  dns-retries: ${EMAIL_DNS_RETRIES:1}
+  cache-minutes: ${EMAIL_DOMAIN_CACHE_MINUTES:30}
+email-verification:
+  token-ttl-minutes: ${EMAIL_VERIFICATION_TTL_MINUTES:30}
+  resend-cooldown-seconds: ${EMAIL_VERIFICATION_COOLDOWN_SECONDS:60}
+  max-per-hour: ${EMAIL_VERIFICATION_MAX_PER_HOUR:5}
+# Where links in emails point. {domain} is the school's subdomain. Locally: APP_PORTAL_URL=http://{domain}.localhost:3000
+app:
+  portal-url: ${APP_PORTAL_URL:https://{domain}.skultem.space}
+  admin-portal-url: ${APP_ADMIN_PORTAL_URL:https://admin.skultem.space}
 management:
   endpoints:
     web:

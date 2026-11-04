@@ -2,6 +2,8 @@ package com.moriba.skultem.application.usecase;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.UserDTO;
@@ -26,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AssignRoleUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(AssignRoleUseCase.class);
 
     private final UserRepository repo;
     private final SchoolUserRepository schoolUserRepo;
@@ -72,7 +76,12 @@ public class AssignRoleUseCase {
         var subdomain = school.getDomain() + ".skultem.space";
         var link = "https://" + subdomain + "/login";
         var param = new AssignUserPayload(user.getEmail(), user.getName(), link, school.getName(), role, subdomain);
-        mailService.sendAssignUserEmail(param);
+        // The user/role is already saved - a mail provider problem must not report the whole request as failed.
+        try {
+            mailService.sendAssignUserEmail(param);
+        } catch (Exception e) {
+            log.error("Failed to send role-assigned email to user {}: {}", user.getId(), e.getMessage(), e);
+        }
     }
 
 }

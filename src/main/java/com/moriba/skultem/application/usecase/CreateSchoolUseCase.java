@@ -38,6 +38,8 @@ public class CreateSchoolUseCase {
 
     private final SchoolRepository repo;
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final ReferenceGeneratorUsecase rg;
     private final PasswordEncoder passwordEncoder;
@@ -130,7 +132,8 @@ public class CreateSchoolUseCase {
             user = userRepo.findByEmail(ownerDto.email()).orElseThrow();
         } else {
             var passwordHash = passwordEncoder.encode(hint);
-            user = User.create(owner.givenNames(), owner.familyName(), owner.email(), passwordHash, hint);
+            emailValidation.requireAcceptable(owner.email());
+            user = User.create(owner.givenNames(), owner.familyName(), owner.email().trim(), passwordHash, hint);
             userRepo.save(user);
         }
 

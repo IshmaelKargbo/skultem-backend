@@ -51,6 +51,8 @@ import lombok.RequiredArgsConstructor;
 public class BootstrapSystemAdminUseCase {
 
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolRepository schoolRepo;
     private final SchoolUserRepository schoolUserRepo;
     private final PasswordEncoder passwordEncoder;
@@ -79,6 +81,7 @@ public class BootstrapSystemAdminUseCase {
             user = userRepo.findByEmail(email).orElseThrow();
         } else {
             var passwordHash = passwordEncoder.encode(password);
+            email = emailValidation.requireAcceptable(email);
             user = User.create(givenNames, familyName, email, passwordHash, "");
             // User.create always starts a fresh account at RESET_PASSWORD (see CreateUserUseCase,
             // which relies on that to force a temp/generated password to be changed on first

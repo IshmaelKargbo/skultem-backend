@@ -27,6 +27,8 @@ public class EditParentUseCase {
 
     private final ParentRepository parentRepo;
     private final UserRepository userRepo;
+    // Format + domain check for a new address (the shared rules - see EmailValidationService).
+    private final com.moriba.skultem.application.services.EmailValidationService emailValidation;
     private final SchoolUserRepository schoolUserRepo;
     private final LogActivityUseCase logActivityUseCase;
 
@@ -57,6 +59,7 @@ public class EditParentUseCase {
                 throw new RuleException("This person's login is also used for another role or school, so their "
                         + "email can't be changed here.");
             }
+            newEmail = emailValidation.requireAcceptable(newEmail);
             if (userRepo.existsByEmail(newEmail)) {
                 throw new AlreadyExistsException("Email already in use by another account");
             }

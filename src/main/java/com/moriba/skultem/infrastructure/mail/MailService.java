@@ -239,4 +239,35 @@ public class MailService {
                         String role,
                         String domain) {
         }
+
+        // "Verify your email" - a Skultem-branded button with the link, how long it lasts, and what to do if the
+        // recipient didn't ask for it. The link is never logged.
+        public void sendVerificationEmail(String to, String name, String link, long expiresInMinutes, String schoolName) {
+                String who = name == null || name.isBlank() ? "there" : org.springframework.web.util.HtmlUtils.htmlEscape(name);
+                String from = schoolName == null || schoolName.isBlank() ? "Skultem"
+                                : org.springframework.web.util.HtmlUtils.htmlEscape(schoolName) + " on Skultem";
+                String href = org.springframework.web.util.HtmlUtils.htmlEscape(link);
+                String html = """
+                                <!DOCTYPE html>
+                                <html><body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2937;">
+                                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 12px;">
+                                  <tr><td align="center">
+                                    <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;">
+                                      <tr><td style="background:#1d4ed8;padding:20px 28px;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.3px;">Skultem</td></tr>
+                                      <tr><td style="padding:28px;">
+                                        <p style="margin:0 0 12px;font-size:16px;">Hi %s,</p>
+                                        <p style="margin:0 0 20px;font-size:15px;line-height:1.55;">Please confirm that this is your email address for %s. It lets the school reach you reliably.</p>
+                                        <p style="margin:0 0 24px;"><a href="%s" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:8px;">Verify email address</a></p>
+                                        <p style="margin:0 0 8px;font-size:13px;color:#4b5563;">This link works once and expires in %d minutes.</p>
+                                        <p style="margin:0 0 20px;font-size:13px;color:#4b5563;word-break:break-all;">If the button doesn't work, open this link:<br><a href="%s" style="color:#1d4ed8;">%s</a></p>
+                                        <p style="margin:0;font-size:13px;color:#6b7280;">Didn't ask for this? You can ignore this email - nothing changes unless the link is opened.</p>
+                                      </td></tr>
+                                    </table>
+                                    <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">Sent by Skultem school management</p>
+                                  </td></tr>
+                                </table>
+                                </body></html>
+                                """.formatted(who, from, href, expiresInMinutes, href, href);
+                sendEmail(to, "Verify your email address", html);
+        }
 }
