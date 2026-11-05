@@ -17,7 +17,9 @@ public class ResolveScoreGradeUseCase {
     private final SchoolRepository schoolRepository;
 
     public String execute(String schoolId, int score, Status status) {
-        if (!status.equals(Status.APPROVED) && !status.equals(Status.COMPLETED)) return null;
+        // Same statuses whose score is shown (see AssessmentScoreMapper) - a submitted score is shown as
+        // provisional, so its grade is too.
+        if (status != Status.APPROVED && status != Status.COMPLETED && status != Status.SUBMITTED) return null;
         
         var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
