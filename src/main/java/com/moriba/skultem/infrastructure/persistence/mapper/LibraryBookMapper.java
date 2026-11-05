@@ -7,7 +7,7 @@ public class LibraryBookMapper {
     public static LibraryBook toDomain(LibraryBookEntity param) {
         if (param == null) return null;
 
-        return new LibraryBook(param.getId(), param.getSchoolId(),
+        return new LibraryBook(param.getId(), param.getSchoolId(), param.getManagementSectionId(),
                 LibraryCategoryMapper.toDomain(param.getCategory()), param.getTitle(), param.getAuthor(),
                 param.getIsbn(), param.getPublisher(), param.getShelf(), param.getTotalCopies(),
                 param.getAvailableCopies(), param.getCreatedAt(), param.getUpdatedAt());
@@ -19,6 +19,7 @@ public class LibraryBookMapper {
         return LibraryBookEntity.builder()
                 .id(param.getId())
                 .schoolId(param.getSchoolId())
+                .managementSectionId(param.getSectionId())
                 .category(LibraryCategoryMapper.toEntity(param.getCategory()))
                 .title(param.getTitle())
                 .author(param.getAuthor())

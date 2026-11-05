@@ -58,6 +58,7 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
                 where l.schoolId = :schoolId
                 and l.status in :statuses
                 and l.dueDate >= :dueFrom and l.dueDate <= :dueTo
+                and (:allSections = true or l.book.managementSectionId in :sectionIds)
                 and (
                     lower(l.borrowerName) like lower(concat('%', :query, '%'))
                     or lower(l.book.title) like lower(concat('%', :query, '%'))
@@ -68,6 +69,7 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
                 where l.schoolId = :schoolId
                 and l.status in :statuses
                 and l.dueDate >= :dueFrom and l.dueDate <= :dueTo
+                and (:allSections = true or l.book.managementSectionId in :sectionIds)
                 and (
                     lower(l.borrowerName) like lower(concat('%', :query, '%'))
                     or lower(l.book.title) like lower(concat('%', :query, '%'))
@@ -75,7 +77,8 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
             """)
     Page<LibraryLoanEntity> search(@Param("schoolId") String schoolId, @Param("query") String query,
             @Param("statuses") Collection<Status> statuses, @Param("dueFrom") LocalDate dueFrom,
-            @Param("dueTo") LocalDate dueTo, Pageable pageable);
+            @Param("dueTo") LocalDate dueTo, @Param("allSections") boolean allSections,
+            @Param("sectionIds") Collection<String> sectionIds, Pageable pageable);
 
     @EntityGraph(attributePaths = { "book", "book.category" })
     Page<LibraryLoanEntity> findAllByBook_IdAndSchoolIdOrderByIssueDateDescCreatedAtDesc(String bookId,
@@ -85,5 +88,12 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
     @Query("delete from LibraryLoanEntity l where l.book.id = :bookId and l.schoolId = :schoolId")
     void deleteByBook(@Param("bookId") String bookId, @Param("schoolId") String schoolId);
 
-    long countBySchoolIdAndStatusAndDueDateBefore(String schoolId, Status status, LocalDate date);
+    @Query("""
+                select count(l) from LibraryLoanEntity l
+                where l.schoolId = :schoolId and l.status = :status and l.dueDate < :date
+                and (:allSections = true or l.book.managementSectionId in :sectionIds)
+            """)
+    long countOverdue(@Param("schoolId") String schoolId, @Param("status") Status status,
+            @Param("date") LocalDate date, @Param("allSections") boolean allSections,
+            @Param("sectionIds") Collection<String> sectionIds);
 }

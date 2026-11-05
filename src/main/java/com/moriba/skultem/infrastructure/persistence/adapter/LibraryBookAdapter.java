@@ -2,6 +2,7 @@ package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,8 +33,8 @@ public class LibraryBookAdapter implements LibraryBookRepository {
     }
 
     @Override
-    public boolean existsByIsbnAndSchool(String isbn, String schoolId) {
-        return repo.existsByIsbnIgnoreCaseAndSchoolId(isbn, schoolId);
+    public boolean existsByIsbnInSection(String isbn, String schoolId, String sectionId) {
+        return repo.existsByIsbnIgnoreCaseAndSchoolIdAndManagementSectionId(isbn, schoolId, sectionId);
     }
 
     @Override
@@ -53,30 +54,40 @@ public class LibraryBookAdapter implements LibraryBookRepository {
 
     @Override
     public Page<LibraryBook> search(String schoolId, String query, String categoryId, boolean outOfStockOnly,
-            Pageable pageable) {
+            Collection<String> sectionIds, Pageable pageable) {
         return repo.search(schoolId, query == null ? "" : query, categoryId == null ? "" : categoryId,
-                outOfStockOnly, pageable)
+                outOfStockOnly, all(sectionIds), ids(sectionIds), pageable)
                 .map(LibraryBookMapper::toDomain);
     }
 
     @Override
-    public Map<String, Long> countByCategories(String schoolId, Collection<String> categoryIds) {
+    public Map<String, Long> countByCategories(String schoolId, Collection<String> categoryIds,
+            Collection<String> sectionIds) {
         Map<String, Long> counts = new HashMap<>();
         if (categoryIds == null || categoryIds.isEmpty()) return counts;
 
-        for (Object[] row : repo.countByCategories(schoolId, categoryIds)) {
+        for (Object[] row : repo.countByCategories(schoolId, categoryIds, all(sectionIds), ids(sectionIds))) {
             counts.put((String) row[0], ((Number) row[1]).longValue());
         }
         return counts;
     }
 
     @Override
-    public Totals totals(String schoolId) {
-        var rows = repo.totals(schoolId);
+    public Totals totals(String schoolId, Collection<String> sectionIds) {
+        var rows = repo.totals(schoolId, all(sectionIds), ids(sectionIds));
         if (rows.isEmpty()) return new Totals(0, 0, 0);
 
         Object[] row = rows.get(0);
         return new Totals(((Number) row[0]).longValue(), ((Number) row[1]).longValue(),
                 ((Number) row[2]).longValue());
+    }
+
+    // Queries take "every section" as a flag plus a list that's never empty (an empty IN list isn't valid SQL).
+    static boolean all(Collection<String> sectionIds) {
+        return sectionIds == null;
+    }
+
+    static Collection<String> ids(Collection<String> sectionIds) {
+        return sectionIds == null || sectionIds.isEmpty() ? List.of("") : sectionIds;
     }
 }

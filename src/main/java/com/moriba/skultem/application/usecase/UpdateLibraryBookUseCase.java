@@ -24,22 +24,23 @@ public class UpdateLibraryBookUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "LIBRARY_BOOK_UPDATED")
-    public LibraryBookDTO execute(String schoolId, String id, String categoryId, String title, String author,
-            String isbn, String publisher, String shelf, int totalCopies) {
+    public LibraryBookDTO execute(String schoolId, String id, String sectionId, String categoryId, String title,
+            String author, String isbn, String publisher, String shelf, int totalCopies) {
         // Locked so a loan issued or returned at the same time can't throw the copy count off.
         var book = repo.findByIdAndSchoolForUpdate(id, schoolId)
                 .orElseThrow(() -> new NotFoundException("Book not found"));
 
         String cleanIsbn = CreateLibraryBookUseCase.blankToNull(isbn);
-        boolean isbnChanged = cleanIsbn != null && !cleanIsbn.equalsIgnoreCase(book.getIsbn());
-        if (isbnChanged && repo.existsByIsbnAndSchool(cleanIsbn, schoolId)) {
-            throw new AlreadyExistsException("A book with this ISBN is already in the library");
+        boolean isbnChanged = cleanIsbn != null && (!cleanIsbn.equalsIgnoreCase(book.getIsbn())
+                || !java.util.Objects.equals(sectionId, book.getSectionId()));
+        if (isbnChanged && repo.existsByIsbnInSection(cleanIsbn, schoolId, sectionId)) {
+            throw new AlreadyExistsException("A book with this ISBN is already in this section's library");
         }
 
         var category = categoryRepo.findByIdAndSchool(categoryId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Library category not found"));
 
-        book.update(category, title.trim(), author.trim(), cleanIsbn,
+        book.update(sectionId, category, title.trim(), author.trim(), cleanIsbn,
                 CreateLibraryBookUseCase.blankToNull(publisher), CreateLibraryBookUseCase.blankToNull(shelf),
                 totalCopies);
         repo.save(book);

@@ -14,5 +14,7 @@ public record SaveLibraryBookDTO(
         @Length(max = 255, message = "Publisher must not exceed 255 characters") String publisher,
         @Length(max = 50, message = "Shelf must not exceed 50 characters") String shelf,
         @NotBlank(message = "Category is required") String categoryId,
+        // The management section the book belongs to. Required when the school is run by sections.
+        String sectionId,
         @NotNull(message = "Total copies is required") @Min(value = 1, message = "At least 1 copy is required") @Max(value = 100000, message = "Total copies is too large") Integer totalCopies) {
 }

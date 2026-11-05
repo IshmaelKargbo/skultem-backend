@@ -15,6 +15,8 @@ import lombok.Getter;
 @Getter
 public class LibraryBook extends AggregateRoot<String> {
     private String schoolId;
+    // The management section this book belongs to; null = not assigned yet (whole-school staff only).
+    private String sectionId;
     private LibraryCategory category;
     private String title;
     private String author;
@@ -24,11 +26,12 @@ public class LibraryBook extends AggregateRoot<String> {
     private int totalCopies;
     private int availableCopies;
 
-    public LibraryBook(String id, String schoolId, LibraryCategory category, String title, String author,
-            String isbn, String publisher, String shelf, int totalCopies, int availableCopies, Instant createdAt,
-            Instant updatedAt) {
+    public LibraryBook(String id, String schoolId, String sectionId, LibraryCategory category, String title,
+            String author, String isbn, String publisher, String shelf, int totalCopies, int availableCopies,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
+        this.sectionId = sectionId;
         this.category = category;
         this.title = title;
         this.author = author;
@@ -40,15 +43,15 @@ public class LibraryBook extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
-    public static LibraryBook create(String schoolId, LibraryCategory category, String title, String author,
-            String isbn, String publisher, String shelf, int totalCopies) {
+    public static LibraryBook create(String schoolId, String sectionId, LibraryCategory category, String title,
+            String author, String isbn, String publisher, String shelf, int totalCopies) {
         if (totalCopies < 1) {
             throw new IllegalArgumentException("A book needs at least 1 copy");
         }
 
         Instant now = Instant.now();
-        return new LibraryBook(UUID.randomUUID().toString(), schoolId, category, title, author, isbn, publisher,
-                shelf, totalCopies, totalCopies, now, now);
+        return new LibraryBook(UUID.randomUUID().toString(), schoolId, sectionId, category, title, author, isbn,
+                publisher, shelf, totalCopies, totalCopies, now, now);
     }
 
     public int getIssuedCopies() {
@@ -56,8 +59,8 @@ public class LibraryBook extends AggregateRoot<String> {
     }
 
     /** Changing the copy count keeps the copies already on loan out on loan. */
-    public void update(LibraryCategory category, String title, String author, String isbn, String publisher,
-            String shelf, int totalCopies) {
+    public void update(String sectionId, LibraryCategory category, String title, String author, String isbn,
+            String publisher, String shelf, int totalCopies) {
         int issued = getIssuedCopies();
 
         if (totalCopies < 1) {
@@ -69,6 +72,7 @@ public class LibraryBook extends AggregateRoot<String> {
                     "Total copies can't be less than the " + issued + " copies currently on loan");
         }
 
+        this.sectionId = sectionId;
         this.category = category;
         this.title = title;
         this.author = author;

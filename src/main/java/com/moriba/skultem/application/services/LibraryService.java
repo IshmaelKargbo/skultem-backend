@@ -34,6 +34,9 @@ import com.moriba.skultem.domain.repository.LibraryLoanRepository;
 import com.moriba.skultem.domain.repository.LibraryLoanRepository.Filter;
 import com.moriba.skultem.domain.repository.LibrarySettingRepository;
 
+import java.util.List;
+import com.moriba.skultem.application.error.RuleException;
+import com.moriba.skultem.domain.model.LibraryBook;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -55,6 +58,8 @@ public class LibraryService {
     private final IssueLibraryBookUseCase issueBookUseCase;
     private final ReturnLibraryBookUseCase returnBookUseCase;
     private final RemindLibraryBorrowerUseCase remindBorrowerUseCase;
+    // Who sees which section's books - see LibrarySectionAccess.
+    private final LibrarySectionAccess access;
 
     // Categories
 
@@ -72,36 +77,40 @@ public class LibraryService {
 
     public Page<LibraryCategoryDTO> listCategories(String schoolId, int page, int size, String search) {
         Page<LibraryCategory> result = categoryRepo.search(schoolId, trim(search), pageable(page, size));
-        var counts = bookRepo.countByCategories(schoolId, result.map(LibraryCategory::getId).getContent());
+        var counts = bookRepo.countByCategories(schoolId, result.map(LibraryCategory::getId).getContent(),
+                access.visibleSections());
         return result.map(c -> LibraryMapper.toDTO(c, counts.getOrDefault(c.getId(), 0L)));
     }
 
     // Books
 
-    public LibraryBookDTO createBook(String schoolId, String categoryId, String title, String author, String isbn,
-            String publisher, String shelf, int totalCopies) {
-        return createBookUseCase.execute(schoolId, categoryId, title, author, isbn, publisher, shelf, totalCopies);
+    public LibraryBookDTO createBook(String schoolId, String sectionId, String categoryId, String title,
+            String author, String isbn, String publisher, String shelf, int totalCopies) {
+        return createBookUseCase.execute(schoolId, access.sectionForSave(schoolId, sectionId), categoryId, title,
+                author, isbn, publisher, shelf, totalCopies);
     }
 
-    public LibraryBookDTO updateBook(String schoolId, String id, String categoryId, String title, String author,
-            String isbn, String publisher, String shelf, int totalCopies) {
-        return updateBookUseCase.execute(schoolId, id, categoryId, title, author, isbn, publisher, shelf,
-                totalCopies);
+    public LibraryBookDTO updateBook(String schoolId, String id, String sectionId, String categoryId, String title,
+            String author, String isbn, String publisher, String shelf, int totalCopies) {
+        visibleBook(schoolId, id);
+        return updateBookUseCase.execute(schoolId, id, access.sectionForSave(schoolId, sectionId), categoryId,
+                title, author, isbn, publisher, shelf, totalCopies);
     }
 
     public void deleteBook(String schoolId, String id) {
+        visibleBook(schoolId, id);
         deleteBookUseCase.execute(schoolId, id);
     }
 
     public LibraryBookDTO getBook(String schoolId, String id) {
-        return bookRepo.findByIdAndSchool(id, schoolId)
-                .map(LibraryMapper::toDTO)
-                .orElseThrow(() -> new NotFoundException("Book not found"));
+        return LibraryMapper.toDTO(visibleBook(schoolId, id));
     }
 
+    // sectionId narrows the list to one section; it can't widen it past the caller's own sections.
     public Page<LibraryBookDTO> listBooks(String schoolId, int page, int size, String search, String categoryId,
-            boolean outOfStockOnly) {
-        return bookRepo.search(schoolId, trim(search), trim(categoryId), outOfStockOnly, pageable(page, size))
+            boolean outOfStockOnly, String sectionId) {
+        return bookRepo.search(schoolId, trim(search), trim(categoryId), outOfStockOnly, sections(sectionId),
+                pageable(page, size))
                 .map(LibraryMapper::toDTO);
     }
 
@@ -109,37 +118,43 @@ public class LibraryService {
 
     public LibraryLoanDTO issueBook(String schoolId, String bookId, BorrowerType borrowerType, String borrowerId,
             LocalDate dueDate) {
+        visibleBook(schoolId, bookId);
         return issueBookUseCase.execute(schoolId, bookId, borrowerType, borrowerId, dueDate);
     }
 
     public LibraryLoanDTO returnBook(String schoolId, String loanId) {
+        visibleLoan(schoolId, loanId);
         return returnBookUseCase.execute(schoolId, loanId);
     }
 
     public LibraryLoanDTO remindBorrower(String schoolId, String loanId) {
+        visibleLoan(schoolId, loanId);
         return remindBorrowerUseCase.execute(schoolId, loanId);
     }
 
-    public Page<LibraryLoanDTO> listLoans(String schoolId, int page, int size, String search, Filter filter) {
+    public Page<LibraryLoanDTO> listLoans(String schoolId, int page, int size, String search, Filter filter,
+            String sectionId) {
         LocalDate today = LocalDate.now();
-        return loanRepo.search(schoolId, trim(search), filter, today, pageable(page, size))
+        return loanRepo.search(schoolId, trim(search), filter, today, sections(sectionId), pageable(page, size))
                 .map(loan -> LibraryMapper.toDTO(loan, today));
     }
 
     public Page<LibraryLoanDTO> listBookLoans(String schoolId, String bookId, int page, int size) {
+        visibleBook(schoolId, bookId);
         LocalDate today = LocalDate.now();
         return loanRepo.findByBook(bookId, schoolId, pageable(page, size))
                 .map(loan -> LibraryMapper.toDTO(loan, today));
     }
 
-    public LibrarySummaryDTO summary(String schoolId) {
-        var totals = bookRepo.totals(schoolId);
+    public LibrarySummaryDTO summary(String schoolId, String sectionId) {
+        var visible = sections(sectionId);
+        var totals = bookRepo.totals(schoolId, visible);
         return new LibrarySummaryDTO(
                 totals.titles(),
                 totals.totalCopies(),
                 totals.availableCopies(),
                 totals.totalCopies() - totals.availableCopies(),
-                loanRepo.countOverdue(schoolId, LocalDate.now()),
+                loanRepo.countOverdue(schoolId, LocalDate.now(), visible),
                 categoryRepo.countBySchool(schoolId));
     }
 
@@ -162,6 +177,32 @@ public class LibraryService {
         long overdue = loanRepo.countOverdueByBorrower(borrowerId, schoolId, LocalDate.now());
         String reason = setting.blockReason(type, active, overdue);
         return new LibraryBorrowerStatusDTO(active, overdue, setting.maxLoansFor(type), reason == null, reason);
+    }
+
+    // The sections a list covers: the caller's own, optionally narrowed to one of them.
+    private List<String> sections(String sectionId) {
+        var visible = access.visibleSections();
+        String wanted = trim(sectionId);
+        if (wanted.isEmpty()) {
+            return visible;
+        }
+        if (visible != null && !visible.contains(wanted)) {
+            throw new RuleException("You can only see your own sections' books");
+        }
+        return List.of(wanted);
+    }
+
+    private LibraryBook visibleBook(String schoolId, String bookId) {
+        var book = bookRepo.findByIdAndSchool(bookId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Book not found"));
+        access.requireVisible(book);
+        return book;
+    }
+
+    private void visibleLoan(String schoolId, String loanId) {
+        String bookId = loanRepo.findBookId(loanId, schoolId)
+                .orElseThrow(() -> new NotFoundException("Loan not found"));
+        visibleBook(schoolId, bookId);
     }
 
     private LibrarySetting setting(String schoolId) {

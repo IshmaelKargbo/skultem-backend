@@ -25,17 +25,17 @@ public class CreateLibraryBookUseCase {
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "LIBRARY_BOOK_CREATED")
-    public LibraryBookDTO execute(String schoolId, String categoryId, String title, String author, String isbn,
-            String publisher, String shelf, int totalCopies) {
+    public LibraryBookDTO execute(String schoolId, String sectionId, String categoryId, String title, String author,
+            String isbn, String publisher, String shelf, int totalCopies) {
         String cleanIsbn = blankToNull(isbn);
-        if (cleanIsbn != null && repo.existsByIsbnAndSchool(cleanIsbn, schoolId)) {
-            throw new AlreadyExistsException("A book with this ISBN is already in the library");
+        if (cleanIsbn != null && repo.existsByIsbnInSection(cleanIsbn, schoolId, sectionId)) {
+            throw new AlreadyExistsException("A book with this ISBN is already in this section's library");
         }
 
         var category = categoryRepo.findByIdAndSchool(categoryId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Library category not found"));
 
-        var domain = LibraryBook.create(schoolId, category, title.trim(), author.trim(), cleanIsbn,
+        var domain = LibraryBook.create(schoolId, sectionId, category, title.trim(), author.trim(), cleanIsbn,
                 blankToNull(publisher), blankToNull(shelf), totalCopies);
         repo.save(domain);
 

@@ -14,7 +14,8 @@ public interface LibraryBookRepository {
 
     void deleteById(String id);
 
-    boolean existsByIsbnAndSchool(String isbn, String schoolId);
+    // In this section (null = books without one).
+    boolean existsByIsbnInSection(String isbn, String schoolId, String sectionId);
 
     boolean existsByCategoryAndSchool(String categoryId, String schoolId);
 
@@ -24,15 +25,17 @@ public interface LibraryBookRepository {
     Optional<LibraryBook> findByIdAndSchoolForUpdate(String id, String schoolId);
 
     // Matches on title, author or ISBN. An empty query or categoryId means "no filter";
-    // outOfStockOnly keeps only books with no copy on the shelf.
+    // outOfStockOnly keeps only books with no copy on the shelf. sectionIds: only these sections' books
+    // (null = every book). The same goes for the other sectionIds parameters below.
     Page<LibraryBook> search(String schoolId, String query, String categoryId, boolean outOfStockOnly,
-            Pageable pageable);
+            Collection<String> sectionIds, Pageable pageable);
 
     // Category id -> number of books in it, for the given categories.
-    Map<String, Long> countByCategories(String schoolId, Collection<String> categoryIds);
+    Map<String, Long> countByCategories(String schoolId, Collection<String> categoryIds,
+            Collection<String> sectionIds);
 
-    /** Number of titles, total copies and available copies across the whole school. */
-    Totals totals(String schoolId);
+    /** Number of titles, total copies and available copies. */
+    Totals totals(String schoolId, Collection<String> sectionIds);
 
     record Totals(long titles, long totalCopies, long availableCopies) {
     }

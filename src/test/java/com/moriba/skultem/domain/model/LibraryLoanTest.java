@@ -17,7 +17,7 @@ class LibraryLoanTest {
     private final LibraryCategory category = LibraryCategory.create("school-1", "Fiction", "");
 
     private LibraryBook book(int copies) {
-        return LibraryBook.create("school-1", category, "Things Fall Apart", "Chinua Achebe", null, null, "A1",
+        return LibraryBook.create("school-1", null, category, "Things Fall Apart", "Chinua Achebe", null, null, "A1",
                 copies);
     }
 
@@ -98,10 +98,10 @@ class LibraryLoanTest {
         LibraryLoan.issueToStudent("school-1", book, student(), TODAY, TODAY.plusDays(3));
         LibraryLoan.issueToStudent("school-1", book, student(), TODAY, TODAY.plusDays(3));
 
-        assertThatThrownBy(() -> book.update(category, "T", "A", null, null, null, 1))
+        assertThatThrownBy(() -> book.update(null, category, "T", "A", null, null, null, 1))
                 .isInstanceOf(IllegalStateException.class);
 
-        book.update(category, "T", "A", null, null, null, 5);
+        book.update(null, category, "T", "A", null, null, null, 5);
         assertThat(book.getTotalCopies()).isEqualTo(5);
         assertThat(book.getAvailableCopies()).isEqualTo(3);
     }

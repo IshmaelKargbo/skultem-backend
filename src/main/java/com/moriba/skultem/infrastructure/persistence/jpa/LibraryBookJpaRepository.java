@@ -17,7 +17,9 @@ import com.moriba.skultem.infrastructure.persistence.entity.LibraryBookEntity;
 import jakarta.persistence.LockModeType;
 
 public interface LibraryBookJpaRepository extends JpaRepository<LibraryBookEntity, String> {
-    boolean existsByIsbnIgnoreCaseAndSchoolId(String isbn, String schoolId);
+    // ISBNs are unique per section: two sections can each own a copy of the same title. A null section matches
+    // books without one.
+    boolean existsByIsbnIgnoreCaseAndSchoolIdAndManagementSectionId(String isbn, String schoolId, String sectionId);
 
     boolean existsByCategory_IdAndSchoolId(String categoryId, String schoolId);
 
@@ -34,6 +36,7 @@ public interface LibraryBookJpaRepository extends JpaRepository<LibraryBookEntit
                 where b.schoolId = :schoolId
                 and (:categoryId = '' or b.category.id = :categoryId)
                 and (:outOfStockOnly = false or b.availableCopies = 0)
+                and (:allSections = true or b.managementSectionId in :sectionIds)
                 and (
                     lower(b.title) like lower(concat('%', :query, '%'))
                     or lower(b.author) like lower(concat('%', :query, '%'))
@@ -45,6 +48,7 @@ public interface LibraryBookJpaRepository extends JpaRepository<LibraryBookEntit
                 where b.schoolId = :schoolId
                 and (:categoryId = '' or b.category.id = :categoryId)
                 and (:outOfStockOnly = false or b.availableCopies = 0)
+                and (:allSections = true or b.managementSectionId in :sectionIds)
                 and (
                     lower(b.title) like lower(concat('%', :query, '%'))
                     or lower(b.author) like lower(concat('%', :query, '%'))
@@ -53,19 +57,24 @@ public interface LibraryBookJpaRepository extends JpaRepository<LibraryBookEntit
             """)
     Page<LibraryBookEntity> search(@Param("schoolId") String schoolId, @Param("query") String query,
             @Param("categoryId") String categoryId, @Param("outOfStockOnly") boolean outOfStockOnly,
+            @Param("allSections") boolean allSections, @Param("sectionIds") Collection<String> sectionIds,
             Pageable pageable);
 
     @Query("""
                 select b.category.id, count(b) from LibraryBookEntity b
                 where b.schoolId = :schoolId and b.category.id in :categoryIds
+                and (:allSections = true or b.managementSectionId in :sectionIds)
                 group by b.category.id
             """)
     List<Object[]> countByCategories(@Param("schoolId") String schoolId,
-            @Param("categoryIds") Collection<String> categoryIds);
+            @Param("categoryIds") Collection<String> categoryIds, @Param("allSections") boolean allSections,
+            @Param("sectionIds") Collection<String> sectionIds);
 
     @Query("""
                 select count(b), coalesce(sum(b.totalCopies), 0), coalesce(sum(b.availableCopies), 0)
                 from LibraryBookEntity b where b.schoolId = :schoolId
+                and (:allSections = true or b.managementSectionId in :sectionIds)
             """)
-    List<Object[]> totals(@Param("schoolId") String schoolId);
+    List<Object[]> totals(@Param("schoolId") String schoolId, @Param("allSections") boolean allSections,
+            @Param("sectionIds") Collection<String> sectionIds);
 }

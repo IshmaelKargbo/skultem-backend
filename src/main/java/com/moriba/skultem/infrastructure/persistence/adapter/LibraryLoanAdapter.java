@@ -1,6 +1,7 @@
 package com.moriba.skultem.infrastructure.persistence.adapter;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,7 +68,7 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
 
     @Override
     public Page<LibraryLoan> search(String schoolId, String query, Filter filter, LocalDate today,
-            Pageable pageable) {
+            Collection<String> sectionIds, Pageable pageable) {
         List<Status> statuses = List.of(Status.ISSUED, Status.RETURNED);
         LocalDate dueFrom = EARLIEST;
         LocalDate dueTo = LATEST;
@@ -86,7 +87,8 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
             }
         }
 
-        return repo.search(schoolId, query == null ? "" : query, statuses, dueFrom, dueTo, pageable)
+        return repo.search(schoolId, query == null ? "" : query, statuses, dueFrom, dueTo,
+                LibraryBookAdapter.all(sectionIds), LibraryBookAdapter.ids(sectionIds), pageable)
                 .map(LibraryLoanMapper::toDomain);
     }
 
@@ -97,7 +99,8 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
     }
 
     @Override
-    public long countOverdue(String schoolId, LocalDate today) {
-        return repo.countBySchoolIdAndStatusAndDueDateBefore(schoolId, Status.ISSUED, today);
+    public long countOverdue(String schoolId, LocalDate today, Collection<String> sectionIds) {
+        return repo.countOverdue(schoolId, Status.ISSUED, today, LibraryBookAdapter.all(sectionIds),
+                LibraryBookAdapter.ids(sectionIds));
     }
 }

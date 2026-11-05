@@ -27,6 +27,9 @@ public class LibraryBookEntity {
     @Column(nullable = false)
     private String schoolId;
 
+    @Column(name = "management_section_id")
+    private String managementSectionId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private LibraryCategoryEntity category;

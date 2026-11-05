@@ -1,6 +1,7 @@
 package com.moriba.skultem.domain.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -36,9 +37,11 @@ public interface LibraryLoanRepository {
     long countOverdueByBorrower(String borrowerId, String schoolId, LocalDate today);
 
     // Matches on book title or borrower name; an empty query means "no search".
-    Page<LibraryLoan> search(String schoolId, String query, Filter filter, LocalDate today, Pageable pageable);
+    // sectionIds: only loans of these sections' books (null = every loan).
+    Page<LibraryLoan> search(String schoolId, String query, Filter filter, LocalDate today,
+            Collection<String> sectionIds, Pageable pageable);
 
     Page<LibraryLoan> findByBook(String bookId, String schoolId, Pageable pageable);
 
-    long countOverdue(String schoolId, LocalDate today);
+    long countOverdue(String schoolId, LocalDate today, Collection<String> sectionIds);
 }

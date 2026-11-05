@@ -23,7 +23,7 @@ public class LibraryMapper {
 
     public static LibraryBookDTO toDTO(LibraryBook param) {
         if (param == null) return null;
-        return new LibraryBookDTO(param.getId(), param.getTitle(), param.getAuthor(), param.getIsbn(),
+        return new LibraryBookDTO(param.getId(), param.getSectionId(), param.getTitle(), param.getAuthor(), param.getIsbn(),
                 param.getPublisher(), param.getShelf(), toDTO(param.getCategory()), param.getTotalCopies(),
                 param.getAvailableCopies(), param.getCreatedAt(), param.getUpdatedAt());
     }

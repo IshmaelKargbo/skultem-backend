@@ -29,14 +29,14 @@ import com.moriba.skultem.infrastructure.security.PermissionService;
 
 import lombok.RequiredArgsConstructor;
 
-// Works out a caller's SectionScope. Only ADMIN, ACCOUNTANT and TEACHER can be limited to management
+// Works out a caller's SectionScope. Only the roles in SCOPABLE_ROLES can be limited to management
 // sections; everyone else (owner, proprietor, super admin, parent, system admin) is whole-school.
 @Service
 @RequiredArgsConstructor
 public class SectionScopeService {
 
     public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER, Role.PRINCIPAL,
-            Role.EXAM_OFFICER);
+            Role.EXAM_OFFICER, Role.LIBRARIAN);
 
     private static final String REQUEST_ATTRIBUTE = SectionScopeService.class.getName() + ".scope";
     private static final String VIEW_ATTRIBUTE = SectionScopeService.class.getName() + ".view";

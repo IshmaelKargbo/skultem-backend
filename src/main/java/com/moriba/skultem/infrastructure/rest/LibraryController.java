@@ -38,7 +38,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RequiresModule(FeatureModule.LIBRARY)
-// The school library is shared by every section.
+// Split by management section inside LibraryService (see LibrarySectionAccess), so a section-limited admin or
+// librarian gets through here and then only sees their sections' books.
 @com.moriba.skultem.infrastructure.security.SectionNeutral
 @RestController
 @RequestMapping("/api/v1/library")
@@ -46,15 +47,18 @@ import lombok.RequiredArgsConstructor;
 public class LibraryController {
 
     private static final String MANAGE = "@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'LIBRARIAN')";
-    private static final String VIEW = "@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'LIBRARIAN', 'TEACHER')";
+    // Teachers don't use the library screens - the librarian (or an admin) issues their books.
+    private static final String VIEW = "@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'LIBRARIAN')";
 
     private final LibraryService service;
 
     @GetMapping("/summary")
     @PreAuthorize(VIEW)
     public ApiResponse<LibrarySummaryDTO> summary(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
-        return new ApiResponse<>("success", 200, "Library summary fetched successfully", service.summary(school));
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String sectionId) {
+        return new ApiResponse<>("success", 200, "Library summary fetched successfully",
+                service.summary(school, sectionId));
     }
 
     // Settings & borrowing rules
@@ -142,8 +146,10 @@ public class LibraryController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String categoryId,
-            @RequestParam(defaultValue = "false") boolean outOfStock) {
-        return paged(service.listBooks(school, page, size, search, categoryId, outOfStock), "Books fetched successfully");
+            @RequestParam(defaultValue = "false") boolean outOfStock,
+            @RequestParam(required = false) String sectionId) {
+        return paged(service.listBooks(school, page, size, search, categoryId, outOfStock, sectionId),
+                "Books fetched successfully");
     }
 
     @GetMapping("/books/{id}")
@@ -169,7 +175,7 @@ public class LibraryController {
     public ApiResponse<LibraryBookDTO> createBook(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SaveLibraryBookDTO param) {
-        var res = service.createBook(school, param.categoryId(), param.title(), param.author(), param.isbn(),
+        var res = service.createBook(school, param.sectionId(), param.categoryId(), param.title(), param.author(), param.isbn(),
                 param.publisher(), param.shelf(), param.totalCopies());
         return new ApiResponse<>("success", 200, "Book added successfully", res);
     }
@@ -180,7 +186,7 @@ public class LibraryController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
             @Valid @RequestBody SaveLibraryBookDTO param) {
-        var res = service.updateBook(school, id, param.categoryId(), param.title(), param.author(), param.isbn(),
+        var res = service.updateBook(school, id, param.sectionId(), param.categoryId(), param.title(), param.author(), param.isbn(),
                 param.publisher(), param.shelf(), param.totalCopies());
         return new ApiResponse<>("success", 200, "Book updated successfully", res);
     }
@@ -203,8 +209,10 @@ public class LibraryController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "ALL") String status) {
-        return paged(service.listLoans(school, page, size, search, filter(status)), "Loans fetched successfully");
+            @RequestParam(defaultValue = "ALL") String status,
+            @RequestParam(required = false) String sectionId) {
+        return paged(service.listLoans(school, page, size, search, filter(status), sectionId),
+                "Loans fetched successfully");
     }
 
     @PostMapping("/loans")
