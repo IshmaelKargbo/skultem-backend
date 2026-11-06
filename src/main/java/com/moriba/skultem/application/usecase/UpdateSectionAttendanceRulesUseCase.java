@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class UpdateSectionAttendanceRulesUseCase {
 
     public record Input(Double attendanceThreshold, Integer attendanceWindowDays, Integer attendanceMinDays,
-            Integer attendanceStreakDays) {
+            Integer attendanceStreakDays, Integer attendanceRollCalls) {
     }
 
     private final SchoolRepository schoolRepo;
@@ -43,6 +43,7 @@ public class UpdateSectionAttendanceRulesUseCase {
 
         section.updateAttendanceRules(in.attendanceThreshold(), in.attendanceWindowDays(), in.attendanceMinDays(),
                 in.attendanceStreakDays());
+        section.updateAttendanceRollCalls(in.attendanceRollCalls());
         sectionRepo.save(section);
 
         return getSchoolStructureUseCase.execute(schoolId);

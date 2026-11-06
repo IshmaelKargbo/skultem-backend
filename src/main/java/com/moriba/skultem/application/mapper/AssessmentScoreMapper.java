@@ -126,7 +126,8 @@ public class AssessmentScoreMapper {
                 com.moriba.skultem.domain.service.ContinuousAssessmentCalculator.points(param.getFormalScore(), cycle.getFormalPercentage()),
                 recordings, cycle.isCaSubmitted(), new java.util.ArrayList<>(cycle.getCaLockedWeeks()),
                 cycle.getCaComponents().stream().map(c -> new AssessmentScoreDTO.Component(c.name(), c.weight(), c.source())).toList(),
-                cycle.getFormalLabel(), new java.util.ArrayList<>(cycle.getCaUnlockedWeeks()));
+                cycle.getFormalLabel(), new java.util.ArrayList<>(cycle.getCaUnlockedWeeks()),
+                cycle.getCaScoreScale().name());
         return new AssessmentScoreDTO(base.id(), base.name(), base.assessment(), base.term(), base.student(),
                 base.teacher(), base.subject(), base.clazz(), base.score(), base.weight(), base.weightScore(),
                 base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous, base.classSession(),

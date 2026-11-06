@@ -12,12 +12,15 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.ClassSessionAttendanceDTO;
 import com.moriba.skultem.application.dto.ClassSessionAttendanceRecordDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
+import com.moriba.skultem.domain.model.Attendance;
 import com.moriba.skultem.domain.model.ClassSession;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -32,10 +35,25 @@ public class GetClassSessionAttendanceUseCase {
         private final HolidayRepository holidayRepo;
         private final EnrollmentRepository enrollmentRepo;
         private final UserRepository userRepo;
+        private final SchoolRepository schoolRepo;
+        private final AttendanceRulesResolver attendanceRulesResolver;
 
         public ClassSessionAttendanceDTO execute(String schoolId, String classSessionId, LocalDate date) {
+                return execute(schoolId, classSessionId, date, null);
+        }
+
+        // With roll (1 or 2) on a two-roll-call class, each record shows that roll call's mark so the
+        // teacher edits just that one; without it, records show the result for the whole day.
+        public ClassSessionAttendanceDTO execute(String schoolId, String classSessionId, LocalDate date,
+                        Integer roll) {
                 var classSession = classSessionRepo.findByIdAndSchoolId(classSessionId, schoolId)
                                 .orElseThrow(() -> new NotFoundException("Class session not found"));
+
+                int rollCalls = schoolRepo.findById(schoolId)
+                                .map(s -> attendanceRulesResolver.rollCallsForLevel(s,
+                                                classSession.getClazz().getLevel()))
+                                .orElse(1);
+                Integer shownRoll = rollCalls == 2 && roll != null && (roll == 1 || roll == 2) ? roll : null;
 
                 var enrollments = loadSessionEnrollments(classSession, schoolId);
 
@@ -66,11 +84,40 @@ public class GetClassSessionAttendanceUseCase {
                                                 false,
                                                 null,
                                                 null,
+                                                null,
+                                                null,
                                                 null);
                         }
 
                         var mark = attendance.get();
                         String recordedBy = resolveRecorderName(mark.getRecordedByUserId(), recorderNameCache);
+                        String first = mark.getFirstRoll() != null ? mark.getFirstRoll().name() : null;
+                        String second = mark.getSecondRoll() != null ? mark.getSecondRoll().name() : null;
+
+                        if (shownRoll != null) {
+                                // This roll call only. A day marked before the school switched to two roll
+                                // calls has no roll marks, so it shows as not taken yet.
+                                var rollMark = mark.rollMark(shownRoll);
+                                return new ClassSessionAttendanceRecordDTO(
+                                                rollMark != null ? mark.getId() : null,
+                                                enrollment.getId(),
+                                                student.getId(),
+                                                student.getAdmissionNumber(),
+                                                String.join(" ", student.getGivenNames(), student.getFamilyName()),
+                                                gender,
+                                                student.getPhoto(),
+                                                rollMark != null,
+                                                mark.isHoliday(),
+                                                rollMark == Attendance.RollMark.PRESENT,
+                                                rollMark == Attendance.RollMark.EXCUSED,
+                                                rollMark == Attendance.RollMark.LATE,
+                                                rollMark == Attendance.RollMark.EXCUSED ? mark.getReason() : null,
+                                                recordedBy,
+                                                mark.getUpdatedAt(),
+                                                first,
+                                                second);
+                        }
+
                         return new ClassSessionAttendanceRecordDTO(
                                         mark.getId(),
                                         enrollment.getId(),
@@ -86,7 +133,9 @@ public class GetClassSessionAttendanceUseCase {
                                         mark.isLate(),
                                         mark.getReason(),
                                         recordedBy,
-                                        mark.getUpdatedAt());
+                                        mark.getUpdatedAt(),
+                                        first,
+                                        second);
                 }).toList();
 
                 int totalStudents = records.size();
@@ -133,7 +182,9 @@ public class GetClassSessionAttendanceUseCase {
                                 totalGirls,
                                 presentBoys,
                                 presentGirls,
-                                records);
+                                records,
+                                rollCalls,
+                                shownRoll);
         }
 
         private String resolveRecorderName(String recordedByUserId, Map<String, String> cache) {

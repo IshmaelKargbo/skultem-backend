@@ -21,8 +21,12 @@ public class LibrarySettingEntity {
     @Id
     private String id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String schoolId;
+
+    // Null = the school's own rules; otherwise this management section's.
+    @Column(name = "management_section_id")
+    private String managementSectionId;
 
     @Column(nullable = false)
     private int maxStudentLoans;

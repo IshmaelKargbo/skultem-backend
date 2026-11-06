@@ -170,7 +170,7 @@ public class SchoolController {
         var res = updateSectionAttendanceRulesUseCase.execute(school, id,
                 new com.moriba.skultem.application.usecase.UpdateSectionAttendanceRulesUseCase.Input(
                         param.attendanceThreshold(), param.attendanceWindowDays(), param.attendanceMinDays(),
-                        param.attendanceStreakDays()));
+                        param.attendanceStreakDays(), param.attendanceRollCalls()));
         return new ApiResponse<>("success", 200, "Section attendance rules updated successfully", res);
     }
 
@@ -242,7 +242,8 @@ public class SchoolController {
         var address = new Address(param.region(), param.district(), param.chiefdom(), param.city(), param.street());
         var res = updateSchoolUseCase.execute(school, param.name(), param.domain(), address,
                 param.attendanceThreshold(), param.genderComposition(), param.attendanceWindowDays(),
-                param.attendanceMinDays(), param.attendanceStreakDays(), param.gradeApprover(),
+                param.attendanceMinDays(), param.attendanceStreakDays(), param.attendanceRollCalls(),
+                param.gradeApprover(),
                 param.roundAssessmentScores());
         return new ApiResponse<>("success", 200, "School updated successfully", res);
     }

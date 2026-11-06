@@ -56,7 +56,7 @@ public class SchoolBrandingResolver {
                 dto.primaryColor(), dto.secondaryColor(), dto.attendanceThreshold(), dto.genderComposition(),
                 dto.testSchool(), dto.managementModel(), dto.createdAt(), dto.updatedAt(), b.phone(),
                 dto.attendanceWindowDays(), dto.attendanceMinDays(), dto.attendanceStreakDays(), dto.gradeApprover(),
-                dto.roundAssessmentScores());
+                dto.roundAssessmentScores(), dto.attendanceRollCalls());
     }
 
     public EffectiveBranding forSchool(School school) {

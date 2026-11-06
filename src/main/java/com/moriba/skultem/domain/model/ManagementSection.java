@@ -31,14 +31,16 @@ public class ManagementSection extends AggregateRoot<String> {
     private Integer attendanceWindowDays;
     private Integer attendanceMinDays;
     private Integer attendanceStreakDays;
+    // 1 or 2 roll calls a day; null = use the school's.
+    private Integer attendanceRollCalls;
     // Null = the school's choice (see GradeApprovalResolver).
     private GradeApprover gradeApprover;
 
     public ManagementSection(String id, String schoolId, String name, int displayOrder, String logo,
             String principalName, String principalSignature, Address address, String phone,
             Double attendanceThreshold, Integer attendanceWindowDays, Integer attendanceMinDays,
-            Integer attendanceStreakDays, GradeApprover gradeApprover, Instant createdAt,
-            Instant updatedAt) {
+            Integer attendanceStreakDays, Integer attendanceRollCalls, GradeApprover gradeApprover,
+            Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
         this.name = name;
@@ -52,6 +54,7 @@ public class ManagementSection extends AggregateRoot<String> {
         this.attendanceWindowDays = attendanceWindowDays;
         this.attendanceMinDays = attendanceMinDays;
         this.attendanceStreakDays = attendanceStreakDays;
+        this.attendanceRollCalls = attendanceRollCalls;
         this.gradeApprover = gradeApprover;
         touch(updatedAt);
     }
@@ -59,7 +62,7 @@ public class ManagementSection extends AggregateRoot<String> {
     public static ManagementSection create(String schoolId, String name, int displayOrder) {
         Instant now = Instant.now();
         return new ManagementSection(UUID.randomUUID().toString(), schoolId, name, displayOrder, null, null, null, null, null, null, null, null, null, null,
-                now, now);
+                null, now, now);
     }
 
     public void update(String name, int displayOrder) {
@@ -95,6 +98,12 @@ public class ManagementSection extends AggregateRoot<String> {
         this.attendanceWindowDays = windowDays;
         this.attendanceMinDays = minDays;
         this.attendanceStreakDays = streakDays;
+        touch(Instant.now());
+    }
+
+    // 1 or 2 roll calls a day; null clears the override so the section uses the school's again.
+    public void updateAttendanceRollCalls(Integer rollCalls) {
+        this.attendanceRollCalls = rollCalls == null ? null : School.validateRollCalls(rollCalls);
         touch(Instant.now());
     }
 

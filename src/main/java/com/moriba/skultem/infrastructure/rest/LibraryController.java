@@ -66,8 +66,10 @@ public class LibraryController {
     @GetMapping("/settings")
     @PreAuthorize(VIEW)
     public ApiResponse<LibrarySettingDTO> getSettings(
-            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
-        return new ApiResponse<>("success", 200, "Library settings fetched successfully", service.getSettings(school));
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String sectionId) {
+        return new ApiResponse<>("success", 200, "Library settings fetched successfully",
+                service.getSettings(school, sectionId));
     }
 
     @PutMapping("/settings")
@@ -75,9 +77,19 @@ public class LibraryController {
     public ApiResponse<LibrarySettingDTO> updateSettings(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody SaveLibrarySettingDTO param) {
-        var res = service.updateSettings(school, param.maxStudentLoans(), param.maxTeacherLoans(),
+        var res = service.updateSettings(school, param.sectionId(), param.maxStudentLoans(), param.maxTeacherLoans(),
                 param.blockWhenOverdue(), param.defaultLoanDays());
         return new ApiResponse<>("success", 200, "Library settings saved successfully", res);
+    }
+
+    // A section goes back to using the school's borrowing rules.
+    @DeleteMapping("/settings")
+    @PreAuthorize(MANAGE)
+    public ApiResponse<LibrarySettingDTO> resetSectionSettings(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String sectionId) {
+        return new ApiResponse<>("success", 200, "Section now uses the school's library rules",
+                service.resetSectionSettings(school, sectionId));
     }
 
     @GetMapping("/borrowers/{type}/{id}/status")
@@ -85,7 +97,8 @@ public class LibraryController {
     public ApiResponse<LibraryBorrowerStatusDTO> borrowerStatus(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String type,
-            @PathVariable String id) {
+            @PathVariable String id,
+            @RequestParam(required = false) String bookId) {
         BorrowerType borrowerType;
         try {
             borrowerType = BorrowerType.valueOf(type.trim().toUpperCase());
@@ -93,7 +106,7 @@ public class LibraryController {
             throw new BadRequestException("Borrower type must be STUDENT or TEACHER");
         }
         return new ApiResponse<>("success", 200, "Borrower status fetched successfully",
-                service.borrowerStatus(school, borrowerType, id));
+                service.borrowerStatus(school, borrowerType, id, bookId));
     }
 
     // Categories

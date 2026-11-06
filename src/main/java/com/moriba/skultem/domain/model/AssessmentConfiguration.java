@@ -39,6 +39,8 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
     // name of the formal part. Empty = the CA is N equal recordings, as before.
     private final java.util.List<CaComponent> components = new java.util.ArrayList<>();
     private String formalLabel;
+    // What teachers type a CA recording out of (see CaScoreScale). Display only - the stored mark stays 0-100.
+    private com.moriba.skultem.domain.vo.CaScoreScale caScoreScale = com.moriba.skultem.domain.vo.CaScoreScale.PERCENT;
 
     // One assessment in one term ("Test 1" in Term 2): whether it uses CA + formal test and, if so, how many CA
     // recordings it has. A short term, or a short test, simply has fewer weeks.
@@ -152,6 +154,17 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
         this.formalLabel = formalLabel == null || formalLabel.isBlank() ? null : formalLabel.trim();
         this.caEntries = clean.size();
         this.caFrequency = CaFrequency.CUSTOM;
+    }
+
+    // null keeps the current scale (a screen that doesn't show the option mustn't reset it).
+    public void changeScoreScale(com.moriba.skultem.domain.vo.CaScoreScale scale) {
+        if (scale != null) {
+            this.caScoreScale = scale;
+        }
+    }
+
+    public void restoreScoreScale(com.moriba.skultem.domain.vo.CaScoreScale scale) {
+        this.caScoreScale = scale == null ? com.moriba.skultem.domain.vo.CaScoreScale.PERCENT : scale;
     }
 
     public void restoreComponents(String text, String formalLabel) {
@@ -333,6 +346,7 @@ public class AssessmentConfiguration extends AggregateRoot<String> {
                 + caEntries
                 + (components.isEmpty() ? "" : ", components " + components.stream()
                         .map(c -> c.name() + " " + c.weight() + "%").collect(java.util.stream.Collectors.joining(", ")))
-                + (plan.isEmpty() ? "" : ", " + plan.size() + " term/assessment override(s)");
+                + (plan.isEmpty() ? "" : ", " + plan.size() + " term/assessment override(s)")
+                + (caScoreScale == com.moriba.skultem.domain.vo.CaScoreScale.WEIGHT ? ", CA marked out of each part's weight" : "");
     }
 }

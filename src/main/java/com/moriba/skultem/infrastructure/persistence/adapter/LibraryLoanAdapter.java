@@ -67,6 +67,17 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
     }
 
     @Override
+    public long countActiveByBorrowerInSection(String borrowerId, String schoolId, String sectionId) {
+        return repo.countByBorrowerInSection(borrowerId, schoolId, sectionId, Status.ISSUED);
+    }
+
+    @Override
+    public long countOverdueByBorrowerInSection(String borrowerId, String schoolId, String sectionId,
+            LocalDate today) {
+        return repo.countDueBeforeByBorrowerInSection(borrowerId, schoolId, sectionId, Status.ISSUED, today);
+    }
+
+    @Override
     public Page<LibraryLoan> search(String schoolId, String query, Filter filter, LocalDate today,
             Collection<String> sectionIds, Pageable pageable) {
         List<Status> statuses = List.of(Status.ISSUED, Status.RETURNED);

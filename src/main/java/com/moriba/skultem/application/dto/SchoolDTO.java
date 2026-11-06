@@ -15,6 +15,8 @@ public record SchoolDTO(String id, String name, String domain, Address address, 
         String primaryColor, String secondaryColor, Double attendanceThreshold, GenderComposition genderComposition,
         boolean testSchool, ManagementModel managementModel, Instant createdAt, Instant updatedAt, String phone,
         int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
-        com.moriba.skultem.domain.vo.GradeApprover gradeApprover, boolean roundAssessmentScores) {
+        com.moriba.skultem.domain.vo.GradeApprover gradeApprover, boolean roundAssessmentScores,
+        // 1 or 2 roll calls a day (see School.attendanceRollCalls).
+        int attendanceRollCalls) {
 
 }

@@ -20,6 +20,7 @@ public class ClassSubjectAssessmentLifeCycleMapper {
         cycle.restoreLockedWeeks(param.getCaLockedWeeks());
         cycle.restoreUnlockedWeeks(param.getCaUnlockedWeeks());
         cycle.restoreComponents(param.getCaComponentsText(), param.getFormalLabel());
+        cycle.restoreScoreScale(param.getCaScoreScale());
         return cycle;
     }
 
@@ -35,7 +36,7 @@ public class ClassSubjectAssessmentLifeCycleMapper {
         return new ClassSubjectAssessmentLifeCycleEntity(param.getId(), param.getSchoolId(), term, assessment, subject, param.getStatus(),
                 param.getStructure(), param.getCaPercentage(), param.getFormalPercentage(), param.getCaFrequency(),
                 param.getCaEntries(), param.getConfigVersion(), param.getStructureFrozenAt(), param.getCaSubmittedAt(), param.lockedWeeksAsText(),
-                param.componentsAsText(), param.getFormalLabel(), param.unlockedWeeksAsText(), param.getCreatedAt(),
+                param.componentsAsText(), param.getFormalLabel(), param.unlockedWeeksAsText(), param.getCaScoreScale(), param.getCreatedAt(),
                 param.getUpdatedAt());
     }
 }

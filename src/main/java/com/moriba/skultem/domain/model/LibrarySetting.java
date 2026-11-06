@@ -9,7 +9,8 @@ import com.moriba.skultem.domain.shared.AggregateRoot;
 import lombok.Getter;
 
 /**
- * A school's borrowing rules: how many books a student or teacher may hold at once, whether an
+ * A library's borrowing rules. sectionId null = the school's own rules; otherwise one management
+ * section's library (e.g. Primary) - a section without its own uses the school's. The rules: how many books a student or teacher may hold at once, whether an
  * overdue book stops them borrowing more, and how long a book is lent for by default.
  */
 @Getter
@@ -18,6 +19,7 @@ public class LibrarySetting extends AggregateRoot<String> {
     public static final int MAX_LOAN_DAYS = 365;
 
     private String schoolId;
+    private String sectionId;
     private int maxStudentLoans;
     private int maxTeacherLoans;
     private boolean blockWhenOverdue;
@@ -25,8 +27,15 @@ public class LibrarySetting extends AggregateRoot<String> {
 
     public LibrarySetting(String id, String schoolId, int maxStudentLoans, int maxTeacherLoans,
             boolean blockWhenOverdue, int defaultLoanDays, Instant createdAt, Instant updatedAt) {
+        this(id, schoolId, null, maxStudentLoans, maxTeacherLoans, blockWhenOverdue, defaultLoanDays, createdAt,
+                updatedAt);
+    }
+
+    public LibrarySetting(String id, String schoolId, String sectionId, int maxStudentLoans, int maxTeacherLoans,
+            boolean blockWhenOverdue, int defaultLoanDays, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.schoolId = schoolId;
+        this.sectionId = sectionId;
         this.maxStudentLoans = maxStudentLoans;
         this.maxTeacherLoans = maxTeacherLoans;
         this.blockWhenOverdue = blockWhenOverdue;
@@ -38,6 +47,14 @@ public class LibrarySetting extends AggregateRoot<String> {
     public static LibrarySetting defaults(String schoolId) {
         Instant now = Instant.now();
         return new LibrarySetting(UUID.randomUUID().toString(), schoolId, 2, 5, true, 14, now, now);
+    }
+
+    /** A section's own rules, starting as a copy of the rules it used until now. */
+    public static LibrarySetting forSection(String sectionId, LibrarySetting from) {
+        Instant now = Instant.now();
+        return new LibrarySetting(UUID.randomUUID().toString(), from.getSchoolId(), sectionId,
+                from.getMaxStudentLoans(), from.getMaxTeacherLoans(), from.isBlockWhenOverdue(),
+                from.getDefaultLoanDays(), now, now);
     }
 
     public void update(int maxStudentLoans, int maxTeacherLoans, boolean blockWhenOverdue, int defaultLoanDays) {

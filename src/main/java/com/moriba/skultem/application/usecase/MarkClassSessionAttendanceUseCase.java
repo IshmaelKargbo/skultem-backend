@@ -20,6 +20,7 @@ import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.AttendanceMapper;
 import com.moriba.skultem.application.mapper.NotificationMapper;
+import com.moriba.skultem.application.services.AttendanceRulesResolver;
 import com.moriba.skultem.application.services.NotificationService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.model.Attendance;
@@ -33,6 +34,7 @@ import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.HolidayRepository;
 import com.moriba.skultem.domain.repository.NotificationRepository;
+import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.StudentParentRepository;
 import com.moriba.skultem.domain.vo.Priority;
 import com.moriba.skultem.infrastructure.security.PermissionService;
@@ -54,6 +56,8 @@ public class MarkClassSessionAttendanceUseCase {
     private final StudentParentRepository studentParentRepo;
     private final HolidayRepository holidayRepo;
     private final EnrollmentRepository enrollmentRepo;
+    private final SchoolRepository schoolRepo;
+    private final AttendanceRulesResolver attendanceRulesResolver;
 
     @AuditLogAnnotation(action = "CLASS_ATTENDANCE_MARKED")
     public List<AttendanceDTO> execute(
@@ -61,6 +65,19 @@ public class MarkClassSessionAttendanceUseCase {
             String classSessionId,
             LocalDate date,
             boolean holiday,
+            List<MarkRecord> records) {
+        return execute(schoolId, classSessionId, date, holiday, null, records);
+    }
+
+    // roll is which roll call (1 or 2) is being taken. It is only used, and then required, when the
+    // class's school/section takes two roll calls a day; otherwise the whole day is marked at once.
+    @AuditLogAnnotation(action = "CLASS_ATTENDANCE_MARKED")
+    public List<AttendanceDTO> execute(
+            String schoolId,
+            String classSessionId,
+            LocalDate date,
+            boolean holiday,
+            Integer roll,
             List<MarkRecord> records) {
 
         var academicYear = academicYearRepo.findActiveBySchool(schoolId)
@@ -90,6 +107,14 @@ public class MarkClassSessionAttendanceUseCase {
             throw new RuleException("Cannot mark attendance on a weekend or holiday");
         }
 
+        var school = schoolRepo.findById(schoolId)
+                .orElseThrow(() -> new NotFoundException("School not found"));
+        boolean twoRollCalls = attendanceRulesResolver.rollCallsForLevel(school,
+                classSession.getClazz().getLevel()) == 2;
+        if (twoRollCalls && (roll == null || (roll != 1 && roll != 2))) {
+            throw new RuleException("Pick which roll call you are taking (1st or 2nd)");
+        }
+
         String recordedByUserId = PermissionService.getCurrentUser().userId();
 
         return records.stream().map(record -> {
@@ -104,7 +129,26 @@ public class MarkClassSessionAttendanceUseCase {
             var existingOpt = attendanceRepo.findByEnrollmentAndDateAndSchoolId(enrollment.getId(), date, schoolId);
 
             Attendance attendance;
-            if (existingOpt.isPresent()) {
+            if (twoRollCalls) {
+                var mark = Attendance.RollMark.of(record.present(), record.excused(), record.late());
+                if (existingOpt.isPresent()) {
+                    attendance = existingOpt.get();
+                } else {
+                    // Starts as the first mark taken; markRoll below sets the day from it.
+                    attendance = Attendance.create(UUID.randomUUID().toString(), schoolId, enrollment, date,
+                            false, false, false, null, holiday, recordedByUserId);
+                }
+                var prevMark = attendance.rollMark(roll);
+
+                attendance.markRoll(roll, mark, record.reason(), holiday, recordedByUserId);
+                attendanceRepo.save(attendance);
+
+                // Parents hear after each roll call, so a missed morning is known the same day.
+                if (mark != prevMark) {
+                    parents.forEach(parent -> notifyParentForRollCall(attendance, parent, roll, mark,
+                            prevMark != null));
+                }
+            } else if (existingOpt.isPresent()) {
                 attendance = existingOpt.get();
 
                 String prevStatus = attendance.getStatus();
@@ -181,6 +225,51 @@ public class MarkClassSessionAttendanceUseCase {
                 meta,
                 Priority.HIGH
             );
+
+        notificationRepo.save(notification);
+        long count = notificationRepo.countAllOpenByOwnerAndSchoolId(parent.getUser().getId(), attendance.getSchoolId());
+        notificationService.sendToUser(parent.getUser().getId(), count, NotificationMapper.toDTO(notification));
+    }
+
+    private void notifyParentForRollCall(Attendance attendance, Parent parent, int roll, Attendance.RollMark mark,
+            boolean corrected) {
+        if (parent == null || mark == Attendance.RollMark.PRESENT) {
+            return;
+        }
+
+        String rollName = roll == 1 ? "1st" : "2nd";
+        String label = switch (mark) {
+            case LATE -> "Late";
+            case EXCUSED -> "Excused";
+            default -> "Absent";
+        };
+        String name = attendance.getEnrollment().getStudent().getName();
+
+        Map<String, String> meta = Map.of(
+                "student_id", attendance.getEnrollment().getStudent().getId(),
+                "student_name", name,
+                "attendance_date", attendance.getDate().toString(),
+                "status", label,
+                "roll_call", String.valueOf(roll),
+                "day_status", attendance.getStatus(),
+                "corrected", corrected ? "true" : "false");
+
+        String title = "Attendance Update for " + name + " on " + attendance.getDate();
+        String message = "Your child was marked " + label + " at the " + rollName + " roll call on "
+                + attendance.getDate() + ".";
+        if (mark == Attendance.RollMark.ABSENT) {
+            message += " A student must be present at both roll calls to count as present for the day.";
+        }
+
+        Notification notification = Notification.create(
+                UUID.randomUUID().toString(),
+                attendance.getSchoolId(),
+                parent.getUser(),
+                Notification.Type.ATTENDANCE,
+                title,
+                message,
+                meta,
+                Priority.HIGH);
 
         notificationRepo.save(notification);
         long count = notificationRepo.countAllOpenByOwnerAndSchoolId(parent.getUser().getId(), attendance.getSchoolId());

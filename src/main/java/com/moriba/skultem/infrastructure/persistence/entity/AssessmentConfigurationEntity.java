@@ -62,6 +62,11 @@ public class AssessmentConfigurationEntity {
 
     private String formalLabel;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(nullable = false)
+    @lombok.Builder.Default
+    private com.moriba.skultem.domain.vo.CaScoreScale caScoreScale = com.moriba.skultem.domain.vo.CaScoreScale.PERCENT;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

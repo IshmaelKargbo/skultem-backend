@@ -40,12 +40,14 @@ public class SaveAssessmentConfigurationUseCase {
     private final ListAssessmentConfigurationsUseCase listUseCase;
     private final LogActivityUseCase logActivityUseCase;
     private final RefreshUnstartedAssessmentsUseCase refreshUnstartedUseCase;
+    private final com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository cycleRepo;
 
     @AuditLogAnnotation(action = "ASSESSMENT_CONFIGURATION_CHANGED")
     public Result execute(String schoolId, String userId, String templateId, AssessmentStructure structure,
             int caPercentage, int formalPercentage, CaFrequency caFrequency, int caEntries,
             java.util.List<AssessmentConfiguration.PlanEntry> plan, boolean applyToUnstarted,
-            java.util.List<com.moriba.skultem.domain.vo.CaComponent> components, String formalLabel) {
+            java.util.List<com.moriba.skultem.domain.vo.CaComponent> components, String formalLabel,
+            com.moriba.skultem.domain.vo.CaScoreScale scoreScale) {
         var template = templateRepo.findByIdAndSchoolId(templateId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Assessment template not found"));
         String scope = "template " + template.getName();
@@ -64,7 +66,20 @@ public class SaveAssessmentConfigurationUseCase {
         }
         saved.replacePlan(plan);
         saved.replaceComponents(components, formalLabel);
+        saved.changeScoreScale(scoreScale);
         configRepo.save(saved);
+
+        // The entry scale never changes a stored mark, so it follows the setting on every open assessment of this
+        // template - including ones already being graded - instead of waiting for a new term like the rest.
+        var scale = saved.getCaScoreScale();
+        var rescaled = cycleRepo.findAllOpenBySchool(schoolId).stream()
+                .filter(c -> c.getAssessment() != null && c.getAssessment().getTemplate() != null
+                        && templateId.equals(c.getAssessment().getTemplate().getId()))
+                .filter(c -> c.applyScoreScale(scale))
+                .toList();
+        if (!rescaled.isEmpty()) {
+            cycleRepo.saveAll(rescaled);
+        }
 
         // Assessments nobody has graded yet move onto the new setup right away (a school going live with blank
         // assessments doesn't have to wait for a new term); anything with a grade in it is never touched.

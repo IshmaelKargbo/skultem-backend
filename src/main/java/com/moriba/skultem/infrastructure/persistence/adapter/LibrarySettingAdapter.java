@@ -21,6 +21,7 @@ public class LibrarySettingAdapter implements LibrarySettingRepository {
         repo.save(LibrarySettingEntity.builder()
                 .id(d.getId())
                 .schoolId(d.getSchoolId())
+                .managementSectionId(d.getSectionId())
                 .maxStudentLoans(d.getMaxStudentLoans())
                 .maxTeacherLoans(d.getMaxTeacherLoans())
                 .blockWhenOverdue(d.isBlockWhenOverdue())
@@ -32,8 +33,22 @@ public class LibrarySettingAdapter implements LibrarySettingRepository {
 
     @Override
     public Optional<LibrarySetting> findBySchool(String schoolId) {
-        return repo.findBySchoolId(schoolId).map(e -> new LibrarySetting(e.getId(), e.getSchoolId(),
-                e.getMaxStudentLoans(), e.getMaxTeacherLoans(), e.isBlockWhenOverdue(), e.getDefaultLoanDays(),
-                e.getCreatedAt(), e.getUpdatedAt()));
+        return repo.findBySchoolIdAndManagementSectionIdIsNull(schoolId).map(LibrarySettingAdapter::toDomain);
+    }
+
+    @Override
+    public Optional<LibrarySetting> findBySchoolAndSection(String schoolId, String sectionId) {
+        return repo.findBySchoolIdAndManagementSectionId(schoolId, sectionId).map(LibrarySettingAdapter::toDomain);
+    }
+
+    @Override
+    public void delete(LibrarySetting d) {
+        repo.deleteById(d.getId());
+    }
+
+    private static LibrarySetting toDomain(LibrarySettingEntity e) {
+        return new LibrarySetting(e.getId(), e.getSchoolId(), e.getManagementSectionId(), e.getMaxStudentLoans(),
+                e.getMaxTeacherLoans(), e.isBlockWhenOverdue(), e.getDefaultLoanDays(), e.getCreatedAt(),
+                e.getUpdatedAt());
     }
 }

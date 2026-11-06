@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.dto.BroadsheetDTO;
-import com.moriba.skultem.application.dto.ExamScheduleDTO;
-import com.moriba.skultem.application.usecase.ExamScheduleUseCase;
+import com.moriba.skultem.application.dto.ExamTimetableDTO;
+import com.moriba.skultem.application.usecase.ExamTimetableUseCase;
 import com.moriba.skultem.application.usecase.GetBroadsheetUseCase;
 import com.moriba.skultem.application.usecase.ListExamSubmissionsUseCase;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
-import com.moriba.skultem.infrastructure.rest.dto.SaveExamScheduleDTO;
+import com.moriba.skultem.infrastructure.rest.dto.SaveExamPaperDTO;
+import com.moriba.skultem.infrastructure.rest.dto.SaveExamTimetableDTO;
+import com.moriba.skultem.infrastructure.security.PermissionService;
 import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
@@ -40,52 +42,128 @@ public class ExamOfficeController {
     // Teachers read the timetable too - they invigilate, and need to know when their classes sit.
     private static final String VIEW = "@permissionService.hasAnySchoolRole(#school, 'EXAM_OFFICER', 'ADMIN', 'PRINCIPAL', 'OWNER', 'PROPRIETOR', 'TEACHER')";
 
-    private final ExamScheduleUseCase examScheduleUseCase;
+    private final ExamTimetableUseCase examTimetableUseCase;
     private final GetBroadsheetUseCase getBroadsheetUseCase;
     private final ListExamSubmissionsUseCase listExamSubmissionsUseCase;
+    private final PermissionService permissionService;
+
+    // ---- Exam timetables: one per assessment per term. Teachers only see published ones.
 
     @SectionScoped
-    @GetMapping("/schedule")
-    @PreAuthorize(VIEW + " and @sectionScope.clazz(#school, #classId)")
-    public ApiResponse<List<ExamScheduleDTO>> listSchedule(
+    @GetMapping("/timetables")
+    @PreAuthorize(VIEW)
+    public ApiResponse<List<ExamTimetableDTO.Summary>> listTimetables(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @AuthenticationPrincipal(expression = "userId") String userId,
-            @RequestParam String termId,
-            @RequestParam(required = false) String classId,
-            @RequestParam(required = false, defaultValue = "false") boolean mine) {
-        var res = examScheduleUseCase.list(school, termId, classId, mine ? userId : null);
-        return new ApiResponse<>("success", 200, "Exam timetable fetched successfully", res);
+            @RequestParam String termId) {
+        var res = examTimetableUseCase.listForTerm(school, termId, canManage(school));
+        return new ApiResponse<>("success", 200, "Exam timetables fetched successfully", res);
     }
 
     @SectionScoped
-    @PostMapping("/schedule")
-    @PreAuthorize(MANAGE + " and @sectionScope.clazz(#school, #param.classId())")
-    public ApiResponse<ExamScheduleDTO> createSchedule(
+    @GetMapping("/timetables/{id}")
+    @PreAuthorize(VIEW + " and @sectionScope.examTimetable(#school, #id) and @sectionScope.clazz(#school, #classId)")
+    public ApiResponse<ExamTimetableDTO> getTimetable(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @Valid @RequestBody SaveExamScheduleDTO param) {
-        var res = examScheduleUseCase.create(school, toInput(param));
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @PathVariable String id,
+            @RequestParam(required = false) String classId,
+            @RequestParam(required = false, defaultValue = "false") boolean mine) {
+        var res = examTimetableUseCase.get(school, id, classId, mine ? userId : null, canManage(school));
+        return new ApiResponse<>("success", 200, "Exam timetable fetched successfully", res);
+    }
+
+    // A parent's child: their class's papers on every published timetable this year.
+    @SectionScoped
+    @GetMapping("/timetables/student/{studentId}")
+    @PreAuthorize("@permissionService.isParentOfStudent(#school, #studentId) and @sectionScope.student(#school, #studentId)")
+    public ApiResponse<List<ExamTimetableDTO>> studentTimetables(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String studentId) {
+        var res = examTimetableUseCase.forStudent(school, studentId);
+        return new ApiResponse<>("success", 200, "Exam timetables fetched successfully", res);
+    }
+
+    @SectionScoped
+    @PostMapping("/timetables")
+    @PreAuthorize(MANAGE)
+    public ApiResponse<ExamTimetableDTO> createTimetable(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody SaveExamTimetableDTO param) {
+        var res = examTimetableUseCase.create(school, toInput(param));
+        return new ApiResponse<>("success", 200, "Exam timetable set up", res);
+    }
+
+    @SectionScoped
+    @PutMapping("/timetables/{id}")
+    @PreAuthorize(MANAGE + " and @sectionScope.examTimetable(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> updateTimetable(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody SaveExamTimetableDTO param) {
+        var res = examTimetableUseCase.update(school, id, toInput(param));
+        return new ApiResponse<>("success", 200, "Exam timetable updated", res);
+    }
+
+    @SectionScoped
+    @PostMapping("/timetables/{id}/publish")
+    @PreAuthorize(MANAGE + " and @sectionScope.examTimetable(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> publishTimetable(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = examTimetableUseCase.publish(school, id);
+        return new ApiResponse<>("success", 200, "Exam timetable published", res);
+    }
+
+    @SectionScoped
+    @PostMapping("/timetables/{id}/unpublish")
+    @PreAuthorize(MANAGE + " and @sectionScope.examTimetable(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> unpublishTimetable(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        var res = examTimetableUseCase.unpublish(school, id);
+        return new ApiResponse<>("success", 200, "Exam timetable moved back to draft", res);
+    }
+
+    @SectionScoped
+    @DeleteMapping("/timetables/{id}")
+    @PreAuthorize(MANAGE + " and @sectionScope.examTimetable(#school, #id)")
+    public ApiResponse<Void> deleteTimetable(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        examTimetableUseCase.delete(school, id);
+        return new ApiResponse<>("success", 200, "Exam timetable deleted", null);
+    }
+
+    @SectionScoped
+    @PostMapping("/timetables/{id}/papers")
+    @PreAuthorize(MANAGE + " and @sectionScope.examTimetable(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> addPaper(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody SaveExamPaperDTO param) {
+        var res = examTimetableUseCase.addPaper(school, id, toInput(param));
         return new ApiResponse<>("success", 200, "Exam paper added", res);
     }
 
     @SectionScoped
-    @PutMapping("/schedule/{id}")
-    @PreAuthorize(MANAGE + " and @sectionScope.examSchedule(#school, #id) and @sectionScope.clazz(#school, #param.classId())")
-    public ApiResponse<ExamScheduleDTO> updateSchedule(
+    @PutMapping("/papers/{id}")
+    @PreAuthorize(MANAGE + " and @sectionScope.examPaper(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> updatePaper(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,
-            @Valid @RequestBody SaveExamScheduleDTO param) {
-        var res = examScheduleUseCase.update(school, id, toInput(param));
+            @Valid @RequestBody SaveExamPaperDTO param) {
+        var res = examTimetableUseCase.updatePaper(school, id, toInput(param));
         return new ApiResponse<>("success", 200, "Exam paper updated", res);
     }
 
     @SectionScoped
-    @DeleteMapping("/schedule/{id}")
-    @PreAuthorize(MANAGE + " and @sectionScope.examSchedule(#school, #id)")
-    public ApiResponse<Void> deleteSchedule(
+    @DeleteMapping("/papers/{id}")
+    @PreAuthorize(MANAGE + " and @sectionScope.examPaper(#school, #id)")
+    public ApiResponse<ExamTimetableDTO> deletePaper(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
-        examScheduleUseCase.delete(school, id);
-        return new ApiResponse<>("success", 200, "Exam paper removed", null);
+        var res = examTimetableUseCase.deletePaper(school, id);
+        return new ApiResponse<>("success", 200, "Exam paper removed", res);
     }
 
     // termId blank = the active term.
@@ -112,8 +190,17 @@ public class ExamOfficeController {
         return new ApiResponse<>("success", 200, "Broadsheet fetched successfully", res);
     }
 
-    private static ExamScheduleUseCase.Input toInput(SaveExamScheduleDTO p) {
-        return new ExamScheduleUseCase.Input(p.termId(), p.classId(), p.subjectId(), p.paper(), p.examDate(),
-                p.startTime(), p.endTime(), p.venue(), p.invigilatorId(), p.notes());
+    private boolean canManage(String school) {
+        return permissionService.hasAnySchoolRole(school, "EXAM_OFFICER", "ADMIN", "PRINCIPAL", "OWNER", "PROPRIETOR");
+    }
+
+    private static ExamTimetableUseCase.TimetableInput toInput(SaveExamTimetableDTO p) {
+        return new ExamTimetableUseCase.TimetableInput(p.termId(), p.assessmentId(), p.title(), p.startDate(),
+                p.endDate(), p.instructions());
+    }
+
+    private static ExamTimetableUseCase.PaperInput toInput(SaveExamPaperDTO p) {
+        return new ExamTimetableUseCase.PaperInput(p.subjectId(), p.paper(), p.examDate(), p.startTime(),
+                p.endTime(), p.classIds(), p.invigilatorIds(), p.venue(), p.notes());
     }
 }

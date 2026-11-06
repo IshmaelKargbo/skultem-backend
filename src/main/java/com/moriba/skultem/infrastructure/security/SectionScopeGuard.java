@@ -53,8 +53,9 @@ public class SectionScopeGuard {
     private final NoticeRepository noticeRepo;
     private final CalendarEventRepository calendarEventRepo;
     private final SubjectGroupRepository subjectGroupRepo;
-    private final com.moriba.skultem.domain.repository.ExamScheduleRepository examScheduleRepo;
     private final com.moriba.skultem.domain.repository.AttendanceRepository attendanceRepo;
+    private final com.moriba.skultem.domain.repository.ExamPaperRepository examPaperRepo;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final com.moriba.skultem.domain.repository.PromotionRequestRepository promotionRequestRepo;
     private final com.moriba.skultem.domain.repository.PeriodRepository periodRepo;
     private final com.moriba.skultem.domain.repository.HealthCareVisitRepository healthVisitRepo;
@@ -192,14 +193,30 @@ public class SectionScopeGuard {
                 .map(r -> scope.allows(r.getTeacherSubject().getSession().getClazz().getLevel())).orElse(true);
     }
 
-    // An exam timetable paper belongs to the class sitting it.
-    public boolean examSchedule(String schoolId, String scheduleId) {
+    // An exam timetable covers the classes that sit its assessment: a section-limited caller needs at least one of
+    // them in their sections.
+    public boolean examTimetable(String schoolId, String timetableId) {
         var scope = sectionScopeService.current();
-        if (scope.wholeSchool() || scheduleId == null) {
+        if (scope.wholeSchool() || timetableId == null) {
             return true;
         }
-        return examScheduleRepo.findByIdAndSchoolId(scheduleId, schoolId)
-                .map(e -> clazz(schoolId, e.getClassId())).orElse(true);
+        var levels = jdbc.queryForList("""
+                SELECT DISTINCT c.level FROM exam_timetables t
+                JOIN assessments a ON a.id = t.assessment_id
+                JOIN classes c ON c.assessment_template_id = a.template_id AND c.status <> 'DELETED'
+                WHERE t.id = ? AND t.school_id = ?
+                """, String.class, timetableId, schoolId);
+        return levels.isEmpty() || levels.stream().anyMatch(l -> scope.allows(Level.valueOf(l)));
+    }
+
+    // An exam paper belongs to the classes sitting it - every one of them has to be in the caller's sections.
+    public boolean examPaper(String schoolId, String paperId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || paperId == null) {
+            return true;
+        }
+        return examPaperRepo.findByIdAndSchoolId(paperId, schoolId)
+                .map(p -> p.getClassIds().stream().allMatch(id -> clazz(schoolId, id))).orElse(true);
     }
 
     // A sick bay visit follows the student's section (by their enrolment this year).

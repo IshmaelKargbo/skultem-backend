@@ -18,5 +18,8 @@ public record ClassSessionAttendanceDTO(
         int totalGirls,
         int presentBoys,
         int presentGirls,
-        List<ClassSessionAttendanceRecordDTO> records) {
+        List<ClassSessionAttendanceRecordDTO> records,
+        // 1 or 2 roll calls a day for this class, and which one the records show (null = the day).
+        int rollCalls,
+        Integer roll) {
 }

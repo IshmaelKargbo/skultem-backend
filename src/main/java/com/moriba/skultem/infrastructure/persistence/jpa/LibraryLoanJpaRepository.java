@@ -50,6 +50,26 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
     long countDueBeforeByBorrower(@Param("borrowerId") String borrowerId, @Param("schoolId") String schoolId,
             @Param("status") Status status, @Param("dueBefore") LocalDate dueBefore);
 
+    @Query("""
+                select count(l) from LibraryLoanEntity l
+                where l.schoolId = :schoolId and l.status = :status
+                and (l.studentId = :borrowerId or l.teacherId = :borrowerId)
+                and l.book.managementSectionId = :sectionId
+            """)
+    long countByBorrowerInSection(@Param("borrowerId") String borrowerId, @Param("schoolId") String schoolId,
+            @Param("sectionId") String sectionId, @Param("status") Status status);
+
+    @Query("""
+                select count(l) from LibraryLoanEntity l
+                where l.schoolId = :schoolId and l.status = :status
+                and (l.studentId = :borrowerId or l.teacherId = :borrowerId)
+                and l.book.managementSectionId = :sectionId
+                and l.dueDate < :dueBefore
+            """)
+    long countDueBeforeByBorrowerInSection(@Param("borrowerId") String borrowerId, @Param("schoolId") String schoolId,
+            @Param("sectionId") String sectionId, @Param("status") Status status,
+            @Param("dueBefore") LocalDate dueBefore);
+
     // The status filter is expressed as a set of statuses plus a due-date window, so every filter
     // (all / issued / overdue / returned) runs as one query without nullable parameters.
     @EntityGraph(attributePaths = { "book", "book.category" })

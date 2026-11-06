@@ -2,10 +2,13 @@ package com.moriba.skultem.infrastructure.persistence.entity;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
+
+import com.moriba.skultem.domain.model.ExamTimetable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,12 +17,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "exam_schedules")
+@Table(name = "exam_timetables")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExamScheduleEntity {
+public class ExamTimetableEntity {
     @Id
     private String id;
 
@@ -30,31 +33,23 @@ public class ExamScheduleEntity {
     private String termId;
 
     @Column(nullable = false)
-    private String classId;
+    private String assessmentId;
 
-    @Column(nullable = false)
-    private String subjectId;
+    @Column(nullable = false, length = 150)
+    private String title;
 
-    @Column(length = 100)
-    private String paper;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
-    @Column(nullable = false)
-    private LocalDate examDate;
+    @Column(length = 2000)
+    private String instructions;
 
-    @Column(nullable = false)
-    private LocalTime startTime;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private ExamTimetable.Status status;
 
-    @Column(nullable = false)
-    private LocalTime endTime;
-
-    @Column(length = 150)
-    private String venue;
-
-    private String invigilatorId;
-
-    @Column(length = 500)
-    private String notes;
-
+    private Instant publishedAt;
+    private String publishedByName;
     private Instant createdAt;
     private Instant updatedAt;
 }

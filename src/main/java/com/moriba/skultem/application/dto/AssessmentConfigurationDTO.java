@@ -31,7 +31,9 @@ public record AssessmentConfigurationDTO(
         java.util.List<Component> caComponents,
         String formalLabel,
         // Set when this is an assessment template's own configuration.
-        String assessmentTemplateId) {
+        String assessmentTemplateId,
+        // What teachers type a CA recording out of: PERCENT (100) or WEIGHT (the recording's own weight).
+        com.moriba.skultem.domain.vo.CaScoreScale caScoreScale) {
 
     public record Component(String name, int weight, String source) {
     }

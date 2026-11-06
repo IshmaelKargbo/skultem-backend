@@ -55,6 +55,28 @@ public class AttendanceRulesResolver {
         return result;
     }
 
+    // How many roll calls a day (1 or 2) a class at this level takes: the level's section's own
+    // choice when it has one, otherwise the school's.
+    public int rollCallsForLevel(School school, Level level) {
+        if (level == null || school.getManagementModel() != ManagementModel.SECTION_BASED) {
+            return school.getAttendanceRollCalls();
+        }
+        var sectionId = schoolLevelRepo.findBySchoolId(school.getId()).stream()
+                .filter(l -> l.getLevel() == level)
+                .map(SchoolLevel::getManagementSectionId)
+                .filter(java.util.Objects::nonNull)
+                .findFirst();
+        if (sectionId.isEmpty()) {
+            return school.getAttendanceRollCalls();
+        }
+        return managementSectionRepo.findBySchoolId(school.getId()).stream()
+                .filter(s -> s.getId().equals(sectionId.get()))
+                .map(ManagementSection::getAttendanceRollCalls)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(school.getAttendanceRollCalls());
+    }
+
     public static Rules merge(School school, ManagementSection section) {
         var base = school.attendanceRules();
         int window = section.getAttendanceWindowDays() != null ? section.getAttendanceWindowDays()

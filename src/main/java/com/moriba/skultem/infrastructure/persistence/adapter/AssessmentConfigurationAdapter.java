@@ -35,6 +35,7 @@ public class AssessmentConfigurationAdapter implements AssessmentConfigurationRe
                 .planText(d.planAsText())
                 .caComponentsText(d.componentsAsText())
                 .formalLabel(d.getFormalLabel())
+                .caScoreScale(d.getCaScoreScale())
                 .createdAt(d.getCreatedAt())
                 .updatedAt(d.getUpdatedAt())
                 .build());
@@ -66,6 +67,7 @@ public class AssessmentConfigurationAdapter implements AssessmentConfigurationRe
         config.forTemplate(e.getAssessmentTemplateId());
         config.restorePlan(e.getPlanText());
         config.restoreComponents(e.getCaComponentsText(), e.getFormalLabel());
+        config.restoreScoreScale(e.getCaScoreScale());
         return config;
     }
 }

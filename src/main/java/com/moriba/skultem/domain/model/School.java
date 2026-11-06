@@ -35,6 +35,9 @@ public class School extends AggregateRoot<String> {
     private int attendanceWindowDays;
     private int attendanceMinDays;
     private int attendanceStreakDays;
+    // Roll calls a day: 1 (the default) or 2 (e.g. morning and afternoon). With 2, a student only
+    // counts as present for the day when they were there at both - see Attendance.markRoll.
+    private int attendanceRollCalls;
     private GradeApprover gradeApprover;
     // Show assessment scores and averages as whole numbers (true) or keep one decimal place (false).
     private boolean roundAssessmentScores;
@@ -84,7 +87,8 @@ public class School extends AggregateRoot<String> {
             String principalSignature, String primaryColor, String secondaryColor, Double attendanceThreshold,
             GenderComposition genderComposition, boolean testSchool, ManagementModel managementModel,
             String phone, int attendanceWindowDays, int attendanceMinDays, int attendanceStreakDays,
-            GradeApprover gradeApprover, boolean roundAssessmentScores, Instant createdAt, Instant updatedAt) {
+            int attendanceRollCalls, GradeApprover gradeApprover, boolean roundAssessmentScores, Instant createdAt,
+            Instant updatedAt) {
         super(id, createdAt);
         this.name = name;
         this.address = address;
@@ -110,6 +114,7 @@ public class School extends AggregateRoot<String> {
                 : AttendanceAttentionCalculator.DEFAULT_MIN_DAYS;
         this.attendanceStreakDays = attendanceStreakDays > 0 ? attendanceStreakDays
                 : AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS;
+        this.attendanceRollCalls = attendanceRollCalls == 2 ? 2 : 1;
         this.gradeApprover = gradeApprover != null ? gradeApprover : GradeApprover.CLASS_MASTER;
         this.roundAssessmentScores = roundAssessmentScores;
         touch(updatedAt);
@@ -121,7 +126,7 @@ public class School extends AggregateRoot<String> {
                 null, DEFAULT_PRIMARY_COLOR, DEFAULT_SECONDARY_COLOR, DEFAULT_ATTENDANCE_THRESHOLD,
                 GenderComposition.MIXED, false, ManagementModel.UNIFIED, null,
                 AttendanceAttentionCalculator.DEFAULT_WINDOW_DAYS, AttendanceAttentionCalculator.DEFAULT_MIN_DAYS,
-                AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS, GradeApprover.CLASS_MASTER, true, now, now);
+                AttendanceAttentionCalculator.DEFAULT_STREAK_DAYS, 1, GradeApprover.CLASS_MASTER, true, now, now);
     }
 
     public void setManagementModel(ManagementModel managementModel) {
@@ -167,6 +172,22 @@ public class School extends AggregateRoot<String> {
         this.attendanceMinDays = min;
         this.attendanceStreakDays = streak;
         touch(Instant.now());
+    }
+
+    // Null keeps what the school already has.
+    public void updateAttendanceRollCalls(Integer rollCalls) {
+        if (rollCalls == null) {
+            return;
+        }
+        this.attendanceRollCalls = validateRollCalls(rollCalls);
+        touch(Instant.now());
+    }
+
+    public static int validateRollCalls(int rollCalls) {
+        if (rollCalls != 1 && rollCalls != 2) {
+            throw new RuleException("Roll calls a day must be 1 or 2");
+        }
+        return rollCalls;
     }
 
     // Null keeps what the school already has.

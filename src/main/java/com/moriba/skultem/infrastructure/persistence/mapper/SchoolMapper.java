@@ -22,7 +22,7 @@ public class SchoolMapper {
                 param.getPrincipalSignature(), param.getPrimaryColor(), param.getSecondaryColor(),
                 param.getAttendanceThreshold(), param.getGenderComposition(), param.isTestSchool(), param.getManagementModel(),
                 param.getPhone(), param.getAttendanceWindowDays(), param.getAttendanceMinDays(),
-                param.getAttendanceStreakDays(), param.getGradeApprover(), param.isRoundAssessmentScores(),
+                param.getAttendanceStreakDays(), param.getAttendanceRollCalls(), param.getGradeApprover(), param.isRoundAssessmentScores(),
                 param.getCreatedAt(), param.getUpdatedAt());
     }
 
@@ -47,6 +47,7 @@ public class SchoolMapper {
                 .attendanceWindowDays(args.getAttendanceWindowDays())
                 .attendanceMinDays(args.getAttendanceMinDays())
                 .attendanceStreakDays(args.getAttendanceStreakDays())
+                .attendanceRollCalls(args.getAttendanceRollCalls())
                 .gradeApprover(args.getGradeApprover())
                 .roundAssessmentScores(args.isRoundAssessmentScores())
                 .primaryColor(args.getPrimaryColor())

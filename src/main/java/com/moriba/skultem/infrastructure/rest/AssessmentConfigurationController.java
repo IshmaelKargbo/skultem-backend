@@ -81,7 +81,7 @@ public class AssessmentConfigurationController {
                 param.caComponents() == null ? java.util.List.<com.moriba.skultem.domain.vo.CaComponent>of()
                         : param.caComponents().stream()
                                 .map(c -> new com.moriba.skultem.domain.vo.CaComponent(c.name(), c.weight(), c.source())).toList(),
-                param.formalLabel());
+                param.formalLabel(), param.caScoreScale());
         return new ApiResponse<>("success", 200,
                 res.applied() == null ? "Assessment configuration saved. It applies to assessments that open from now on."
                         : "Assessment configuration saved. " + res.applied(),

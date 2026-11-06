@@ -62,6 +62,8 @@ public class ClassSubjectAssessmentLifeCycleEntity {
     private String caComponentsText;
     private String formalLabel;
     private String caUnlockedWeeks;
+    @Enumerated(EnumType.STRING)
+    private com.moriba.skultem.domain.vo.CaScoreScale caScoreScale;
 
     private Instant createdAt;
 

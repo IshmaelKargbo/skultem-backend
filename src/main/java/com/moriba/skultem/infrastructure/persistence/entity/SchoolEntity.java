@@ -73,6 +73,9 @@ public class SchoolEntity {
     @Column(name = "attendance_streak_days", nullable = false)
     private int attendanceStreakDays;
 
+    @Column(name = "attendance_roll_calls", nullable = false)
+    private int attendanceRollCalls;
+
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "grade_approver", nullable = false)
     private com.moriba.skultem.domain.vo.GradeApprover gradeApprover;

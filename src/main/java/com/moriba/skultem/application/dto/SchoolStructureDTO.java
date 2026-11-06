@@ -19,6 +19,6 @@ public record SchoolStructureDTO(ManagementModel managementModel, List<LevelDTO>
     public record ManagementSectionDTO(String id, String name, int displayOrder, List<Level> levels, String logo,
             String principalName, String principalSignature, Address address, String phone, Double attendanceThreshold,
             Integer attendanceWindowDays, Integer attendanceMinDays, Integer attendanceStreakDays,
-            com.moriba.skultem.domain.vo.GradeApprover gradeApprover) {
+            com.moriba.skultem.domain.vo.GradeApprover gradeApprover, Integer attendanceRollCalls) {
     }
 }

@@ -36,6 +36,11 @@ public interface LibraryLoanRepository {
     // How many of the books a borrower holds are past their due date.
     long countOverdueByBorrower(String borrowerId, String schoolId, LocalDate today);
 
+    // The same two counts, only for books of one section's library.
+    long countActiveByBorrowerInSection(String borrowerId, String schoolId, String sectionId);
+
+    long countOverdueByBorrowerInSection(String borrowerId, String schoolId, String sectionId, LocalDate today);
+
     // Matches on book title or borrower name; an empty query means "no search".
     // sectionIds: only loans of these sections' books (null = every loan).
     Page<LibraryLoan> search(String schoolId, String query, Filter filter, LocalDate today,

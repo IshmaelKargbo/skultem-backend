@@ -21,10 +21,39 @@ public class Attendance extends AggregateRoot<String> {
     private String reason;
     private boolean holiday;
     private String recordedByUserId;
+    // Only used when the school takes two roll calls a day: each roll call's own mark (null = not
+    // taken yet). present/late/excused above stay the result for the whole day - see markRoll.
+    private RollMark firstRoll;
+    private RollMark secondRoll;
+
+    // Ordered from best to worst: the day takes the worst mark of its roll calls.
+    public enum RollMark {
+        PRESENT,
+        LATE,
+        EXCUSED,
+        ABSENT;
+
+        public static RollMark of(boolean present, boolean excused, boolean late) {
+            if (present)
+                return PRESENT;
+            if (late)
+                return LATE;
+            if (excused)
+                return EXCUSED;
+            return ABSENT;
+        }
+    }
 
     public Attendance(String id, String school, Enrollment enrollment, LocalDate date, boolean present, boolean excused,
             boolean late, String reason, boolean holiday, String recordedByUserId, Instant createdAt,
             Instant updatedAt) {
+        this(id, school, enrollment, date, present, excused, late, reason, holiday, recordedByUserId, null, null,
+                createdAt, updatedAt);
+    }
+
+    public Attendance(String id, String school, Enrollment enrollment, LocalDate date, boolean present, boolean excused,
+            boolean late, String reason, boolean holiday, String recordedByUserId, RollMark firstRoll,
+            RollMark secondRoll, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
         this.enrollment = enrollment;
         this.schoolId = school;
@@ -36,6 +65,8 @@ public class Attendance extends AggregateRoot<String> {
         this.reason = reason;
         this.late = late;
         this.recordedByUserId = recordedByUserId;
+        this.firstRoll = firstRoll;
+        this.secondRoll = secondRoll;
         touch(updatedAt);
     }
 
@@ -54,7 +85,46 @@ public class Attendance extends AggregateRoot<String> {
         this.reason = reason;
         this.holiday = holiday;
         this.recordedByUserId = recordedByUserId;
+        // Marked for the whole day at once (one roll call, or an admin correcting the day), so any
+        // roll call marks no longer describe it.
+        this.firstRoll = null;
+        this.secondRoll = null;
         touch(Instant.now());
+    }
+
+    // Records one roll call (1 or 2) on a two-roll-call day, then works out the day from both: the
+    // worst mark wins, so a student is only Present for the day when present at both roll calls,
+    // and missing either one makes the day Absent. Until the second roll call is taken the day
+    // follows the first, so the register doesn't show everyone absent through the morning.
+    public void markRoll(int roll, RollMark mark, String reason, boolean holiday, String recordedByUserId) {
+        if (roll == 1) {
+            this.firstRoll = mark;
+        } else if (roll == 2) {
+            this.secondRoll = mark;
+        } else {
+            throw new IllegalArgumentException("Roll call must be 1 or 2");
+        }
+
+        RollMark day = firstRoll;
+        if (day == null || (secondRoll != null && secondRoll.ordinal() > day.ordinal())) {
+            day = secondRoll;
+        }
+
+        this.present = day == RollMark.PRESENT;
+        this.late = day == RollMark.LATE;
+        this.excused = day == RollMark.EXCUSED;
+        if (mark == RollMark.EXCUSED) {
+            this.reason = reason;
+        } else if (firstRoll != RollMark.EXCUSED && secondRoll != RollMark.EXCUSED) {
+            this.reason = null;
+        }
+        this.holiday = holiday;
+        this.recordedByUserId = recordedByUserId;
+        touch(Instant.now());
+    }
+
+    public RollMark rollMark(int roll) {
+        return roll == 1 ? firstRoll : roll == 2 ? secondRoll : null;
     }
 
     public String getStatus() {

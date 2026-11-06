@@ -31,6 +31,9 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
     // Empty = the CA is caEntries equal recordings.
     private final List<com.moriba.skultem.domain.vo.CaComponent> caComponents = new java.util.ArrayList<>();
     private String formalLabel;
+    // What teachers type each CA recording out of. Unlike the rest of the setup this follows the configuration even
+    // after the assessment has marks, because it never changes a stored score - only how it is entered and shown.
+    private com.moriba.skultem.domain.vo.CaScoreScale caScoreScale;
     private Instant structureFrozenAt;
     // Continuous assessment only: when the CA recordings were submitted as complete. Until then the formal test
     // can't be entered; after it, the recordings are closed.
@@ -90,6 +93,7 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         this.caComponents.clear();
         this.caComponents.addAll(resolved.components());
         this.formalLabel = resolved.formalLabel();
+        this.caScoreScale = config.getCaScoreScale();
         this.configVersion = config.getVersion();
     }
 
@@ -127,6 +131,24 @@ public class ClassSubjectAssessmentLifeCycle extends AggregateRoot<String> {
         this.caEntries = caEntries;
         this.configVersion = configVersion;
         this.structureFrozenAt = structureFrozenAt;
+    }
+
+    public com.moriba.skultem.domain.vo.CaScoreScale getCaScoreScale() {
+        return caScoreScale == null ? com.moriba.skultem.domain.vo.CaScoreScale.PERCENT : caScoreScale;
+    }
+
+    public void restoreScoreScale(com.moriba.skultem.domain.vo.CaScoreScale scale) {
+        this.caScoreScale = scale;
+    }
+
+    // Returns whether it changed.
+    public boolean applyScoreScale(com.moriba.skultem.domain.vo.CaScoreScale scale) {
+        if (scale == null || scale == getCaScoreScale()) {
+            return false;
+        }
+        this.caScoreScale = scale;
+        touch(Instant.now());
+        return true;
     }
 
     public void restoreComponents(String text, String formalLabel) {

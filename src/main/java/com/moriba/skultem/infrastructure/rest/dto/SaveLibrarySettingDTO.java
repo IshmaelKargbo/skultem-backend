@@ -4,7 +4,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+// sectionId: whose rules to save - empty for the school's (whole-school staff), or a section's own.
 public record SaveLibrarySettingDTO(
+        String sectionId,
         @NotNull(message = "Student limit is required") @Min(value = 1, message = "Students must be allowed at least 1 book") @Max(value = 50, message = "Student limit can't be more than 50") Integer maxStudentLoans,
         @NotNull(message = "Teacher limit is required") @Min(value = 1, message = "Teachers must be allowed at least 1 book") @Max(value = 50, message = "Teacher limit can't be more than 50") Integer maxTeacherLoans,
         @NotNull(message = "Overdue rule is required") Boolean blockWhenOverdue,

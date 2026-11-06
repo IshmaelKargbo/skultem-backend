@@ -55,6 +55,9 @@ public class ManagementSectionEntity {
     @Column(name = "attendance_streak_days")
     private Integer attendanceStreakDays;
 
+    @Column(name = "attendance_roll_calls")
+    private Integer attendanceRollCalls;
+
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "grade_approver")
     private com.moriba.skultem.domain.vo.GradeApprover gradeApprover;

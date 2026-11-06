@@ -47,7 +47,9 @@ public record AssessmentScoreDTO(String id, String name, String assessment, Stri
                         // when the CA is plain equal recordings.
                         java.util.List<Component> caComponents, String formalLabel,
                         // Recordings an administrator unlocked after they were locked (changed after closing).
-                        java.util.List<Integer> unlockedWeeks) {
+                        java.util.List<Integer> unlockedWeeks,
+                        // What the teacher types each recording out of: PERCENT (100) or WEIGHT (its own weight).
+                        String caScoreScale) {
         }
 
         public record Component(String name, int weight, String source) {

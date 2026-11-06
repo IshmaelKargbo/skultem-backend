@@ -118,7 +118,7 @@ public class AttendanceController {
             @Valid @RequestBody MarkClassAttendanceDTO param) {
         var records = param.records().stream().map(this::toMarkRecord).toList();
         var res = markClassSessionAttendanceUseCase.execute(
-                school, classSessionId, param.date(), param.holiday(), records);
+                school, classSessionId, param.date(), param.holiday(), param.roll(), records);
         return new ApiResponse<>("success", 200, "Class attendance marked successfully", res);
     }
 
@@ -139,8 +139,9 @@ public class AttendanceController {
     public ApiResponse<ClassSessionAttendanceDTO> getClassSessionSheet(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
-            @RequestParam(required = true) java.time.LocalDate date) {
-        var res = getClassSessionAttendanceUseCase.execute(school, classSessionId, date);
+            @RequestParam(required = true) java.time.LocalDate date,
+            @RequestParam(required = false) Integer roll) {
+        var res = getClassSessionAttendanceUseCase.execute(school, classSessionId, date, roll);
         return new ApiResponse<>("success", 200, "Class attendance sheet fetched successfully", res);
     }
 

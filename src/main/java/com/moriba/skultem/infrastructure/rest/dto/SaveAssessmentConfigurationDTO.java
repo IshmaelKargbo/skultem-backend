@@ -20,7 +20,9 @@ public record SaveAssessmentConfigurationDTO(
         // (Attendance 20 + Assignment 20 + Participation 20 + Test 40). Their total must equal caPercentage.
         java.util.List<Component> caComponents,
         // The name of the formal part ("Test"), shown in place of "Formal test".
-        String formalLabel) {
+        String formalLabel,
+        // What teachers type a CA recording out of. Omitted = keep the current setting (PERCENT for a new one).
+        com.moriba.skultem.domain.vo.CaScoreScale caScoreScale) {
 
     public record Component(@jakarta.validation.constraints.NotBlank String name, int weight, String source) {
     }

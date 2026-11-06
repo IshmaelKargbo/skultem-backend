@@ -94,6 +94,6 @@ public class ListAssessmentConfigurationsUseCase {
                         e.formalLabel())).toList(),
                 c.getComponents().stream().map(x -> new AssessmentConfigurationDTO.Component(x.name(), x.weight(), x.source()))
                         .toList(),
-                c.getFormalLabel(), c.getAssessmentTemplateId());
+                c.getFormalLabel(), c.getAssessmentTemplateId(), c.getCaScoreScale());
     }
 }

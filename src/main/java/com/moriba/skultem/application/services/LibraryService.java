@@ -26,7 +26,6 @@ import com.moriba.skultem.application.usecase.UpdateLibraryBookUseCase;
 import com.moriba.skultem.application.usecase.UpdateLibraryCategoryUseCase;
 import com.moriba.skultem.application.usecase.UpdateLibrarySettingUseCase;
 import com.moriba.skultem.domain.model.LibraryCategory;
-import com.moriba.skultem.domain.model.LibrarySetting;
 import com.moriba.skultem.domain.model.LibraryLoan.BorrowerType;
 import com.moriba.skultem.domain.repository.LibraryBookRepository;
 import com.moriba.skultem.domain.repository.LibraryCategoryRepository;
@@ -47,6 +46,8 @@ public class LibraryService {
     private final LibraryBookRepository bookRepo;
     private final LibraryLoanRepository loanRepo;
     private final LibrarySettingRepository settingRepo;
+    private final LibraryBorrowingRules rules;
+    private final com.moriba.skultem.domain.repository.ManagementSectionRepository sectionRepo;
     private final UpdateLibrarySettingUseCase updateSettingUseCase;
 
     private final CreateLibraryCategoryUseCase createCategoryUseCase;
@@ -160,23 +161,66 @@ public class LibraryService {
 
     // Settings & borrowing rules
 
-    public LibrarySettingDTO getSettings(String schoolId) {
-        return UpdateLibrarySettingUseCase.toDTO(setting(schoolId));
+    // sectionId picks one section's library (null = the school's rules). Staff limited to sections get their own
+    // section's rules, and can only read and change those.
+    public LibrarySettingDTO getSettings(String schoolId, String sectionId) {
+        String section = settingsSection(schoolId, sectionId);
+        boolean own = section == null || settingRepo.findBySchoolAndSection(schoolId, section).isPresent();
+        return UpdateLibrarySettingUseCase.toDTO(rules.settingFor(schoolId, section), section, own);
     }
 
-    public LibrarySettingDTO updateSettings(String schoolId, int maxStudentLoans, int maxTeacherLoans,
-            boolean blockWhenOverdue, int defaultLoanDays) {
-        return updateSettingUseCase.execute(schoolId, maxStudentLoans, maxTeacherLoans, blockWhenOverdue,
-                defaultLoanDays);
+    public LibrarySettingDTO updateSettings(String schoolId, String sectionId, int maxStudentLoans,
+            int maxTeacherLoans, boolean blockWhenOverdue, int defaultLoanDays) {
+        return updateSettingUseCase.execute(schoolId, settingsSection(schoolId, sectionId), maxStudentLoans,
+                maxTeacherLoans, blockWhenOverdue, defaultLoanDays);
     }
 
-    /** What the issue form shows once a borrower is picked - the same check issuing a book runs. */
-    public LibraryBorrowerStatusDTO borrowerStatus(String schoolId, BorrowerType type, String borrowerId) {
-        var setting = setting(schoolId);
-        long active = loanRepo.countActiveByBorrower(borrowerId, schoolId);
-        long overdue = loanRepo.countOverdueByBorrower(borrowerId, schoolId, LocalDate.now());
-        String reason = setting.blockReason(type, active, overdue);
+    /** Drops a section's own rules, so its library goes back to the school's. */
+    public LibrarySettingDTO resetSectionSettings(String schoolId, String sectionId) {
+        String section = settingsSection(schoolId, sectionId);
+        if (section == null) {
+            throw new RuleException("Choose the section to reset");
+        }
+        settingRepo.findBySchoolAndSection(schoolId, section).ifPresent(settingRepo::delete);
+        return UpdateLibrarySettingUseCase.toDTO(rules.settingFor(schoolId, null), section, false);
+    }
+
+    /**
+     * What the issue form shows once a borrower is picked - the same check issuing a book runs. With a book, that
+     * book's section library applies (its rules, its loan counts, its borrowers).
+     */
+    public LibraryBorrowerStatusDTO borrowerStatus(String schoolId, BorrowerType type, String borrowerId,
+            String bookId) {
+        String section = bookId == null || bookId.isBlank() ? null : visibleBook(schoolId, bookId).getSectionId();
+        LocalDate today = LocalDate.now();
+        var setting = rules.settingFor(schoolId, section);
+        long active = rules.activeLoans(schoolId, borrowerId, section);
+        long overdue = rules.overdueLoans(schoolId, borrowerId, section, today);
+        String reason = rules.blockReason(schoolId, type, borrowerId, section, today);
         return new LibraryBorrowerStatusDTO(active, overdue, setting.maxLoansFor(type), reason == null, reason);
+    }
+
+    // Whose borrowing rules a settings call is about. Whole-school staff: the one asked for, or the school's.
+    // Section-limited staff: one of their own sections - their only one if they don't say.
+    private String settingsSection(String schoolId, String sectionId) {
+        var visible = access.visibleSections();
+        String wanted = trim(sectionId);
+        if (wanted.isEmpty()) {
+            if (visible == null) {
+                return null;
+            }
+            if (visible.size() == 1) {
+                return visible.get(0);
+            }
+            throw new RuleException("Choose which section's library rules to use");
+        }
+        if (visible != null && !visible.contains(wanted)) {
+            throw new RuleException("You can only manage your own sections' library");
+        }
+        if (sectionRepo.findBySchoolId(schoolId).stream().noneMatch(s -> s.getId().equals(wanted))) {
+            throw new NotFoundException("Section not found");
+        }
+        return wanted;
     }
 
     // The sections a list covers: the caller's own, optionally narrowed to one of them.
@@ -203,10 +247,6 @@ public class LibraryService {
         String bookId = loanRepo.findBookId(loanId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Loan not found"));
         visibleBook(schoolId, bookId);
-    }
-
-    private LibrarySetting setting(String schoolId) {
-        return settingRepo.findBySchool(schoolId).orElseGet(() -> LibrarySetting.defaults(schoolId));
     }
 
     private static Pageable pageable(int page, int size) {

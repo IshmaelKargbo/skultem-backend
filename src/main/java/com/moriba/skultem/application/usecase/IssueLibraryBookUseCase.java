@@ -14,19 +14,20 @@ import com.moriba.skultem.application.dto.LibraryLoanDTO;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.LibraryMapper;
+import com.moriba.skultem.application.services.LibraryBorrowingRules;
 import com.moriba.skultem.domain.model.LibraryLoan;
 import com.moriba.skultem.domain.model.LibraryLoan.BorrowerType;
 import com.moriba.skultem.domain.repository.LibraryBookRepository;
 import com.moriba.skultem.domain.model.LibrarySetting;
 import com.moriba.skultem.domain.repository.LibraryLoanRepository;
-import com.moriba.skultem.domain.repository.LibrarySettingRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.TeacherRepository;
 
 /**
  * Lends one copy of a book to a student or a teacher. The book row is locked while this runs, so
  * two loans issued at the same moment can't both take the last copy. A borrower can't hold two
- * copies of the same book at once, and the school's {@link LibrarySetting} rules apply: a limit on
+ * copies of the same book at once, and the {@link LibrarySetting} rules of the book's section apply (see
+ * LibraryBorrowingRules - borrowers must belong to that section, and limits count that library's books only): a limit on
  * how many books they hold, and (when switched on) no new loan while one is overdue.
  */
 @Service
@@ -37,7 +38,7 @@ public class IssueLibraryBookUseCase {
     private final LibraryLoanRepository loanRepo;
     private final StudentRepository studentRepo;
     private final TeacherRepository teacherRepo;
-    private final LibrarySettingRepository settingRepo;
+    private final LibraryBorrowingRules rules;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "LIBRARY_BOOK_ISSUED")
@@ -52,10 +53,8 @@ public class IssueLibraryBookUseCase {
 
         LocalDate today = LocalDate.now();
 
-        var setting = settingRepo.findBySchool(schoolId).orElseGet(() -> LibrarySetting.defaults(schoolId));
-        String blocked = setting.blockReason(borrowerType,
-                loanRepo.countActiveByBorrower(borrowerId, schoolId),
-                loanRepo.countOverdueByBorrower(borrowerId, schoolId, today));
+        // The book's section decides whose library this is: its rules, its loan counts, its borrowers.
+        String blocked = rules.blockReason(schoolId, borrowerType, borrowerId, book.getSectionId(), today);
         if (blocked != null) {
             throw new RuleException("Can't issue this book. The borrower " + Character.toLowerCase(blocked.charAt(0))
                     + blocked.substring(1));

@@ -13,7 +13,7 @@ public enum Role {
     // Runs the school sick bay (see HealthCareController, docs/HEALTH_CARE.md) and nothing else.
     NURSE,
     // Runs the exam office: approves grades where the school routes them here, tracks submissions, moves the
-    // assessment cycle on, generates report cards and keeps the exam timetable (see ExamScheduleController).
+    // assessment cycle on, generates report cards and keeps the exam timetable (see ExamOfficeController).
     EXAM_OFFICER,
     TEACHER,
     PARENT

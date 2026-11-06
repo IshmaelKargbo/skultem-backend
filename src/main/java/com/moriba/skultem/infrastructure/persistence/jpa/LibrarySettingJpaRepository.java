@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.moriba.skultem.infrastructure.persistence.entity.LibrarySettingEntity;
 
 public interface LibrarySettingJpaRepository extends JpaRepository<LibrarySettingEntity, String> {
-    Optional<LibrarySettingEntity> findBySchoolId(String schoolId);
+    Optional<LibrarySettingEntity> findBySchoolIdAndManagementSectionIdIsNull(String schoolId);
+
+    Optional<LibrarySettingEntity> findBySchoolIdAndManagementSectionId(String schoolId, String managementSectionId);
 }

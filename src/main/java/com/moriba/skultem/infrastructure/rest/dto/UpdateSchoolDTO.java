@@ -32,6 +32,9 @@ public record UpdateSchoolDTO(
         @Min(value = 1, message = "Minimum recorded days must be at least 1") @Max(value = 60, message = "Minimum recorded days cannot exceed 60") Integer attendanceMinDays,
         @Min(value = 2, message = "Consecutive absences must be at least 2") @Max(value = 10, message = "Consecutive absences cannot exceed 10") Integer attendanceStreakDays,
 
+        // 1 or 2 roll calls a day - null keeps the school's current value.
+        @Min(value = 1, message = "Roll calls a day must be 1 or 2") @Max(value = 2, message = "Roll calls a day must be 1 or 2") Integer attendanceRollCalls,
+
         // CLASS_MASTER or ADMIN - who approves grades; null keeps the school's current choice.
         String gradeApprover,
 

@@ -153,7 +153,7 @@ public class CreateSchoolUseCase {
                 school.isTestSchool(), school.getManagementModel(), school.getCreatedAt(),
                 school.getUpdatedAt(), school.getPhone(),
                 school.getAttendanceWindowDays(), school.getAttendanceMinDays(), school.getAttendanceStreakDays(),
-                school.getGradeApprover(), school.isRoundAssessmentScores());
+                school.getGradeApprover(), school.isRoundAssessmentScores(), school.getAttendanceRollCalls());
     }
 
     private void sendWelcomeEmail(School school, String password) {

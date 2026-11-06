@@ -44,7 +44,7 @@ public class GetSchoolStructureUseCase {
                                 .toList(),
                         s.getLogo(), s.getPrincipalName(), s.getPrincipalSignature(), s.getAddress(), s.getPhone(),
                         s.getAttendanceThreshold(), s.getAttendanceWindowDays(), s.getAttendanceMinDays(),
-                        s.getAttendanceStreakDays(), s.getGradeApprover()))
+                        s.getAttendanceStreakDays(), s.getGradeApprover(), s.getAttendanceRollCalls()))
                 .toList();
 
         return new SchoolStructureDTO(school.getManagementModel(), levelDTOs, sectionDTOs);

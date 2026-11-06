@@ -10,7 +10,7 @@ public class ManagementSectionMapper {
                 param.getLogo(), param.getPrincipalName(), param.getPrincipalSignature(),
                 JsonMapper.fromJson(param.getAddress(), Address.class), param.getPhone(), param.getAttendanceThreshold(),
                 param.getAttendanceWindowDays(), param.getAttendanceMinDays(), param.getAttendanceStreakDays(),
-                param.getGradeApprover(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getAttendanceRollCalls(), param.getGradeApprover(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static ManagementSectionEntity toEntity(ManagementSection args) {
@@ -27,6 +27,7 @@ public class ManagementSectionMapper {
                 .attendanceWindowDays(args.getAttendanceWindowDays())
                 .attendanceMinDays(args.getAttendanceMinDays())
                 .attendanceStreakDays(args.getAttendanceStreakDays())
+                .attendanceRollCalls(args.getAttendanceRollCalls())
                 .gradeApprover(args.getGradeApprover())
                 .address(args.getAddress() == null ? null : JsonMapper.toJson(args.getAddress()))
                 .createdAt(args.getCreatedAt())

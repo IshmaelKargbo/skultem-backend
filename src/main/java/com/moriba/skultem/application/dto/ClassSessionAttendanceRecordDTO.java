@@ -20,5 +20,9 @@ public record ClassSessionAttendanceRecordDTO(
         // student placeholder - the Daily Register renders "-" for either case rather than
         // fabricating a value.
         String recordedBy,
-        Instant recordedAt) {
+        Instant recordedAt,
+        // Each roll call's mark (PRESENT, LATE, EXCUSED, ABSENT; null = not taken) on a
+        // two-roll-call day; both null otherwise.
+        String firstRoll,
+        String secondRoll) {
 }
