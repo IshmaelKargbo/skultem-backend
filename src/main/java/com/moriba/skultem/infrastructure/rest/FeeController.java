@@ -144,7 +144,7 @@ public class FeeController {
                                 param.studentIds(), param.feeCategory(), param.termId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
                                 param.hasSupply(), param.supplyItems(), param.newStudentsOnly(),
-                                param.oldStudentsOnly(), gender, param.streamId());
+                                param.oldStudentsOnly(), gender, param.streamId(), installmentsOf(param.installments()));
                 var res = createFeeStructureUseCase.execute(payload);
                 String message = res.size() > 1
                                 ? "Fee structure created for " + res.size() + " classes successfully"
@@ -165,7 +165,7 @@ public class FeeController {
                 var payload = new UpdateRecord(school, feeId, param.feeCategory(), param.termId(),
                                 param.amount(), param.dueDate(), param.allowInstallment(), param.description(),
                                 param.hasSupply(), param.supplyItems(), param.newStudentsOnly(), param.oldStudentsOnly(),
-                                gender);
+                                gender, installmentsOf(param.installments()));
                 var res = updateFeeStructureUseCase.execute(payload);
                 return new ApiResponse<>("success", 200, "Fee structure updated successfully", res);
         }
@@ -444,5 +444,10 @@ public class FeeController {
 
                 return new ApiResponse<>("success", 200, "Fee category fetched successfully", list,
                                 meta);
+        }
+
+        private static List<com.moriba.skultem.domain.vo.FeeInstallment> installmentsOf(
+                        List<com.moriba.skultem.infrastructure.rest.dto.FeeInstallmentInputDTO> parts) {
+                return parts == null ? List.of() : parts.stream().map(p -> p.toDomain()).toList();
         }
 }

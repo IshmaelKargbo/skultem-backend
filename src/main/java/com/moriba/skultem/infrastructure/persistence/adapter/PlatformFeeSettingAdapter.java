@@ -22,6 +22,8 @@ public class PlatformFeeSettingAdapter implements PlatformFeeSettingRepository {
         var entity = PlatformFeeSettingEntity.builder()
                 .id(domain.getId())
                 .amount(domain.getAmount())
+                .installmentMode(domain.getInstallmentMode())
+                .termShares(PlatformFeeSetting.formatShares(domain.getTermShares()))
                 .updatedAt(domain.getUpdatedAt())
                 .build();
         repo.save(entity);
@@ -30,13 +32,18 @@ public class PlatformFeeSettingAdapter implements PlatformFeeSettingRepository {
     @Override
     public Optional<PlatformFeeSetting> findBySchool(String schoolId) {
         return repo.findById(schoolId)
-                .map(e -> new PlatformFeeSetting(e.getId(), e.getAmount(), e.getUpdatedAt(), e.getUpdatedAt()));
+                .map(PlatformFeeSettingAdapter::toDomain);
     }
 
     @Override
     public List<PlatformFeeSetting> findAll() {
         return repo.findAll().stream()
-                .map(e -> new PlatformFeeSetting(e.getId(), e.getAmount(), e.getUpdatedAt(), e.getUpdatedAt()))
+                .map(PlatformFeeSettingAdapter::toDomain)
                 .toList();
+    }
+
+    private static PlatformFeeSetting toDomain(com.moriba.skultem.infrastructure.persistence.entity.PlatformFeeSettingEntity e) {
+        return new PlatformFeeSetting(e.getId(), e.getAmount(), e.getInstallmentMode(),
+                PlatformFeeSetting.parseShares(e.getTermShares()), e.getUpdatedAt(), e.getUpdatedAt());
     }
 }

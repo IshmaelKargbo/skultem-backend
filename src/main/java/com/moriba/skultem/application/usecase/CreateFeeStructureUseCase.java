@@ -154,6 +154,7 @@ public class CreateFeeStructureUseCase {
                                 param.oldStudentsOnly(),
                                 param.gender(),
                                 stream);
+                fee.setInstallmentPlan(param.installments());
 
                 repo.save(fee);
 
@@ -310,6 +311,8 @@ public class CreateFeeStructureUseCase {
                         boolean newStudentsOnly,
                         boolean oldStudentsOnly,
                         Gender gender,
-                        String streamId) {
+                        String streamId,
+                        // The installment plan (empty = none) - every class's fee gets the same plan.
+                        List<com.moriba.skultem.domain.vo.FeeInstallment> installments) {
         }
 }

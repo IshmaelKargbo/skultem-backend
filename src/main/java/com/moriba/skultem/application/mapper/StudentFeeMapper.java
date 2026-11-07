@@ -38,7 +38,8 @@ public class StudentFeeMapper {
             balance = BigDecimal.ZERO;
         }
 
-        String status = resolveStatus(amountPaid, netPayable, fee.dueDate());
+        LocalDate today = LocalDate.now();
+        String status = resolveStatus(amountPaid, netPayable, param.getFee().isOverdue(amountPaid, discount, today));
 
         return new StudentFeeDTO(
                 student.id(),
@@ -54,15 +55,17 @@ public class StudentFeeMapper {
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
                 discount,
-                ClassSessionLabel.of(param.getEnrollment()));
+                ClassSessionLabel.of(param.getEnrollment()),
+                param.getFee().installmentStatuses(amountPaid, discount, today));
     }
 
-    private static String resolveStatus(BigDecimal amountPaid, BigDecimal netPayable, LocalDate dueDate) {
+    // overdue: the fee's due date has passed or, with an installment plan, a part that has fallen due isn't covered.
+    private static String resolveStatus(BigDecimal amountPaid, BigDecimal netPayable, boolean overdue) {
         if (amountPaid.compareTo(netPayable) >= 0) {
             return "Paid";
         }
 
-        if (dueDate != null && dueDate.isBefore(LocalDate.now())) {
+        if (overdue) {
             return "Overdue";
         }
 

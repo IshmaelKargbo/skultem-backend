@@ -154,6 +154,11 @@ public class ConfigureNextAcademicYearUseCase {
                     sourceFee.isOldStudentsOnly(),
                     sourceFee.getGender(),
                     sourceFee.getStream());
+            // The same installment plan, a year on.
+            copy.setInstallmentPlan(sourceFee.getInstallments().stream()
+                    .map(i -> new com.moriba.skultem.domain.vo.FeeInstallment(i.label(), i.amount(),
+                            i.dueDate().plusYears(1)))
+                    .toList());
 
             feeStructureRepo.save(copy);
             copied++;

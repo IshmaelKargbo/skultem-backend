@@ -14,7 +14,7 @@ public class GetPlatformFeeSettingUseCase {
 
     public PlatformFeeSettingDTO execute(String schoolId) {
         return repo.findBySchool(schoolId)
-                .map(s -> new PlatformFeeSettingDTO(schoolId, s.getAmount(), s.getUpdatedAt()))
-                .orElse(new PlatformFeeSettingDTO(schoolId, null, null));
+                .map(s -> PlatformFeeSettingDTO.of(schoolId, s))
+                .orElse(PlatformFeeSettingDTO.of(schoolId, null));
     }
 }

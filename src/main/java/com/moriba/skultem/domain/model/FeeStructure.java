@@ -1,14 +1,18 @@
 package com.moriba.skultem.domain.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.shared.AggregateRoot;
+import com.moriba.skultem.domain.vo.FeeInstallment;
 import com.moriba.skultem.domain.vo.Gender;
+import com.moriba.skultem.domain.vo.InstallmentStatus;
 
 import lombok.Getter;
 
@@ -78,6 +82,14 @@ public class FeeStructure extends AggregateRoot<String> {
      * fully paid.
      */
     private List<FeeStructureSupplyItem> supplyItems;
+
+    /**
+     * The installment plan, when {@link #allowInstallment} is on and the school set one: two or more parts adding
+     * up to {@link #amount}, in due-date order. Empty = no plan (the whole fee is due by {@link #dueDate}, and when
+     * installments are allowed any part payment is accepted). Payments go against the fee as a whole; the plan only
+     * decides how much should be paid by when - see {@link #isOverdue} and {@link #installmentStatuses}.
+     */
+    private List<FeeInstallment> installments = new ArrayList<>();
 
     public enum Type {
         ALL, SELECTION, CLASS
@@ -176,9 +188,152 @@ public class FeeStructure extends AggregateRoot<String> {
         this.amount = amount;
         this.description = description;
         this.allowInstallment = allowInstallment;
+        if (!allowInstallment) {
+            // No installments, no plan.
+            this.installments = new ArrayList<>();
+        }
         this.newStudentsOnly = newStudentsOnly;
         this.oldStudentsOnly = oldStudentsOnly;
         this.gender = gender;
         touch(Instant.now());
+    }
+
+    /** Loads a saved plan without validating or touching updatedAt - for the persistence mapper only. */
+    public FeeStructure restoreInstallments(List<FeeInstallment> saved) {
+        this.installments = saved == null ? new ArrayList<>() : new ArrayList<>(saved);
+        return this;
+    }
+
+    /**
+     * Sets (or, with an empty list, clears) the installment plan. A plan needs installments allowed, at least two
+     * parts, each above zero and with a due date, in date order, adding up to the fee. The fee's own due date
+     * becomes the last part's. The platform fee's plan is set by {@link #applyPlatformPlan} instead.
+     */
+    public void setInstallmentPlan(List<FeeInstallment> plan) {
+        if (system) {
+            throw new RuleException("The platform fee's plan is set by Skultem");
+        }
+        applyPlan(plan);
+    }
+
+    /** The platform fee's plan (see PlatformFeeSetting): by term, or one payment when the plan is empty. */
+    public void applyPlatformPlan(List<FeeInstallment> plan) {
+        if (!system) {
+            throw new RuleException("Only the platform fee takes a platform plan");
+        }
+        this.allowInstallment = plan != null && !plan.isEmpty();
+        applyPlan(plan);
+    }
+
+    private void applyPlan(List<FeeInstallment> plan) {
+        var parts = plan == null ? List.<FeeInstallment>of() : plan;
+        if (parts.isEmpty()) {
+            this.installments = new ArrayList<>();
+            touch(Instant.now());
+            return;
+        }
+        if (!allowInstallment) {
+            throw new RuleException("Turn on installments before adding an installment plan");
+        }
+        if (parts.size() < 2) {
+            throw new RuleException("An installment plan needs at least two parts");
+        }
+        var cleaned = new ArrayList<FeeInstallment>();
+        BigDecimal total = BigDecimal.ZERO;
+        LocalDate previous = null;
+        for (int i = 0; i < parts.size(); i++) {
+            var part = parts.get(i);
+            if (part.amount() == null || part.amount().signum() <= 0) {
+                throw new RuleException("Each installment needs an amount above zero");
+            }
+            if (part.dueDate() == null) {
+                throw new RuleException("Each installment needs a due date");
+            }
+            if (previous != null && part.dueDate().isBefore(previous)) {
+                throw new RuleException("Installments have to be in due-date order");
+            }
+            previous = part.dueDate();
+            String label = part.label() == null || part.label().isBlank() ? ordinal(i + 1) + " installment"
+                    : part.label().trim();
+            var amount = part.amount().setScale(2, RoundingMode.HALF_UP);
+            cleaned.add(new FeeInstallment(label, amount, part.dueDate()));
+            total = total.add(amount);
+        }
+        if (total.compareTo(amount.setScale(2, RoundingMode.HALF_UP)) != 0) {
+            throw new RuleException("The installments add up to " + total.toPlainString() + " but the fee is "
+                    + amount.setScale(2, RoundingMode.HALF_UP).toPlainString());
+        }
+        this.installments = cleaned;
+        this.dueDate = previous;
+        touch(Instant.now());
+    }
+
+    public boolean hasInstallmentPlan() {
+        return installments != null && !installments.isEmpty();
+    }
+
+    /**
+     * Each part of the plan for one student: their share of it after discounts, how much their payments cover
+     * (payments fill the parts in order) and whether it is paid, part paid, due or overdue. Empty without a plan.
+     */
+    public List<InstallmentStatus> installmentStatuses(BigDecimal paid, BigDecimal discount, LocalDate today) {
+        if (!hasInstallmentPlan()) {
+            return List.of();
+        }
+        BigDecimal net = amount.subtract(orZero(discount)).max(BigDecimal.ZERO);
+        BigDecimal left = orZero(paid);
+        BigDecimal allocated = BigDecimal.ZERO;
+        var out = new ArrayList<InstallmentStatus>();
+        for (int i = 0; i < installments.size(); i++) {
+            var part = installments.get(i);
+            // A discount comes off every part in proportion; the last part takes any rounding.
+            BigDecimal share = i == installments.size() - 1 ? net.subtract(allocated)
+                    : amount.signum() == 0 ? BigDecimal.ZERO
+                            : part.amount().multiply(net).divide(amount, 2, RoundingMode.HALF_UP);
+            allocated = allocated.add(share);
+            BigDecimal covered = left.min(share).max(BigDecimal.ZERO);
+            left = left.subtract(covered);
+            InstallmentStatus.State state;
+            if (covered.compareTo(share) >= 0) {
+                state = InstallmentStatus.State.PAID;
+            } else if (part.dueDate().isBefore(today)) {
+                state = InstallmentStatus.State.OVERDUE;
+            } else if (covered.signum() > 0) {
+                state = InstallmentStatus.State.PARTIAL;
+            } else {
+                state = InstallmentStatus.State.DUE;
+            }
+            out.add(new InstallmentStatus(part.label(), share, covered, part.dueDate(), state));
+        }
+        return out;
+    }
+
+    /**
+     * Is a student behind on this fee? With a plan, when a part whose due date has passed isn't fully covered yet;
+     * without one, when the fee isn't fully paid and its due date has passed.
+     */
+    public boolean isOverdue(BigDecimal paid, BigDecimal discount, LocalDate today) {
+        BigDecimal net = amount.subtract(orZero(discount));
+        if (orZero(paid).compareTo(net) >= 0) {
+            return false;
+        }
+        if (hasInstallmentPlan()) {
+            return installmentStatuses(paid, discount, today).stream()
+                    .anyMatch(s -> s.state() == InstallmentStatus.State.OVERDUE);
+        }
+        return dueDate != null && dueDate.isBefore(today);
+    }
+
+    private static BigDecimal orZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private static String ordinal(int n) {
+        return switch (n) {
+            case 1 -> "1st";
+            case 2 -> "2nd";
+            case 3 -> "3rd";
+            default -> n + "th";
+        };
     }
 }

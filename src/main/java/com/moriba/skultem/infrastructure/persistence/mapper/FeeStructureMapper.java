@@ -8,6 +8,8 @@ import com.moriba.skultem.domain.model.AcademicYear;
 import com.moriba.skultem.domain.model.Clazz;
 import com.moriba.skultem.domain.model.FeeCategory;
 import com.moriba.skultem.domain.model.FeeStructure;
+import com.moriba.skultem.domain.vo.FeeInstallment;
+import com.moriba.skultem.infrastructure.persistence.entity.FeeInstallmentEmbeddable;
 import com.moriba.skultem.domain.model.FeeStructureSupplyItem;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.infrastructure.persistence.entity.AcademicYearEntity;
@@ -46,7 +48,9 @@ public class FeeStructureMapper {
                 param.getDueDate(), param.getAmount(), param.getDescription(), param.isSystem(),
                 param.isNewStudentsOnly(), param.isOldStudentsOnly(), param.getGender(),
                 param.getStream() != null ? StreamMapper.toDomain(param.getStream()) : null, param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt())
+                .restoreInstallments(param.getInstallments() == null ? List.of() : param.getInstallments().stream()
+                        .map(i -> new FeeInstallment(i.getLabel(), i.getAmount(), i.getDueDate())).toList());
     }
 
     public static FeeStructureEntity toEntity(FeeStructure param) {
@@ -96,6 +100,8 @@ public class FeeStructureMapper {
                 .build();
 
         entity.setSupplyItems(toEntityItems(param.getSupplyItems(), param.getSchoolId(), entity));
+        entity.setInstallments(new ArrayList<>(param.getInstallments().stream()
+                .map(i -> new FeeInstallmentEmbeddable(i.label(), i.amount(), i.dueDate())).toList()));
 
         return entity;
     }

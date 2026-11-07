@@ -47,6 +47,11 @@ public record CreateFeeStructureDTO(
 
         boolean allowInstallment,
 
+        // The installment plan when allowInstallment is on: two or more parts adding up to the amount, in due-date
+        // order. Empty/null = no plan (any part payment accepted, all due by dueDate).
+        @Valid
+        List<FeeInstallmentInputDTO> installments,
+
         // Only ever charged the first time a student enrolls (e.g. Uniform Fee) - never to a
         // student who's simply continuing/being promoted/re-enrolled into what this fee targets.
         // Doesn't apply to type SELECTION - an explicit student list is already a deliberate,

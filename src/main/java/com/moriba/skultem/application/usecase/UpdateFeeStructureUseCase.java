@@ -65,6 +65,7 @@ public class UpdateFeeStructureUseCase {
         fee.update(term, category, supplyItems, param.hasSupply(), param.dueDate(), param.amount(),
                 param.description(), param.allowInstallment(), param.newStudentsOnly(), param.oldStudentsOnly(),
                 param.gender());
+        fee.setInstallmentPlan(param.installments());
 
         repo.save(fee);
 
@@ -92,6 +93,8 @@ public class UpdateFeeStructureUseCase {
             List<FeeStructureSupplyItemInputDTO> supplyItems,
             boolean newStudentsOnly,
             boolean oldStudentsOnly,
-            Gender gender) {
+            Gender gender,
+            // The installment plan (empty = none).
+            List<com.moriba.skultem.domain.vo.FeeInstallment> installments) {
     }
 }

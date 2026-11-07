@@ -21,7 +21,7 @@ public class ListPlatformFeeSettingsUseCase {
 
     public List<PlatformFeeSettingDTO> execute() {
         return repo.findAll().stream()
-                .map(s -> new PlatformFeeSettingDTO(s.getId(), s.getAmount(), s.getUpdatedAt()))
+                .map(s -> PlatformFeeSettingDTO.of(s.getId(), s))
                 .toList();
     }
 }

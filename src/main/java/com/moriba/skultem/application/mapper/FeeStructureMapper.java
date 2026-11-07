@@ -32,6 +32,6 @@ public class FeeStructureMapper {
                 param.isOldStudentsOnly(), param.getGender(),
                 param.getStream() != null ? param.getStream().getId() : null,
                 param.getStream() != null ? param.getStream().getName() : null,
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.getCreatedAt(), param.getUpdatedAt(), List.copyOf(param.getInstallments()));
     }
 }

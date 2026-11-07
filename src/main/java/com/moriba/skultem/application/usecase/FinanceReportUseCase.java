@@ -79,7 +79,8 @@ public class FinanceReportUseCase {
                         BigDecimal outstanding = calculateOutstanding(fee.getAmount(), totalDiscount,
                                         paid);
 
-                        String status = parseStatus(fee.getAmount(), totalDiscount, paid, fee.getDueDate(), today);
+                        String status = parseStatus(fee.getAmount(), totalDiscount, paid,
+                                        fee.isOverdue(paid, totalDiscount, today));
 
                         return new OutstandingBalanceDTO(
                                         fee.getId(),
@@ -91,7 +92,8 @@ public class FinanceReportUseCase {
                                         fee.getDueDate(),
                                         status,
                                         fee.getTerm().getName(),
-                                        fee.isAllowInstallment());
+                                        fee.isAllowInstallment(),
+                                        fee.installmentStatuses(paid, totalDiscount, today));
 
                 }).toList();
         }
@@ -134,12 +136,14 @@ public class FinanceReportUseCase {
                                                 return null;
                                         }
 
-                                        String status = determineStatus(outstanding, paid, fee.getDueDate(), today);
+                                        String status = determineStatus(outstanding, paid,
+                                                        fee.isOverdue(paid, totalDiscount, today));
 
                                         return new OutstandingBalanceDTO(fee.getId(), fee.getCategory().getName(),
                                                         fee.getAmount(), paid, outstanding, totalDiscount,
                                                         fee.getDueDate(), status, fee.getTerm().getName(),
-                                                        fee.isAllowInstallment());
+                                                        fee.isAllowInstallment(),
+                                                        fee.installmentStatuses(paid, totalDiscount, today));
                                 })
                                 .filter(Objects::nonNull)
                                 .toList();
@@ -175,12 +179,12 @@ public class FinanceReportUseCase {
         }
 
         private String determineStatus(BigDecimal outstanding,
-                        BigDecimal paid, LocalDate dueDate, LocalDate today) {
+                        BigDecimal paid, boolean overdue) {
 
                 if (paid.compareTo(BigDecimal.ZERO) == 0)
                         return "Unpaid";
 
-                if (outstanding.compareTo(BigDecimal.ZERO) > 0 && dueDate.isBefore(today))
+                if (outstanding.compareTo(BigDecimal.ZERO) > 0 && overdue)
                         return "Overdue";
 
                 return "Partial";
@@ -190,8 +194,7 @@ public class FinanceReportUseCase {
                         BigDecimal feeAmount,
                         BigDecimal totalDiscount,
                         BigDecimal paid,
-                        LocalDate dueDate,
-                        LocalDate today) {
+                        boolean overdue) {
 
                 BigDecimal netPayable = feeAmount.subtract(totalDiscount);
 
@@ -209,7 +212,7 @@ public class FinanceReportUseCase {
                         return "Unpaid";
                 }
 
-                if (dueDate.isBefore(today)) {
+                if (overdue) {
                         return "Overdue";
                 }
 

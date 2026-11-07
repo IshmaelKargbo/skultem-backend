@@ -12,5 +12,7 @@ public record FeeStructureDTO(String id, Type type, ClassDTO clazz, TermDTO term
         boolean allowInstallment, boolean hasSupply, List<FeeStructureSupplyItemDTO> supplyItems, LocalDate dueDate,
         AcademicYearDTO academicYear, BigDecimal amount,
         String description, boolean isSystem, boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender,
-        String streamId, String streamName, Instant createdAt, Instant updatedAt) {
+        String streamId, String streamName, Instant createdAt, Instant updatedAt,
+        // The installment plan, in order (empty = no plan).
+        List<com.moriba.skultem.domain.vo.FeeInstallment> installments) {
 }

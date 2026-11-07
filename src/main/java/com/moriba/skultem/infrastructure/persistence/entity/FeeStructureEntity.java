@@ -12,6 +12,9 @@ import com.moriba.skultem.domain.vo.Gender;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -51,6 +54,15 @@ public class FeeStructureEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stream_id")
     private StreamEntity stream;
+
+    // The installment plan, in order. Loaded with its own query (not joined) so it can sit beside the eager
+    // supplyItems list.
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "fee_structure_installments", joinColumns = @JoinColumn(name = "fee_structure_id"))
+    @OrderColumn(name = "position")
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SELECT)
+    @Builder.Default
+    private List<FeeInstallmentEmbeddable> installments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)

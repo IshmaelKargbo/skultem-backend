@@ -90,6 +90,18 @@ public class SeedPlatformFeeForAcademicYearUseCase {
         boolean feeJustCreated = existingFee.isEmpty();
         var fee = existingFee.orElseGet(() -> createPlatformFeeStructure(schoolId, term, academicYear, setting));
 
+        // A platform fee seeded before plans existed (or before every term of the year was set up) gets its
+        // by-term plan now. Only the schedule changes - no amount already charged moves.
+        if (!feeJustCreated && !fee.hasInstallmentPlan()
+                && setting.getInstallmentMode() == PlatformFeeSetting.InstallmentMode.BY_TERM) {
+            var plan = setting.planFor(fee.getAmount(),
+                    termRepo.findByAcademicYearIdAndSchool(academicYear.getId(), schoolId), academicYear);
+            if (!plan.isEmpty()) {
+                fee.applyPlatformPlan(plan);
+                feeStructureRepo.save(fee);
+            }
+        }
+
         var enrollments = enrollmentRepo.findAllByAcademicSchoolId(academicYear.getId(), schoolId);
 
         // Fast path for the overwhelmingly common steady state (every enrolled student already has
@@ -163,6 +175,9 @@ public class SeedPlatformFeeForAcademicYearUseCase {
 
         var fee = FeeStructure.createSystemFee(schoolId, term, category, academicYear, term.getEndDate(),
                 setting.getAmount(), "Platform fee");
+        // Three parts unless Skultem set this school to pay in full (see PlatformFeeSetting.planFor).
+        fee.applyPlatformPlan(setting.planFor(setting.getAmount(),
+                termRepo.findByAcademicYearIdAndSchool(academicYear.getId(), schoolId), academicYear));
         feeStructureRepo.save(fee);
         return fee;
     }

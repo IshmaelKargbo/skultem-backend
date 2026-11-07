@@ -91,7 +91,10 @@ public class PlatformSettingController {
     @PutMapping("/{schoolId}/fee-setting")
     public ApiResponse<PlatformFeeSettingDTO> updateFeeSetting(@PathVariable String schoolId,
             @Valid @RequestBody UpdatePlatformFeeSettingDTO param) {
-        var res = updatePlatformFeeSettingUseCase.execute(schoolId, param.amount());
+        var res = updatePlatformFeeSettingUseCase.execute(schoolId, param.amount(),
+                param.installmentMode() == null ? null
+                        : com.moriba.skultem.domain.model.PlatformFeeSetting.InstallmentMode.valueOf(param.installmentMode()),
+                param.termShares());
         return new ApiResponse<>("success", 200, "Platform fee setting updated successfully", res);
     }
 }
