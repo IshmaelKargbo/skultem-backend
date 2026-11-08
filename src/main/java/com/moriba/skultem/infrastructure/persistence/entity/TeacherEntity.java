@@ -66,6 +66,9 @@ public class TeacherEntity {
     @Column(nullable = false)
     private boolean teaching;
 
+    @Column(length = 512)
+    private String signature;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

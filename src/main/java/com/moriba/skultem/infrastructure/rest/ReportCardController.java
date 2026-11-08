@@ -53,10 +53,36 @@ public class ReportCardController {
     private final UpdateReportCardRemarkUseCase updateReportCardRemarkUseCase;
     private final TrackReportCardDownloadUseCase trackReportCardDownloadUseCase;
     private final ListReportCardAssessmentsUseCase listReportCardAssessmentsUseCase;
+    private final com.moriba.skultem.application.usecase.ReviewReportCardsUseCase reviewReportCardsUseCase;
+    private final com.moriba.skultem.infrastructure.security.PermissionService permissionService;
+
+    // ---- Review: the class teacher approves a class's generated cards (then parents see them), or sends them back
+    // to the admin with a note. ids narrows it to some students; empty = all of the class's cards for the term.
 
     @SectionScoped
+    @PostMapping("/review/approve")
+    @PreAuthorize("@permissionService.canReviewReportCardsForClass(#school, #param.classId()) and @sectionScope.clazz(#school, #param.classId())")
+    public ApiResponse<com.moriba.skultem.application.usecase.ReviewReportCardsUseCase.Result> approve(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ReviewReportCardsDTO param) {
+        var res = reviewReportCardsUseCase.approve(school, param.classId(), param.termId(), param.ids());
+        return new ApiResponse<>("success", 200, "Report cards approved", res);
+    }
+
+    @SectionScoped
+    @PostMapping("/review/return")
+    @PreAuthorize("@permissionService.canReviewReportCardsForClass(#school, #param.classId()) and @sectionScope.clazz(#school, #param.classId())")
+    public ApiResponse<com.moriba.skultem.application.usecase.ReviewReportCardsUseCase.Result> sendBack(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ReviewReportCardsDTO param) {
+        var res = reviewReportCardsUseCase.sendBack(school, param.classId(), param.termId(), param.ids(), param.note());
+        return new ApiResponse<>("success", 200, "Report cards sent back to the admin", res);
+    }
+
+    @SectionScoped
+    // Only admins generate; the class teacher then reviews and approves (see /review).
     @PostMapping("/generate")
-    @PreAuthorize("@permissionService.canManageReportCardsForClass(#school, #param.classId()) and @sectionScope.clazz(#school, #param.classId())")
+    @PreAuthorize("@permissionService.canGenerateReportCards(#school) and @sectionScope.clazz(#school, #param.classId())")
     public ApiResponse<GenerateReportCardsResultDTO> generate(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId,
@@ -71,7 +97,7 @@ public class ReportCardController {
     @SectionScoped
     // A class master has to name one of their own classes; management can list across the school.
     @GetMapping
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)")
     public ApiResponse<List<ReportCardSummaryDTO>> list(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam(required = false) String classId,
@@ -99,18 +125,21 @@ public class ReportCardController {
     // by guessing/enumerating a studentId.
     @SectionScoped
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.isParentOfStudent(#school, #studentId)) and @sectionScope.student(#school, #studentId)")
     public ApiResponse<List<ReportCardSummaryDTO>> byStudent(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String studentId) {
-        var res = listStudentReportCardsUseCase.execute(school, studentId);
+        // Staff see every card; a parent only the approved ones.
+        boolean staff = permissionService.hasAnySchoolRole(school, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN",
+                "PROPRIETOR");
+        var res = listStudentReportCardsUseCase.execute(school, studentId, !staff);
         return new ApiResponse<>("success", 200, "Report cards fetched successfully", res);
     }
 
     // The assessments a class's report cards can be limited to (the options on the Generate page).
     @SectionScoped
     @GetMapping("/assessments")
-    @PreAuthorize("@permissionService.canManageReportCardsForClass(#school, #classId) and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.canGenerateReportCards(#school) and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<List<ReportCardAssessmentOptionDTO>> assessments(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String classId) {
@@ -120,7 +149,7 @@ public class ReportCardController {
 
     @com.moriba.skultem.infrastructure.security.SectionNeutral
     @GetMapping("/stats")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
     public ApiResponse<ReportCardStatsDTO> stats(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardStatsUseCase.execute(school);
@@ -138,8 +167,9 @@ public class ReportCardController {
     }
 
     @SectionScoped
+    // The class teacher's comment, while the card is under review.
     @PatchMapping("/{id}/remark")
-    @PreAuthorize("@permissionService.canManageReportCard(#school, #id) and @sectionScope.reportCard(#school, #id)")
+    @PreAuthorize("@permissionService.canReviewReportCard(#school, #id) and @sectionScope.reportCard(#school, #id)")
     public ApiResponse<ReportCardDTO> updateRemark(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

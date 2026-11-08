@@ -49,6 +49,38 @@ public class TeacherController {
         private final ListTeacherSubjectBySessionUseCase listTeacherSubjectBySessionUseCase;
         private final ListMyClassMasterAssignmentsUseCase listMyClassMasterAssignmentsUseCase;
         private final TeacherService teacherSvc;
+        private final com.moriba.skultem.application.usecase.TeacherSignatureUseCase teacherSignatureUseCase;
+
+        // ---- The signed-in teacher's own signature (printed on the report cards they approve as class teacher).
+
+        @SectionNeutral
+        @GetMapping("/me/signature")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+        public ApiResponse<com.moriba.skultem.application.usecase.TeacherSignatureUseCase.Result> mySignature(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId) {
+                return new ApiResponse<>("success", 200, "Signature fetched", teacherSignatureUseCase.get(school, userId));
+        }
+
+        @SectionNeutral
+        @org.springframework.web.bind.annotation.PutMapping(value = "/me/signature", consumes = "multipart/form-data")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+        public ApiResponse<com.moriba.skultem.application.usecase.TeacherSignatureUseCase.Result> saveMySignature(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId,
+                        @org.springframework.web.bind.annotation.RequestPart("signature") org.springframework.web.multipart.MultipartFile signature) {
+                return new ApiResponse<>("success", 200, "Signature saved",
+                                teacherSignatureUseCase.save(school, userId, signature));
+        }
+
+        @SectionNeutral
+        @org.springframework.web.bind.annotation.DeleteMapping("/me/signature")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'TEACHER')")
+        public ApiResponse<com.moriba.skultem.application.usecase.TeacherSignatureUseCase.Result> removeMySignature(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @AuthenticationPrincipal(expression = "userId") String userId) {
+                return new ApiResponse<>("success", 200, "Signature removed", teacherSignatureUseCase.remove(school, userId));
+        }
         private final GetTeacherSubjectUseCase getTeacherSubjectUseCase;
         
         @SectionNeutral

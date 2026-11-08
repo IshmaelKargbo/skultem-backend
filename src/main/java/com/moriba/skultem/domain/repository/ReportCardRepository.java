@@ -26,6 +26,9 @@ public interface ReportCardRepository {
     // Card tab on the student profile (all terms/years in one place, not just the current term).
     List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId);
 
+    // Every card of one class for one term (all scopes) - what a class teacher reviews and approves together.
+    List<ReportCard> findAllBySchoolIdAndClassIdAndTermId(String schoolId, String classId, String termId);
+
     // levels: only cards for classes at these levels (see SectionScope).
     // sectionId / streamId: the student's section / stream in that term's academic year.
     Page<ReportCard> search(String schoolId, String classId, String termId, String search, String sectionId,

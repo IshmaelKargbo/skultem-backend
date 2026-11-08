@@ -24,5 +24,9 @@ public record CreateTimetableDTO(
 
         // SUBJECT (default) or LIBRARY.
         @Pattern(regexp = "SUBJECT|LIBRARY", message = "Kind must be SUBJECT or LIBRARY")
-        String kind
+        String kind,
+
+        // Also put it in the period straight after (a double period, e.g. a practical) - for a new lesson, or to
+        // extend an existing one.
+        Boolean doublePeriod
 ) {}

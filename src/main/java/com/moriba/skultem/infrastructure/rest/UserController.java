@@ -163,7 +163,8 @@ public class UserController {
 
     @SectionNeutral
     @GetMapping("/notifications")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'TEACHER', 'PARENT', 'PROPRIETOR')")
+    // Everyone's own notifications - every school role, as in NotificationController.
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER', 'TEACHER', 'PARENT')")
     public ApiResponse<Object> notifications(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String userId) {

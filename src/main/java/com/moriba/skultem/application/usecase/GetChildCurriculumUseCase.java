@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.ChildSchemeOfWorkDTO;
 import com.moriba.skultem.application.dto.SchemeProgressDTO;
-import com.moriba.skultem.application.error.AccessDeniedException;
+import com.moriba.skultem.application.error.ForbiddenException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.mapper.SchemeOfWorkMapper;
 import com.moriba.skultem.application.mapper.WeekMapper;
@@ -49,7 +49,7 @@ public class GetChildCurriculumUseCase {
         // otherwise scoped to the caller anywhere in this flow, so this check is what actually
         // stops one family from browsing another's child by guessing/enumerating a studentId.
         if (student.getParent() == null || !student.getParent().getId().equals(parent.getId())) {
-            throw new AccessDeniedException("You can only view your own child's curriculum");
+            throw new ForbiddenException("You can only view your own child's curriculum");
         }
 
         var sessionId = student.getSession().getId();

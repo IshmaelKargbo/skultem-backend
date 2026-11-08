@@ -32,6 +32,10 @@ public class Teacher extends AggregateRoot<String> {
     // for everyone added through Add Teacher.
     private boolean teaching;
 
+    // The teacher's own signature image (URL), drawn or uploaded on their profile - printed on the report cards
+    // they approve as class teacher. Null = none yet.
+    private String signature;
+
     public enum Status {
         ACTIVE,
         INACTIVE,
@@ -113,5 +117,17 @@ public class Teacher extends AggregateRoot<String> {
 
     public String getName() {
         return String.join(" ", title.toSentenceCase(), user.getName());
+    }
+
+    /** Loads the saved signature without touching updatedAt - for the persistence mapper only. */
+    public Teacher restoreSignature(String signature) {
+        this.signature = signature;
+        return this;
+    }
+
+    // Null removes it.
+    public void updateSignature(String signature) {
+        this.signature = signature == null || signature.isBlank() ? null : signature;
+        touch(Instant.now());
     }
 }

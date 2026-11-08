@@ -46,6 +46,13 @@ public class ReportCardAdapter implements ReportCardRepository {
     }
 
     @Override
+    public List<ReportCard> findAllBySchoolIdAndClassIdAndTermId(String schoolId, String classId, String termId) {
+        return repo.findAllBySchoolIdAndClassIdAndTermId(schoolId, classId, termId).stream()
+                .map(ReportCardMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<ReportCard> findAllBySchoolIdAndStudentId(String schoolId, String studentId) {
         return repo.findAllBySchoolIdAndStudentIdOrderByGeneratedAtDesc(schoolId, studentId).stream()
                 .map(ReportCardMapper::toDomain)

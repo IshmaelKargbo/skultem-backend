@@ -15,7 +15,9 @@ public class ReportCardMapper {
         return new ReportCardSummaryDTO(param.getId(), param.getStudentId(), param.getStudentName(),
                 param.getAdmissionNumber(), param.getPhoto(), param.getClassName(), param.getTermName(),
                 param.getAcademicYearName(), param.getAverage(), param.getPosition(), param.getOverallGrade(),
-                param.isPassed(), param.getDownloadCount(), param.getGeneratedAt(), param.getScopeLabel());
+                param.isPassed(), param.getDownloadCount(), param.getGeneratedAt(), param.getScopeLabel(),
+                param.getReviewStatus().name(), param.getReviewNote(), param.getReviewedByName(), param.getClassId(),
+                param.getTermId());
     }
 
     public static ReportCardDTO toDTO(ReportCard param, SchoolDTO school, ReportCardSettingDTO settings,
@@ -28,6 +30,8 @@ public class ReportCardMapper {
                 param.getAverage(), param.getPosition(), param.getOverallGrade(), param.isPassed(),
                 param.getAttendancePercentage(), param.getRemark(), subjects, param.getGeneratedAt(),
                 param.getDownloadCount(), school, settings, level, param.getScopeLabel(),
-                settings == null ? null : RemarkScale.resolve(settings.remarkScale(), param.getAverage()));
+                settings == null ? null : RemarkScale.resolve(settings.remarkScale(), param.getAverage()),
+                param.getReviewStatus().name(), param.getReviewNote(), param.getReviewedByName(),
+                param.getReviewedAt(), param.getClassTeacherName(), param.getClassTeacherSignature());
     }
 }

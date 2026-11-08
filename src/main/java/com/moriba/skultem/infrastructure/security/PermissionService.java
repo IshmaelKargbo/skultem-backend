@@ -31,6 +31,7 @@ public class PermissionService {
     private final PromotionRequestRepository promotionRequestRepo;
     private final ParentRepository parentRepo;
     private final ReportCardRepository reportCardRepo;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final AssessmentApprovalRequestRepository assessmentApprovalRequestRepo;
     private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
     private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
@@ -191,7 +192,7 @@ public class PermissionService {
             return true;
         }
 
-        var teacher = teacherRepo.findByUserId(teacherId);
+        var teacher = teacherRepo.findByUserIdAndSchoolId(teacherId, currentSchoolId());
         if (teacher.isEmpty()) {
             return false;
         }
@@ -240,9 +241,10 @@ public class PermissionService {
                 && currentUserId().equals(request.get().getTeacher().getUser().getId());
     }
 
+    // Parents only ever see approved cards - a card still with the class teacher isn't final.
     public boolean isParentOfReportCard(String schoolId, String reportCardId) {
         var card = reportCardRepo.findByIdAndSchoolId(reportCardId, schoolId);
-        return card.isPresent() && isParentOfStudent(schoolId, card.get().getStudentId());
+        return card.isPresent() && card.get().isApproved() && isParentOfStudent(schoolId, card.get().getStudentId());
     }
 
     public boolean canPromoteClassSession(String schoolId, String sessionId) {
@@ -258,7 +260,7 @@ public class PermissionService {
             return false;
         }
 
-        var teacher = teacherRepo.findByUserId(currentUserId());
+        var teacher = teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
         if (teacher.isEmpty()) {
             return false;
         }
@@ -272,8 +274,57 @@ public class PermissionService {
     // Report cards belong to management and to a class's own class master: a teacher who isn't a class
     // master of this class (any of its sessions) can't generate, list, open or remark its cards,
     // even though the endpoints are role-gated to TEACHER.
+    // Who generates report cards: only the school's admins (most schools keep results with the admin office). The
+    // class teacher then reviews, comments on and approves them - see canReviewReportCardsForClass.
+    public boolean canGenerateReportCards(String schoolId) {
+        return hasAnySchoolRole(schoolId, "ADMIN", "SUPER_ADMIN");
+    }
+
+    // Who reviews a class's generated report cards (adds comments, approves, sends back): its class teacher. An
+    // admin can too when the class has no class teacher, so a class is never stuck.
+    public boolean canReviewReportCardsForClass(String schoolId, String classId) {
+        if (classId == null || classId.isBlank()) {
+            return false;
+        }
+        if (isClassMasterOf(schoolId, classId)) {
+            return true;
+        }
+        return canGenerateReportCards(schoolId) && !classHasClassMaster(schoolId, classId);
+    }
+
+    public boolean canReviewReportCard(String schoolId, String reportCardId) {
+        return reportCardRepo.findByIdAndSchoolId(reportCardId, schoolId)
+                .map(card -> canReviewReportCardsForClass(schoolId, card.getClassId()))
+                .orElse(false);
+    }
+
+    private boolean isClassMasterOf(String schoolId, String classId) {
+        if (!hasRole(Role.TEACHER)) {
+            return false;
+        }
+        return teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId)
+                .map(t -> classMasterRepo.existsActiveByTeacherIdAndClassIdAndSchoolId(t.getId(), classId, schoolId))
+                .orElse(false);
+    }
+
+    // Whether any class session of the class has a current class teacher.
+    public boolean classHasClassMaster(String schoolId, String classId) {
+        return !classMasterUserIds(schoolId, classId).isEmpty();
+    }
+
+    // The user accounts of a class's current class teachers (every session of the class).
+    public java.util.List<String> classMasterUserIds(String schoolId, String classId) {
+        return jdbc.queryForList("SELECT DISTINCT t.user_id FROM class_masters cm"
+                + " JOIN class_sessions cs ON cs.id = cm.class_session_id"
+                + " JOIN teachers t ON t.id = cm.teacher_id"
+                + " WHERE cm.school_id = ? AND cs.class_id = ? AND cm.ended_at IS NULL", String.class, schoolId,
+                classId);
+    }
+
+    // Who sees a class's report cards on staff screens. The exam office doesn't - report cards are the admin's and
+    // the class teacher's job.
     public boolean canManageReportCardsForClass(String schoolId, String classId) {
-        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN", "PROPRIETOR", "EXAM_OFFICER")) {
+        if (hasAnySchoolRole(schoolId, "ADMIN", "OWNER", "PRINCIPAL", "SUPER_ADMIN", "PROPRIETOR")) {
             return true;
         }
 
@@ -380,7 +431,7 @@ public class PermissionService {
             return false;
         }
 
-        var teacher = teacherRepo.findByUserId(currentUserId());
+        var teacher = teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
         if (teacher.isEmpty()) {
             return false;
         }

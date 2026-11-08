@@ -36,7 +36,7 @@ public class ListPromotionRequestsUseCase {
     }
 
     public Page<PromotionRequestDTO> executeByUser(String schoolId, String userId, int page, int size) {
-        var teacher = teacherRepo.findByUserId(userId)
+        var teacher = teacherRepo.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Teacher not found"));
 
         Pageable pageable = createPageable(page, size);

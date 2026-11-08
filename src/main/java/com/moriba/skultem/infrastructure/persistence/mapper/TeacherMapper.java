@@ -14,7 +14,8 @@ public class TeacherMapper {
         }
 
         return new Teacher(param.getId(), param.getSchoolId(), param.getTitle(), param.getPhone(), param.getStreet(), param.getCity(), param.getGender(), param.getStaffId(),
-                user, param.getStatus(), param.getDesignation(), param.isTeaching(), param.getCreatedAt(), param.getUpdatedAt());
+                user, param.getStatus(), param.getDesignation(), param.isTeaching(), param.getCreatedAt(), param.getUpdatedAt())
+                .restoreSignature(param.getSignature());
     }
 
     public static TeacherEntity toEntity(Teacher param) {
@@ -37,6 +38,7 @@ public class TeacherMapper {
                 .status(param.getStatus())
                 .designation(param.getDesignation())
                 .teaching(param.isTeaching())
+                .signature(param.getSignature())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

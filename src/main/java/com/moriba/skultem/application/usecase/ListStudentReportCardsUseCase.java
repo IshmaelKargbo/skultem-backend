@@ -18,7 +18,13 @@ public class ListStudentReportCardsUseCase {
     private final ReportCardRepository repo;
 
     public List<ReportCardSummaryDTO> execute(String schoolId, String studentId) {
+        return execute(schoolId, studentId, false);
+    }
+
+    // approvedOnly: a parent's view - only cards the class teacher has approved.
+    public List<ReportCardSummaryDTO> execute(String schoolId, String studentId, boolean approvedOnly) {
         return repo.findAllBySchoolIdAndStudentId(schoolId, studentId).stream()
+                .filter(c -> !approvedOnly || c.isApproved())
                 .map(ReportCardMapper::toSummaryDTO)
                 .toList();
     }

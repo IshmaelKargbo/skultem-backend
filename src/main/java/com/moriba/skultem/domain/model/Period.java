@@ -18,8 +18,13 @@ public class Period extends AggregateRoot<String> {
     private LocalTime endTime;
 
     public enum Type {
-        PERIOD, BREAK, LUNCH
+        PERIOD, BREAK, LUNCH,
+        // The school (or the class) gathers - morning assembly, devotion. Nothing is taught in it, like a break.
+        ASSEMBLY
     }
+
+    /** How long a new assembly slot is; the time can be adjusted on the timetable afterwards. */
+    public static final int DEFAULT_ASSEMBLY_MINUTES = 20;
 
     public Period(String id, String schoolId, ClassSession session, Type type, String name, LocalTime startTime, LocalTime endTime, Instant createdAt, Instant updatedAt) {
         super(id, createdAt);
@@ -38,6 +43,15 @@ public class Period extends AggregateRoot<String> {
 
     public boolean isLunch() {
         return this.type == Type.LUNCH;
+    }
+
+    public boolean isAssembly() {
+        return this.type == Type.ASSEMBLY;
+    }
+
+    /** Break, lunch or assembly: a slot no lesson or Library period can go in. */
+    public boolean isFixed() {
+        return this.type != Type.PERIOD;
     }
 
     public static Period create(String id, String schoolId, ClassSession session, Type type, String name, LocalTime startTime, LocalTime endTime) {

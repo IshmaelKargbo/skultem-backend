@@ -8,5 +8,7 @@ public record PeriodDTO(String id, String name, String startTime, String endTime
                         // One list per working day: every subject in that slot. More than one means students
                         // split between options (e.g. PHE or RME). `subjects` keeps the first of each, for
                         // older screens.
-                        List<List<TimetableDTO>> slots) {
+                        List<List<TimetableDTO>> slots,
+                        // Morning assembly or devotion - no lessons, like a break.
+                        boolean isAssembly) {
 }

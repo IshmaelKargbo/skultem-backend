@@ -13,7 +13,10 @@ public class ReportCardMapper {
                 param.getAverage(), param.getPosition(), param.getOverallGrade(), param.isPassed(),
                 param.getAttendancePercentage(), param.getRemark(), param.getSubjects(), param.getScopeKey(),
                 param.getScopeLabel(), param.getGeneratedBy(),
-                param.getGeneratedAt(), param.getDownloadCount(), param.getCreatedAt(), param.getUpdatedAt());
+                param.getGeneratedAt(), param.getDownloadCount(), param.getCreatedAt(), param.getUpdatedAt())
+                .restoreReview(param.getReviewStatus(), param.getReviewNote(), param.getReviewedByName(),
+                        param.getReviewedAt())
+                .restoreSignatory(param.getClassTeacherName(), param.getClassTeacherSignature());
     }
 
     public static ReportCardEntity toEntity(ReportCard param) {
@@ -44,6 +47,12 @@ public class ReportCardMapper {
                 .generatedBy(param.getGeneratedBy())
                 .generatedAt(param.getGeneratedAt())
                 .downloadCount(param.getDownloadCount())
+                .reviewStatus(param.getReviewStatus())
+                .reviewNote(param.getReviewNote())
+                .reviewedByName(param.getReviewedByName())
+                .reviewedAt(param.getReviewedAt())
+                .classTeacherName(param.getClassTeacherName())
+                .classTeacherSignature(param.getClassTeacherSignature())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

@@ -7,7 +7,7 @@ import java.util.Set;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.moriba.skultem.application.error.AccessDeniedException;
+import com.moriba.skultem.application.error.ForbiddenException;
 import com.moriba.skultem.domain.model.Student;
 import com.moriba.skultem.domain.repository.ParentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
@@ -48,7 +48,7 @@ public class ReportAccessPolicy {
         String type = entity == null ? "" : entity.trim().toLowerCase();
 
         if (role == Role.TEACHER && TEACHER_DENIED.contains(type)) {
-            throw new AccessDeniedException("Teachers can't run this report.");
+            throw new ForbiddenException("Teachers can't run this report.");
         }
         if (role == Role.PARENT) {
             checkParent(schoolId, type, filters);
@@ -58,7 +58,7 @@ public class ReportAccessPolicy {
     private void checkParent(String schoolId, String type, List<Filter> filters) {
         String field = PARENT_STUDENT_FIELD.get(type);
         if (field == null) {
-            throw new AccessDeniedException("Parents can't run this report.");
+            throw new ForbiddenException("Parents can't run this report.");
         }
 
         Set<String> children = childIds(schoolId);
@@ -78,7 +78,7 @@ public class ReportAccessPolicy {
         });
 
         if (!onlyOwnChildren) {
-            throw new AccessDeniedException("You can only see reports for your own children.");
+            throw new ForbiddenException("You can only see reports for your own children.");
         }
     }
 

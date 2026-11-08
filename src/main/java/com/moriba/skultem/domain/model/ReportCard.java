@@ -43,6 +43,25 @@ public class ReportCard extends AggregateRoot<String> {
     private Instant generatedAt;
     private int downloadCount;
 
+    /**
+     * The review step between generating and releasing a card: the admin generates (PENDING_REVIEW), the class
+     * teacher checks it, adds comments and approves it (APPROVED - only then do parents see it), or sends it back to
+     * the admin with a note (RETURNED). Generating again puts it back up for review.
+     */
+    public enum ReviewStatus {
+        PENDING_REVIEW,
+        RETURNED,
+        APPROVED
+    }
+
+    private ReviewStatus reviewStatus = ReviewStatus.APPROVED;
+    private String reviewNote;
+    private String reviewedByName;
+    private Instant reviewedAt;
+    // Who signed the card as class teacher, copied when they approve it (see approve).
+    private String classTeacherName;
+    private String classTeacherSignature;
+
     public ReportCard(String id, String schoolId, String studentId, String studentName, String admissionNumber,
             String photo, String classId, String className, int classSize, String termId, String termName,
             String academicYearName, double average, int position, String overallGrade, boolean passed,
@@ -82,9 +101,62 @@ public class ReportCard extends AggregateRoot<String> {
             boolean passed, Double attendancePercentage, String remark, String subjects, String scopeKey,
             String scopeLabel, String generatedBy) {
         Instant now = Instant.now();
-        return new ReportCard(id, schoolId, studentId, studentName, admissionNumber, photo, classId, className,
+        var card = new ReportCard(id, schoolId, studentId, studentName, admissionNumber, photo, classId, className,
                 classSize, termId, termName, academicYearName, average, position, overallGrade, passed,
                 attendancePercentage, remark, subjects, scopeKey, scopeLabel, generatedBy, now, 0, now, now);
+        card.reviewStatus = ReviewStatus.PENDING_REVIEW;
+        return card;
+    }
+
+    /** Loads the saved review state without touching updatedAt - for the persistence mapper only. */
+    public ReportCard restoreSignatory(String classTeacherName, String classTeacherSignature) {
+        this.classTeacherName = classTeacherName;
+        this.classTeacherSignature = classTeacherSignature;
+        return this;
+    }
+
+    public ReportCard restoreReview(ReviewStatus status, String note, String reviewedByName, Instant reviewedAt) {
+        this.reviewStatus = status != null ? status : ReviewStatus.APPROVED;
+        this.reviewNote = note;
+        this.reviewedByName = reviewedByName;
+        this.reviewedAt = reviewedAt;
+        return this;
+    }
+
+    public boolean isApproved() {
+        return reviewStatus == ReviewStatus.APPROVED;
+    }
+
+    /** The class teacher approves the card: it is final and parents can see it. */
+    public void approve(String byName) {
+        approve(byName, null, null);
+    }
+
+    /**
+     * Approving is signing: the class teacher's name and signature go on the card. An admin approving a class with
+     * no class teacher passes null for both - the card then keeps a blank signature line.
+     */
+    public void approve(String byName, String classTeacherName, String classTeacherSignature) {
+        this.classTeacherName = classTeacherName;
+        this.classTeacherSignature = classTeacherSignature;
+        this.reviewStatus = ReviewStatus.APPROVED;
+        this.reviewNote = null;
+        this.reviewedByName = byName;
+        this.reviewedAt = Instant.now();
+        touch(Instant.now());
+    }
+
+    /** The class teacher sends it back to the admin - e.g. a score looks wrong - with a note saying why. */
+    public void returnForChanges(String note, String byName) {
+        if (isApproved()) {
+            throw new com.moriba.skultem.application.error.RuleException(
+                    "This report card is already approved. Generate it again to review it again.");
+        }
+        this.reviewStatus = ReviewStatus.RETURNED;
+        this.reviewNote = note;
+        this.reviewedByName = byName;
+        this.reviewedAt = Instant.now();
+        touch(Instant.now());
     }
 
     // Called when the same student/term is generated again - keeps the same id
@@ -108,10 +180,17 @@ public class ReportCard extends AggregateRoot<String> {
         this.subjects = subjects;
         this.generatedBy = generatedBy;
         this.generatedAt = Instant.now();
+        // New figures need checking again.
+        this.reviewStatus = ReviewStatus.PENDING_REVIEW;
+        this.reviewNote = null;
         touch(Instant.now());
     }
 
     public void updateRemark(String remark) {
+        if (isApproved()) {
+            throw new com.moriba.skultem.application.error.RuleException(
+                    "This report card is approved, so its comment is locked. Generate it again to change it.");
+        }
         this.remark = remark;
         touch(Instant.now());
     }

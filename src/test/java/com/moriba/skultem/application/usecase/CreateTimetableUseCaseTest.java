@@ -152,4 +152,12 @@ class CreateTimetableUseCaseTest {
         assertThatThrownBy(() -> useCase.execut("school", "p1", null, Day.TUESDAY, "r1", "blue", null,
                 Timetable.Kind.LIBRARY)).isInstanceOf(RuleException.class);
     }
+
+    @Test
+    void assemblyCantHoldALesson() {
+        when(period.isAssembly()).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execut("school", "p1", null, Day.TUESDAY, "r1", "blue", null,
+                Timetable.Kind.LIBRARY)).isInstanceOf(RuleException.class);
+    }
 }

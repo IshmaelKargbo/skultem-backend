@@ -521,7 +521,7 @@ public class AssessmentController {
     // only move their own; a school without sections omits it.
     @SectionScoped
     @PostMapping("/cycle/{termId}/advance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'PROPRIETOR') and @sectionScope.managementSection(#sectionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR') and @sectionScope.managementSection(#sectionId)")
     public ApiResponse<AssessmentCycleAdvanceDTO> advanceCycle(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String termId,

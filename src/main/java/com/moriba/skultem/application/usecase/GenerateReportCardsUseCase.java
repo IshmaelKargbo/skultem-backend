@@ -56,6 +56,7 @@ public class GenerateReportCardsUseCase {
         private final AssessmentRepository assessmentRepo;
         private final SchoolRepository schoolRepo;
         private final ReportCardRepository reportCardRepo;
+        private final ReviewReportCardsUseCase reviewReportCardsUseCase;
 
         // One student's computed card, held until every student is done so positions can be ranked
         // across the whole class before anything is saved.
@@ -291,6 +292,12 @@ public class GenerateReportCardsUseCase {
                 }
 
                 double classAverage = generated.isEmpty() ? 0 : totalAverage / generated.size();
+
+                // The cards now wait for the class teacher to check, comment on and approve them.
+                if (!generated.isEmpty()) {
+                        reviewReportCardsUseCase.notifyReviewers(schoolId, param.classId(),
+                                        generated.get(0).className(), generated.get(0).termName(), generated.size());
+                }
 
                 return new GenerateReportCardsResultDTO(generated.size(), passedCount, generated.size() - passedCount,
                                 classAverage, generated);

@@ -34,6 +34,11 @@ public class CreatePeriodUseCase {
         return create(schoolId, sessionId, Period.Type.BREAK);
     }
 
+    @AuditLogAnnotation(action = "ASSEMBLY_CREATED")
+    public Period executeAssembly(String schoolId, String sessionId) {
+        return create(schoolId, sessionId, Period.Type.ASSEMBLY);
+    }
+
     @AuditLogAnnotation(action = "LUNCH_CREATED")
     public Period executeLunch(String schoolId, String sessionId) {
         return create(schoolId, sessionId, Period.Type.LUNCH);
@@ -127,6 +132,14 @@ public class CreatePeriodUseCase {
                         .filter(p -> p.getType() == Period.Type.LUNCH)
                         .count();
                 name = "Lunch " + (count + 1);
+            }
+
+            case ASSEMBLY -> {
+                durationMinutes = Period.DEFAULT_ASSEMBLY_MINUTES;
+                long count = periods.stream()
+                        .filter(p -> p.getType() == Period.Type.ASSEMBLY)
+                        .count();
+                name = count == 0 ? "Assembly" : "Assembly " + (count + 1);
             }
 
             default -> throw new IllegalArgumentException("Unsupported period type");

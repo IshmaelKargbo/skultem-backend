@@ -43,9 +43,16 @@ public class TimetableController {
     public ApiResponse<TimetableDTO> create(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @Valid @RequestBody CreateTimetableDTO param) {
+        var kind = "LIBRARY".equals(param.kind()) ? Timetable.Kind.LIBRARY : Timetable.Kind.SUBJECT;
+        if (Boolean.TRUE.equals(param.doublePeriod())) {
+            // New or existing lesson, extended into the next period. Answers with the first of the two entries,
+            // like a single save; the screen reloads to show both.
+            var both = timetableSvc.createDoublePeriod(school, param.period(), param.subject(),
+                    Day.valueOf(param.day()), param.room(), param.color(), param.entry(), kind);
+            return new ApiResponse<>("success", 200, "Double period created successfully", both.get(0));
+        }
         var res = timetableSvc.createTimetable(school, param.period(), param.subject(), Day.valueOf(param.day()),
-                param.room(), param.color(), param.entry(),
-                "LIBRARY".equals(param.kind()) ? Timetable.Kind.LIBRARY : Timetable.Kind.SUBJECT);
+                param.room(), param.color(), param.entry(), kind);
         return new ApiResponse<>("success", 200, "Timetable created successfully", res);
     }
 
@@ -230,6 +237,14 @@ public class TimetableController {
             @Valid @RequestBody CreatePeriodDTO param) {
         var res = timetableSvc.createBreak(school, param.session());
         return new ApiResponse<>("success", 200, "Break added successfully", res);
+    }
+
+    @PostMapping("/assembly")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<PeriodDTO> addAssembly(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody CreatePeriodDTO param) {
+        var res = timetableSvc.createAssembly(school, param.session());
+        return new ApiResponse<>("success", 200, "Assembly added successfully", res);
     }
 
     @PostMapping("/lunch")

@@ -83,6 +83,28 @@ public class ReportCardEntity {
     @Column(nullable = false)
     private int downloadCount;
 
+    // See ReportCard.ReviewStatus.
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "review_status", nullable = false, length = 20)
+    @Builder.Default
+    private com.moriba.skultem.domain.model.ReportCard.ReviewStatus reviewStatus =
+            com.moriba.skultem.domain.model.ReportCard.ReviewStatus.APPROVED;
+
+    @Column(name = "review_note", length = 500)
+    private String reviewNote;
+
+    @Column(name = "reviewed_by_name")
+    private String reviewedByName;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
+    @Column(name = "class_teacher_name")
+    private String classTeacherName;
+
+    @Column(name = "class_teacher_signature", length = 512)
+    private String classTeacherSignature;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

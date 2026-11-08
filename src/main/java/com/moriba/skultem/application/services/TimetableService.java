@@ -86,17 +86,23 @@ public class TimetableService {
         var domain = createPeriodUseCase.executeBreak(schoolId, session);
         List<List<TimetableDTO>> subjects = new ArrayList<>();
 
-        if (!domain.isBreak() && !domain.isLunch()) {
+        if (!domain.isFixed()) {
             subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 
         return PeriodMapper.toDTO(domain, subjects);
     }
 
+    // Assembly holds no lessons, so - like a break - it has no slots.
+    public PeriodDTO createAssembly(String schoolId, String session) {
+        var domain = createPeriodUseCase.executeAssembly(schoolId, session);
+        return PeriodMapper.toDTO(domain, new ArrayList<>());
+    }
+
     public PeriodDTO createLunch(String schoolId, String session) {
         var domain = createPeriodUseCase.executeLunch(schoolId, session);
         List<List<TimetableDTO>> subjects = new ArrayList<>();
-        if (!domain.isBreak() && !domain.isLunch()) {
+        if (!domain.isFixed()) {
             subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 
@@ -109,6 +115,13 @@ public class TimetableService {
         return TimetableMapper.toDTO(domain);
     }
 
+    // The lesson in this period and the next one (a double period); returns both entries.
+    public List<TimetableDTO> createDoublePeriod(String schoolId, String periodId, String subject, Day day,
+            String roomId, String color, String entryId, com.moriba.skultem.domain.model.Timetable.Kind kind) {
+        return timetableUseCase.executeDouble(schoolId, periodId, subject, day, roomId, color, entryId, kind).stream()
+                .map(TimetableMapper::toDTO).toList();
+    }
+
     public TimetableDTO deleteTimetableEntry(String schoolId, String id) {
         return TimetableMapper.toDTO(deleteTimetableEntryUseCase.execute(schoolId, id));
     }
@@ -117,7 +130,7 @@ public class TimetableService {
         return periodRepo.findAllBySessionId(session).stream().map((e) -> {
             List<List<TimetableDTO>> slots = new ArrayList<>();
 
-            if (!e.isBreak() && !e.isLunch()) {
+            if (!e.isFixed()) {
                 slots = getSlots(e.getSchoolId(), e.getId(), session);
             }
 
@@ -200,7 +213,7 @@ public class TimetableService {
         var domain = updatePeriodUseCase.execute(schoolId, id, startTime, endTime);
         List<List<TimetableDTO>> subjects = new ArrayList<>();
 
-        if (!domain.isBreak() && !domain.isLunch()) {
+        if (!domain.isFixed()) {
             subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         }
 

@@ -59,4 +59,7 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
             @Param("termId") String termId, @Param("search") String search,
             @Param("sectionId") String sectionId, @Param("streamId") String streamId,
             @Param("levels") Collection<Level> levels, Pageable pageable);
+
+    java.util.List<com.moriba.skultem.infrastructure.persistence.entity.ReportCardEntity> findAllBySchoolIdAndClassIdAndTermId(
+            String schoolId, String classId, String termId);
 }

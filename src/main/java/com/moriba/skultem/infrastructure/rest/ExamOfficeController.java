@@ -46,6 +46,31 @@ public class ExamOfficeController {
     private final GetBroadsheetUseCase getBroadsheetUseCase;
     private final ListExamSubmissionsUseCase listExamSubmissionsUseCase;
     private final PermissionService permissionService;
+    private final com.moriba.skultem.application.usecase.ExamTimetableDesignUseCase examTimetableDesignUseCase;
+
+    // ---- The exam timetable PDF design: everyone who downloads a timetable reads it; the exam office changes it.
+
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/timetable-design")
+    @PreAuthorize(VIEW + " or @permissionService.hasAnySchoolRole(#school, 'PARENT')")
+    public ApiResponse<com.moriba.skultem.application.dto.ExamTimetableDesignDTO> getTimetableDesign(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        return new ApiResponse<>("success", 200, "Exam timetable design fetched successfully",
+                examTimetableDesignUseCase.get(school));
+    }
+
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @PutMapping("/timetable-design")
+    @PreAuthorize(MANAGE)
+    public ApiResponse<com.moriba.skultem.application.dto.ExamTimetableDesignDTO> saveTimetableDesign(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SaveExamTimetableDesignDTO p) {
+        var res = examTimetableDesignUseCase.save(school, new com.moriba.skultem.application.dto.ExamTimetableDesignDTO(
+                p.heading(), p.accentColor(), p.orientation(), p.showLogo(), p.showVenue(), p.showDuration(),
+                p.showInvigilators(), p.showInstructions(), p.showSignatures(), p.leftSignature(),
+                p.rightSignature(), p.footerNote()));
+        return new ApiResponse<>("success", 200, "Exam timetable design saved", res);
+    }
 
     // ---- Exam timetables: one per assessment per term. Teachers only see published ones.
 

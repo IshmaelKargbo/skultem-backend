@@ -18,6 +18,7 @@ import com.moriba.skultem.application.error.AccessDeniedException;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.BadRequestException;
 import com.moriba.skultem.application.error.FileUploadException;
+import com.moriba.skultem.application.error.ForbiddenException;
 import com.moriba.skultem.application.error.ModuleNotInstalledException;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.OutsideManagementScopeException;
@@ -54,9 +55,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex);
     }
 
+    // Sign-in problems only (wrong password, bad or expired refresh token, inactive session) - a 401 sends
+    // the user back to log in. A signed-in user who isn't allowed something gets ForbiddenException (403).
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.UNAUTHORIZED, "ACCESS_DENIED", ex);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbiddenRule(ForbiddenException ex) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", ex);
     }
 
     // 403, not 401 like AccessDeniedException above: the caller is signed in and allowed by role, the

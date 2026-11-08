@@ -16,6 +16,10 @@ public class PeriodMapper {
         if (param == null) {
             return null;
         }
+        // No slots (a deleted period, a break) - an empty grid row, not a crash.
+        if (slots == null) {
+            slots = List.of();
+        }
 
         return new PeriodDTO(
                 param.getId(),
@@ -27,7 +31,8 @@ public class PeriodMapper {
                 slots.stream().map(s -> s.isEmpty() ? null : s.get(0)).toList(),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                slots
+                slots,
+                param.isAssembly()
         );
     }
 }

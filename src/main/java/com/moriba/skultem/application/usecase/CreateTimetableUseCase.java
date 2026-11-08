@@ -24,6 +24,39 @@ public class CreateTimetableUseCase {
     private final ResolveTimingForLevelUseCase resolveTimingForLevelUseCase;
     private final LogActivityUseCase logActivityUseCase;
 
+    /**
+     * A double period: the same lesson (or Library period) in this period and the one straight after it, the same
+     * day - e.g. a science practical. Both are checked before either is saved; the next period has to be a lesson
+     * period (not a break, lunch or assembly) and free for it.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    @AuditLogAnnotation(action = "TIMETABLE_DOUBLE_PERIOD_CREATED")
+    // entryId set: an existing lesson is saved and extended into the next period.
+    public java.util.List<Timetable> executeDouble(String schoolId, String periodId, String subject, Day day,
+            String roomId, String color, String entryId, Timetable.Kind kind) {
+        var period = periodRepo.findById(periodId)
+                .orElseThrow(() -> new NotFoundException("no period found"));
+        var ordered = periodRepo.findAllBySessionId(period.getSession().getId()).stream()
+                .sorted(java.util.Comparator.comparing(Period::getStartTime))
+                .toList();
+        int at = -1;
+        for (int i = 0; i < ordered.size(); i++) {
+            if (ordered.get(i).getId().equals(periodId)) {
+                at = i;
+            }
+        }
+        if (at < 0 || at == ordered.size() - 1) {
+            throw new RuleException("There's no period after " + period.getName() + " to make it a double period");
+        }
+        var next = ordered.get(at + 1);
+        if (next.isBreak() || next.isLunch() || next.isAssembly()) {
+            throw new RuleException(next.getName() + " comes straight after, so this can't be a double period");
+        }
+        var first = execut(schoolId, periodId, subject, day, roomId, color, entryId, kind);
+        var second = execut(schoolId, next.getId(), subject, day, roomId, color, null, kind);
+        return java.util.List.of(first, second);
+    }
+
     @AuditLogAnnotation(action = "TIMETABLE_CREATED")
     // entryId set: edit that entry. Not set: add a subject to the slot - the only one, or another option when
     // students split between subjects in the same period (e.g. PHE or RME).
@@ -44,8 +77,8 @@ public class CreateTimetableUseCase {
         var workingDay = dayRepo.findByDayAndTimingId(day, timing.getId())
                 .orElseThrow(() -> new NotFoundException("no working day found"));
 
-        if (period.isBreak() || period.isLunch()) {
-            throw new RuleException("Breaks and lunch can't hold a lesson or a Library period");
+        if (period.isBreak() || period.isLunch() || period.isAssembly()) {
+            throw new RuleException("Breaks, lunch and assembly can't hold a lesson or a Library period");
         }
 
         if (!library && (subject == null || subject.isBlank())) {
