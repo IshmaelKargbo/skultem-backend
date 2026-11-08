@@ -25,6 +25,8 @@ public class ReportCardSetting extends AggregateRoot<String> {
     private boolean showTeacherSignature;
     private boolean showPrincipalSignature;
     private boolean showGradeScale;
+    // The student's photo on the card. On unless the school turns it off.
+    private boolean showStudentPhoto = true;
     // JSON array of RemarkBand - null/empty until the school configures one.
     private String remarkScale;
 
@@ -73,5 +75,16 @@ public class ReportCardSetting extends AggregateRoot<String> {
         this.showGradeScale = showGradeScale;
         this.remarkScale = remarkScale;
         touch(Instant.now());
+    }
+
+    public void updateShowStudentPhoto(boolean show) {
+        this.showStudentPhoto = show;
+        touch(Instant.now());
+    }
+
+    /** Loads the saved value without touching updatedAt - for the persistence mapper only. */
+    public ReportCardSetting restoreShowStudentPhoto(boolean show) {
+        this.showStudentPhoto = show;
+        return this;
     }
 }

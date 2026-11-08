@@ -22,7 +22,8 @@ public class ReportCardSettingMapper {
                 param.isShowTeacherSignature(),
                 param.isShowPrincipalSignature(),
                 param.isShowGradeScale(),
-                remarkScale(param));
+                remarkScale(param),
+                param.isShowStudentPhoto());
     }
 
     // A NULL column means the school never set a scale, so it gets the defaults; an explicitly saved empty

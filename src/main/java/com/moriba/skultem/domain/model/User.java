@@ -158,6 +158,17 @@ public class User extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    // A signed-in user changing their own password (they proved the current one first). Only an active
+    // account - one still on a temporary password goes through resetPassword() instead.
+    public void changePassword(String passwordHash) {
+        if (status != Status.ACTIVE) {
+            throw new RuleException("Set your password from the reset page first");
+        }
+        this.password = passwordHash;
+        this.hint = "";
+        touch(Instant.now());
+    }
+
     public void issueTemporaryPassword(String passwordHash, String hint) {
         this.password = passwordHash;
         this.hint = hint;

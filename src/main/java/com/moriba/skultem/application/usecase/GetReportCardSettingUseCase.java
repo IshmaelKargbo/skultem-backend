@@ -28,6 +28,6 @@ public class GetReportCardSettingUseCase {
         String logoUrl = school != null && school.getLogo() != null ? school.getLogo() : "";
 
         return new ReportCardSettingDTO(headerColor, logoUrl, "", true, true, true, true, true, true, true,
-                RemarkScale.defaults());
+                RemarkScale.defaults(), true);
     }
 }

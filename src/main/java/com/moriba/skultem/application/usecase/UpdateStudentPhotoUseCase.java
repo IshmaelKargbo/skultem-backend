@@ -36,6 +36,7 @@ public class UpdateStudentPhotoUseCase {
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final R2StorageService storageService;
     private final LogActivityUseCase logActivityUseCase;
+    private final com.moriba.skultem.domain.repository.ReportCardRepository reportCardRepo;
 
     @AuditLogAnnotation(action = "STUDENT_PHOTO_UPDATED")
     public StudentDTO execute(String schoolId, String studentId, MultipartFile photo) {
@@ -45,6 +46,11 @@ public class UpdateStudentPhotoUseCase {
         String photoUrl = uploadPhoto(photo, student.getId(), schoolId);
         student.setProfile(photoUrl);
         repo.save(student);
+        // Report cards already generated show the new photo too.
+        reportCardRepo.findAllBySchoolIdAndStudentId(schoolId, student.getId()).forEach(card -> {
+            card.refreshPhoto(photoUrl);
+            reportCardRepo.save(card);
+        });
 
         logActivityUseCase.log(schoolId, ActivityType.STUDENT, "Student photo updated",
                 student.getGivenNames() + " " + student.getFamilyName() + " - " + student.getAdmissionNumber(), null,

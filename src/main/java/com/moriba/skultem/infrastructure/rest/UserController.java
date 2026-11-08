@@ -65,6 +65,8 @@ public class UserController {
     private final UpdateUserPhotoUseCase updateUserPhotoUseCase;
     private final SetUserAccessUseCase setUserAccessUseCase;
     private final RemoveRoleUseCase removeRoleUseCase;
+    private final com.moriba.skultem.application.usecase.ChangePasswordUseCase changePasswordUseCase;
+    private final com.moriba.skultem.infrastructure.security.JwtUtil jwtUtil;
     private final AssignStaffManagementSectionsUseCase assignStaffManagementSectionsUseCase;
     private final ListStaffManagementSectionsUseCase listStaffManagementSectionsUseCase;
     private final SectionScopeService sectionScopeService;
@@ -282,5 +284,20 @@ public class UserController {
             @RequestPart("photo") MultipartFile photo) {
         var res = updateUserPhotoUseCase.execute(school, userId, photo);
         return new ApiResponse<>("success", 200, "Photo updated successfully", res);
+    }
+
+    // Change your own password: needs the current one. Signs out every other device; this one stays in.
+    @SectionNeutral
+    @PutMapping("/me/password")
+    @PreAuthorize("@permissionService.canAccessSchool(#school)")
+    public ApiResponse<com.moriba.skultem.application.usecase.ChangePasswordUseCase.Result> changeMyPassword(
+            @AuthenticationPrincipal(expression = "userId") String userId,
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            jakarta.servlet.http.HttpServletRequest request,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.ChangePasswordDTO param) {
+        String header = request.getHeader("Authorization");
+        String sessionId = header != null && header.startsWith("Bearer ") ? jwtUtil.extractSessionId(header.substring(7)) : null;
+        var res = changePasswordUseCase.execute(userId, sessionId, param.currentPassword(), param.newPassword());
+        return new ApiResponse<>("success", 200, "Password changed", res);
     }
 }

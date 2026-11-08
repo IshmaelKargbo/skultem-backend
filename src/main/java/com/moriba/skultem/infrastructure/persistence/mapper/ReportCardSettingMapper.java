@@ -10,7 +10,8 @@ public class ReportCardSettingMapper {
         return new ReportCardSetting(param.getId(), param.getSchoolId(), param.getHeaderColor(), param.getLogoUrl(),
                 param.getFooterNote(), param.isShowAttendance(), param.isShowRemarks(), param.isShowPosition(),
                 param.isShowSignatures(), param.isShowTeacherSignature(), param.isShowPrincipalSignature(),
-                param.isShowGradeScale(), param.getRemarkScale(), param.getCreatedAt(), param.getUpdatedAt());
+                param.isShowGradeScale(), param.getRemarkScale(), param.getCreatedAt(), param.getUpdatedAt())
+                .restoreShowStudentPhoto(param.isShowStudentPhoto());
     }
 
     public static ReportCardSettingEntity toEntity(ReportCardSetting param) {
@@ -29,6 +30,7 @@ public class ReportCardSettingMapper {
                 .showTeacherSignature(param.isShowTeacherSignature())
                 .showPrincipalSignature(param.isShowPrincipalSignature())
                 .showGradeScale(param.isShowGradeScale())
+                .showStudentPhoto(param.isShowStudentPhoto())
                 .remarkScale(param.getRemarkScale())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())

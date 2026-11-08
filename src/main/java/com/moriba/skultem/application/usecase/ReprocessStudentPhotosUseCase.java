@@ -29,6 +29,7 @@ public class ReprocessStudentPhotosUseCase {
 
     private final StudentRepository repo;
     private final R2StorageService storageService;
+    private final com.moriba.skultem.domain.repository.ReportCardRepository reportCardRepo;
 
     public record Summary(int total, int reprocessed, int cleared) {
     }
@@ -50,16 +51,26 @@ public class ReprocessStudentPhotosUseCase {
                 String newUrl = storageService.uploadPhotoFromUrl(photo, basePath, MAX_PHOTO_DIMENSION);
                 student.setProfile(newUrl);
                 repo.save(student);
+                syncCards(schoolId, student.getId(), newUrl);
                 reprocessed++;
             } catch (Exception e) {
                 log.warn("Could not reprocess photo for studentId={} (url={}), clearing it: {}", student.getId(),
                         photo, e.getMessage());
                 student.setProfile(null);
                 repo.save(student);
+                syncCards(schoolId, student.getId(), null);
                 cleared++;
             }
         }
 
         return new Summary(students.size(), reprocessed, cleared);
+    }
+
+    // Keep the student's report cards on the same photo.
+    private void syncCards(String schoolId, String studentId, String photo) {
+        reportCardRepo.findAllBySchoolIdAndStudentId(schoolId, studentId).forEach(card -> {
+            card.refreshPhoto(photo);
+            reportCardRepo.save(card);
+        });
     }
 }

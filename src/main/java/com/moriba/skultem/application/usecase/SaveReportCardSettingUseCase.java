@@ -43,6 +43,10 @@ public class SaveReportCardSettingUseCase {
                     remarkScaleJson);
         }
 
+        if (param.showStudentPhoto() != null) {
+            setting.updateShowStudentPhoto(param.showStudentPhoto());
+        }
+
         repo.save(setting);
         return ReportCardSettingMapper.toDTO(setting);
     }

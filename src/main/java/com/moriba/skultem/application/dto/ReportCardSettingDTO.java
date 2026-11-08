@@ -15,5 +15,7 @@ public record ReportCardSettingDTO(
         boolean showTeacherSignature,
         boolean showPrincipalSignature,
         boolean showGradeScale,
-        List<RemarkBand> remarkScale) {
+        List<RemarkBand> remarkScale,
+        // The student's photo beside their details. Null when saving = leave it as it was.
+        Boolean showStudentPhoto) {
 }

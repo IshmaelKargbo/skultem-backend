@@ -51,6 +51,10 @@ public class ReportCardSettingEntity {
     @Column(nullable = false)
     private boolean showGradeScale;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean showStudentPhoto = true;
+
     @Column(columnDefinition = "text")
     private String remarkScale;
 

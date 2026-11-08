@@ -161,6 +161,11 @@ public class ReportCard extends AggregateRoot<String> {
 
     // Called when the same student/term is generated again - keeps the same id
     // (and download count/history) but refreshes every computed value.
+    // The card shows the student's current photo - a photo added or replaced after generating reaches it too.
+    public void refreshPhoto(String photo) {
+        this.photo = photo;
+    }
+
     public void regenerate(String studentName, String admissionNumber, String photo, String className, int classSize,
             String termName, String academicYearName, double average, int position, String overallGrade,
             boolean passed, Double attendancePercentage, String subjects, String scopeLabel, String generatedBy) {

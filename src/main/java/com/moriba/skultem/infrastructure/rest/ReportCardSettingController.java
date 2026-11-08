@@ -45,7 +45,7 @@ public class ReportCardSettingController {
         var dto = new ReportCardSettingDTO(param.headerColor(), param.logoUrl(), param.footerNote(),
                 param.showAttendance(), param.showRemarks(), param.showPosition(),
                 param.showTeacherSignature() || param.showPrincipalSignature(), param.showTeacherSignature(),
-                param.showPrincipalSignature(), param.showGradeScale(), param.remarkScale());
+                param.showPrincipalSignature(), param.showGradeScale(), param.remarkScale(), param.showStudentPhoto());
         var res = saveReportCardSettingUseCase.execute(school, dto);
         return new ApiResponse<>("success", 200, "Report card settings saved successfully", res);
     }
