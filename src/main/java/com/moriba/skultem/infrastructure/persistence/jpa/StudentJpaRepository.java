@@ -58,6 +58,33 @@ public interface StudentJpaRepository extends JpaRepository<StudentEntity, Strin
             Pageable pageable
     );
 
+    // Every student on file except deleted ones - any year, any status (a student who left can still owe fees).
+    // A section-scoped caller only sees students who were ever enrolled at their levels (allLevels = whole school).
+    @Query("""
+        SELECT s
+        FROM StudentEntity s
+        WHERE s.schoolId = :schoolId
+          AND s.status <> :deleted
+          AND (:allLevels = true OR EXISTS (
+                SELECT 1 FROM EnrollmentEntity e
+                WHERE e.student = s AND e.schoolId = :schoolId AND e.clazz.level IN :levels
+          ))
+          AND (
+                :search = ''
+             OR LOWER(CONCAT(s.givenNames, ' ', s.familyName)) LIKE LOWER(CONCAT('%', :search, '%'))
+             OR LOWER(CAST(s.admissionNumber AS string)) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+        ORDER BY s.givenNames ASC, s.familyName ASC
+        """)
+    Page<StudentEntity> searchAnyYear(
+            @Param("schoolId") String schoolId,
+            @Param("search") String search,
+            @Param("deleted") Status deleted,
+            @Param("allLevels") boolean allLevels,
+            @Param("levels") Collection<Level> levels,
+            Pageable pageable
+    );
+
     Page<StudentEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
     Page<StudentEntity> findAllBySchoolIdAndParent_IdOrderByCreatedAtDesc(String schoolId, String parentId,

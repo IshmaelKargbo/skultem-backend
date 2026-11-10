@@ -35,5 +35,8 @@ public interface StudentRepository {
     Page<Student> search(String value, String schoolId, String academicYearId, Status status, String classId, String gender,
             Collection<Level> levels, Pageable pageable);
 
+    // Every student except deleted ones, any year - e.g. for taking a payment from someone who owes from last year.
+    Page<Student> searchAnyYear(String value, String schoolId, Collection<Level> levels, Pageable pageable);
+
     long countAll();
 }

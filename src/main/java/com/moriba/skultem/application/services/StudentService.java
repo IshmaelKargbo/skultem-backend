@@ -68,4 +68,20 @@ public class StudentService {
     private String normalize(String value) {
         return (value == null || value.isBlank()) ? "" : value.trim();
     }
+
+    // A light row for student pickers: who they are and their latest class. Covers every student on file except
+    // deleted ones, from any year and with any status, so a payment can be taken from anyone who still owes.
+    public record StudentPickerDTO(String id, String name, String admissionNumber, String className, String status) {
+    }
+
+    public Page<StudentPickerDTO> pickerSearch(String value, int page, int size, String schoolId) {
+        Pageable pageable = PageableMapper.toPage(page, size, Sort.unsorted());
+        return studentRepo.searchAnyYear(value, schoolId, sectionScopeService.restrictedLevels(), pageable)
+                .map(s -> {
+                    var latest = enrollmentRepo.findTopByStudentAndSchoolIdOrderByCreatedAtDesc(s.getId(), schoolId).orElse(null);
+                    String className = latest != null && latest.getClazz() != null ? latest.getClazz().getName() : null;
+                    return new StudentPickerDTO(s.getId(), (s.getGivenNames() + " " + s.getFamilyName()).trim(),
+                            s.getAdmissionNumber(), className, s.getStatus() == null ? null : s.getStatus().name());
+                });
+    }
 }

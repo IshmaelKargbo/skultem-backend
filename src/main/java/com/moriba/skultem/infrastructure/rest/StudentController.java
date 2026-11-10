@@ -220,6 +220,19 @@ public class StudentController {
                 return new ApiResponse<>("success", 200, "Student photos reprocessed successfully", res);
         }
 
+        // For student pickers (e.g. taking a payment): every student except deleted ones, any year, light rows.
+        @SectionScoped
+        @GetMapping("/picker")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<List<com.moriba.skultem.application.services.StudentService.StudentPickerDTO>> picker(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String search,
+                        @RequestParam(defaultValue = "1") Integer page,
+                        @RequestParam(defaultValue = "50") Integer size) {
+                var res = studentSvc.pickerSearch(search, page, Math.min(Math.max(size, 1), 100), school);
+                return new ApiResponse<>("success", 200, "Students fetched successfully", res.getContent(), MetaMapper.toMeta(res));
+        }
+
         @SectionScoped
         @GetMapping
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'ACCOUNTANT', 'TEACHER', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER')")

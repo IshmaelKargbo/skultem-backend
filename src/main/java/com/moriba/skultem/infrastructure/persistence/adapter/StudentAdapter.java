@@ -75,4 +75,11 @@ public class StudentAdapter implements StudentRepository {
         return repo.search(schoolId, value, academicYearId, status, classId, gender, levels, pageable)
                 .map(StudentMapper::toDomain);
     }
+
+    @Override
+    public Page<Student> searchAnyYear(String value, String schoolId, Collection<Level> levels, Pageable pageable) {
+        boolean all = levels == null || levels.isEmpty();
+        return repo.searchAnyYear(schoolId, value == null ? "" : value.trim(), Student.Status.DELETED, all,
+                all ? java.util.List.of(Level.values()) : levels, pageable).map(StudentMapper::toDomain);
+    }
 }
