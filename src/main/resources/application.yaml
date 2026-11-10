@@ -122,3 +122,11 @@ r2:
   # (e.g. http://localhost:9000) and R2_PATH_STYLE=true.
   endpoint: ${R2_ENDPOINT:}
   path-style: ${R2_PATH_STYLE:false}
+# Native notifications on devices (Web Push). Generate keys once with:
+#   java -cp target/classes com.moriba.skultem.infrastructure.push.WebPushCrypto
+# Leave them empty to turn device notifications off.
+push:
+  vapid:
+    public-key: ${PUSH_VAPID_PUBLIC_KEY:}
+    private-key: ${PUSH_VAPID_PRIVATE_KEY:}
+    subject: ${PUSH_VAPID_SUBJECT:mailto:support@skultem.space}
