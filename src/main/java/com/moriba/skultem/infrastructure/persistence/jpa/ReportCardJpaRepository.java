@@ -19,6 +19,8 @@ public interface ReportCardJpaRepository extends JpaRepository<ReportCardEntity,
 
     Optional<ReportCardEntity> findByIdAndSchoolId(String id, String schoolId);
 
+    Optional<ReportCardEntity> findFirstBySchoolIdOrderByGeneratedAtDesc(String schoolId);
+
     Optional<ReportCardEntity> findBySchoolIdAndStudentIdAndTermIdAndScopeKey(String schoolId, String studentId,
             String termId, String scopeKey);
 

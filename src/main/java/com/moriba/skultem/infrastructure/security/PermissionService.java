@@ -298,8 +298,10 @@ public class PermissionService {
                 .orElse(false);
     }
 
+    // Being a class's class teacher is who they are, not the role they're using right now: a class teacher who is
+    // also an admin (and generated the cards as one) still reviews and approves their own class.
     private boolean isClassMasterOf(String schoolId, String classId) {
-        if (!hasRole(Role.TEACHER)) {
+        if (!hasAnySchoolRole(schoolId, "TEACHER")) {
             return false;
         }
         return teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId)

@@ -186,6 +186,17 @@ public class GlobalExceptionHandler {
                         errors));
     }
 
+    // The document service (M-Compose) is not set up, cannot be reached, or refused: a 502 whose message says
+    // which, in words a user can act on (or pass on). Never contains a key.
+    @ExceptionHandler(com.moriba.skultem.application.error.DocumentServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleDocumentService(
+            com.moriba.skultem.application.error.DocumentServiceException ex) {
+        log.warn("DOCUMENT_SERVICE: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(
+                new ApiErrorResponse(HttpStatus.BAD_GATEWAY.value(), "DOCUMENT_SERVICE", ex.getMessage(),
+                        LocalDateTime.now(), null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneral(Exception ex) {
         log.error("Unhandled exception", ex);

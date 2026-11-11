@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class SectionScopeService {
 
     public static final Set<Role> SCOPABLE_ROLES = EnumSet.of(Role.ADMIN, Role.ACCOUNTANT, Role.TEACHER, Role.PRINCIPAL,
-            Role.EXAM_OFFICER, Role.LIBRARIAN);
+            Role.EXAM_OFFICER, Role.LIBRARIAN, Role.NURSE);
 
     private static final String REQUEST_ATTRIBUTE = SectionScopeService.class.getName() + ".scope";
     private static final String VIEW_ATTRIBUTE = SectionScopeService.class.getName() + ".view";

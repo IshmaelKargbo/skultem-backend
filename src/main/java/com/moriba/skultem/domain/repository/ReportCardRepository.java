@@ -19,6 +19,9 @@ public interface ReportCardRepository {
 
     Optional<ReportCard> findByIdAndSchoolId(String id, String schoolId);
 
+    // The school's most recently generated card - what a design preview is filled with.
+    Optional<ReportCard> findLatestBySchoolId(String schoolId);
+
     Optional<ReportCard> findBySchoolIdAndStudentIdAndTermIdAndScopeKey(String schoolId, String studentId, String termId,
             String scopeKey);
 

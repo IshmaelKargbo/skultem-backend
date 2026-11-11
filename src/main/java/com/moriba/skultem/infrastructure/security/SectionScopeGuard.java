@@ -259,6 +259,17 @@ public class SectionScopeGuard {
                 .orElse(true);
     }
 
+    // An external exam sitting belongs to one class.
+    public boolean externalExamSitting(String schoolId, String sittingId) {
+        var scope = sectionScopeService.current();
+        if (scope.wholeSchool() || sittingId == null) {
+            return true;
+        }
+        var classIds = jdbc.queryForList("SELECT class_id FROM external_exam_sittings WHERE id = ? AND school_id = ?",
+                String.class, sittingId, schoolId);
+        return classIds.isEmpty() || clazz(schoolId, classIds.get(0));
+    }
+
     // A report card records the class (Clazz) it was generated for.
     public boolean reportCard(String schoolId, String reportCardId) {
         var scope = sectionScopeService.current();

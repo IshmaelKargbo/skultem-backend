@@ -7,6 +7,8 @@ import com.moriba.skultem.infrastructure.security.RequiresModule;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +32,10 @@ import com.moriba.skultem.application.usecase.GetReportCardUseCase;
 import com.moriba.skultem.application.usecase.ListReportCardAssessmentsUseCase;
 import com.moriba.skultem.application.usecase.ListReportCardsUseCase;
 import com.moriba.skultem.application.usecase.ListStudentReportCardsUseCase;
+import com.moriba.skultem.application.usecase.RenderReportCardPdfUseCase;
 import com.moriba.skultem.application.usecase.TrackReportCardDownloadUseCase;
 import com.moriba.skultem.application.usecase.UpdateReportCardRemarkUseCase;
+import com.moriba.skultem.infrastructure.report.ReportFile;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.GenerateReportCardsRequestDTO;
 import com.moriba.skultem.infrastructure.rest.dto.UpdateReportCardRemarkDTO;
@@ -55,6 +59,9 @@ public class ReportCardController {
     private final ListReportCardAssessmentsUseCase listReportCardAssessmentsUseCase;
     private final com.moriba.skultem.application.usecase.ReviewReportCardsUseCase reviewReportCardsUseCase;
     private final com.moriba.skultem.infrastructure.security.PermissionService permissionService;
+    private final RenderReportCardPdfUseCase renderReportCardPdfUseCase;
+    private final com.moriba.skultem.domain.repository.SchoolRepository schoolRepo;
+    private final com.moriba.skultem.application.services.SchoolBrandingResolver brandingResolver;
 
     // ---- Review: the class teacher approves a class's generated cards (then parents see them), or sends them back
     // to the admin with a note. ids narrows it to some students; empty = all of the class's cards for the term.
@@ -154,6 +161,62 @@ public class ReportCardController {
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         var res = getReportCardStatsUseCase.execute(school);
         return new ApiResponse<>("success", 200, "Report card stats fetched successfully", res);
+    }
+
+    // ---- PDFs made by M-Compose (see RenderReportCardPdfUseCase). GET /m-compose/status says whether they are on;
+    // when they are not, the app draws the PDF in the browser instead.
+
+    // A whole class's cards for a term, one student after another, in a single PDF to print.
+    @SectionScoped
+    @GetMapping("/pdf")
+    @PreAuthorize("(@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') or @permissionService.canManageReportCardsForClass(#school, #classId)) and @sectionScope.clazz(#school, #classId)")
+    public ResponseEntity<byte[]> classPdf(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String classId,
+            @RequestParam String termId,
+            @RequestParam(required = false) String scope) {
+        return pdf(renderReportCardPdfUseCase.forClass(school, classId, termId, scope));
+    }
+
+    // The school's report card design as it prints (Report Cards > Design): its latest card, or placeholders.
+    // template: a design to try before choosing it.
+    @com.moriba.skultem.infrastructure.security.SectionNeutral
+    @GetMapping("/preview")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ResponseEntity<byte[]> designPreview(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam(required = false) String template) {
+        var schoolDto = schoolRepo.findById(school).map(s -> brandingResolver.schoolDtoFor(s, null)).orElse(null);
+        return inlinePdf(renderReportCardPdfUseCase.preview(school, template, schoolDto));
+    }
+
+    // One card, for whoever may open it (staff, or the student's parent).
+    @SectionScoped
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("(@permissionService.canManageReportCard(#school, #id) or @permissionService.isParentOfReportCard(#school, #id)) and @sectionScope.reportCard(#school, #id)")
+    public ResponseEntity<byte[]> pdf(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean inline) {
+        var file = renderReportCardPdfUseCase.single(school, id);
+        return inline ? inlinePdf(file) : pdf(file);
+    }
+
+    // Shown in the page (to look at before printing) rather than saved.
+    private static ResponseEntity<byte[]> inlinePdf(ReportFile file) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.filename() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, file.contentType())
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(file.data());
+    }
+
+    private static ResponseEntity<byte[]> pdf(ReportFile file) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.filename() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, file.contentType())
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(file.data());
     }
 
     @SectionScoped

@@ -130,3 +130,18 @@ push:
     public-key: ${PUSH_VAPID_PUBLIC_KEY:}
     private-key: ${PUSH_VAPID_PRIVATE_KEY:}
     subject: ${PUSH_VAPID_SUBJECT:mailto:support@skultem.space}
+# M-Compose, the document engine - see MComposeClient / MComposeSignIn. Each part is off until its settings are set.
+# On the engine: python -m app.accounts create-key skultem server renderer  -> MCOMPOSE_API_KEY
+#                python -m app.accounts set-sso-secret skultem               -> MCOMPOSE_SSO_SECRET
+m-compose:
+  url: ${MCOMPOSE_URL:}                         # the engine's API, e.g. http://127.0.0.1:8000
+  api-key: ${MCOMPOSE_API_KEY:}
+  timeout-seconds: ${MCOMPOSE_TIMEOUT_SECONDS:60}
+  designer-url: ${MCOMPOSE_DESIGNER_URL:}       # Skultem's address on the designer, e.g. http://skultem.localhost:3000
+  sso-secret: ${MCOMPOSE_SSO_SECRET:}
+  templates:
+    # A saved template's id, or sample:<id> for one of the engine's ready-made designs.
+    report-card: ${MCOMPOSE_REPORT_CARD_TEMPLATE:}
+    # External exam documents: the engine's ready-made designs unless a saved template's id is given.
+    exam-result-slip: ${MCOMPOSE_EXAM_RESULT_SLIP_TEMPLATE:sample:exam-result-slip}
+    exam-statement: ${MCOMPOSE_EXAM_STATEMENT_TEMPLATE:sample:exam-statement-of-result}

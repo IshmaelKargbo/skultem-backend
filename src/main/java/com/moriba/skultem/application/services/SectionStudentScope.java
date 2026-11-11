@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 
 // The students a section-limited staff member may see: those enrolled this academic year in a class at one of their
 // sections' levels. For records that carry only a student id (sick bay visits, behaviour, attendance) and so can't be
-// filtered by level directly. Whole-school callers (and non-scopable roles like the nurse) get null = no limit.
+// filtered by level directly - a nurse limited to "Primary" sees only Primary students' sick bay visits. Whole-school
+// callers (and roles that can't be limited) get null = no limit.
 @Service
 @RequiredArgsConstructor
 public class SectionStudentScope {

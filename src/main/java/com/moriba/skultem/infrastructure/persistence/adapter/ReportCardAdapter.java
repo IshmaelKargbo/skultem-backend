@@ -80,4 +80,9 @@ public class ReportCardAdapter implements ReportCardRepository {
     public long sumDownloadsBySchoolId(String schoolId) {
         return repo.sumDownloadCount(schoolId);
     }
+
+    @Override
+    public Optional<ReportCard> findLatestBySchoolId(String schoolId) {
+        return repo.findFirstBySchoolIdOrderByGeneratedAtDesc(schoolId).map(ReportCardMapper::toDomain);
+    }
 }

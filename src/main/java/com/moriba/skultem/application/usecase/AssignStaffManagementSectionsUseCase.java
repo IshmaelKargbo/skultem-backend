@@ -40,7 +40,7 @@ public class AssignStaffManagementSectionsUseCase {
     @AuditLogAnnotation(action = "STAFF_MANAGEMENT_SCOPE_UPDATED")
     public StaffScopeDTO execute(String schoolId, String userId, Role role, List<String> sectionIds) {
         if (role == null || !SectionScopeService.SCOPABLE_ROLES.contains(role)) {
-            throw new RuleException("Only admins, accountants and teachers can be limited to management sections");
+            throw new RuleException("This role can't be limited to management sections - it always works across the whole school");
         }
 
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));

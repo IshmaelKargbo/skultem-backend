@@ -38,6 +38,10 @@ public enum FeatureModule {
             "Record positive and negative student behaviour, organised by category.",
             false),
 
+    EXTERNAL_EXAMS("External Exams", ModuleCategory.ACADEMICS,
+            "Record NPSE, BECE, WASSCE and other national exam results for exam classes, and print result slips and statements.",
+            false),
+
     TIMETABLE("Timetable", ModuleCategory.ACADEMICS,
             "Build and publish class and teacher timetables.",
             false),
