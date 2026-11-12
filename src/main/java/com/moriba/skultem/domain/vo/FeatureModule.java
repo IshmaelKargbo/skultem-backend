@@ -62,6 +62,11 @@ public enum FeatureModule {
             "Notice board and broadcast messages to parents, teachers, and staff.",
             false),
 
+    // Skully (the /skully Worker) only answers parents of schools that installed this.
+    WHATSAPP_ASSISTANT("Skully WhatsApp Assistant", ModuleCategory.COMMUNICATION,
+            "Parents ask Skully on WhatsApp about their children's attendance, fees, results and school news, and get answers from Skultem straight away.",
+            false),
+
     ID_CARDS("ID Cards", ModuleCategory.OPERATIONS,
             "Design and print ID cards for students and staff.",
             false),

@@ -33,6 +33,7 @@ import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.Audience;
+import com.moriba.skultem.domain.vo.FeatureModule;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,7 @@ public class SkullyParentService {
     private final CalendarEventRepository calendarRepo;
     private final GetStudentTermAttendanceUseCase attendanceUseCase;
     private final ListStudentReportCardsUseCase reportCardsUseCase;
+    private final ModuleAccessService modules;
 
     // The country code a phone saved without one (077 123 456) is in.
     @Value("${skully.default-country-code:232}")
@@ -69,7 +71,8 @@ public class SkullyParentService {
             List<Child> children) {
     }
 
-    public record Family(String phone, List<SchoolFamily> schools) {
+    // schools: where Skully may answer. notEnabledAt: schools this parent is at that have not installed Skully.
+    public record Family(String phone, List<SchoolFamily> schools, List<String> notEnabledAt) {
     }
 
     public record FeeLine(String item, String term, String academicYear, BigDecimal amount, BigDecimal discount,
@@ -96,7 +99,12 @@ public class SkullyParentService {
     @Transactional(readOnly = true)
     public Family family(String phone) {
         List<SchoolFamily> schools = new ArrayList<>();
-        for (Parent parent : parents(phone)) {
+        List<String> notEnabledAt = new ArrayList<>();
+        for (Parent parent : allParents(phone)) {
+            if (!skullyOn(parent.getSchoolId())) {
+                schoolRepo.findById(parent.getSchoolId()).ifPresent(s -> notEnabledAt.add(s.getName()));
+                continue;
+            }
             var school = schoolRepo.findById(parent.getSchoolId());
             if (school.isEmpty()) continue;
             var children = studentRepo.findByParentAndSchoolId(parent.getId(), parent.getSchoolId(), PageRequest.of(0, 50))
@@ -109,7 +117,7 @@ public class SkullyParentService {
             schools.add(new SchoolFamily(parent.getSchoolId(), school.get().getName(), school.get().getPhone(), name,
                     children));
         }
-        return new Family(phone, schools);
+        return new Family(phone, schools, notEnabledAt);
     }
 
     @Transactional(readOnly = true)
@@ -155,10 +163,19 @@ public class SkullyParentService {
 
     // ---------------------------------------------------------------------------------------------------------
 
+    // The parent records Skully may use: at schools that installed the WhatsApp Assistant module.
     private List<Parent> parents(String phone) {
+        return allParents(phone).stream().filter(p -> skullyOn(p.getSchoolId())).toList();
+    }
+
+    private List<Parent> allParents(String phone) {
         return parentRepo.findAllByPhoneDigits(phoneForms(phone)).stream()
                 .filter(p -> p.getStatus() == null || !"DELETED".equals(p.getStatus().name()))
                 .toList();
+    }
+
+    private boolean skullyOn(String schoolId) {
+        return modules.isEnabled(schoolId, FeatureModule.WHATSAPP_ASSISTANT);
     }
 
     private Optional<Student> ownChild(String phone, String studentId) {
