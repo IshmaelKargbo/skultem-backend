@@ -55,6 +55,16 @@ public class SkullyController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    // A parent's portal sign-in details (a pending account's temporary password included) - see SkullyParentService.
+    @GetMapping("/portal-access")
+    public ResponseEntity<ApiResponse<List<SkullyParentService.PortalAccess>>> portalAccess(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestParam String phone) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Portal access", skully.portalAccess(phone)));
+    }
+
     @GetMapping("/school/{schoolId}/updates")
     public ResponseEntity<ApiResponse<List<SkullyParentService.Update>>> updates(
             @RequestHeader(value = "X-Skully-Key", required = false) String key,

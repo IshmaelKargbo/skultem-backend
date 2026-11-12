@@ -34,6 +34,9 @@ import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.Audience;
 import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.domain.vo.ActivityType;
+import com.moriba.skultem.domain.model.User;
+import com.moriba.skultem.application.usecase.LogActivityUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,10 +62,15 @@ public class SkullyParentService {
     private final GetStudentTermAttendanceUseCase attendanceUseCase;
     private final ListStudentReportCardsUseCase reportCardsUseCase;
     private final ModuleAccessService modules;
+    private final LogActivityUseCase activity;
 
     // The country code a phone saved without one (077 123 456) is in.
     @Value("${skully.default-country-code:232}")
     private String defaultCountryCode;
+
+    // Where each school's portal is, {domain} being the school's subdomain (same setting as the emails use).
+    @Value("${app.portal-url:https://{domain}.skultem.space}")
+    private String portalUrl;
 
     public record Child(String id, String name, String admissionNumber, String className, String status) {
     }
@@ -88,6 +96,14 @@ public class SkullyParentService {
 
     public record ChildSummary(Child child, String schoolName, StudentTermAttendanceDetailDTO attendance, Fees fees,
             List<ReportCard> reportCards) {
+    }
+
+    /**
+     * How a parent gets into a school's parent portal. status: PENDING (never signed in - temporaryPassword is
+     * set when Skultem still has it), ACTIVE (has their own password), or DISABLED (the school switched it off).
+     */
+    public record PortalAccess(String schoolId, String schoolName, String loginUrl, String signInWith, String status,
+            String temporaryPassword, boolean hasEmail) {
     }
 
     public record Update(String kind, String title, String body, String category, Instant at, Instant endsAt,
@@ -140,6 +156,35 @@ public class SkullyParentService {
             String schoolName = schoolRepo.findById(school).map(s -> s.getName()).orElse(null);
             return new ChildSummary(child(student), schoolName, attendance, fees(student), cards);
         });
+    }
+
+    // The parent's portal sign-in for each of their schools that uses Skully. Handing out a still-pending account's
+    // temporary password is what an admin would do for them; it goes only to the parent's own phone on file, and is
+    // written to the school's activity log.
+    @Transactional
+    public List<PortalAccess> portalAccess(String phone) {
+        List<PortalAccess> out = new ArrayList<>();
+        for (Parent parent : parents(phone)) {
+            var school = schoolRepo.findById(parent.getSchoolId()).orElse(null);
+            User user = parent.getUser();
+            if (school == null || user == null) continue;
+            String status = switch (user.getStatus()) {
+                case RESET_PASSWORD -> "PENDING";
+                case ACTIVE -> "ACTIVE";
+                default -> "DISABLED";
+            };
+            String temporary = "PENDING".equals(status) && user.getHint() != null && !user.getHint().isBlank()
+                    ? user.getHint() : null;
+            boolean hasEmail = user.getEmail() != null && !user.getEmail().isBlank();
+            String loginUrl = portalUrl.replace("{domain}", nz(school.getDomain())).replaceAll("/+$", "") + "/login";
+            out.add(new PortalAccess(school.getId(), school.getName(), loginUrl,
+                    hasEmail ? user.getEmail() : parent.getPhone(), status, temporary, hasEmail));
+            if (temporary != null) {
+                activity.log(school.getId(), ActivityType.USER, "Portal sign-in details sent on WhatsApp (Skully)",
+                        (nz(user.getGivenNames()) + " " + nz(user.getFamilyName())).trim(), null, user.getId());
+            }
+        }
+        return out;
     }
 
     // The school's current notices for parents and its upcoming events (whole-school ones only).
