@@ -70,6 +70,12 @@ public class ParentAdapter implements ParentRepository {
     }
 
     @Override
+    public java.util.List<Parent> findAllByPhoneDigits(java.util.Collection<String> digits) {
+        if (digits == null || digits.isEmpty()) return java.util.List.of();
+        return repo.findAllByPhoneDigits(digits).stream().map(ParentMapper::toDomain).toList();
+    }
+
+    @Override
     public Optional<Parent> findByPhoneAndSchool(String phone, String schoolId) {
         return repo.findFirstByPhoneAndSchoolId(phone, schoolId).map(ParentMapper::toDomain);
     }

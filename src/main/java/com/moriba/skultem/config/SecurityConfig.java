@@ -66,6 +66,9 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/email-verification/check",
                                                                 "/api/v1/email-verification/confirm").permitAll()
                                                 .requestMatchers("/ws/**").permitAll()
+                                                // Skully, the parents' WhatsApp assistant: checked by its own shared
+                                                // key (X-Skully-Key) in SkullyController, not a user session.
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/integrations/skully/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(jwtAuthenticationEntryPoint))

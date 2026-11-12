@@ -37,6 +37,12 @@ public class CalendarEventAdapter implements CalendarEventRepository {
     }
 
     @Override
+    public java.util.List<CalendarEvent> findUpcomingSchoolWide(String schoolId, java.time.Instant from, int limit) {
+        return repo.findBySchoolIdAndManagementSectionIdIsNullAndStartDateGreaterThanEqualOrderByStartDateAsc(schoolId,
+                from, org.springframework.data.domain.PageRequest.of(0, limit)).map(CalendarEventMapper::toDomain).getContent();
+    }
+
+    @Override
     public Page<CalendarEvent> findAllBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByStartDateAsc(schoolId, pageable).map(CalendarEventMapper::toDomain);
     }

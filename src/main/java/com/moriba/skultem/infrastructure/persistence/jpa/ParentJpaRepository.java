@@ -22,6 +22,10 @@ public interface ParentJpaRepository extends JpaRepository<ParentEntity, String>
 
     Optional<ParentEntity> findByUser_IdAndSchoolId(String userId, String schoolId);
 
+    // Phones are saved as typed (+232 77..., 077...), so they are compared digits only.
+    @Query(value = "select * from parents where regexp_replace(phone, '[^0-9]', '', 'g') in (:digits)", nativeQuery = true)
+    List<ParentEntity> findAllByPhoneDigits(@Param("digits") java.util.Collection<String> digits);
+
     Optional<ParentEntity> findByIdAndSchoolId(String id, String schoolId);
 
     // No baked-in ORDER BY - the caller's Pageable carries the Sort (see

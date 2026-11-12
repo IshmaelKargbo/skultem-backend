@@ -145,3 +145,8 @@ m-compose:
     # External exam documents: the engine's ready-made designs unless a saved template's id is given.
     exam-result-slip: ${MCOMPOSE_EXAM_RESULT_SLIP_TEMPLATE:sample:exam-result-slip}
     exam-statement: ${MCOMPOSE_EXAM_STATEMENT_TEMPLATE:sample:exam-statement-of-result}
+# Skully, the parents' WhatsApp assistant (Cloudflare Worker in /skully). Off until SKULLY_API_KEY is set; the Worker
+# sends the same key as X-Skully-Key. Phones saved without a country code are read as being in this one.
+skully:
+  api-key: ${SKULLY_API_KEY:}
+  default-country-code: ${SKULLY_COUNTRY_CODE:232}

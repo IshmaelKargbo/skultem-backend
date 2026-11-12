@@ -24,6 +24,9 @@ public interface ParentRepository {
     // the guardian already created for an earlier row.
     Optional<Parent> findByPhoneAndSchool(String phone, String schoolId);
 
+    // Every school's parent whose phone, digits only, is one of these (Skully, the WhatsApp assistant).
+    List<Parent> findAllByPhoneDigits(java.util.Collection<String> digits);
+
     Page<Parent> findBySchool(String schoolId, Pageable pageable);
 
     // Matches on name, email or phone - backs the parents list search box.

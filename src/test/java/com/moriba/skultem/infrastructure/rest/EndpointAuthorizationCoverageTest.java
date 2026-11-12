@@ -39,7 +39,10 @@ class EndpointAuthorizationCoverageTest {
             "SchoolController#listPublic",
             // Email: the check behind email fields (public forms use it too; rate-limited, says nothing about
             // accounts), and opening a verification link from an email - the token in it is the proof.
-            "EmailVerificationController#check", "EmailVerificationController#confirm");
+            "EmailVerificationController#check", "EmailVerificationController#confirm",
+            // Skully, the parents' WhatsApp assistant: no user session - SkullyController checks its shared key
+            // (X-Skully-Key) and answers only about the parent whose WhatsApp number the call names.
+            "SkullyController#family", "SkullyController#child", "SkullyController#updates");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {

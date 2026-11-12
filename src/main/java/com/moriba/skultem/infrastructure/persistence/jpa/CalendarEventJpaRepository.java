@@ -16,6 +16,9 @@ public interface CalendarEventJpaRepository extends JpaRepository<CalendarEventE
 
     Page<CalendarEventEntity> findAllBySchoolIdOrderByStartDateAsc(String schoolId, Pageable pageable);
 
+    Page<CalendarEventEntity> findBySchoolIdAndManagementSectionIdIsNullAndStartDateGreaterThanEqualOrderByStartDateAsc(
+            String schoolId, java.time.Instant from, Pageable pageable);
+
     // Whole-school rows plus those for one of the given sections (ids must not be empty).
     @Query("select e from CalendarEventEntity e where e.schoolId = :school and (e.managementSectionId is null "
             + "or e.managementSectionId in :ids) order by e.startDate asc")
