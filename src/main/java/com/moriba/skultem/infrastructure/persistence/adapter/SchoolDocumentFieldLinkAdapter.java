@@ -35,6 +35,25 @@ public class SchoolDocumentFieldLinkAdapter implements SchoolDocumentFieldLinkRe
     }
 
     @Override
+    public Optional<String> findGroups(String schoolId, DocumentKind kind, String template) {
+        return jdbc.queryForList(
+                "SELECT groups FROM school_document_field_links WHERE school_id = ? AND kind = ? AND template = ?",
+                String.class, schoolId, kind.name(), template).stream().filter(g -> g != null).findFirst();
+    }
+
+    @Override
+    public void saveAll(String schoolId, DocumentKind kind, String template, String linksJson, String groupsJson,
+            String updatedBy) {
+        jdbc.update("""
+                INSERT INTO school_document_field_links (school_id, kind, template, links, groups, updated_by, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (school_id, kind, template) DO UPDATE
+                SET links = EXCLUDED.links, groups = EXCLUDED.groups, updated_by = EXCLUDED.updated_by,
+                    updated_at = EXCLUDED.updated_at
+                """, schoolId, kind.name(), template, linksJson, groupsJson, updatedBy, Timestamp.from(Instant.now()));
+    }
+
+    @Override
     public void delete(String schoolId, DocumentKind kind, String template) {
         jdbc.update("DELETE FROM school_document_field_links WHERE school_id = ? AND kind = ? AND template = ?",
                 schoolId, kind.name(), template);

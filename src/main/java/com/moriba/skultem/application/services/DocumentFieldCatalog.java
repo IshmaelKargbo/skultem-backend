@@ -56,6 +56,9 @@ public final class DocumentFieldCatalog {
             Source.text("class", "Class", STUDENT, "JSS 2 Blue"),
             Source.text("class_size", "Class size", STUDENT, "32"),
             Source.image("photo", "Student photo", STUDENT),
+            Source.text("gender", "Gender", STUDENT, "Female"),
+            Source.text("date_of_birth", "Date of birth", STUDENT, "4 March 2012"),
+            Source.text("age", "Age", STUDENT, "14"),
             Source.list("results", "Subject results", RESULTS, List.of(
                     Source.text("subject", "Subject", RESULTS, "Mathematics"),
                     Source.text("teacher", "Subject teacher", RESULTS, "Mr. Kamara"),
@@ -64,7 +67,7 @@ public final class DocumentFieldCatalog {
                     Source.text("weight", "Weight", RESULTS, "2"),
                     Source.text("weighted_score", "Weighted score", RESULTS, "176"),
                     Source.text("grade", "Grade", RESULTS, "A"),
-                    Source.text("remarks", "Remark", RESULTS, "Excellent"),
+                    Source.text("total", "Total", RESULTS, "88"),
                     Source.text("breakdown", "Assessment breakdown", RESULTS, "Test 1: 18 · Exam: 70"))),
             Source.text("subject_count", "Number of subjects", RESULTS, "10"),
             Source.text("total", "Total score", RESULTS, "799"),
@@ -75,6 +78,7 @@ public final class DocumentFieldCatalog {
             Source.text("attendance", "Attendance", RESULTS, "96%"),
             Source.text("grading_key", "Grading key", RESULTS, "Grading: A 80-100 · B 70-79"),
             Source.text("teacher_comment", "Class teacher's comment", COMMENTS, "Works with focus."),
+            Source.text("remark", "Overall remark (remark scale)", COMMENTS, "Very good performance. Keep it up."),
             Source.text("principal_comment", "Principal's remark (remark scale)", COMMENTS, "Very good performance."),
             Source.text("teacher", "Class teacher's name", COMMENTS, "Ms. A. Conteh"),
             Source.text("principal", "Principal's name", COMMENTS, "Dr. K. Bangura"),
@@ -130,7 +134,13 @@ public final class DocumentFieldCatalog {
     private static final Map<String, String> REPORT_CARD_ALIASES = Map.ofEntries(Map.entry("school", "organisation"),
             Map.entry("phone", "school_phone"), Map.entry("issue_date", "date"), Map.entry("advisor", "teacher"),
             Map.entry("sessions", "attendance"), Map.entry("subjects", "results"), Map.entry("address", "school_address"),
-            Map.entry("motto", "school_motto"), Map.entry("admission_number", "student_id"));
+            Map.entry("motto", "school_motto"), Map.entry("admission_number", "student_id"),
+            // M-Compose's school report card designs.
+            Map.entry("admission_no", "student_id"), Map.entry("class_teacher", "teacher"),
+            Map.entry("head_teacher", "principal"), Map.entry("head_remark", "principal_comment"),
+            Map.entry("teacher_remark", "teacher_comment"), Map.entry("session", "academic_year"),
+            Map.entry("sex", "gender"), Map.entry("dob", "date_of_birth"), Map.entry("birth_date", "date_of_birth"),
+            Map.entry("overall_remark", "remark"));
 
     private static final Map<String, String> EXAM_ALIASES = Map.ofEntries(Map.entry("school", "organisation"),
             Map.entry("student", "candidate"), Map.entry("student_id", "index_number"), Map.entry("term", "exam_code"),

@@ -185,9 +185,10 @@ public class ReportCardController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ResponseEntity<byte[]> designPreview(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam(required = false) String template) {
-        var schoolDto = schoolRepo.findById(school).map(s -> brandingResolver.schoolDtoFor(s, null)).orElse(null);
-        return inlinePdf(renderReportCardPdfUseCase.preview(school, template, schoolDto));
+            @RequestParam(required = false) String template,
+            @RequestParam(required = false) com.moriba.skultem.domain.vo.Level level) {
+        var schoolDto = schoolRepo.findById(school).map(s -> brandingResolver.schoolDtoFor(s, level)).orElse(null);
+        return inlinePdf(renderReportCardPdfUseCase.preview(school, template, level, schoolDto));
     }
 
     // One card, for whoever may open it (staff, or the student's parent).

@@ -82,9 +82,9 @@ class ReportCardDocumentDataTest {
 
         assertThat(rows).hasSize(2);
         assertThat(rows.get(0)).containsEntry("subject", "Mathematics").containsEntry("score", "88")
-                .containsEntry("grade", "A").containsEntry("remarks", "Excellent")
+                .containsEntry("grade", "A").doesNotContainKey("remarks")
                 .containsEntry("teacher", "Mr. Kamara").containsEntry("breakdown", "Test 1: 18 · Exam: 70");
-        assertThat(rows.get(1)).containsEntry("score", "61.5").containsEntry("remarks", "Keep working");
+        assertThat(rows.get(1)).containsEntry("score", "61.5").doesNotContainKey("remark");
     }
 
     @Test
@@ -111,17 +111,20 @@ class ReportCardDocumentDataTest {
     }
 
     @Test
-    void respectsTheSchoolsReportCardSettings() {
+    void sendsEverythingAndLetsTheDesignDecideWhatShows() {
+        // Old "sections" settings (position and photo off) no longer blank anything.
         var loaded = new java.util.ArrayList<String>();
         var d = ReportCardDocumentData.of(card(TERM_SUBJECTS, settings(false, false)), url -> {
             loaded.add(url);
             return LOGO_DATA;
         });
 
-        assertThat(d.get("position")).isEqualTo("");
-        assertThat(d.get("photo")).isEqualTo(ReportCardDocumentData.NO_IMAGE);
-        // A photo the school does not print is not even downloaded.
-        assertThat(loaded).containsExactly(LOGO_URL);
+        assertThat(d.get("position")).isEqualTo("2nd");
+        assertThat(d.get("attendance")).isEqualTo("96%");
+        assertThat(d.get("teacher_comment")).isEqualTo("Works with focus.");
+        assertThat(d.get("photo")).isEqualTo(LOGO_DATA);
+        assertThat(loaded).contains("https://bucket.example/photo.png");
+        assertThat(d).doesNotContainKey("show_position");
     }
 
     @Test
@@ -137,8 +140,8 @@ class ReportCardDocumentDataTest {
         assertThat(d.get("advisor")).isEqualTo("Ms. A. Conteh");
         @SuppressWarnings("unchecked")
         var rows = (List<Map<String, Object>>) d.get("subjects");
-        assertThat(rows.get(0)).containsEntry("subject", "Mathematics").containsEntry("grade", "88%")
-                .containsEntry("final_grade", "A");
+        assertThat(rows.get(0)).containsEntry("subject", "Mathematics").containsEntry("grade", "A")
+                .containsEntry("final_grade", "A").containsEntry("total", "88");
     }
 
     @Test
@@ -166,6 +169,59 @@ class ReportCardDocumentDataTest {
         assertThat(d.get("period")).isEqualTo("Term 2 (First Assessment) · 2026/2027");
         // A whole-term card stays as it was.
         assertThat(map(c).get("term")).isEqualTo("Term 2");
+    }
+
+    @Test
+    void eachRowCarriesItsMarkPerAssessmentColumn() {
+        var d = map(card(TERM_SUBJECTS, settings(true, null)));
+        assertThat(d.get("result_columns")).isEqualTo(List.of("Test 1", "Exam"));
+        @SuppressWarnings("unchecked")
+        var rows = (List<Map<String, Object>>) d.get("results");
+        assertThat(rows.get(0)).containsEntry("col_1", "18").containsEntry("col_2", "70");
+        // English has no assessments recorded: its marks show as "-".
+        assertThat(rows.get(1)).containsEntry("col_1", "-").containsEntry("col_2", "-");
+    }
+
+    @Test
+    void sendsTheTablesColumnsForMComposeToBuildItFrom() {
+        var d = map(card(TERM_SUBJECTS, settings(true, null)));
+        @SuppressWarnings("unchecked")
+        var cols = (List<Map<String, Object>>) d.get("columns");
+        assertThat(cols).extracting(c -> c.get("field"))
+                .containsExactly("subject", "col_1", "col_2", "total", "grade");
+        // An assessment's heading carries its weight.
+        assertThat(cols.get(1)).containsEntry("label", "Test 1 (20)").containsEntry("alignment", "center");
+        assertThat(cols.get(0)).doesNotContainKey("width");
+        @SuppressWarnings("unchecked")
+        var rows = (List<Map<String, Object>>) d.get("results");
+        assertThat(rows.get(0)).containsEntry("total", "88").doesNotContainKey("remark").doesNotContainKey("remarks");
+    }
+
+    @Test
+    void fillsGenderDateOfBirthAgeAndTheOverallRemarkFromTheStudent() {
+        var student = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Student.class);
+        org.mockito.Mockito.when(student.getGender()).thenReturn(com.moriba.skultem.domain.vo.Gender.FEMALE);
+        org.mockito.Mockito.when(student.getDateOfBirth()).thenReturn(java.time.LocalDate.now().minusYears(14).minusDays(3));
+
+        var d = ReportCardDocumentData.of(card(TERM_SUBJECTS, settings(true, null)), student, url -> null);
+        assertThat(d.get("gender")).isEqualTo("Female");
+        assertThat(d.get("age")).isEqualTo("14");
+        assertThat((String) d.get("date_of_birth")).isNotBlank();
+        assertThat(d.get("remark")).isEqualTo("Very good performance.");
+        // Without the student's record they print blank.
+        assertThat(map(card(TERM_SUBJECTS, settings(true, null))).get("gender")).isEqualTo("");
+    }
+
+    @Test
+    void anAssessmentColumnIsWideEnoughForItsHeadingOnOneLine() {
+        var cols = ReportCardDocumentData.tableColumns(List.of(), List.of("Test 1 (50)", "First Assessment (40)"), true);
+        int short1 = (int) cols.get(1).get("width");
+        int long1 = (int) cols.get(2).get("width");
+        assertThat(short1).isGreaterThanOrEqualTo(ReportCardDocumentData.headingWidth("Test 1 (50)"));
+        assertThat(long1).isGreaterThan(short1);
+        // A short heading keeps the usual width.
+        assertThat((int) ReportCardDocumentData.tableColumns(List.of(), List.of("T1"), true).get(1).get("width"))
+                .isEqualTo(52);
     }
 
     @Test

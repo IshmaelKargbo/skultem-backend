@@ -11,4 +11,11 @@ public interface SchoolDocumentFieldLinkRepository {
     void save(String schoolId, DocumentKind kind, String template, String linksJson, String updatedBy);
 
     void delete(String schoolId, DocumentKind kind, String template);
+
+    /** The design's groups the school shows or hides, as JSON {groupId: true|false}. */
+    Optional<String> findGroups(String schoolId, DocumentKind kind, String template);
+
+    /** Saves both the links and the group choices (either may be "{}"). */
+    void saveAll(String schoolId, DocumentKind kind, String template, String linksJson, String groupsJson,
+            String updatedBy);
 }

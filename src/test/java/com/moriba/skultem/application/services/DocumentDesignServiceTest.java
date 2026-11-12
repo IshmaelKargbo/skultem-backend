@@ -39,6 +39,19 @@ class DocumentDesignServiceTest {
             public void delete(String schoolId, DocumentKind kind) {
                 stored.remove(schoolId + kind);
             }
+
+            public Optional<String> findForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+                return Optional.ofNullable(stored.get(schoolId + kind + level));
+            }
+
+            public void saveForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level,
+                    String template, String updatedBy) {
+                stored.put(schoolId + kind + level, template);
+            }
+
+            public void deleteForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+                stored.remove(schoolId + kind + level);
+            }
         };
         when(compose.designs()).thenReturn(List.of(
                 new Design("sample:certificate", "certificate", "Certificate", "", "Certificate", true, true, 0),
@@ -136,12 +149,43 @@ class DocumentDesignServiceTest {
 
             public void delete(String schoolId, DocumentKind kind) {
             }
+
+            public Optional<String> findForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+                return Optional.empty();
+            }
+
+            public void saveForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level,
+                    String template, String updatedBy) {
+            }
+
+            public void deleteForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+            }
         }, compose, "navy-deleted", "", "");
 
         assertThat(withDeadDefault.templateFor("s1", DocumentKind.REPORT_CARD)).isEqualTo("tpl-9");
         // A school's pick that still exists is kept.
         stored.put("s1" + DocumentKind.REPORT_CARD, "tpl-9");
         assertThat(service.templateFor("s1", DocumentKind.REPORT_CARD)).isEqualTo("tpl-9");
+    }
+
+    @Test
+    void aLevelCanHaveItsOwnDesignElseUsesTheSchoolsGeneralOne() {
+        when(compose.isEnabled()).thenReturn(true);
+        var primary = com.moriba.skultem.domain.vo.Level.PRIMARY;
+        var jss = com.moriba.skultem.domain.vo.Level.JSS;
+        service.choose("s1", DocumentKind.REPORT_CARD, "sample:report-card-classic", "u1");
+
+        service.chooseForLevel("s1", DocumentKind.REPORT_CARD, primary, "tpl-9", "u1");
+
+        assertThat(service.templateFor("s1", DocumentKind.REPORT_CARD, primary)).isEqualTo("tpl-9");
+        assertThat(service.templateFor("s1", DocumentKind.REPORT_CARD, jss)).isEqualTo("sample:report-card-classic");
+        var choice = service.levelChoice("s1", DocumentKind.REPORT_CARD, primary, false);
+        assertThat(choice.chosenBySchool()).isTrue();
+        assertThat(choice.serverDefault()).isEqualTo("sample:report-card-classic");
+
+        // Back to the general design.
+        service.chooseForLevel("s1", DocumentKind.REPORT_CARD, primary, "", "u1");
+        assertThat(service.templateFor("s1", DocumentKind.REPORT_CARD, primary)).isEqualTo("sample:report-card-classic");
     }
 
     @Test

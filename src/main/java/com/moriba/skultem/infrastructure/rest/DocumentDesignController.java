@@ -4,6 +4,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,8 +44,11 @@ public class DocumentDesignController {
     public record ChooseDesign(String template) {
     }
 
+    // groups: {groupId: true (show) | false (hide)}; a group left out is automatic.
+    // level: links for one level only (PRIMARY, JSS...); none = all levels.
     public record SaveLinks(String template,
-            java.util.Map<String, com.moriba.skultem.application.services.DocumentFieldLinkService.Link> links) {
+            java.util.Map<String, com.moriba.skultem.application.services.DocumentFieldLinkService.Link> links,
+            java.util.Map<String, Boolean> groups, String level) {
     }
 
     // ---- Linking a design's placeholders to Skultem's data. template: a design's ref; empty = the school's current
@@ -54,13 +58,14 @@ public class DocumentDesignController {
     @PreAuthorize(VIEW)
     public ApiResponse<com.moriba.skultem.application.services.DocumentFieldLinkService.Editor> fields(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @PathVariable String kind,
-            @RequestParam(required = false) String template) {
+            @RequestParam(required = false) String template, @RequestParam(required = false) String level) {
         var k = kind(kind);
         String ref = template == null || template.isBlank() ? designs.templateFor(school, k) : template.trim();
         if (ref == null || ref.isBlank()) {
             throw new NotFoundException("Pick a design first");
         }
-        return new ApiResponse<>("success", 200, "Placeholders fetched", fieldLinks.editor(school, k, ref));
+        return new ApiResponse<>("success", 200, "Placeholders fetched",
+                fieldLinks.editor(school, k, ref, level == null || level.isBlank() ? null : level(level)));
     }
 
     @PutMapping("/{kind}/fields")
@@ -72,7 +77,9 @@ public class DocumentDesignController {
         if (body == null || body.template() == null || body.template().isBlank()) {
             throw new com.moriba.skultem.application.error.RuleException("Say which design the links are for");
         }
-        var res = fieldLinks.save(school, kind(kind), body.template().trim(), body.links(), userId);
+        var lvl = body.level() == null || body.level().isBlank() ? null : level(body.level());
+        var res = fieldLinks.save(school, kind(kind), body.template().trim(), lvl, body.links(),
+                body.groups() == null ? java.util.Map.of() : body.groups(), userId);
         return new ApiResponse<>("success", 200, "Data links saved", res);
     }
 
@@ -95,6 +102,45 @@ public class DocumentDesignController {
             @RequestBody ChooseDesign body) {
         var res = designs.choose(school, kind(kind), body == null ? null : body.template(), userId);
         return new ApiResponse<>("success", 200, "Design saved", res);
+    }
+
+    // A level goes back to the all-levels links for this design.
+    @DeleteMapping("/{kind}/fields")
+    @PreAuthorize(CHOOSE)
+    public ApiResponse<com.moriba.skultem.application.services.DocumentFieldLinkService.Editor> useAllLevels(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school, @PathVariable String kind,
+            @RequestParam String template, @RequestParam String level) {
+        return new ApiResponse<>("success", 200, "Back to the all-levels links",
+                fieldLinks.useAllLevels(school, kind(kind), template.trim(), level(level)));
+    }
+
+    // ---- A design for one level (a Primary report card, a JSS one), for schools that want separate ones.
+
+    @GetMapping("/{kind}/levels/{level}")
+    @PreAuthorize(VIEW)
+    public ApiResponse<DocumentDesignService.Choice> levelChoice(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school, @PathVariable String kind,
+            @PathVariable String level, @RequestParam(defaultValue = "false") boolean all) {
+        return new ApiResponse<>("success", 200, "Designs fetched",
+                designs.levelChoice(school, kind(kind), level(level), all));
+    }
+
+    @PutMapping("/{kind}/levels/{level}")
+    @PreAuthorize(CHOOSE)
+    public ApiResponse<DocumentDesignService.Choice> chooseForLevel(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @AuthenticationPrincipal(expression = "userId") String userId, @PathVariable String kind,
+            @PathVariable String level, @RequestBody ChooseDesign body) {
+        var res = designs.chooseForLevel(school, kind(kind), level(level), body == null ? null : body.template(), userId);
+        return new ApiResponse<>("success", 200, "Design saved", res);
+    }
+
+    private static com.moriba.skultem.domain.vo.Level level(String value) {
+        try {
+            return com.moriba.skultem.domain.vo.Level.valueOf(value.trim().toUpperCase());
+        } catch (RuntimeException e) {
+            throw new NotFoundException("Unknown level: " + value);
+        }
     }
 
     // A saved template's picture (its thumbnail on the engine), for the picker.

@@ -34,6 +34,33 @@ public class SchoolDocumentDesignAdapter implements SchoolDocumentDesignReposito
     }
 
     @Override
+    public Optional<String> findForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+        if (level == null) {
+            return Optional.empty();
+        }
+        return jdbc.queryForList(
+                "SELECT template FROM school_level_document_designs WHERE school_id = ? AND kind = ? AND level = ?",
+                String.class, schoolId, kind.name(), level.name()).stream().findFirst();
+    }
+
+    @Override
+    public void saveForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level,
+            String template, String updatedBy) {
+        jdbc.update("""
+                INSERT INTO school_level_document_designs (school_id, kind, level, template, updated_by, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (school_id, kind, level) DO UPDATE
+                SET template = EXCLUDED.template, updated_by = EXCLUDED.updated_by, updated_at = EXCLUDED.updated_at
+                """, schoolId, kind.name(), level.name(), template, updatedBy, Timestamp.from(Instant.now()));
+    }
+
+    @Override
+    public void deleteForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+        jdbc.update("DELETE FROM school_level_document_designs WHERE school_id = ? AND kind = ? AND level = ?",
+                schoolId, kind.name(), level.name());
+    }
+
+    @Override
     public void delete(String schoolId, DocumentKind kind) {
         jdbc.update("DELETE FROM school_document_designs WHERE school_id = ? AND kind = ?", schoolId, kind.name());
     }

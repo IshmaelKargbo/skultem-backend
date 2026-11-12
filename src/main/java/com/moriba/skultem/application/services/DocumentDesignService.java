@@ -51,6 +51,39 @@ public class DocumentDesignService {
     }
 
     /** The design to print with: the school's choice, else the server default ("" when there is neither). */
+    /**
+     * The design for one level (a Primary report card): the level's own when the school chose one and it still
+     * exists, else the school's general design for the kind.
+     */
+    public String templateFor(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level) {
+        if (schoolId != null && level != null) {
+            var own = repo.findForLevel(schoolId, kind, level);
+            if (own.isPresent() && !own.get().isBlank() && existsOnEngine(own.get())) {
+                return own.get();
+            }
+        }
+        return templateFor(schoolId, kind);
+    }
+
+    /** A level's design and the designs it can pick; serverDefault is the school's general design it otherwise uses. */
+    public Choice levelChoice(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level, boolean all) {
+        boolean own = repo.findForLevel(schoolId, kind, level).isPresent();
+        return new Choice(kind.key(), templateFor(schoolId, kind, level), templateFor(schoolId, kind), own,
+                options(kind, all));
+    }
+
+    /** The level prints with this design from now on; blank = back to the school's general design. */
+    public Choice chooseForLevel(String schoolId, DocumentKind kind, com.moriba.skultem.domain.vo.Level level,
+            String template, String userId) {
+        if (template == null || template.isBlank()) {
+            repo.deleteForLevel(schoolId, kind, level);
+        } else {
+            requireDesign(template.trim());
+            repo.saveForLevel(schoolId, kind, level, template.trim(), userId);
+        }
+        return levelChoice(schoolId, kind, level, true);
+    }
+
     public String templateFor(String schoolId, DocumentKind kind) {
         if (schoolId != null) {
             var chosen = repo.find(schoolId, kind);

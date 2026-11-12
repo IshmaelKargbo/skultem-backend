@@ -38,8 +38,30 @@ public class DocumentFieldLinkService {
             Map<String, Map<String, String>> automaticColumns) {
     }
 
+    /**
+     * A group of the design as the page shows it. choice: the school's (true show, false hide, null automatic).
+     * follows / followsLabel: the report card setting it follows when automatic (null: the design's own default).
+     */
+    public record GroupChoice(String id, String name, boolean designShows, String field, Boolean choice,
+            String follows, String followsLabel) {
+    }
+
+    /**
+     * level: the level these links are for (null = all levels). inherited: the level has no links of its own yet,
+     * so what is shown (and what prints) is the all-levels links - saving makes them the level's own.
+     */
     public record Editor(String kind, String template, String templateName, boolean readyMade,
-            List<Placeholder> placeholders, List<DocumentFieldCatalog.Source> sources, boolean saved) {
+            List<Placeholder> placeholders, List<DocumentFieldCatalog.Source> sources, boolean saved,
+            List<GroupChoice> groups, String level, boolean inherited) {
+    }
+
+    // A group follows no school setting any more: Automatic is what the design does. (Kept as a hook - follows()
+    // returns null - so the page and the stored choices keep their shape.)
+    private record Follow(String key, String label) {
+    }
+
+    static Follow follows(DocumentKind kind, MComposeClient.DesignGroup g) {
+        return null;
     }
 
     private static final String TEXT = "text:";
@@ -60,8 +82,28 @@ public class DocumentFieldLinkService {
         this.compose = compose;
     }
 
+    // A level's own links are kept beside the all-levels ones, under "<design>#<LEVEL>" (a design id has no "#").
+    private static String stored(String template, com.moriba.skultem.domain.vo.Level level) {
+        return level == null ? template : template + "#" + level.name();
+    }
+
+    private boolean hasOwn(String schoolId, DocumentKind kind, String template, com.moriba.skultem.domain.vo.Level level) {
+        String key = stored(template, level);
+        return repo.find(schoolId, kind, key).isPresent() || repo.findGroups(schoolId, kind, key).isPresent();
+    }
+
+    // Where a level's links come from: its own when it has them, else the all-levels ones.
+    private String source(String schoolId, DocumentKind kind, String template, com.moriba.skultem.domain.vo.Level level) {
+        return level != null && hasOwn(schoolId, kind, template, level) ? stored(template, level) : template;
+    }
+
     /** Everything the linking page needs for one design. */
     public Editor editor(String schoolId, DocumentKind kind, String template) {
+        return editor(schoolId, kind, template, null);
+    }
+
+    /** As above, for one level's links (a Primary report card's) - the all-levels ones until it has its own. */
+    public Editor editor(String schoolId, DocumentKind kind, String template, com.moriba.skultem.domain.vo.Level level) {
         var design = compose.design(template);
         if (design == null) {
             throw new NotFoundException("That design is not on the document service");
@@ -70,7 +112,9 @@ public class DocumentFieldLinkService {
         if (structure == null) {
             throw new RuleException("The design could not be read from the document service. Try again.");
         }
-        var links = links(schoolId, kind, template);
+        String source = source(schoolId, kind, template, level);
+        boolean inherited = level != null && source.equals(template);
+        var links = links(schoolId, kind, source);
         List<Placeholder> placeholders = new ArrayList<>();
         for (var f : structure) {
             var auto = DocumentFieldCatalog.automatic(kind, f.name());
@@ -85,12 +129,32 @@ public class DocumentFieldLinkService {
             }
             placeholders.add(new Placeholder(f.name(), f.type(), f.columns(), links.get(f.name()), automatic, autoCols));
         }
+        var chosen = groupChoices(schoolId, kind, source);
+        List<GroupChoice> groups = new ArrayList<>();
+        for (var g : compose.groupsOf(design)) {
+            var f = follows(kind, g);
+            groups.add(new GroupChoice(g.id(), g.name(), g.show(), g.field(), chosen.get(g.id()),
+                    f == null ? null : f.key(), f == null ? null : f.label()));
+        }
         return new Editor(kind.key(), design.ref(), design.name(), design.readyMade(), placeholders,
-                DocumentFieldCatalog.sources(kind), !links.isEmpty());
+                DocumentFieldCatalog.sources(kind), !links.isEmpty() || !chosen.isEmpty(), groups,
+                level == null ? null : level.name(), inherited);
     }
 
     /** Saves the links for a design; links left empty go back to automatic. */
     public Editor save(String schoolId, DocumentKind kind, String template, Map<String, Link> links, String userId) {
+        return save(schoolId, kind, template, links, null, userId);
+    }
+
+    /** Saves the links and which groups show (true), hide (false) - a group left out is automatic. */
+    public Editor save(String schoolId, DocumentKind kind, String template, Map<String, Link> links,
+            Map<String, Boolean> groups, String userId) {
+        return save(schoolId, kind, template, null, links, groups, userId);
+    }
+
+    /** Saves the links for one level (null = all levels); a level's save makes the links its own. */
+    public Editor save(String schoolId, DocumentKind kind, String template, com.moriba.skultem.domain.vo.Level level, Map<String, Link> links,
+            Map<String, Boolean> groups, String userId) {
         var design = compose.design(template);
         var structure = design == null ? null : compose.structureOf(design);
         if (structure == null) {
@@ -112,17 +176,45 @@ public class DocumentFieldLinkService {
                 }
             }
         }
-        if (clean.isEmpty()) {
-            repo.delete(schoolId, kind, template);
+        Map<String, Boolean> cleanGroups = new LinkedHashMap<>();
+        if (groups != null) {
+            var known = compose.groupsOf(design).stream().map(MComposeClient.DesignGroup::id).toList();
+            groups.forEach((id, show) -> {
+                if (show != null && known.contains(id)) {
+                    cleanGroups.put(id, show);
+                }
+            });
         } else {
-            repo.save(schoolId, kind, template, JsonMapper.toJson(clean), userId);
+            cleanGroups.putAll(groupChoices(schoolId, kind, source(schoolId, kind, template, level)));
         }
-        return editor(schoolId, kind, template);
+        String key = stored(template, level);
+        // All automatic for all levels: nothing to keep. A level keeps even an empty set, as its own.
+        if (level == null && clean.isEmpty() && cleanGroups.isEmpty()) {
+            repo.delete(schoolId, kind, key);
+        } else {
+            repo.saveAll(schoolId, kind, key, JsonMapper.toJson(clean), JsonMapper.toJson(cleanGroups), userId);
+        }
+        return editor(schoolId, kind, template, level);
+    }
+
+    /** The level goes back to the all-levels links. */
+    public Editor useAllLevels(String schoolId, DocumentKind kind, String template, com.moriba.skultem.domain.vo.Level level) {
+        if (level != null) {
+            repo.delete(schoolId, kind, stored(template, level));
+        }
+        return editor(schoolId, kind, template, level);
     }
 
     /** What to do to each record's data before printing it with this design (nothing when nothing is linked). */
     public UnaryOperator<Map<String, Object>> linker(String schoolId, DocumentKind kind, String template) {
-        var links = links(schoolId, kind, template);
+        return linker(schoolId, kind, template, null);
+    }
+
+    /** As above, with the level's own links when it has them (a Primary card's "Head Teacher"). */
+    public UnaryOperator<Map<String, Object>> linker(String schoolId, DocumentKind kind, String template,
+            com.moriba.skultem.domain.vo.Level level) {
+        String source = template == null ? null : source(schoolId, kind, template, level);
+        var links = links(schoolId, kind, source);
         // Lists the school hasn't linked, and that Skultem doesn't already send under their own name, still get
         // their columns filled from the matching row fields.
         Map<String, Link> automatic = new LinkedHashMap<>();
@@ -153,10 +245,34 @@ public class DocumentFieldLinkService {
                 }
             }
         }
-        if (links.isEmpty() && automatic.isEmpty() && textPlaceholders.isEmpty()) {
+        // The design's groups: the school's choice, else the report card setting the group follows (in the data).
+        var chosenGroups = groupChoices(schoolId, kind, source);
+        List<MComposeClient.DesignGroup> designGroups = design == null ? List.of() : compose.groupsOf(design);
+        if (links.isEmpty() && automatic.isEmpty() && textPlaceholders.isEmpty() && designGroups.isEmpty()) {
             return UnaryOperator.identity();
         }
-        return data -> {
+        return input -> {
+            Map<String, Object> withGroups = new LinkedHashMap<>(input);
+            Map<String, Object> shown = new LinkedHashMap<>();
+            if (input.get("groups") instanceof Map<?, ?> given) {
+                given.forEach((k, v) -> shown.put(String.valueOf(k), v));
+            }
+            for (var g : designGroups) {
+                Boolean choice = chosenGroups.get(g.id());
+                if (choice == null) {
+                    var f = follows(kind, g);
+                    if (f != null && input.get(f.key()) instanceof Boolean setting) {
+                        choice = setting;
+                    }
+                }
+                if (choice != null) {
+                    shown.put(g.id(), choice);
+                }
+            }
+            if (!shown.isEmpty()) {
+                withGroups.put("groups", shown);
+            }
+            final Map<String, Object> data = withGroups;
             Map<String, Link> all = new LinkedHashMap<>();
             automatic.forEach((name, link) -> {
                 if (!data.containsKey(name) || name.equals(link.source())) {
@@ -211,6 +327,17 @@ public class DocumentFieldLinkService {
     }
 
     // ---- Helpers
+
+    private Map<String, Boolean> groupChoices(String schoolId, DocumentKind kind, String template) {
+        if (schoolId == null || template == null || template.isBlank()) {
+            return Map.of();
+        }
+        return repo.findGroups(schoolId, kind, template)
+                .map(json -> JsonMapper.fromJson(json, new TypeReference<LinkedHashMap<String, Boolean>>() {
+                }))
+                .map(m -> (Map<String, Boolean>) m)
+                .orElse(Map.of());
+    }
 
     private Map<String, Link> links(String schoolId, DocumentKind kind, String template) {
         if (schoolId == null || template == null || template.isBlank()) {

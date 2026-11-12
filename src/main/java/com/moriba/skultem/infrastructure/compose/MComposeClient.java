@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.moriba.skultem.application.error.DocumentServiceException;
 
 /**
@@ -96,6 +97,30 @@ public class MComposeClient {
     /** A design a school can print with: one of the engine's ready-made ones, or one saved in Skultem's account. */
     public record Design(String ref, String id, String name, String description, String category, boolean readyMade,
             boolean hasPreview, int revision) {
+    }
+
+    /** A group of a design: elements shown or hidden together. field: the data switch the design set for it. */
+    public record DesignGroup(String id, String name, boolean show, String field) {
+    }
+
+    /** The design's groups (none when it has none, or it can't be read). */
+    public List<DesignGroup> groupsOf(Design design) {
+        try {
+            JsonNode groups = designJson(design.ref()).path("groups");
+            List<DesignGroup> out = new java.util.ArrayList<>();
+            if (groups.isArray()) {
+                for (JsonNode g : groups) {
+                    String id = g.path("id").asText("");
+                    if (!id.isBlank()) {
+                        out.add(new DesignGroup(id, g.path("name").asText(id), g.path("show").asBoolean(true),
+                                g.path("field").asText("")));
+                    }
+                }
+            }
+            return out;
+        } catch (DocumentServiceException e) {
+            return List.of();
+        }
     }
 
     /** A placeholder in a design: text, a picture, or a list (a table or repeat) with its own row fields. */
@@ -280,47 +305,54 @@ public class MComposeClient {
      * never fails on a missing picture). For showing a design before a real document exists.
      */
     public byte[] preview(String template, Map<String, Object> data) {
-        var branded = branded(template, wantsBrand(data));
-        if (branded != null) {
-            return post("/preview", body("template", branded, "data", data));
-        }
-        if (isSample(template)) {
-            return post("/preview", body("template", sampleTemplate(template), "data", data));
+        return preview(template, data, null);
+    }
+
+    /** As above, with the design changed for this print (e.g. the results table's columns); null = as it is. */
+    public byte[] preview(String template, Map<String, Object> data, java.util.function.Consumer<ObjectNode> adjust) {
+        var inline = prepared(template, wantsBrand(data), adjust);
+        if (inline != null) {
+            return post("/preview", body("template", inline, "data", data));
         }
         return post("/templates/" + id(template) + "/preview", body("data", data));
     }
 
     /** One document: the template filled with this data. */
     public byte[] render(String template, Map<String, Object> data) {
-        var branded = branded(template, wantsBrand(data));
-        if (branded != null) {
-            return post("/render", body("template", branded, "data", data));
-        }
-        if (isSample(template)) {
-            return post("/render", body("template", sampleTemplate(template), "data", data));
+        return render(template, data, null);
+    }
+
+    /** As above, with the design changed for this print (e.g. the results table's columns); null = as it is. */
+    public byte[] render(String template, Map<String, Object> data, java.util.function.Consumer<ObjectNode> adjust) {
+        var inline = prepared(template, wantsBrand(data), adjust);
+        if (inline != null) {
+            return post("/render", body("template", inline, "data", data));
         }
         return post("/templates/" + id(template) + "/render", body("data", data));
     }
 
     /** One PDF holding the template once per record, in order (a class's report cards, say). */
     public byte[] renderBatch(String template, Map<String, Object> shared, List<Map<String, Object>> records) {
+        return renderBatch(template, shared, records, null);
+    }
+
+    public byte[] renderBatch(String template, Map<String, Object> shared, List<Map<String, Object>> records,
+            java.util.function.Consumer<ObjectNode> adjust) {
         if (records == null || records.isEmpty()) {
             throw new DocumentServiceException("There is nothing to put in the document");
         }
         Map<String, Object> data = shared == null ? Map.of() : shared;
-        var branded = branded(template, wantsBrand(data) || wantsBrand(records.get(0)));
-        if (branded != null) {
-            return post("/render/batch", body("template", branded, "data", data, "records", records));
-        }
-        if (isSample(template)) {
-            return post("/render/batch", body("template", sampleTemplate(template), "data", data, "records", records));
+        var inline = prepared(template, wantsBrand(data) || wantsBrand(records.get(0)), adjust);
+        if (inline != null) {
+            return post("/render/batch", body("template", inline, "data", data, "records", records));
         }
         return post("/templates/" + id(template) + "/render/batch", body("data", data, "records", records));
     }
 
-    // ---- School colours on designs made without brand colours (see TemplateBranding)
+    // ---- Changing a design for one print: the school's colours (TemplateBranding), and any adjustment
 
-    // Branded designs by ref@revision: a saved design changes revision when it is edited.
+    // Designs as fetched, and branded, by ref@revision: a saved design changes revision when it is edited.
+    private final java.util.Map<String, ObjectNode> designCache = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, TemplateBranding.Result> brandingCache =
             new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -329,33 +361,61 @@ public class MComposeClient {
     }
 
     /**
-     * The design with brand colours added, to render instead of the saved one - or null when the data has no school
-     * colours, or the design already has brand colours (or has no strong colours to follow them).
+     * The design to send with the data, or null to render the saved design as it is (by id - nothing to change).
+     * A ready-made "sample:" design is always sent. If the design can't be read, it prints as it is.
      */
-    private com.fasterxml.jackson.databind.node.ObjectNode branded(String template, boolean colours) {
-        if (!colours || template == null || template.isBlank()) {
-            return null;
+    private ObjectNode prepared(String template, boolean colours, java.util.function.Consumer<ObjectNode> adjust) {
+        if (template == null || template.isBlank()) {
+            throw new DocumentServiceException("No document design is chosen");
         }
         try {
-            String key;
-            if (isSample(template)) {
-                key = template;
-            } else {
-                int revision = designs().stream().filter(d -> d.ref().equals(template)).mapToInt(Design::revision)
-                        .findFirst().orElse(-1);
-                key = template + "@" + revision;
+            ObjectNode base = isSample(template) || colours || adjust != null ? designJson(template) : null;
+            if (base == null) {
+                return null;
             }
-            var result = brandingCache.computeIfAbsent(key, k -> {
-                JsonNode t = isSample(template) ? sampleTemplate(template) : storedTemplate(template);
-                return t instanceof com.fasterxml.jackson.databind.node.ObjectNode o ? TemplateBranding.brand(o)
-                        : new TemplateBranding.Result(null, false);
-            });
-            return result.changed() ? result.template() : null;
+            boolean changed = isSample(template);
+            if (colours) {
+                final ObjectNode original = base;
+                var branded = brandingCache.computeIfAbsent(cacheKey(template), k -> TemplateBranding.brand(original));
+                if (branded.changed()) {
+                    changed = true;
+                }
+                base = branded.template();
+            }
+            if (adjust != null) {
+                ObjectNode copy = base.deepCopy();
+                adjust.accept(copy);
+                if (!copy.equals(base)) {
+                    return copy;
+                }
+            }
+            return changed ? base : null;
         } catch (DocumentServiceException e) {
-            // Can't read the design right now: print it in its own colours rather than not at all.
-            log.warn("Could not add brand colours to {}: {}", template, e.getMessage());
+            if (isSample(template)) {
+                throw e;
+            }
+            log.warn("Could not prepare {} for printing, printing it as it is: {}", template, e.getMessage());
             return null;
         }
+    }
+
+    private ObjectNode designJson(String template) {
+        return designCache.computeIfAbsent(cacheKey(template), k -> {
+            JsonNode t = isSample(template) ? sampleTemplate(template) : storedTemplate(template);
+            if (t instanceof ObjectNode o) {
+                return o;
+            }
+            throw new DocumentServiceException("The document design could not be read");
+        });
+    }
+
+    private String cacheKey(String template) {
+        if (isSample(template)) {
+            return template;
+        }
+        int revision = designs().stream().filter(d -> d.ref().equals(template)).mapToInt(Design::revision)
+                .findFirst().orElse(-1);
+        return template + "@" + revision;
     }
 
     private JsonNode storedTemplate(String template) {
