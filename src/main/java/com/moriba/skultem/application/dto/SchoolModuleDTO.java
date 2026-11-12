@@ -16,5 +16,7 @@ public record SchoolModuleDTO(
         boolean installed,
         boolean starter,
         List<String> requires,
-        List<String> requiredBy) {
+        List<String> requiredBy,
+        // Only the Skultem team can switch it on or off (see FeatureModule#platformManaged).
+        boolean platformManaged) {
 }

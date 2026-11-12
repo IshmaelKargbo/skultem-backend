@@ -27,6 +27,12 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
     private final LibraryLoanJpaRepository repo;
 
     @Override
+    public java.util.List<LibraryLoan> findRecentByStudent(String schoolId, String studentId, int limit) {
+        return repo.findBySchoolIdAndStudentIdOrderByIssueDateDesc(schoolId, studentId,
+                org.springframework.data.domain.PageRequest.of(0, limit)).map(LibraryLoanMapper::toDomain).getContent();
+    }
+
+    @Override
     public void save(LibraryLoan domain) {
         repo.save(LibraryLoanMapper.toEntity(domain));
     }

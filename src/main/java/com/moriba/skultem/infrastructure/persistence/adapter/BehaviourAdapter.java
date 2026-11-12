@@ -21,6 +21,12 @@ public class BehaviourAdapter implements BehaviourRepository {
     private final BehaviourJpaRepository repo;
 
     @Override
+    public java.util.List<Behaviour> findRecentByStudent(String schoolId, String studentId, int limit) {
+        return repo.findRecentByStudent(schoolId, studentId, org.springframework.data.domain.PageRequest.of(0, limit))
+                .map(BehaviourMapper::toDomain).getContent();
+    }
+
+    @Override
     public boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
         return repo.existsByEnrollment_IdAndSchoolId(enrollmentId, schoolId);
     }

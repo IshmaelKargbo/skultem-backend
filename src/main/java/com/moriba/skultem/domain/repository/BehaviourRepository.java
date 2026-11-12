@@ -9,6 +9,9 @@ import com.moriba.skultem.domain.model.Behaviour;
 import com.moriba.skultem.domain.vo.KindCount;
 
 public interface BehaviourRepository {
+    // A student's most recent records, newest first (Skully).
+    List<Behaviour> findRecentByStudent(String schoolId, String studentId, int limit);
+
     void save(Behaviour domain);
 
     boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);

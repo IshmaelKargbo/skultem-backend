@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.moriba.skultem.application.services.SkullyParentService;
+import com.moriba.skultem.application.services.SkullyReminderService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class SkullyController {
 
     private final SkullyParentService skully;
+    private final SkullyReminderService reminders;
 
     @Value("${skully.api-key:}")
     private String apiKey;
@@ -75,6 +79,45 @@ public class SkullyController {
         return skully.updates(phone, schoolId)
                 .map(u -> ResponseEntity.ok(new ApiResponse<>("success", 200, "Updates found", u)))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    // Reminders Skully should send now (each parent at most one message a day per school). They count as handed
+    // over until Skully reports back with /reminders/result.
+    @GetMapping("/reminders/due")
+    public ResponseEntity<ApiResponse<List<SkullyReminderService.Message>>> dueReminders(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestParam(defaultValue = "100") int limit) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        var res = reminders.due(Math.max(1, Math.min(limit, 500)));
+        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Reminders due", res));
+    }
+
+    public record ReminderResult(List<String> sent, List<String> failed) {
+    }
+
+    @PostMapping("/reminders/result")
+    public ResponseEntity<ApiResponse<Void>> reminderResult(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestBody ReminderResult body) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        reminders.result(body.sent(), body.failed());
+        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Recorded", null));
+    }
+
+    public record OptOut(String phone, boolean optOut) {
+    }
+
+    // A parent replied STOP (optOut = true) or START to Skully.
+    @PostMapping("/reminders/opt-out")
+    public ResponseEntity<ApiResponse<Void>> optOut(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestBody OptOut body) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        reminders.optOut(body.phone(), body.optOut());
+        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Recorded", null));
     }
 
     private ResponseEntity.BodyBuilder check(String key) {

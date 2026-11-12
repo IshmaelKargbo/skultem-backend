@@ -59,6 +59,9 @@ public class SystemAdminController {
     private final SetSchoolTestFlagUseCase setSchoolTestFlagUseCase;
     private final WipeTestSchoolDataUseCase wipeTestSchoolDataUseCase;
     private final GetPlaygroundSummaryUseCase getPlaygroundSummaryUseCase;
+    private final com.moriba.skultem.application.usecase.InstallSchoolModuleUseCase installSchoolModuleUseCase;
+    private final com.moriba.skultem.application.usecase.DisableSchoolModuleUseCase disableSchoolModuleUseCase;
+    private final com.moriba.skultem.application.services.SkullyReminderService skullyReminderService;
 
     @GetMapping("/stats")
     @PreAuthorize("@permissionService.hasPlatformPermission('DASHBOARD')")
@@ -87,6 +90,27 @@ public class SystemAdminController {
             @RequestParam("testSchool") boolean testSchool) {
         var res = setSchoolTestFlagUseCase.execute(schoolId, testSchool);
         return new ApiResponse<>("success", 200, "School test environment flag updated successfully", res);
+    }
+
+    // Skully (the WhatsApp assistant) is a paid feature the Skultem team switches on per school - see
+    // FeatureModule#platformManaged. The ids of the schools that have it.
+    @GetMapping("/skully/schools")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
+    public ApiResponse<java.util.List<String>> skullySchools() {
+        return new ApiResponse<>("success", 200, "Schools with Skully", skullyReminderService.schoolsWithSkully());
+    }
+
+    @PutMapping("/school/{id}/skully")
+    @PreAuthorize("@permissionService.hasPlatformPermission('SCHOOLS')")
+    public ApiResponse<Boolean> setSkully(@PathVariable("id") String schoolId, @RequestParam("enabled") boolean enabled,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "userId") String userId) {
+        String key = com.moriba.skultem.domain.vo.FeatureModule.WHATSAPP_ASSISTANT.key();
+        if (enabled) {
+            installSchoolModuleUseCase.execute(schoolId, key, userId, true);
+        } else {
+            disableSchoolModuleUseCase.execute(schoolId, key, userId, true);
+        }
+        return new ApiResponse<>("success", 200, enabled ? "Skully switched on" : "Skully switched off", enabled);
     }
 
     @GetMapping("/school/{id}/playground")

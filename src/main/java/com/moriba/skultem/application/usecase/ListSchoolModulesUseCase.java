@@ -31,7 +31,8 @@ public class ListSchoolModulesUseCase {
                         installed.contains(module),
                         module.starter(),
                         module.requires().stream().map(FeatureModule::key).toList(),
-                        module.requiredBy().stream().map(FeatureModule::key).toList()))
+                        module.requiredBy().stream().map(FeatureModule::key).toList(),
+                        module.platformManaged()))
                 .toList();
     }
 }

@@ -12,6 +12,9 @@ import com.moriba.skultem.domain.vo.KindCount;
 import com.moriba.skultem.infrastructure.persistence.entity.BehaviourEntity;
 
 public interface BehaviourJpaRepository extends JpaRepository<BehaviourEntity, String> {
+    @Query("select b from BehaviourEntity b where b.schoolId = :school and b.enrollment.student.id = :student order by b.createdAt desc")
+    Page<BehaviourEntity> findRecentByStudent(@Param("school") String school, @Param("student") String student, Pageable pageable);
+
 
   boolean existsByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
 

@@ -33,8 +33,16 @@ public class DisableSchoolModuleUseCase {
 
     @AuditLogAnnotation(action = "MODULE_DISABLED")
     public List<SchoolModuleDTO> execute(String schoolId, String moduleKey, String userId) {
+        return execute(schoolId, moduleKey, userId, false);
+    }
+
+    /** byPlatform: the Skultem team doing it (System Admin) - the only way to disable a platform-managed module. */
+    public List<SchoolModuleDTO> execute(String schoolId, String moduleKey, String userId, boolean byPlatform) {
         var module = FeatureModule.fromKey(moduleKey)
                 .orElseThrow(() -> new NotFoundException("Module not found: " + moduleKey));
+        if (module.platformManaged() && !byPlatform) {
+            throw new RuleException(module.label() + " is switched on by the Skultem team. Contact Skultem to get it for your school.");
+        }
 
         var installed = moduleAccess.enabledModules(schoolId);
         if (!installed.contains(module)) {

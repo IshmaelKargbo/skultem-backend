@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.dto.SchoolModuleDTO;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.services.ModuleAccessService;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
 import com.moriba.skultem.domain.repository.SchoolModuleRepository;
@@ -32,8 +33,16 @@ public class InstallSchoolModuleUseCase {
 
     @AuditLogAnnotation(action = "MODULE_INSTALLED")
     public List<SchoolModuleDTO> execute(String schoolId, String moduleKey, String userId) {
+        return execute(schoolId, moduleKey, userId, false);
+    }
+
+    /** byPlatform: the Skultem team doing it (System Admin) - the only way to install a platform-managed module. */
+    public List<SchoolModuleDTO> execute(String schoolId, String moduleKey, String userId, boolean byPlatform) {
         var module = FeatureModule.fromKey(moduleKey)
                 .orElseThrow(() -> new NotFoundException("Module not found: " + moduleKey));
+        if (module.platformManaged() && !byPlatform) {
+            throw new RuleException(module.label() + " is switched on by the Skultem team. Contact Skultem to get it for your school.");
+        }
 
         install(schoolId, module, userId);
         moduleAccess.evict(schoolId);

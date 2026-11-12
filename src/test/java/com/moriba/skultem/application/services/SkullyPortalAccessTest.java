@@ -32,7 +32,7 @@ class SkullyPortalAccessTest {
     private final ModuleAccessService modules = mock(ModuleAccessService.class);
     private final LogActivityUseCase activity = mock(LogActivityUseCase.class);
     private final SkullyParentService service = new SkullyParentService(parents, null, schools, null, null, null,
-            null, null, null, null, modules, activity);
+            null, null, null, null, modules, activity, null, null, null);
 
     SkullyPortalAccessTest() {
         ReflectionTestUtils.setField(service, "defaultCountryCode", "232");

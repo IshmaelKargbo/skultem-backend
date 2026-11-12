@@ -34,6 +34,13 @@ import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.vo.Audience;
 import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.domain.model.Behaviour;
+import com.moriba.skultem.domain.model.HealthCareVisit;
+import com.moriba.skultem.domain.model.LibraryLoan;
+import com.moriba.skultem.domain.repository.BehaviourRepository;
+import com.moriba.skultem.domain.repository.HealthCareVisitRepository;
+import com.moriba.skultem.domain.repository.LibraryLoanRepository;
+import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.application.usecase.LogActivityUseCase;
@@ -63,6 +70,13 @@ public class SkullyParentService {
     private final ListStudentReportCardsUseCase reportCardsUseCase;
     private final ModuleAccessService modules;
     private final LogActivityUseCase activity;
+    private final LibraryLoanRepository loanRepo;
+    private final HealthCareVisitRepository visitRepo;
+    private final BehaviourRepository behaviourRepo;
+
+    // The optional modules Skully can also report on, when the school has installed them.
+    private static final List<FeatureModule> EXTRAS = List.of(FeatureModule.LIBRARY, FeatureModule.HEALTH_CARE,
+            FeatureModule.BEHAVIOUR);
 
     // The country code a phone saved without one (077 123 456) is in.
     @Value("${skully.default-country-code:232}")
@@ -75,8 +89,9 @@ public class SkullyParentService {
     public record Child(String id, String name, String admissionNumber, String className, String status) {
     }
 
+    // features: the optional modules (library, health-care, behaviour) this school uses, so Skully knows what to offer.
     public record SchoolFamily(String schoolId, String schoolName, String schoolPhone, String parentName,
-            List<Child> children) {
+            List<Child> children, List<String> features) {
     }
 
     // schools: where Skully may answer. notEnabledAt: schools this parent is at that have not installed Skully.
@@ -94,8 +109,23 @@ public class SkullyParentService {
             String overallGrade, boolean passed, String remark) {
     }
 
+    // library, sickBay and behaviour are null when the school does not use that module.
     public record ChildSummary(Child child, String schoolName, StudentTermAttendanceDetailDTO attendance, Fees fees,
-            List<ReportCard> reportCards) {
+            List<ReportCard> reportCards, List<Loan> library, List<SickBayVisit> sickBay,
+            List<BehaviourNote> behaviour) {
+    }
+
+    public record Loan(String book, String author, LocalDate issued, LocalDate due, boolean returned,
+            boolean overdue) {
+    }
+
+    // What parents are told about a sick bay visit (the same as the school's own notice to them): when, what was
+    // wrong and how it ended - never nurse's notes, medication or temperature.
+    public record SickBayVisit(String when, List<String> complaints, String outcome, String referredTo,
+            String collectedBy, boolean stillInSickBay) {
+    }
+
+    public record BehaviourNote(LocalDate date, String kind, String category, String note) {
     }
 
     /**
@@ -130,8 +160,10 @@ public class SkullyParentService {
                     .toList();
             var user = parent.getUser();
             String name = user == null ? null : (nz(user.getGivenNames()) + " " + nz(user.getFamilyName())).trim();
+            var features = EXTRAS.stream().filter(m -> modules.isEnabled(parent.getSchoolId(), m))
+                    .map(FeatureModule::key).toList();
             schools.add(new SchoolFamily(parent.getSchoolId(), school.get().getName(), school.get().getPhone(), name,
-                    children));
+                    children, features));
         }
         return new Family(phone, schools, notEnabledAt);
     }
@@ -154,7 +186,10 @@ public class SkullyParentService {
                 log.debug("Skully: no report cards for {}: {}", studentId, e.getMessage());
             }
             String schoolName = schoolRepo.findById(school).map(s -> s.getName()).orElse(null);
-            return new ChildSummary(child(student), schoolName, attendance, fees(student), cards);
+            return new ChildSummary(child(student), schoolName, attendance, fees(student), cards,
+                    modules.isEnabled(school, FeatureModule.LIBRARY) ? loans(student) : null,
+                    modules.isEnabled(school, FeatureModule.HEALTH_CARE) ? sickBay(student) : null,
+                    modules.isEnabled(school, FeatureModule.BEHAVIOUR) ? behaviour(student) : null);
         });
     }
 
@@ -289,6 +324,55 @@ public class SkullyParentService {
                     fee.getAmount(), discount, paid, outstanding, fee.getDueDate()));
         }
         return new Fees(billed, paidAll, owed, lines);
+    }
+
+    private List<Loan> loans(Student student) {
+        LocalDate today = LocalDate.now(SchoolTimeZone.ZONE);
+        return loanRepo.findRecentByStudent(student.getSchoolId(), student.getId(), 8).stream()
+                .filter(l -> l.getStatus() == LibraryLoan.Status.ISSUED
+                        || (l.getReturnedAt() != null && l.getReturnedAt().isAfter(Instant.now().minusSeconds(60L * 86400))))
+                .map(l -> {
+                    boolean returned = l.getStatus() == LibraryLoan.Status.RETURNED;
+                    return new Loan(l.getBook() == null ? null : l.getBook().getTitle(),
+                            l.getBook() == null ? null : l.getBook().getAuthor(), l.getIssueDate(), l.getDueDate(),
+                            returned, !returned && l.getDueDate() != null && l.getDueDate().isBefore(today));
+                })
+                .toList();
+    }
+
+    // The last 90 days' visits (voided ones left out), newest first.
+    private List<SickBayVisit> sickBay(Student student) {
+        return visitRepo.findByStudentSince(student.getSchoolId(), student.getId(),
+                Instant.now().minusSeconds(90L * 86400)).stream()
+                .filter(v -> v.getStatus() != HealthCareVisit.Status.VOIDED)
+                .sorted(java.util.Comparator.comparing(HealthCareVisit::getArrivedAt).reversed())
+                .limit(5)
+                .map(v -> {
+                    var t = v.getArrivedAt().atZone(SchoolTimeZone.ZONE);
+                    String when = String.format("%s %02d:%02d", t.toLocalDate(), t.getHour(), t.getMinute());
+                    List<String> complaints = new ArrayList<>(v.getComplaints() == null ? List.of()
+                            : v.getComplaints().stream().map(HealthCareVisit.Complaint::label).toList());
+                    if (v.getComplaintOther() != null && !v.getComplaintOther().isBlank()) complaints.add(v.getComplaintOther());
+                    boolean open = v.getStatus() == HealthCareVisit.Status.OPEN;
+                    String outcome = open || v.getOutcome() == null ? null : switch (v.getOutcome()) {
+                        case RETURNED_TO_CLASS -> "seen and returned to class";
+                        case SENT_HOME -> "sent home";
+                        case REFERRED -> "referred to hospital";
+                    };
+                    return new SickBayVisit(when, complaints, outcome,
+                            v.getOutcome() == HealthCareVisit.Outcome.REFERRED ? v.getReferredTo() : null,
+                            v.getOutcome() == HealthCareVisit.Outcome.SENT_HOME ? v.getCollectedBy() : null, open);
+                })
+                .toList();
+    }
+
+    private List<BehaviourNote> behaviour(Student student) {
+        return behaviourRepo.findRecentByStudent(student.getSchoolId(), student.getId(), 8).stream()
+                .map((Behaviour b) -> new BehaviourNote(
+                        b.getCreatedAt() == null ? null : b.getCreatedAt().atZone(SchoolTimeZone.ZONE).toLocalDate(),
+                        b.getKind() == null ? null : b.getKind().name().toLowerCase(),
+                        b.getCategory() == null ? null : b.getCategory().getName(), b.getNote()))
+                .toList();
     }
 
     private static ReportCard card(ReportCardSummaryDTO c) {

@@ -18,6 +18,9 @@ public interface LibraryLoanRepository {
 
     void save(LibraryLoan domain);
 
+    // A student's loans, latest first (Skully).
+    java.util.List<LibraryLoan> findRecentByStudent(String schoolId, String studentId, int limit);
+
     Optional<LibraryLoan> findByIdAndSchool(String id, String schoolId);
 
     // Just the book id, so a caller can lock the book before loading the loan with it.

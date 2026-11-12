@@ -43,7 +43,8 @@ class EndpointAuthorizationCoverageTest {
             // Skully, the parents' WhatsApp assistant: no user session - SkullyController checks its shared key
             // (X-Skully-Key) and answers only about the parent whose WhatsApp number the call names.
             "SkullyController#family", "SkullyController#child", "SkullyController#updates",
-            "SkullyController#portalAccess");
+            "SkullyController#portalAccess", "SkullyController#dueReminders",
+            "SkullyController#reminderResult", "SkullyController#optOut");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {

@@ -16,6 +16,8 @@ import com.moriba.skultem.domain.model.LibraryLoan.Status;
 import com.moriba.skultem.infrastructure.persistence.entity.LibraryLoanEntity;
 
 public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntity, String> {
+    Page<LibraryLoanEntity> findBySchoolIdAndStudentIdOrderByIssueDateDesc(String schoolId, String studentId, Pageable pageable);
+
 
     @EntityGraph(attributePaths = { "book", "book.category" })
     Optional<LibraryLoanEntity> findByIdAndSchoolId(String id, String schoolId);

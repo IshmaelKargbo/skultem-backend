@@ -126,6 +126,14 @@ public enum FeatureModule {
         return requires;
     }
 
+    /**
+     * Switched on and off by the Skultem team only (System Admin → Schools), never by the school itself - e.g. a
+     * paid feature given to schools that have paid or agreed to pay early. Schools see it, but can't install it.
+     */
+    public boolean platformManaged() {
+        return this == WHATSAPP_ASSISTANT;
+    }
+
     /** Every module that lists this one in its {@link #requires()}. */
     public List<FeatureModule> requiredBy() {
         return Arrays.stream(values()).filter(m -> m.requires.contains(this)).toList();
