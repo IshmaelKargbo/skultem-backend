@@ -35,6 +35,21 @@ class SkullyReminderServiceTest {
     }
 
     @Test
+    void theWeeklySummaryGoesOutFridayAfternoonOrSaturday() {
+        var zone = java.time.ZoneId.of("Africa/Freetown");
+        assertThat(SkullyReminderService.weeklyTime(java.time.ZonedDateTime.of(2026, 11, 13, 13, 0, 0, 0, zone))).isFalse();
+        assertThat(SkullyReminderService.weeklyTime(java.time.ZonedDateTime.of(2026, 11, 13, 14, 0, 0, 0, zone))).isTrue();
+        assertThat(SkullyReminderService.weeklyTime(java.time.ZonedDateTime.of(2026, 11, 14, 9, 0, 0, 0, zone))).isTrue();
+        assertThat(SkullyReminderService.weeklyTime(java.time.ZonedDateTime.of(2026, 11, 15, 9, 0, 0, 0, zone))).isFalse();
+    }
+
+    @Test
+    void theWeekIsMondayToFriday() {
+        assertThat(SkullyReminderService.weekLabel(java.time.LocalDate.of(2026, 11, 9))).isEqualTo("9 - 13 Nov 2026");
+        assertThat(SkullyReminderService.weekLabel(java.time.LocalDate.of(2026, 11, 30))).isEqualTo("30 Nov - 4 Dec 2026");
+    }
+
+    @Test
     void childrenAreNamedTogether() {
         assertThat(SkullyReminderService.names(List.of())).isEqualTo("your child");
         assertThat(SkullyReminderService.names(List.of("Fatu"))).isEqualTo("Fatu");

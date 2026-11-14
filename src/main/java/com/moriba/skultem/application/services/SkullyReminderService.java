@@ -5,9 +5,11 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -66,8 +68,8 @@ public class SkullyReminderService {
     private static final String WELCOME_KEY = "welcome";
 
     /** What Skully can send, one WhatsApp template each. */
-    public static final String REMINDER = "REMINDER", WELCOME = "WELCOME", LINKED = "LINKED";
-    public static final Set<String> ALL_KINDS = Set.of(REMINDER, WELCOME, LINKED);
+    public static final String REMINDER = "REMINDER", WELCOME = "WELCOME", LINKED = "LINKED", WEEKLY = "WEEKLY";
+    public static final Set<String> ALL_KINDS = Set.of(REMINDER, WELCOME, LINKED, WEEKLY);
     // The kinds of item that make up the one reminder message a day.
     private static final List<String> REMINDER_ITEMS = List.of("EXAM", "EVENT", "FEE");
 
@@ -86,7 +88,7 @@ public class SkullyReminderService {
     @Value("${app.portal-url:https://{domain}.skultem.space}")
     private String portalUrl;
 
-    public record Settings(boolean examReminders, boolean eventReminders, boolean feeReminders) {
+    public record Settings(boolean examReminders, boolean eventReminders, boolean feeReminders, boolean weeklySummary) {
     }
 
     public record SettingsView(boolean enabled, Settings settings, long sentThisMonth, long optedOut) {
@@ -144,6 +146,8 @@ public class SkullyReminderService {
                 if (kinds.contains(WELCOME)) welcomes(schoolId, optedOut, limit, out);
                 if (kinds.contains(LINKED)) linked(schoolId, optedOut, limit, out);
                 if (kinds.contains(REMINDER)) reminders(schoolId, today, optedOut, limit, out);
+                if (kinds.contains(WEEKLY) && weeklyTime(ZonedDateTime.now(SchoolTimeZone.ZONE))
+                        && settings(schoolId).weeklySummary()) weekly(schoolId, today, optedOut, limit, out);
             } catch (RuntimeException e) {
                 log.error("Skully messages for school {} failed: {}", schoolId, e.getMessage(), e);
             }
@@ -158,11 +162,11 @@ public class SkullyReminderService {
                     || optedOut.contains(optOutKey(a.phone()))) continue;
             String messageId = claim(schoolId, a.parentId(), a.phone(), WELCOME, List.of(WELCOME_KEY));
             if (messageId == null) continue;
-            // No password in the template (Meta doesn't allow them in Utility templates): the parent replies
-            // "password" and Skully hands it over in the chat, as it does for any parent who asks.
+            // Must match the approved skultem_create_new_parent template: 6 values, the temporary password last.
             String signInWith = a.email() != null ? a.email() : a.savedPhone();
             out.add(new Message(messageId, WELCOME, a.phone(), a.name(), a.schoolName(), "Welcome and sign-in details",
-                    List.of(a.name(), a.schoolName(), names(a.children()), a.loginUrl(), signInWith)));
+                    List.of(a.name(), a.schoolName(), names(a.children()), a.loginUrl(), signInWith,
+                            a.temporaryPassword())));
         }
     }
 
@@ -274,6 +278,148 @@ public class SkullyReminderService {
     }
 
     // ---------------------------------------------------------------------------------------------------------
+    // The weekly academic summary: on Friday afternoon (Saturday as a catch-up), one message per child with their
+    // week - marks the school approved this week, attendance, and behaviour notes as the teacher's remark. A child
+    // with nothing recorded this week gets no message. Fills the approved weekly_academic_summary template.
+
+    static boolean weeklyTime(ZonedDateTime now) {
+        return (now.getDayOfWeek() == DayOfWeek.FRIDAY && now.getHour() >= 14) || now.getDayOfWeek() == DayOfWeek.SATURDAY;
+    }
+
+    private static final DateTimeFormatter WEEK_DAY = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
+    private static final int MAX_REMARK = 300;
+
+    /** "10 - 14 Nov 2026": Monday to Friday of this week. */
+    static String weekLabel(LocalDate monday) {
+        LocalDate friday = monday.plusDays(4);
+        String from = monday.getMonth() == friday.getMonth() ? String.valueOf(monday.getDayOfMonth()) : monday.format(WEEK_DAY);
+        return from + " - " + friday.format(WEEK_DAY) + " " + friday.getYear();
+    }
+
+    private static final class Week {
+        long days, present;
+        final List<Integer> scores = new ArrayList<>();
+        final Set<String> subjects = new java.util.TreeSet<>();
+        String best;
+        int bestScore = -1;
+        final List<String> remarks = new ArrayList<>();
+
+        boolean empty() {
+            return days == 0 && scores.isEmpty() && remarks.isEmpty();
+        }
+
+        void mark(String subject, int score) {
+            scores.add(score);
+            subjects.add(subject);
+            if (score > bestScore) {
+                bestScore = score;
+                best = score + "% (" + subject + ")";
+            }
+        }
+
+        /** {{6}} to {{11}} of the template. */
+        List<String> values() {
+            boolean marked = !scores.isEmpty();
+            String average = marked
+                    ? Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(0)) + "%" : "No marks this week";
+            String remark = remarks.isEmpty() ? "Normal this week" : String.join("; ", remarks);
+            if (remark.length() > MAX_REMARK) remark = remark.substring(0, MAX_REMARK - 3).trim() + "...";
+            return List.of(
+                    marked ? subjects.size() + " (" + String.join(", ", subjects) + ")" : "None this week",
+                    average,
+                    marked ? best : "-",
+                    days == 0 ? "Not recorded" : present + " of " + days,
+                    days == 0 ? "Not recorded" : String.valueOf(days - present),
+                    remark);
+        }
+    }
+
+    private void weekly(String schoolId, LocalDate today, Set<String> optedOut, int limit, List<Message> out) {
+        LocalDate monday = today.with(DayOfWeek.MONDAY);
+        Timestamp weekStart = Timestamp.from(monday.atStartOfDay(SchoolTimeZone.ZONE).toInstant());
+        Map<String, Week> weeks = new LinkedHashMap<>();
+
+        for (var r : jdbc.queryForList("""
+                SELECT e.student_id,
+                       COUNT(*) FILTER (WHERE NOT a.holiday) AS days,
+                       COUNT(*) FILTER (WHERE a.present AND NOT a.holiday) AS present
+                FROM attendance a JOIN enrollments e ON e.id = a.enrollment_id AND e.status = 'ACTIVE'
+                WHERE a.school_id = ? AND a.date BETWEEN ? AND ?
+                GROUP BY e.student_id
+                """, schoolId, Date.valueOf(monday), Date.valueOf(today))) {
+            Week w = weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week());
+            w.days = ((Number) r.get("days")).longValue();
+            w.present = ((Number) r.get("present")).longValue();
+        }
+
+        // Marks once the school has approved them (what report cards use), not drafts a teacher may still change.
+        for (var r : jdbc.queryForList("""
+                SELECT e.student_id, s.name AS subject, sc.score
+                FROM assessment_scores sc
+                JOIN class_subject_assessment_life_cycle lc ON lc.id = sc.class_subject_assessment_life_cycle_id
+                    AND lc.status IN ('APPROVED', 'COMPLETED', 'LOCKED') AND lc.updated_at >= ?
+                JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id
+                JOIN subjects s ON s.id = ts.subject_id
+                JOIN student_assessments sa ON sa.id = sc.student_assessment_id
+                JOIN enrollments e ON e.id = sa.enrollment_id AND e.status = 'ACTIVE'
+                WHERE sc.school_id = ?
+                """, weekStart, schoolId)) {
+            weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week())
+                    .mark((String) r.get("subject"), ((Number) r.get("score")).intValue());
+        }
+
+        // Behaviour notes are the teacher's remark: positive ones first, said as written.
+        for (var r : jdbc.queryForList("""
+                SELECT e.student_id, b.kind, b.note
+                FROM behaviours b JOIN enrollments e ON e.id = b.enrollment_id AND e.status = 'ACTIVE'
+                WHERE b.school_id = ? AND b.created_at >= ?
+                ORDER BY CASE b.kind WHEN 'POSITIVE' THEN 0 WHEN 'NEUTRAL' THEN 1 ELSE 2 END, b.created_at
+                """, schoolId, weekStart)) {
+            String note = Optional.ofNullable((String) r.get("note")).map(n -> n.replaceAll("\\s+", " ").trim()).orElse("");
+            if (note.isEmpty()) continue;
+            String kind = (String) r.get("kind");
+            weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week()).remarks
+                    .add("NEGATIVE".equals(kind) ? "To talk about: " + note : note);
+        }
+
+        weeks.values().removeIf(Week::empty);
+        if (weeks.isEmpty()) return;
+
+        // The children, their class and their parent.
+        String in = String.join(",", weeks.keySet().stream().map(k -> "?").toList());
+        List<Object> args = new ArrayList<>(List.of(schoolId));
+        args.addAll(weeks.keySet());
+        var students = jdbc.queryForList("""
+                SELECT st.id, st.parent_id, st.given_names, st.family_name, c.name AS class_name, sec.name AS section
+                FROM students st
+                JOIN enrollments e ON e.student_id = st.id AND e.status = 'ACTIVE'
+                JOIN classes c ON c.id = e.class_id
+                LEFT JOIN sections sec ON sec.id = e.section_id
+                WHERE st.school_id = ? AND st.status = 'ACTIVE' AND st.parent_id IS NOT NULL AND st.id IN (""" + in + ")",
+                args.toArray());
+        Map<String, Recipient> recipients = recipients(schoolId,
+                students.stream().map(s -> (String) s.get("parent_id")).collect(java.util.stream.Collectors.toSet()));
+        String week = weekLabel(monday);
+
+        for (var s : students) {
+            if (out.size() >= limit) return;
+            Recipient to = recipients.get((String) s.get("parent_id"));
+            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
+            String studentId = (String) s.get("id");
+            String messageId = claim(schoolId, to.parentId(), to.phone(), WEEKLY, List.of("weekly:" + monday + ":" + studentId));
+            if (messageId == null) continue;
+            String child = (Optional.ofNullable((String) s.get("given_names")).orElse("") + " "
+                    + Optional.ofNullable((String) s.get("family_name")).orElse("")).trim();
+            String section = (String) s.get("section");
+            String clazz = s.get("class_name") + (section == null || section.isBlank() ? "" : " " + section);
+            List<String> values = new ArrayList<>(List.of(to.name(), to.schoolName(), child, week, clazz));
+            values.addAll(weeks.get(studentId).values());
+            values.add(portal(to.schoolDomain()));
+            out.add(new Message(messageId, WEEKLY, to.phone(), to.name(), to.schoolName(), child + "'s week", values));
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
     // The welcome is decided from the account: every parent with a phone who has never signed in gets it once -
     // parents added before Skully included - and the school can see who is still waiting and why.
 
@@ -329,14 +475,14 @@ public class SkullyReminderService {
         Timestamp now = Timestamp.from(Instant.now());
         for (String id : sent == null ? List.<String>of() : sent) {
             jdbc.update("UPDATE skully_reminders SET status = 'SENT', updated_at = ? WHERE message_id = ?", now, id);
-            // The school's activity log shows who has had their welcome.
+            // A temporary password went out: the school's activity log says so, as when Skully hands it over in a chat.
             for (var r : jdbc.queryForList("""
                     SELECT r.school_id, u.id AS user_id, u.given_name, u.family_name FROM skully_reminders r
                     JOIN parents p ON p.id = r.parent_id JOIN users u ON u.id = p.user_id
                     WHERE r.message_id = ? AND r.item_key = ?
                     """, id, WELCOME_KEY)) {
                 activity.log((String) r.get("school_id"), ActivityType.USER,
-                        "Welcome with sign-in steps sent on WhatsApp (Skully)",
+                        "Welcome and sign-in details sent on WhatsApp (Skully)",
                         (Optional.ofNullable((String) r.get("given_name")).orElse("") + " "
                                 + Optional.ofNullable((String) r.get("family_name")).orElse("")).trim(),
                         null, (String) r.get("user_id"));
@@ -364,20 +510,23 @@ public class SkullyReminderService {
     // The school's settings (Skully page)
 
     public Settings settings(String schoolId) {
-        var rows = jdbc.query("SELECT exam_reminders, event_reminders, fee_reminders FROM skully_settings WHERE school_id = ?",
-                (rs, n) -> new Settings(rs.getBoolean(1), rs.getBoolean(2), rs.getBoolean(3)), schoolId);
-        return rows.isEmpty() ? new Settings(true, true, true) : rows.get(0);
+        var rows = jdbc.query("""
+                SELECT exam_reminders, event_reminders, fee_reminders, weekly_summary FROM skully_settings WHERE school_id = ?
+                """, (rs, n) -> new Settings(rs.getBoolean(1), rs.getBoolean(2), rs.getBoolean(3), rs.getBoolean(4)), schoolId);
+        return rows.isEmpty() ? new Settings(true, true, true, true) : rows.get(0);
     }
 
     @Transactional
     public SettingsView saveSettings(String schoolId, Settings s) {
         jdbc.update("""
-                INSERT INTO skully_settings (school_id, exam_reminders, event_reminders, fee_reminders, updated_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO skully_settings (school_id, exam_reminders, event_reminders, fee_reminders, weekly_summary,
+                    updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (school_id) DO UPDATE SET exam_reminders = EXCLUDED.exam_reminders,
                     event_reminders = EXCLUDED.event_reminders, fee_reminders = EXCLUDED.fee_reminders,
-                    updated_at = EXCLUDED.updated_at
-                """, schoolId, s.examReminders(), s.eventReminders(), s.feeReminders(), Timestamp.from(Instant.now()));
+                    weekly_summary = EXCLUDED.weekly_summary, updated_at = EXCLUDED.updated_at
+                """, schoolId, s.examReminders(), s.eventReminders(), s.feeReminders(), s.weeklySummary(),
+                Timestamp.from(Instant.now()));
         return view(schoolId);
     }
 
@@ -547,8 +696,12 @@ public class SkullyReminderService {
         return code + digits;
     }
 
+    private String portal(String domain) {
+        return portalUrl.replace("{domain}", domain == null ? "" : domain).replaceAll("/+$", "");
+    }
+
     private String loginUrl(String domain) {
-        return portalUrl.replace("{domain}", domain == null ? "" : domain).replaceAll("/+$", "") + "/login";
+        return portal(domain) + "/login";
     }
 
     /** Fatu / Fatu and Musa / Fatu, Musa and Ali; "your child" when there are none. */
