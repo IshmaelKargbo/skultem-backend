@@ -149,4 +149,6 @@ m-compose:
 # sends the same key as X-Skully-Key. Phones saved without a country code are read as being in this one.
 skully:
   api-key: ${SKULLY_API_KEY:}
+  # The Worker's address (e.g. https://skully.<account>.workers.dev), for the leadership insights brief it writes.
+  worker-url: ${SKULLY_WORKER_URL:}
   default-country-code: ${SKULLY_COUNTRY_CODE:232}

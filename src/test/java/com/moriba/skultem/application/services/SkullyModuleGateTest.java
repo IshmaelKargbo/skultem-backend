@@ -31,7 +31,7 @@ class SkullyModuleGateTest {
     private final SchoolRepository schools = mock(SchoolRepository.class);
     private final ModuleAccessService modules = mock(ModuleAccessService.class);
     private final SkullyParentService service = new SkullyParentService(parents, students, schools, null, null, null,
-            null, null, null, null, modules, null, null, null, null);
+            null, null, null, null, modules, null, null, null, null, null);
 
     SkullyModuleGateTest() {
         ReflectionTestUtils.setField(service, "defaultCountryCode", "232");

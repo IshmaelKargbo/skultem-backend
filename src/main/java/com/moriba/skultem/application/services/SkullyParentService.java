@@ -45,6 +45,8 @@ import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.model.User;
 import com.moriba.skultem.application.usecase.LogActivityUseCase;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,6 +75,7 @@ public class SkullyParentService {
     private final LibraryLoanRepository loanRepo;
     private final HealthCareVisitRepository visitRepo;
     private final BehaviourRepository behaviourRepo;
+    private final JdbcTemplate jdbc;
 
     // The optional modules Skully can also report on, when the school has installed them.
     private static final List<FeatureModule> EXTRAS = List.of(FeatureModule.LIBRARY, FeatureModule.HEALTH_CARE,
@@ -109,9 +112,17 @@ public class SkullyParentService {
             String overallGrade, boolean passed, String remark) {
     }
 
+    /**
+     * The latest term's marks in one subject, once the school approved them (0-100): the child's average over the
+     * assessments so far, the latest one, and the class average for the same assessments (no other child's marks).
+     */
+    public record SubjectMarks(String term, String subject, int average, int assessments, int latest,
+            Integer classAverage) {
+    }
+
     // library, sickBay and behaviour are null when the school does not use that module.
     public record ChildSummary(Child child, String schoolName, StudentTermAttendanceDetailDTO attendance, Fees fees,
-            List<ReportCard> reportCards, List<Loan> library, List<SickBayVisit> sickBay,
+            List<ReportCard> reportCards, List<SubjectMarks> subjects, List<Loan> library, List<SickBayVisit> sickBay,
             List<BehaviourNote> behaviour) {
     }
 
@@ -185,8 +196,14 @@ public class SkullyParentService {
             } catch (RuntimeException e) {
                 log.debug("Skully: no report cards for {}: {}", studentId, e.getMessage());
             }
+            List<SubjectMarks> subjects = List.of();
+            try {
+                subjects = subjects(school, studentId);
+            } catch (RuntimeException e) {
+                log.debug("Skully: no subject marks for {}: {}", studentId, e.getMessage());
+            }
             String schoolName = schoolRepo.findById(school).map(s -> s.getName()).orElse(null);
-            return new ChildSummary(child(student), schoolName, attendance, fees(student), cards,
+            return new ChildSummary(child(student), schoolName, attendance, fees(student), cards, subjects,
                     modules.isEnabled(school, FeatureModule.LIBRARY) ? loans(student) : null,
                     modules.isEnabled(school, FeatureModule.HEALTH_CARE) ? sickBay(student) : null,
                     modules.isEnabled(school, FeatureModule.BEHAVIOUR) ? behaviour(student) : null);
@@ -373,6 +390,35 @@ public class SkullyParentService {
                         b.getKind() == null ? null : b.getKind().name().toLowerCase(),
                         b.getCategory() == null ? null : b.getCategory().getName(), b.getNote()))
                 .toList();
+    }
+
+    // The most recent term with approved marks for this child, per subject.
+    List<SubjectMarks> subjects(String schoolId, String studentId) {
+        return jdbc.query("""
+                WITH mine AS (
+                    SELECT lc.id AS lc_id, lc.term_id, t.name AS term, t.start_date, s.name AS subject, sc.score,
+                           sc.updated_at
+                    FROM assessment_scores sc
+                    JOIN student_assessments sa ON sa.id = sc.student_assessment_id
+                    JOIN enrollments e ON e.id = sa.enrollment_id AND e.student_id = ?
+                    JOIN class_subject_assessment_life_cycle lc ON lc.id = sc.class_subject_assessment_life_cycle_id
+                        AND lc.status IN ('APPROVED', 'COMPLETED', 'LOCKED')
+                    JOIN terms t ON t.id = lc.term_id
+                    JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id
+                    JOIN subjects s ON s.id = ts.subject_id
+                    WHERE sc.school_id = ?
+                ), latest_term AS (SELECT term_id FROM mine ORDER BY start_date DESC LIMIT 1)
+                SELECT m.term, m.subject, ROUND(AVG(m.score)) AS average, COUNT(*) AS assessments,
+                       (ARRAY_AGG(m.score ORDER BY m.updated_at DESC))[1] AS latest,
+                       (SELECT ROUND(AVG(o.score)) FROM assessment_scores o
+                        WHERE o.class_subject_assessment_life_cycle_id = ANY (ARRAY_AGG(m.lc_id))) AS class_average
+                FROM mine m
+                WHERE m.term_id = (SELECT term_id FROM latest_term)
+                GROUP BY m.term, m.subject
+                ORDER BY m.subject
+                """, (rs, n) -> new SubjectMarks(rs.getString("term"), rs.getString("subject"), rs.getInt("average"),
+                rs.getInt("assessments"), rs.getInt("latest"),
+                rs.getObject("class_average") == null ? null : rs.getInt("class_average")), studentId, schoolId);
     }
 
     private static ReportCard card(ReportCardSummaryDTO c) {
