@@ -49,6 +49,18 @@ public class SkullyController {
                 skully.family(phone).withStaff(staff.staff(phone))));
     }
 
+    // A teacher's own classes: the class they are class teacher of and the subjects they teach (SkullyStaffService).
+    @GetMapping("/staff/classes")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> staffClasses(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestParam String phone, @RequestParam String schoolId) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        return staff.myClasses(phone, schoolId)
+                .map(o -> ResponseEntity.ok(new ApiResponse<>("success", 200, "My classes", o)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
     // A staff member's school, limited to what their role sees in Skultem (see SkullyStaffService).
     @GetMapping("/staff/overview")
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> staffOverview(

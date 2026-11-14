@@ -46,7 +46,7 @@ class EndpointAuthorizationCoverageTest {
             "SkullyController#portalAccess", "SkullyController#dueReminders",
             "SkullyController#reminderResult", "SkullyController#optOut",
             // ...and for school staff, only their own school, limited to what their role sees (SkullyStaffService).
-            "SkullyController#staffOverview");
+            "SkullyController#staffOverview", "SkullyController#staffClasses");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {
