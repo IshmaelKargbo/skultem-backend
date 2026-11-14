@@ -39,8 +39,9 @@ public class SkullySettingsController {
 
     // Skully's insights brief for leadership: the latest one, and writing a new one.
     @SectionNeutral
+    // The brief includes fees, so it is for the roles that see fee reports and the attention reports alike.
     @GetMapping("/insights")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SkullyInsightsService.Insights> insights(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
         return new ApiResponse<>("success", 200, "Skully insights", insights.view(school));
@@ -48,7 +49,7 @@ public class SkullySettingsController {
 
     @SectionNeutral
     @PostMapping("/insights/refresh")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
     public ApiResponse<SkullyInsightsService.Insights> refreshInsights(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @AuthenticationPrincipal(expression = "userId") String user) {

@@ -12,10 +12,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,6 +31,7 @@ import com.moriba.skultem.application.usecase.GetOutstandingFeesReportUseCase;
 import com.moriba.skultem.application.usecase.ListClassesNeedingAttentionUseCase;
 import com.moriba.skultem.domain.shared.SchoolTimeZone;
 import com.moriba.skultem.domain.vo.FeatureModule;
+import com.moriba.skultem.domain.vo.Level;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,12 +52,17 @@ public class SkullyInsightsService {
     private static final int TOP_STUDENTS = 15;
     private static final int TOP_ROWS = 6;
 
+    /** The parts of the facts; who may see each is decided by the caller (see SkullyStaffService). */
+    public static final String ATTENDANCE = "attendance", ACADEMICS = "academics", FEES = "fees";
+    public static final Set<String> ALL_PARTS = Set.of(ATTENDANCE, ACADEMICS, FEES);
+
     private final JdbcTemplate jdbc;
     private final ModuleAccessService modules;
     private final GenerateStudentsRequiringAttentionUseCase studentsAttention;
     private final ListClassesNeedingAttentionUseCase classesAttention;
     private final GetFeeDashboardSummaryUseCase feeSummary;
     private final GetOutstandingFeesReportUseCase outstandingFees;
+    private final SectionScopeService sections;
     // Our own, like WebPushService and MComposeClient: Spring Boot 4 provides Jackson 3, not this ObjectMapper bean.
     private final ObjectMapper json = new ObjectMapper();
 
@@ -69,14 +77,16 @@ public class SkullyInsightsService {
 
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-    public record Insights(boolean enabled, boolean configured, String brief, Instant generatedAt, String generatedBy) {
+    /** allowed: false for a section-limited leader - the brief covers the whole school. */
+    public record Insights(boolean enabled, boolean configured, boolean allowed, String brief, Instant generatedAt,
+            String generatedBy) {
     }
 
     public Insights view(String schoolId) {
         var rows = jdbc.queryForList("SELECT brief, generated_at, generated_by FROM skully_insights WHERE school_id = ?",
                 schoolId);
-        var row = rows.isEmpty() ? null : rows.get(0);
-        return new Insights(modules.isEnabled(schoolId, FeatureModule.WHATSAPP_ASSISTANT), configured(),
+        var row = rows.isEmpty() || !wholeSchool() ? null : rows.get(0);
+        return new Insights(modules.isEnabled(schoolId, FeatureModule.WHATSAPP_ASSISTANT), configured(), wholeSchool(),
                 row == null ? null : (String) row.get("brief"),
                 row == null ? null : ((Timestamp) row.get("generated_at")).toInstant(),
                 row == null ? null : (String) row.get("generated_by"));
@@ -87,12 +97,13 @@ public class SkullyInsightsService {
             throw new RuleException("Skully isn't switched on for your school yet. Contact Skultem to get it.");
         }
         if (!configured()) throw new RuleException("Skully insights aren't set up yet. Contact Skultem.");
+        if (!wholeSchool()) throw new RuleException("The brief covers the whole school, so only whole-school leaders can write it.");
         Insights current = view(schoolId);
         if (current.generatedAt() != null && current.generatedAt().isAfter(Instant.now().minus(MIN_REFRESH))) {
             throw new RuleException("The brief was written a few minutes ago. Try again in a little while.");
         }
 
-        String brief = write(facts(schoolId));
+        String brief = write(facts(schoolId, ALL_PARTS));
         String requestedBy = userId == null ? null : jdbc.queryForList(
                 "SELECT trim(given_name || ' ' || family_name) FROM users WHERE id = ?", String.class, userId)
                 .stream().findFirst().orElse(null);
@@ -104,23 +115,29 @@ public class SkullyInsightsService {
         return view(schoolId);
     }
 
+    // The signed-in user sees the whole school (not one management section).
+    private boolean wholeSchool() {
+        return sections.restrictedLevels() == null;
+    }
+
     private boolean configured() {
         return apiKey != null && !apiKey.isBlank() && workerUrl != null && !workerUrl.isBlank();
     }
 
     // ---------------------------------------------------------------------------------------------------------
-    // The facts: only numbers the school's own reports already show leadership. Each part is optional - a report
-    // that fails (e.g. no fees set up) is left out rather than failing the brief.
+    // The facts: only numbers the school's own reports already show leadership, limited to the parts asked for and
+    // to the caller's management sections (the reports apply the signed-in user's scope; attendance does it here).
+    // Each part is optional - a report that fails (e.g. no fees set up) is left out rather than failing the brief.
 
-    Map<String, Object> facts(String schoolId) {
+    public Map<String, Object> facts(String schoolId, Set<String> parts) {
         LocalDate today = LocalDate.now(SchoolTimeZone.ZONE);
         Map<String, Object> facts = new LinkedHashMap<>();
         facts.put("school", jdbc.queryForObject("SELECT name FROM schools WHERE id = ?", String.class, schoolId));
         facts.put("today", today.toString());
         facts.put("currency", currency.trim());
 
-        part(facts, "attendance", () -> attendance(schoolId, today));
-        part(facts, "studentsNeedingAttention", () -> {
+        if (parts.contains(ATTENDANCE)) part(facts, "attendance", () -> attendance(schoolId, today));
+        if (parts.contains(ACADEMICS)) part(facts, "studentsNeedingAttention", () -> {
             var res = studentsAttention.execute(schoolId, null, null, null, null, 0, TOP_STUDENTS);
             List<Map<String, Object>> students = new ArrayList<>();
             for (var s : res.students()) {
@@ -142,7 +159,7 @@ public class SkullyInsightsService {
             return Map.of("totalStudents", res.totalStudents(), "flagged", res.flaggedCount(),
                     "mostUrgent", students);
         });
-        part(facts, "classesNeedingAttention", () -> {
+        if (parts.contains(ACADEMICS)) part(facts, "classesNeedingAttention", () -> {
             var res = classesAttention.execute(schoolId, null);
             return Map.of("totalClasses", res.totalClasses(), "flaggedClasses", res.flaggedClasses(),
                     "flaggedStudents", res.flaggedStudents(),
@@ -150,7 +167,7 @@ public class SkullyInsightsService {
                             "class", (c.className() + " " + Optional.ofNullable(c.sectionName()).orElse("")).trim(),
                             "flagged", c.flaggedCount(), "students", c.totalStudents())).toList());
         });
-        part(facts, "fees", () -> {
+        if (parts.contains(FEES)) part(facts, "fees", () -> {
             var sum = feeSummary.execute(schoolId, null, null);
             var owed = outstandingFees.execute(schoolId, null, null);
             Map<String, Object> m = new LinkedHashMap<>();
@@ -179,17 +196,27 @@ public class SkullyInsightsService {
     // Present rate this week and last week (school days that were taken, holidays excluded).
     private Map<String, Object> attendance(String schoolId, LocalDate today) {
         LocalDate monday = today.with(DayOfWeek.MONDAY);
+        Collection<Level> levels = sections.restrictedLevels();
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("thisWeekPresentPercent", rate(schoolId, monday, today));
-        m.put("lastWeekPresentPercent", rate(schoolId, monday.minusWeeks(1), monday.minusDays(1)));
+        m.put("thisWeekPresentPercent", rate(schoolId, monday, today, levels));
+        m.put("lastWeekPresentPercent", rate(schoolId, monday.minusWeeks(1), monday.minusDays(1), levels));
         return m;
     }
 
-    private Long rate(String schoolId, LocalDate from, LocalDate to) {
+    // levels: null for the whole school, else only classes at those levels (a section-limited caller).
+    private Long rate(String schoolId, LocalDate from, LocalDate to, Collection<Level> levels) {
+        List<Object> args = new ArrayList<>(List.of(schoolId, Date.valueOf(from), Date.valueOf(to)));
+        String scope = "";
+        if (levels != null) {
+            if (levels.isEmpty()) return null;
+            scope = " AND a.enrollment_id IN (SELECT e.id FROM enrollments e JOIN classes c ON c.id = e.class_id WHERE c.level IN ("
+                    + String.join(",", levels.stream().map(l -> "?").toList()) + "))";
+            levels.forEach(l -> args.add(l.name()));
+        }
         Double r = jdbc.queryForObject("""
-                SELECT 100.0 * COUNT(*) FILTER (WHERE present) / NULLIF(COUNT(*), 0)
-                FROM attendance WHERE school_id = ? AND date BETWEEN ? AND ? AND NOT holiday
-                """, Double.class, schoolId, Date.valueOf(from), Date.valueOf(to));
+                SELECT 100.0 * COUNT(*) FILTER (WHERE a.present) / NULLIF(COUNT(*), 0)
+                FROM attendance a WHERE a.school_id = ? AND a.date BETWEEN ? AND ? AND NOT a.holiday""" + scope,
+                Double.class, args.toArray());
         return r == null ? null : Math.round(r);
     }
 

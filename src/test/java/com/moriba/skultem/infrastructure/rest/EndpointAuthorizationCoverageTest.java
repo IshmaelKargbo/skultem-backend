@@ -44,7 +44,9 @@ class EndpointAuthorizationCoverageTest {
             // (X-Skully-Key) and answers only about the parent whose WhatsApp number the call names.
             "SkullyController#family", "SkullyController#child", "SkullyController#updates",
             "SkullyController#portalAccess", "SkullyController#dueReminders",
-            "SkullyController#reminderResult", "SkullyController#optOut");
+            "SkullyController#reminderResult", "SkullyController#optOut",
+            // ...and for school staff, only their own school, limited to what their role sees (SkullyStaffService).
+            "SkullyController#staffOverview");
 
     @Test
     void everyEndpointDeclaresWhoMayCallIt() throws Exception {

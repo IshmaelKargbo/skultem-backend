@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class SkullyController {
 
     private final SkullyParentService skully;
+    private final com.moriba.skultem.application.services.SkullyStaffService staff;
     private final SkullyReminderService reminders;
 
     @Value("${skully.api-key:}")
@@ -44,7 +45,20 @@ public class SkullyController {
             @RequestParam String phone) {
         var denied = check(key);
         if (denied != null) return denied.build();
-        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Family found", skully.family(phone)));
+        return ResponseEntity.ok(new ApiResponse<>("success", 200, "Family found",
+                skully.family(phone).withStaff(staff.staff(phone))));
+    }
+
+    // A staff member's school, limited to what their role sees in Skultem (see SkullyStaffService).
+    @GetMapping("/staff/overview")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> staffOverview(
+            @RequestHeader(value = "X-Skully-Key", required = false) String key,
+            @RequestParam String phone, @RequestParam String schoolId) {
+        var denied = check(key);
+        if (denied != null) return denied.build();
+        return staff.overview(phone, schoolId)
+                .map(o -> ResponseEntity.ok(new ApiResponse<>("success", 200, "School overview", o)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping("/student/{studentId}")

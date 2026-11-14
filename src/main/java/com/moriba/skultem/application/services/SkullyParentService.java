@@ -98,7 +98,13 @@ public class SkullyParentService {
     }
 
     // schools: where Skully may answer. notEnabledAt: schools this parent is at that have not installed Skully.
-    public record Family(String phone, List<SchoolFamily> schools, List<String> notEnabledAt) {
+    /** staff: schools where this number is staff (SkullyStaffService), so Skully can answer them about the school. */
+    public record Family(String phone, List<SchoolFamily> schools, List<String> notEnabledAt,
+            List<SkullyStaffService.StaffAccess> staff) {
+
+        public Family withStaff(List<SkullyStaffService.StaffAccess> staff) {
+            return new Family(phone, schools, notEnabledAt, staff);
+        }
     }
 
     public record FeeLine(String item, String term, String academicYear, BigDecimal amount, BigDecimal discount,
@@ -176,7 +182,7 @@ public class SkullyParentService {
             schools.add(new SchoolFamily(parent.getSchoolId(), school.get().getName(), school.get().getPhone(), name,
                     children, features));
         }
-        return new Family(phone, schools, notEnabledAt);
+        return new Family(phone, schools, notEnabledAt, List.of());
     }
 
     @Transactional(readOnly = true)
