@@ -9,7 +9,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class SkullyReminderServiceTest {
 
-    private final SkullyReminderService service = new SkullyReminderService(null, null, null, null);
+    private final SkullyReminderService service = new SkullyReminderService(null, null, null, null, null);
 
     SkullyReminderServiceTest() {
         ReflectionTestUtils.setField(service, "countryCode", "232");
@@ -23,6 +23,23 @@ class SkullyReminderServiceTest {
         assertThat(service.whatsappNumber("76854598")).isEqualTo("23276854598");
         assertThat(service.whatsappNumber("+44 7700 900123")).isEqualTo("447700900123");
         assertThat(service.whatsappNumber("123")).isNull();
+    }
+
+    @Test
+    void aStopMatchesTheNumberHoweverItWasSaved() {
+        String stop = SkullyReminderService.optOutKey("23276854598");
+        assertThat(SkullyReminderService.optOutKey(service.whatsappNumber("076 854 598"))).isEqualTo(stop);
+        assertThat(SkullyReminderService.optOutKey(service.whatsappNumber("+232 76 854 598"))).isEqualTo(stop);
+        assertThat(SkullyReminderService.optOutKey(service.whatsappNumber("0023276854598"))).isEqualTo(stop);
+        assertThat(SkullyReminderService.optOutKey(service.whatsappNumber("077 123 456"))).isNotEqualTo(stop);
+    }
+
+    @Test
+    void childrenAreNamedTogether() {
+        assertThat(SkullyReminderService.names(List.of())).isEqualTo("your child");
+        assertThat(SkullyReminderService.names(List.of("Fatu"))).isEqualTo("Fatu");
+        assertThat(SkullyReminderService.names(List.of("Fatu", "Musa"))).isEqualTo("Fatu and Musa");
+        assertThat(SkullyReminderService.names(List.of("Fatu", "Musa", "Ali"))).isEqualTo("Fatu, Musa and Ali");
     }
 
     @Test

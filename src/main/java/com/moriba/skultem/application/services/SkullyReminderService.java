@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -25,21 +26,25 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.moriba.skultem.application.usecase.LogActivityUseCase;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.shared.SchoolTimeZone;
+import com.moriba.skultem.domain.vo.ActivityType;
 import com.moriba.skultem.domain.vo.FeatureModule;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Skully's reminders to parents on WhatsApp: exams coming up, school events and holidays, and fees due. Skully
+ * Skully's messages to parents on WhatsApp: a welcome with how to sign in (to every parent with a phone whose account
+ * has never been used), a note when another child is linked to an existing parent, and reminders - exams coming up,
+ * school events and holidays, and fees due. Skully
  * (the Worker) asks for what is due a few times a day ({@link #due}), sends each parent one message, and reports
  * back ({@link #result}). Each reminder goes out once, a parent gets at most one reminder message a day from a
- * school, and nothing goes to a school without the Skully module, a reminder kind the school switched off, or a
- * parent who replied STOP.
+ * school (except a day-before reminder, which can't wait until tomorrow), and nothing goes to a school without the
+ * Skully module, a reminder kind the school switched off, or a parent who replied STOP.
  */
 @Slf4j
 @Service
@@ -49,11 +54,28 @@ public class SkullyReminderService {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH);
     // WhatsApp template values can't hold new lines and should stay short.
     private static final int MAX_TEXT = 900;
+    // A Skully run takes seconds; a row still SENDING after this was never reported back (the Worker failed
+    // between asking and reporting), so it is let go and tried again.
+    private static final Duration STALE_SENDING = Duration.ofHours(1);
+    // A STOP is matched on the last 8 digits (a Sierra Leone number without its country code or leading 0), so it
+    // still counts if the school saved the number in another format. The Skully page counts opt-outs the same way.
+    private static final int OPT_OUT_DIGITS = 8;
+    // A child linked to an existing parent is announced if the link is this recent (so turning this on doesn't
+    // announce every old link). A parent created within minutes of the link is new - the welcome covers them.
+    private static final Duration LINK_WINDOW = Duration.ofDays(3);
+    private static final String WELCOME_KEY = "welcome";
+
+    /** What Skully can send, one WhatsApp template each. */
+    public static final String REMINDER = "REMINDER", WELCOME = "WELCOME", LINKED = "LINKED";
+    public static final Set<String> ALL_KINDS = Set.of(REMINDER, WELCOME, LINKED);
+    // The kinds of item that make up the one reminder message a day.
+    private static final List<String> REMINDER_ITEMS = List.of("EXAM", "EVENT", "FEE");
 
     private final JdbcTemplate jdbc;
     private final ModuleAccessService modules;
     private final FeeDiscountRepository discountRepo;
     private final PaymentRepository paymentRepo;
+    private final LogActivityUseCase activity;
 
     @Value("${skully.default-country-code:232}")
     private String countryCode;
@@ -61,84 +83,244 @@ public class SkullyReminderService {
     @Value("${skully.currency-prefix:Le }")
     private String currency;
 
+    @Value("${app.portal-url:https://{domain}.skultem.space}")
+    private String portalUrl;
+
     public record Settings(boolean examReminders, boolean eventReminders, boolean feeReminders) {
     }
 
     public record SettingsView(boolean enabled, Settings settings, long sentThisMonth, long optedOut) {
     }
 
-    /** One WhatsApp message for one parent. text is a single line (a template value). */
-    public record Message(String id, String phone, String parentName, String schoolName, String text) {
+    /**
+     * One WhatsApp message for one parent. kind picks the template (REMINDER, WELCOME, LINKED) and values fill its
+     * {{1}}, {{2}}... in order. text is a short description (for a reminder, the reminder itself).
+     */
+    public record Message(String id, String kind, String phone, String parentName, String schoolName, String text,
+            List<String> values) {
     }
 
-    private record Item(String schoolId, String parentId, String kind, String key, String text) {
+    /** A parent who hasn't had the welcome yet, and why (the school's Skully page). */
+    public record WelcomeWaiting(String parentId, String name, String phone, String children, String reason) {
     }
 
-    private record Recipient(String parentId, String phone, String name, String schoolName) {
+    public record WelcomeTracking(long sent, long waiting, List<WelcomeWaiting> parents) {
+    }
+
+    // A parent whose account has never been used, with what the welcome needs.
+    private record Account(String parentId, String savedPhone, String phone, String name, String familyName,
+            String email, String temporaryPassword, String schoolName, String loginUrl, List<String> children,
+            boolean sending) {
+    }
+
+    /** urgent: about tomorrow, so it is sent even if the parent already had a message today. */
+    private record Item(String schoolId, String parentId, String kind, String key, String text, boolean urgent) {
+    }
+
+    private record Recipient(String parentId, String phone, String name, String schoolName, String schoolDomain) {
     }
 
     // ---------------------------------------------------------------------------------------------------------
     // What is due
 
-    @Transactional
     public List<Message> due(int limit) {
+        return due(limit, Set.of(REMINDER));
+    }
+
+    /** Messages Skully should send now, of the kinds it has a template for. Each counts as handed over until {@link #result}. */
+    @Transactional
+    public List<Message> due(int limit, Set<String> kinds) {
         LocalDate today = LocalDate.now(SchoolTimeZone.ZONE);
         List<Message> out = new ArrayList<>();
-        Set<String> optedOut = new HashSet<>(jdbc.queryForList("SELECT phone FROM skully_opt_outs", String.class));
+        int stale = jdbc.update("DELETE FROM skully_reminders WHERE status = 'SENDING' AND updated_at < ?",
+                Timestamp.from(Instant.now().minus(STALE_SENDING)));
+        if (stale > 0) log.warn("Skully reminders: {} never reported back, trying them again", stale);
+        Set<String> optedOut = optedOut();
 
         for (String schoolId : schoolsWithSkully()) {
             if (out.size() >= limit) break;
-            Settings settings = settings(schoolId);
-            List<Item> items = new ArrayList<>();
             try {
-                if (settings.examReminders()) items.addAll(exams(schoolId, today));
-                if (settings.eventReminders()) items.addAll(events(schoolId, today));
-                if (settings.feeReminders()) items.addAll(fees(schoolId, today));
+                // Sign-in details first: a parent can't use anything else until they have them.
+                if (kinds.contains(WELCOME)) welcomes(schoolId, optedOut, limit, out);
+                if (kinds.contains(LINKED)) linked(schoolId, optedOut, limit, out);
+                if (kinds.contains(REMINDER)) reminders(schoolId, today, optedOut, limit, out);
             } catch (RuntimeException e) {
-                log.error("Skully reminders for school {} failed: {}", schoolId, e.getMessage(), e);
-                continue;
-            }
-            if (items.isEmpty()) continue;
-
-            // Already sent, or the parent already had today's message from this school.
-            Set<String> sentKeys = new HashSet<>(jdbc.queryForList(
-                    "SELECT parent_id || '|' || item_key FROM skully_reminders WHERE school_id = ?", String.class, schoolId));
-            Set<String> doneToday = new HashSet<>(jdbc.queryForList(
-                    "SELECT DISTINCT parent_id FROM skully_reminders WHERE school_id = ? AND created_at >= ?",
-                    String.class, schoolId, Timestamp.from(today.atStartOfDay(SchoolTimeZone.ZONE).toInstant())));
-
-            Map<String, List<Item>> byParent = new LinkedHashMap<>();
-            for (Item item : items) {
-                if (sentKeys.contains(item.parentId() + "|" + item.key()) || doneToday.contains(item.parentId())) continue;
-                byParent.computeIfAbsent(item.parentId(), k -> new ArrayList<>()).add(item);
-            }
-            if (byParent.isEmpty()) continue;
-
-            Map<String, Recipient> recipients = recipients(schoolId, byParent.keySet());
-            for (var entry : byParent.entrySet()) {
-                if (out.size() >= limit) break;
-                Recipient to = recipients.get(entry.getKey());
-                if (to == null || to.phone() == null || optedOut.contains(to.phone())) continue;
-                // Several items about the same thing (two children, same event) are said once.
-                List<Item> parts = new ArrayList<>();
-                Set<String> texts = new HashSet<>();
-                for (Item i : entry.getValue()) if (texts.add(i.text())) parts.add(i);
-
-                String text = join(parts.stream().map(Item::text).toList());
-                String messageId = UUID.randomUUID().toString();
-                Instant now = Instant.now();
-                for (Item i : entry.getValue()) {
-                    jdbc.update("""
-                            INSERT INTO skully_reminders (id, message_id, school_id, parent_id, phone, kind, item_key,
-                                status, created_at, updated_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 'SENDING', ?, ?) ON CONFLICT (parent_id, item_key) DO NOTHING
-                            """, UUID.randomUUID().toString(), messageId, schoolId, i.parentId(), to.phone(), i.kind(),
-                            i.key(), Timestamp.from(now), Timestamp.from(now));
-                }
-                out.add(new Message(messageId, to.phone(), to.name(), to.schoolName(), text));
+                log.error("Skully messages for school {} failed: {}", schoolId, e.getMessage(), e);
             }
         }
         return out;
+    }
+
+    private void welcomes(String schoolId, Set<String> optedOut, int limit, List<Message> out) {
+        for (Account a : notWelcomed(schoolId)) {
+            if (out.size() >= limit) return;
+            if (a.sending() || a.phone() == null || a.temporaryPassword() == null
+                    || optedOut.contains(optOutKey(a.phone()))) continue;
+            String messageId = claim(schoolId, a.parentId(), a.phone(), WELCOME, List.of(WELCOME_KEY));
+            if (messageId == null) continue;
+            // No password in the template (Meta doesn't allow them in Utility templates): the parent replies
+            // "password" and Skully hands it over in the chat, as it does for any parent who asks.
+            String signInWith = a.email() != null ? a.email() : a.savedPhone();
+            out.add(new Message(messageId, WELCOME, a.phone(), a.name(), a.schoolName(), "Welcome and sign-in details",
+                    List.of(a.name(), a.schoolName(), names(a.children()), a.loginUrl(), signInWith)));
+        }
+    }
+
+    // Another child linked to a parent who already had their account (signed in, or had the welcome before the link).
+    private void linked(String schoolId, Set<String> optedOut, int limit, List<Message> out) {
+        var rows = jdbc.queryForList("""
+                SELECT sp.parent_id, sp.student_id, st.given_names
+                FROM student_parents sp
+                JOIN parents p ON p.id = sp.parent_id AND p.status = 'ACTIVE'
+                JOIN users u ON u.id = p.user_id
+                JOIN students st ON st.id = sp.student_id AND st.status = 'ACTIVE'
+                WHERE sp.school_id = ? AND sp.status = 'ACTIVE' AND sp.created_at >= ?
+                  AND p.created_at < sp.created_at - interval '10 minutes'
+                  AND (u.status = 'ACTIVE' OR EXISTS (SELECT 1 FROM skully_reminders r WHERE r.parent_id = p.id
+                       AND r.item_key = ? AND r.status = 'SENT' AND r.created_at < sp.created_at))
+                  AND NOT EXISTS (SELECT 1 FROM skully_reminders r WHERE r.parent_id = sp.parent_id
+                       AND r.item_key = 'linked:' || sp.student_id)
+                ORDER BY sp.created_at
+                """, schoolId, Timestamp.from(Instant.now().minus(LINK_WINDOW)), WELCOME_KEY);
+        Map<String, List<Map<String, Object>>> byParent = new LinkedHashMap<>();
+        for (var r : rows) byParent.computeIfAbsent((String) r.get("parent_id"), k -> new ArrayList<>()).add(r);
+        if (byParent.isEmpty()) return;
+
+        Map<String, Recipient> recipients = recipients(schoolId, byParent.keySet());
+        for (var entry : byParent.entrySet()) {
+            if (out.size() >= limit) return;
+            Recipient to = recipients.get(entry.getKey());
+            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
+            List<String> keys = entry.getValue().stream().map(r -> "linked:" + r.get("student_id")).toList();
+            String messageId = claim(schoolId, to.parentId(), to.phone(), LINKED, keys);
+            if (messageId == null) continue;
+            String children = names(entry.getValue().stream().map(r -> first(r.get("given_names"))).toList());
+            out.add(new Message(messageId, LINKED, to.phone(), to.name(), to.schoolName(),
+                    children + " linked to your account",
+                    List.of(to.name(), to.schoolName(), children, loginUrl(to.schoolDomain()))));
+        }
+    }
+
+    private void reminders(String schoolId, LocalDate today, Set<String> optedOut, int limit, List<Message> out) {
+        Settings settings = settings(schoolId);
+        List<Item> items = new ArrayList<>();
+        if (settings.examReminders()) items.addAll(exams(schoolId, today));
+        if (settings.eventReminders()) items.addAll(events(schoolId, today));
+        if (settings.feeReminders()) items.addAll(fees(schoolId, today));
+        if (items.isEmpty()) return;
+
+        // Already sent, or the parent already had today's reminder message from this school (unless it is about
+        // tomorrow). Welcome and linked messages don't count: they are messages of their own.
+        Set<String> sentKeys = new HashSet<>(jdbc.queryForList(
+                "SELECT parent_id || '|' || item_key FROM skully_reminders WHERE school_id = ?", String.class, schoolId));
+        Set<String> doneToday = new HashSet<>(jdbc.queryForList("""
+                SELECT DISTINCT parent_id FROM skully_reminders
+                WHERE school_id = ? AND created_at >= ? AND kind IN ('EXAM', 'EVENT', 'FEE')
+                """, String.class, schoolId, Timestamp.from(today.atStartOfDay(SchoolTimeZone.ZONE).toInstant())));
+
+        Map<String, List<Item>> byParent = new LinkedHashMap<>();
+        for (Item item : items) {
+            if (sentKeys.contains(item.parentId() + "|" + item.key())) continue;
+            if (!item.urgent() && doneToday.contains(item.parentId())) continue;
+            byParent.computeIfAbsent(item.parentId(), k -> new ArrayList<>()).add(item);
+        }
+        if (byParent.isEmpty()) return;
+
+        Map<String, Recipient> recipients = recipients(schoolId, byParent.keySet());
+        for (var entry : byParent.entrySet()) {
+            if (out.size() >= limit) return;
+            Recipient to = recipients.get(entry.getKey());
+            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
+            // Several items about the same thing (two children, same event) are said once.
+            List<Item> parts = new ArrayList<>();
+            Set<String> texts = new HashSet<>();
+            for (Item i : entry.getValue()) if (texts.add(i.text())) parts.add(i);
+
+            String text = join(parts.stream().map(Item::text).toList());
+            String messageId = UUID.randomUUID().toString();
+            Timestamp now = Timestamp.from(Instant.now());
+            for (Item i : entry.getValue()) {
+                jdbc.update("""
+                        INSERT INTO skully_reminders (id, message_id, school_id, parent_id, phone, kind, item_key,
+                            status, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'SENDING', ?, ?) ON CONFLICT (parent_id, item_key) DO NOTHING
+                        """, UUID.randomUUID().toString(), messageId, schoolId, i.parentId(), to.phone(), i.kind(),
+                        i.key(), now, now);
+            }
+            out.add(new Message(messageId, REMINDER, to.phone(), to.name(), to.schoolName(), text,
+                    List.of(to.name(), to.schoolName(), text)));
+        }
+    }
+
+    // Records a message's items as handed to Skully. null when they were already claimed (another run has them).
+    private String claim(String schoolId, String parentId, String phone, String kind, List<String> keys) {
+        String messageId = UUID.randomUUID().toString();
+        Timestamp now = Timestamp.from(Instant.now());
+        int claimed = 0;
+        for (String key : keys) {
+            claimed += jdbc.update("""
+                    INSERT INTO skully_reminders (id, message_id, school_id, parent_id, phone, kind, item_key,
+                        status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'SENDING', ?, ?) ON CONFLICT (parent_id, item_key) DO NOTHING
+                    """, UUID.randomUUID().toString(), messageId, schoolId, parentId, phone, kind, key, now, now);
+        }
+        return claimed > 0 ? messageId : null;
+    }
+
+    private Set<String> optedOut() {
+        Set<String> out = new HashSet<>();
+        for (String phone : jdbc.queryForList("SELECT phone FROM skully_opt_outs", String.class)) out.add(optOutKey(phone));
+        return out;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // The welcome is decided from the account: every parent with a phone who has never signed in gets it once -
+    // parents added before Skully included - and the school can see who is still waiting and why.
+
+    private List<Account> notWelcomed(String schoolId) {
+        return jdbc.query("""
+                SELECT p.id, p.phone, u.given_name, u.family_name, u.email, u.hint, s.name AS school_name, s.domain,
+                       ARRAY(SELECT st.given_names FROM students st WHERE st.parent_id = p.id AND st.status = 'ACTIVE'
+                             ORDER BY st.given_names) AS children,
+                       EXISTS (SELECT 1 FROM skully_reminders r WHERE r.parent_id = p.id AND r.item_key = ?) AS sending
+                FROM parents p JOIN users u ON u.id = p.user_id JOIN schools s ON s.id = p.school_id
+                WHERE p.school_id = ? AND p.status = 'ACTIVE' AND u.status = 'RESET_PASSWORD'
+                  AND NOT EXISTS (SELECT 1 FROM skully_reminders r WHERE r.parent_id = p.id AND r.item_key = ?
+                                  AND r.status = 'SENT')
+                ORDER BY p.created_at
+                """, (rs, n) -> {
+            var childArray = rs.getArray("children");
+            List<String> children = new ArrayList<>();
+            if (childArray != null) for (Object c : (Object[]) childArray.getArray()) children.add(first(c));
+            String hint = rs.getString("hint");
+            String email = rs.getString("email");
+            return new Account(rs.getString("id"), rs.getString("phone"), whatsappNumber(rs.getString("phone")),
+                    Optional.ofNullable(rs.getString("given_name")).filter(v -> !v.isBlank()).orElse("Parent"),
+                    rs.getString("family_name"), email == null || email.isBlank() ? null : email.trim(),
+                    hint == null || hint.isBlank() ? null : hint, rs.getString("school_name"),
+                    loginUrl(rs.getString("domain")), children, rs.getBoolean("sending"));
+        }, WELCOME_KEY, schoolId, WELCOME_KEY);
+    }
+
+    /** Who at this school hasn't had the welcome, and what is holding each one up. */
+    public WelcomeTracking welcomeTracking(String schoolId) {
+        boolean on = modules.isEnabled(schoolId, FeatureModule.WHATSAPP_ASSISTANT);
+        Set<String> optedOut = optedOut();
+        List<WelcomeWaiting> waiting = new ArrayList<>();
+        for (Account a : notWelcomed(schoolId)) {
+            String reason = !on ? "Skully is off for this school"
+                    : a.phone() == null ? "The phone number can't be used on WhatsApp - correct it on the guardian"
+                    : optedOut.contains(optOutKey(a.phone())) ? "Replied STOP to Skully"
+                    : a.temporaryPassword() == null ? "No temporary password - issue a new one from their account"
+                    : a.sending() ? "Sending now"
+                    : "Waiting - goes out on Skully's next run (hourly, 08:00-16:00)";
+            String name = (a.name() + " " + Optional.ofNullable(a.familyName()).orElse("")).trim();
+            waiting.add(new WelcomeWaiting(a.parentId(), name, a.savedPhone(), names(a.children()), reason));
+        }
+        Long sent = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM skully_reminders WHERE school_id = ? AND item_key = ? AND status = 'SENT'",
+                Long.class, schoolId, WELCOME_KEY);
+        return new WelcomeTracking(sent == null ? 0 : sent, waiting.size(), waiting.stream().limit(500).toList());
     }
 
     /** What Skully could send: sent messages are kept, failed ones are forgotten so they are tried again later. */
@@ -147,6 +329,18 @@ public class SkullyReminderService {
         Timestamp now = Timestamp.from(Instant.now());
         for (String id : sent == null ? List.<String>of() : sent) {
             jdbc.update("UPDATE skully_reminders SET status = 'SENT', updated_at = ? WHERE message_id = ?", now, id);
+            // The school's activity log shows who has had their welcome.
+            for (var r : jdbc.queryForList("""
+                    SELECT r.school_id, u.id AS user_id, u.given_name, u.family_name FROM skully_reminders r
+                    JOIN parents p ON p.id = r.parent_id JOIN users u ON u.id = p.user_id
+                    WHERE r.message_id = ? AND r.item_key = ?
+                    """, id, WELCOME_KEY)) {
+                activity.log((String) r.get("school_id"), ActivityType.USER,
+                        "Welcome with sign-in steps sent on WhatsApp (Skully)",
+                        (Optional.ofNullable((String) r.get("given_name")).orElse("") + " "
+                                + Optional.ofNullable((String) r.get("family_name")).orElse("")).trim(),
+                        null, (String) r.get("user_id"));
+            }
         }
         for (String id : failed == null ? List.<String>of() : failed) {
             jdbc.update("DELETE FROM skully_reminders WHERE message_id = ? AND status = 'SENDING'", id);
@@ -194,8 +388,8 @@ public class SkullyReminderService {
                 Long.class, schoolId, Timestamp.from(monthStart));
         Long optedOut = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM skully_opt_outs o WHERE EXISTS (SELECT 1 FROM parents p WHERE p.school_id = ?
-                    AND right(regexp_replace(p.phone, '[^0-9]', '', 'g'), 8) = right(o.phone, 8))
-                """, Long.class, schoolId);
+                    AND right(regexp_replace(p.phone, '[^0-9]', '', 'g'), ?) = right(o.phone, ?))
+                """, Long.class, schoolId, OPT_OUT_DIGITS, OPT_OUT_DIGITS);
         return new SettingsView(modules.isEnabled(schoolId, FeatureModule.WHATSAPP_ASSISTANT), settings(schoolId),
                 sent == null ? 0 : sent, optedOut == null ? 0 : optedOut);
     }
@@ -236,7 +430,7 @@ public class SkullyReminderService {
                     + (subjects.isEmpty() ? "" : " with " + String.join(", ", subjects.stream().limit(3).toList()))
                     + " - please help them prepare";
             String key = "exam:" + r.get("timetable_id") + ":" + r.get("student_id") + ":" + (days == 1 ? "tomorrow" : "week");
-            out.add(new Item(schoolId, (String) r.get("parent_id"), "EXAM", key, text));
+            out.add(new Item(schoolId, (String) r.get("parent_id"), "EXAM", key, text, days == 1));
         }
         return out;
     }
@@ -266,7 +460,7 @@ public class SkullyReminderService {
                 """, String.class, schoolId);
         List<Item> out = new ArrayList<>();
         for (String parent : parents) {
-            for (String[] h : happenings) out.add(new Item(schoolId, parent, "EVENT", h[0], h[1]));
+            for (String[] h : happenings) out.add(new Item(schoolId, parent, "EVENT", h[0], h[1], true));
         }
         return out;
     }
@@ -295,7 +489,7 @@ public class SkullyReminderService {
                     + (overdue ? " was due on " + due.format(DAY) + " and is still unpaid"
                             : due.equals(today) ? " is due today" : " is due on " + due.format(DAY));
             String key = "fee:" + feeId + ":" + studentId + ":" + (overdue ? "overdue" : "before");
-            out.add(new Item(schoolId, (String) r.get("parent_id"), "FEE", key, text));
+            out.add(new Item(schoolId, (String) r.get("parent_id"), "FEE", key, text, false));
         }
         return out;
     }
@@ -317,12 +511,12 @@ public class SkullyReminderService {
         args.add(schoolId);
         args.addAll(parentIds);
         for (var r : jdbc.queryForList("""
-                SELECT p.id, p.phone, u.given_name, s.name AS school_name
+                SELECT p.id, p.phone, u.given_name, s.name AS school_name, s.domain
                 FROM parents p JOIN schools s ON s.id = p.school_id LEFT JOIN users u ON u.id = p.user_id
                 WHERE p.school_id = ? AND p.id IN (""" + in + ")", args.toArray())) {
             out.put((String) r.get("id"), new Recipient((String) r.get("id"), whatsappNumber((String) r.get("phone")),
                     Optional.ofNullable((String) r.get("given_name")).filter(s -> !s.isBlank()).orElse("Parent"),
-                    (String) r.get("school_name")));
+                    (String) r.get("school_name"), (String) r.get("domain")));
         }
         return out;
     }
@@ -351,6 +545,22 @@ public class SkullyReminderService {
         if (!code.isEmpty() && digits.startsWith(code) && digits.length() > code.length() + 6) return digits;
         if (digits.startsWith("0")) return code + digits.substring(1);
         return code + digits;
+    }
+
+    private String loginUrl(String domain) {
+        return portalUrl.replace("{domain}", domain == null ? "" : domain).replaceAll("/+$", "") + "/login";
+    }
+
+    /** Fatu / Fatu and Musa / Fatu, Musa and Ali; "your child" when there are none. */
+    static String names(List<String> names) {
+        if (names.isEmpty()) return "your child";
+        if (names.size() == 1) return names.get(0);
+        return String.join(", ", names.subList(0, names.size() - 1)) + " and " + names.get(names.size() - 1);
+    }
+
+    static String optOutKey(String phone) {
+        String digits = phone == null ? "" : phone.replaceAll("[^0-9]", "");
+        return digits.length() <= OPT_OUT_DIGITS ? digits : digits.substring(digits.length() - OPT_OUT_DIGITS);
     }
 
     static String join(List<String> parts) {

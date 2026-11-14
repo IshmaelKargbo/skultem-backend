@@ -34,6 +34,15 @@ public class SkullySettingsController {
         return new ApiResponse<>("success", 200, "Skully settings", reminders.view(school));
     }
 
+    // Parents who haven't had the WhatsApp welcome (how to sign in) yet, and why.
+    @SectionNeutral
+    @GetMapping("/welcome")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<SkullyReminderService.WelcomeTracking> welcome(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        return new ApiResponse<>("success", 200, "Skully welcome", reminders.welcomeTracking(school));
+    }
+
     // Changing what goes to every parent is for whole-school leadership (not section-limited admins).
     @PutMapping("/settings")
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")

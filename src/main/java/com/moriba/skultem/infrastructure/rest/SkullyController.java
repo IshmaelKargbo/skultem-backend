@@ -81,15 +81,19 @@ public class SkullyController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // Reminders Skully should send now (each parent at most one message a day per school). They count as handed
-    // over until Skully reports back with /reminders/result.
+    // Messages Skully should send now: welcomes, linked children and reminders (each parent at most one reminder
+    // message a day per school). kinds = the ones Skully has a WhatsApp template for; an older Skully that doesn't
+    // say gets reminders only. They count as handed over until Skully reports back with /reminders/result.
     @GetMapping("/reminders/due")
     public ResponseEntity<ApiResponse<List<SkullyReminderService.Message>>> dueReminders(
             @RequestHeader(value = "X-Skully-Key", required = false) String key,
-            @RequestParam(defaultValue = "100") int limit) {
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = SkullyReminderService.REMINDER) List<String> kinds) {
         var denied = check(key);
         if (denied != null) return denied.build();
-        var res = reminders.due(Math.max(1, Math.min(limit, 500)));
+        var wanted = new java.util.HashSet<>(kinds.stream().map(k -> k.trim().toUpperCase()).toList());
+        wanted.retainAll(SkullyReminderService.ALL_KINDS);
+        var res = reminders.due(Math.max(1, Math.min(limit, 500)), wanted);
         return ResponseEntity.ok(new ApiResponse<>("success", 200, "Reminders due", res));
     }
 
