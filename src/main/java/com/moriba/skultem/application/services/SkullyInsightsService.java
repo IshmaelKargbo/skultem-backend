@@ -55,7 +55,8 @@ public class SkullyInsightsService {
     private final ListClassesNeedingAttentionUseCase classesAttention;
     private final GetFeeDashboardSummaryUseCase feeSummary;
     private final GetOutstandingFeesReportUseCase outstandingFees;
-    private final ObjectMapper json;
+    // Our own, like WebPushService and MComposeClient: Spring Boot 4 provides Jackson 3, not this ObjectMapper bean.
+    private final ObjectMapper json = new ObjectMapper();
 
     @Value("${skully.api-key:}")
     private String apiKey;
