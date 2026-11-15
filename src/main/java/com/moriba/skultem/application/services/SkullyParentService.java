@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -127,9 +128,15 @@ public class SkullyParentService {
     }
 
     // library, sickBay and behaviour are null when the school does not use that module.
+    // weeklyPlan: the class's published weekly plan for this week and next (WeeklyPlanService), or null.
     public record ChildSummary(Child child, String schoolName, StudentTermAttendanceDetailDTO attendance, Fees fees,
             List<ReportCard> reportCards, List<SubjectMarks> subjects, List<Loan> library, List<SickBayVisit> sickBay,
-            List<BehaviourNote> behaviour) {
+            List<BehaviourNote> behaviour, Map<String, Object> weeklyPlan) {
+
+        public ChildSummary withWeeklyPlan(Map<String, Object> plan) {
+            return new ChildSummary(child, schoolName, attendance, fees, reportCards, subjects, library, sickBay,
+                    behaviour, plan);
+        }
     }
 
     public record Loan(String book, String author, LocalDate issued, LocalDate due, boolean returned,
@@ -212,7 +219,7 @@ public class SkullyParentService {
             return new ChildSummary(child(student), schoolName, attendance, fees(student), cards, subjects,
                     modules.isEnabled(school, FeatureModule.LIBRARY) ? loans(student) : null,
                     modules.isEnabled(school, FeatureModule.HEALTH_CARE) ? sickBay(student) : null,
-                    modules.isEnabled(school, FeatureModule.BEHAVIOUR) ? behaviour(student) : null);
+                    modules.isEnabled(school, FeatureModule.BEHAVIOUR) ? behaviour(student) : null, null);
         });
     }
 

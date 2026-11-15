@@ -34,6 +34,7 @@ public class SkullyController {
 
     private final SkullyParentService skully;
     private final com.moriba.skultem.application.services.SkullyStaffService staff;
+    private final com.moriba.skultem.application.services.WeeklyPlanService weeklyPlans;
     private final SkullyReminderService reminders;
 
     @Value("${skully.api-key:}")
@@ -81,6 +82,8 @@ public class SkullyController {
         var denied = check(key);
         if (denied != null) return denied.build();
         return skully.child(phone, studentId)
+                .map(c -> c.withWeeklyPlan(weeklyPlans.forStudent(studentId,
+                        com.moriba.skultem.application.services.WeeklyPlanService.today()).orElse(null)))
                 .map(c -> ResponseEntity.ok(new ApiResponse<>("success", 200, "Child found", c)))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
