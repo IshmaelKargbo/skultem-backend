@@ -148,16 +148,25 @@ public class SkullyStaffService {
 
         LocalDate today = LocalDate.now(SchoolTimeZone.ZONE);
         LocalDate monday = today.with(DayOfWeek.MONDAY);
+        // Everything is for the current term; between terms (term null) marks fall back to the last term with marks.
+        Map<String, Object> term = insights.currentTerm(schoolId);
+        String termId = term == null ? null : (String) term.get("id");
+        LocalDate termStart = term == null ? null : ((Date) term.get("start_date")).toLocalDate();
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("today", today.toString());
+        out.put("currentTerm", term == null ? null
+                : Map.of("name", term.get("name"), "academicYear", term.get("academic_year"),
+                        "startDate", termStart.toString()));
         out.put("asClassTeacher", as(new AuthUser(userId, schoolId, Role.TEACHER),
-                () -> classTeacher(schoolId, teacherId, monday, today)));
-        out.put("asSubjectTeacher", subjectTeacher(schoolId, teacherId));
+                () -> classTeacher(schoolId, teacherId, monday, today, termId, termStart)));
+        out.put("asSubjectTeacher", subjectTeacher(schoolId, teacherId, termId));
         return Optional.of(out);
     }
 
-    // The class sections they are class teacher of this year: attendance and the students needing attention there.
-    private List<Map<String, Object>> classTeacher(String schoolId, String teacherId, LocalDate monday, LocalDate today) {
+    // The class sections they are class teacher of this year: attendance, the students needing attention there, and
+    // this term's assessments in the class whose marks are not approved yet.
+    private List<Map<String, Object>> classTeacher(String schoolId, String teacherId, LocalDate monday, LocalDate today,
+            String termId, LocalDate termStart) {
         List<Map<String, Object>> out = new ArrayList<>();
         for (var cs : jdbc.queryForList("""
                 SELECT cs.id, cs.class_id, cs.section_id, cs.stream_id, cs.academic_year_id, c.name AS class_name,
@@ -183,6 +192,20 @@ public class SkullyStaffService {
             m.put("students", enrollments.size());
             m.put("thisWeekPresentPercent", rate(enrollments, monday, today));
             m.put("lastWeekPresentPercent", rate(enrollments, monday.minusWeeks(1), monday.minusDays(1)));
+            if (termStart != null) m.put("termSoFarPresentPercent", rate(enrollments, termStart, today));
+            if (termId != null) {
+                m.put("assessmentsNotReleasedYet", jdbc.queryForList("""
+                        SELECT s.name AS subject, a.name AS assessment, lc.status
+                        FROM class_subject_assessment_life_cycle lc
+                        JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id AND ts.class_session_id = ?
+                        JOIN subjects s ON s.id = ts.subject_id
+                        JOIN assessments a ON a.id = lc.assessment_id
+                        WHERE lc.school_id = ? AND lc.term_id = ? AND lc.status IN ('DRAFT', 'SUBMITTED', 'RETURNED')
+                        ORDER BY s.name, a.position
+                        """, cs.get("id"), schoolId, termId).stream().map(r -> Map.of(
+                        "subject", r.get("subject"), "assessment", r.get("assessment"),
+                        "stage", SkullyInsightsService.stage((String) r.get("status")))).toList());
+            }
             List<Map<String, Object>> flagged = new ArrayList<>();
             try {
                 var res = studentsAttention.execute(schoolId, (String) cs.get("class_id"), null, null, null, 0, 500);
@@ -212,8 +235,9 @@ public class SkullyStaffService {
         return out;
     }
 
-    // The subjects they teach, per class: this term's average in that subject and who is below the pass mark.
-    private List<Map<String, Object>> subjectTeacher(String schoolId, String teacherId) {
+    // The subjects they teach, per class: this term's average in that subject, who is below the pass mark, and where
+    // each of this term's assessments stands (not submitted, waiting for approval, approved).
+    private List<Map<String, Object>> subjectTeacher(String schoolId, String teacherId, String termId) {
         List<Map<String, Object>> out = new ArrayList<>();
         for (var ts : jdbc.queryForList("""
                 SELECT ts.id, s.name AS subject, c.name AS class_name, sec.name AS section_name, str.name AS stream_name
@@ -236,7 +260,10 @@ public class SkullyStaffService {
                             AND lc.status IN ('SUBMITTED', 'RETURNED', 'APPROVED', 'COMPLETED', 'LOCKED')
                         JOIN terms t ON t.id = lc.term_id
                         JOIN student_assessments sa ON sa.id = sc.student_assessment_id
-                    ), latest_term AS (SELECT term_id FROM m ORDER BY start_date DESC LIMIT 1)
+                    ), latest_term AS (
+                        SELECT COALESCE(CAST(? AS varchar), (SELECT term_id FROM m ORDER BY start_date DESC LIMIT 1))
+                            AS term_id
+                    )
                     SELECT m.term, st.given_names, st.family_name, ROUND(AVG(m.score)) AS average
                     FROM m
                     JOIN enrollments e ON e.id = m.enrollment_id AND e.status = 'ACTIVE'
@@ -244,10 +271,20 @@ public class SkullyStaffService {
                     WHERE m.term_id = (SELECT term_id FROM latest_term)
                     GROUP BY m.term, st.id, st.given_names, st.family_name
                     ORDER BY average, st.given_names
-                    """, ts.get("id"));
+                    """, ts.get("id"), termId);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("subject", ts.get("subject"));
             m.put("class", label(ts));
+            if (termId != null) {
+                m.put("assessments", jdbc.queryForList("""
+                        SELECT a.name AS assessment, lc.status
+                        FROM class_subject_assessment_life_cycle lc
+                        JOIN assessments a ON a.id = lc.assessment_id
+                        WHERE lc.teacher_subject_id = ? AND lc.term_id = ?
+                        ORDER BY a.position
+                        """, ts.get("id"), termId).stream().map(r -> Map.of("assessment", r.get("assessment"),
+                        "stage", SkullyInsightsService.stage((String) r.get("status")))).toList());
+            }
             if (students.isEmpty()) {
                 m.put("marks", "No marks handed in yet this term");
             } else {

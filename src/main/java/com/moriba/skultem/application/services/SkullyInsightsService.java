@@ -135,8 +135,16 @@ public class SkullyInsightsService {
         facts.put("school", jdbc.queryForObject("SELECT name FROM schools WHERE id = ?", String.class, schoolId));
         facts.put("today", today.toString());
         facts.put("currency", currency.trim());
+        Map<String, Object> term = currentTerm(schoolId);
+        String termId = term == null ? null : (String) term.get("id");
+        facts.put("currentTerm", term == null ? null
+                : Map.of("name", term.get("name"), "academicYear", term.get("academic_year"),
+                        "startDate", term.get("start_date").toString()));
 
-        if (parts.contains(ATTENDANCE)) part(facts, "attendance", () -> attendance(schoolId, today));
+        if (parts.contains(ATTENDANCE)) part(facts, "attendance", () -> attendance(schoolId, today, term));
+        if (parts.contains(ACADEMICS) && termId != null) {
+            part(facts, "assessmentsThisTerm", () -> assessments(schoolId, termId));
+        }
         if (parts.contains(ACADEMICS)) part(facts, "studentsNeedingAttention", () -> {
             var res = studentsAttention.execute(schoolId, null, null, null, null, 0, TOP_STUDENTS);
             List<Map<String, Object>> students = new ArrayList<>();
@@ -168,10 +176,15 @@ public class SkullyInsightsService {
                             "flagged", c.flaggedCount(), "students", c.totalStudents())).toList());
         });
         if (parts.contains(FEES)) part(facts, "fees", () -> {
-            var sum = feeSummary.execute(schoolId, null, null);
-            var owed = outstandingFees.execute(schoolId, null, null);
+            // This term's fees (the whole year between terms), plus the year's total still owed for context.
+            var sum = feeSummary.execute(schoolId, null, termId);
+            var owed = outstandingFees.execute(schoolId, null, termId);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("academicYear", sum.academicYearName());
+            m.put("period", term == null ? "whole academic year" : String.valueOf(term.get("name")));
+            if (termId != null) {
+                m.put("wholeYearOutstanding", money(feeSummary.execute(schoolId, null, null).totalOutstanding()));
+            }
             m.put("expected", money(sum.totalExpected()));
             m.put("collected", money(sum.totalCollected()));
             m.put("outstanding", money(sum.totalOutstanding()));
@@ -193,13 +206,82 @@ public class SkullyInsightsService {
         return facts;
     }
 
-    // Present rate this week and last week (school days that were taken, holidays excluded).
-    private Map<String, Object> attendance(String schoolId, LocalDate today) {
+    /** The active term of the school's active academic year (id, name, academic_year, start_date), or null between terms. */
+    public Map<String, Object> currentTerm(String schoolId) {
+        return jdbc.queryForList("""
+                SELECT t.id, t.name, ay.name AS academic_year, t.start_date
+                FROM terms t JOIN academic_years ay ON ay.id = t.academic_year_id AND ay.active
+                WHERE t.school_id = ? AND t.status = 'ACTIVE'
+                ORDER BY t.start_date DESC LIMIT 1
+                """, schoolId).stream().findFirst().orElse(null);
+    }
+
+    /** A lifecycle status as Skully says it. */
+    public static String stage(String status) {
+        return switch (status) {
+            case "DRAFT" -> "not submitted yet";
+            case "RETURNED" -> "returned to the teacher for corrections";
+            case "SUBMITTED" -> "submitted, waiting for approval";
+            default -> "approved";
+        };
+    }
+
+    // Present rate this week, last week and the term so far (school days that were taken, holidays excluded).
+    private Map<String, Object> attendance(String schoolId, LocalDate today, Map<String, Object> term) {
         LocalDate monday = today.with(DayOfWeek.MONDAY);
         Collection<Level> levels = sections.restrictedLevels();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("thisWeekPresentPercent", rate(schoolId, monday, today, levels));
         m.put("lastWeekPresentPercent", rate(schoolId, monday.minusWeeks(1), monday.minusDays(1), levels));
+        if (term != null) {
+            m.put("termSoFarPresentPercent",
+                    rate(schoolId, ((Date) term.get("start_date")).toLocalDate(), today, levels));
+        }
+        return m;
+    }
+
+    // This term's assessments by stage (approved, waiting for approval, not submitted...), and the class subjects
+    // whose marks are not in yet - within the caller's sections.
+    private Map<String, Object> assessments(String schoolId, String termId) {
+        Collection<Level> levels = sections.restrictedLevels();
+        if (levels != null && levels.isEmpty()) return Map.of();
+        List<Object> args = new ArrayList<>(List.of(schoolId, termId));
+        String scope = "";
+        if (levels != null) {
+            scope = " AND c.level IN (" + String.join(",", levels.stream().map(l -> "?").toList()) + ")";
+            levels.forEach(l -> args.add(l.name()));
+        }
+        var rows = jdbc.queryForList("""
+                SELECT lc.status, s.name AS subject, a.name AS assessment, c.name AS class_name, sec.name AS section_name,
+                       trim(coalesce(u.given_name, '') || ' ' || coalesce(u.family_name, '')) AS teacher
+                FROM class_subject_assessment_life_cycle lc
+                JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id
+                JOIN class_sessions cs ON cs.id = ts.class_session_id
+                JOIN classes c ON c.id = cs.class_id
+                LEFT JOIN sections sec ON sec.id = cs.section_id
+                JOIN subjects s ON s.id = ts.subject_id
+                JOIN assessments a ON a.id = lc.assessment_id
+                LEFT JOIN teachers t ON t.id = ts.teacher_id
+                LEFT JOIN users u ON u.id = t.user_id
+                WHERE lc.school_id = ? AND lc.term_id = ?""" + scope + """
+
+                ORDER BY c.name, sec.name, s.name, a.position
+                """, args.toArray());
+        Map<String, Integer> byStage = new LinkedHashMap<>();
+        List<Map<String, Object>> notIn = new ArrayList<>();
+        for (var r : rows) {
+            String stage = stage((String) r.get("status"));
+            byStage.merge(stage, 1, Integer::sum);
+            if (!"approved".equals(stage) && notIn.size() < 20) {
+                notIn.add(Map.of("class", (r.get("class_name") + " " + Optional.ofNullable(r.get("section_name")).orElse("")).trim(),
+                        "subject", r.get("subject"), "assessment", r.get("assessment"), "stage", stage,
+                        "teacher", Optional.ofNullable(r.get("teacher")).orElse("")));
+            }
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("total", rows.size());
+        m.put("byStage", byStage);
+        m.put("notReleasedYet", notIn);
         return m;
     }
 

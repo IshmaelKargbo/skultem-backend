@@ -112,7 +112,25 @@ public class SkullyParentService {
             BigDecimal paid, BigDecimal outstanding, LocalDate dueDate) {
     }
 
-    public record Fees(BigDecimal totalBilled, BigDecimal totalPaid, BigDecimal totalOutstanding, List<FeeLine> items) {
+    /**
+     * This term's fees (plus whole-year fees of the current academic year): billed, paid and still owed, per item.
+     * arrears: what is still owed on fees from earlier terms or years - zero when everything earlier is paid.
+     * With no active term (between terms) every fee is listed and arrears is zero.
+     */
+    public record Fees(BigDecimal totalBilled, BigDecimal totalPaid, BigDecimal totalOutstanding, List<FeeLine> items,
+            BigDecimal arrears) {
+    }
+
+    // The school's current term (the active term of the active academic year).
+    public record CurrentTerm(String id, String name, String academicYear) {
+    }
+
+    /**
+     * An assessment of the current term whose marks the parent can't see yet. stage: "not submitted yet" (the teacher
+     * is still entering marks, or the school sent them back for corrections) or "waiting for approval" (submitted,
+     * not yet approved by the school).
+     */
+    public record PendingAssessment(String subject, String assessment, String stage) {
     }
 
     public record ReportCard(String term, String academicYear, String className, double average, int position,
@@ -127,15 +145,17 @@ public class SkullyParentService {
             Integer classAverage) {
     }
 
+    // currentTerm: the term attendance, fees, subjects and pendingAssessments are for (null between terms).
     // library, sickBay and behaviour are null when the school does not use that module.
     // weeklyPlan: the class's published weekly plan for this week and next (WeeklyPlanService), or null.
-    public record ChildSummary(Child child, String schoolName, StudentTermAttendanceDetailDTO attendance, Fees fees,
-            List<ReportCard> reportCards, List<SubjectMarks> subjects, List<Loan> library, List<SickBayVisit> sickBay,
-            List<BehaviourNote> behaviour, Map<String, Object> weeklyPlan) {
+    public record ChildSummary(Child child, String schoolName, CurrentTerm currentTerm,
+            StudentTermAttendanceDetailDTO attendance, Fees fees, List<ReportCard> reportCards,
+            List<SubjectMarks> subjects, List<PendingAssessment> pendingAssessments, List<Loan> library,
+            List<SickBayVisit> sickBay, List<BehaviourNote> behaviour, Map<String, Object> weeklyPlan) {
 
         public ChildSummary withWeeklyPlan(Map<String, Object> plan) {
-            return new ChildSummary(child, schoolName, attendance, fees, reportCards, subjects, library, sickBay,
-                    behaviour, plan);
+            return new ChildSummary(child, schoolName, currentTerm, attendance, fees, reportCards, subjects,
+                    pendingAssessments, library, sickBay, behaviour, plan);
         }
     }
 
@@ -209,14 +229,28 @@ public class SkullyParentService {
             } catch (RuntimeException e) {
                 log.debug("Skully: no report cards for {}: {}", studentId, e.getMessage());
             }
+            CurrentTerm term = null;
+            try {
+                term = currentTerm(school);
+            } catch (RuntimeException e) {
+                log.debug("Skully: no current term for {}: {}", school, e.getMessage());
+            }
+            String termId = term == null ? null : term.id();
             List<SubjectMarks> subjects = List.of();
             try {
-                subjects = subjects(school, studentId);
+                subjects = subjects(school, studentId, termId);
             } catch (RuntimeException e) {
                 log.debug("Skully: no subject marks for {}: {}", studentId, e.getMessage());
             }
+            List<PendingAssessment> pending = List.of();
+            try {
+                if (termId != null) pending = pending(student, termId);
+            } catch (RuntimeException e) {
+                log.debug("Skully: no pending assessments for {}: {}", studentId, e.getMessage());
+            }
             String schoolName = schoolRepo.findById(school).map(s -> s.getName()).orElse(null);
-            return new ChildSummary(child(student), schoolName, attendance, fees(student), cards, subjects,
+            return new ChildSummary(child(student), schoolName, term, attendance, fees(student, termId), cards,
+                    subjects, pending,
                     modules.isEnabled(school, FeatureModule.LIBRARY) ? loans(student) : null,
                     modules.isEnabled(school, FeatureModule.HEALTH_CARE) ? sickBay(student) : null,
                     modules.isEnabled(school, FeatureModule.BEHAVIOUR) ? behaviour(student) : null, null);
@@ -326,9 +360,13 @@ public class SkullyParentService {
                 className, s.getStatus() == null ? null : s.getStatus().name());
     }
 
-    private Fees fees(Student student) {
+    // termId: the current term, or null to list every fee.
+    private Fees fees(Student student, String termId) {
         List<FeeLine> lines = new ArrayList<>();
-        BigDecimal billed = BigDecimal.ZERO, paidAll = BigDecimal.ZERO, owed = BigDecimal.ZERO;
+        BigDecimal billed = BigDecimal.ZERO, paidAll = BigDecimal.ZERO, owed = BigDecimal.ZERO,
+                arrears = BigDecimal.ZERO;
+        String yearId = termId == null ? null : jdbc.queryForObject(
+                "SELECT academic_year_id FROM terms WHERE id = ?", String.class, termId);
         List<StudentFee> rows = studentFeeRepo
                 .findAllBySchoolAndStudent(student.getSchoolId(), student.getId(), PageRequest.of(0, 100)).getContent();
         for (StudentFee row : rows) {
@@ -344,6 +382,10 @@ public class SkullyParentService {
             BigDecimal paid = Optional.ofNullable(paymentRepo.sumPaymentsByStudentAndFee(student.getId(), fee.getId()))
                     .orElse(BigDecimal.ZERO);
             BigDecimal outstanding = fee.getAmount().subtract(discount).subtract(paid).max(BigDecimal.ZERO);
+            if (termId != null && !thisTerm(fee, termId, yearId)) {
+                arrears = arrears.add(outstanding);
+                continue;
+            }
             billed = billed.add(fee.getAmount().subtract(discount));
             paidAll = paidAll.add(paid);
             owed = owed.add(outstanding);
@@ -353,7 +395,41 @@ public class SkullyParentService {
                     fee.getAcademicYear() == null ? null : fee.getAcademicYear().getName(),
                     fee.getAmount(), discount, paid, outstanding, fee.getDueDate()));
         }
-        return new Fees(billed, paidAll, owed, lines);
+        return new Fees(billed, paidAll, owed, lines, arrears);
+    }
+
+    // A fee for the current term, or a whole-year fee (no term) of the current academic year.
+    private static boolean thisTerm(com.moriba.skultem.domain.model.FeeStructure fee, String termId, String yearId) {
+        if (fee.getTerm() != null) return termId.equals(fee.getTerm().getId());
+        return yearId != null && fee.getAcademicYear() != null && yearId.equals(fee.getAcademicYear().getId());
+    }
+
+    // The active term of the school's active academic year, or null between terms.
+    CurrentTerm currentTerm(String schoolId) {
+        return jdbc.query("""
+                SELECT t.id, t.name, ay.name AS year
+                FROM terms t JOIN academic_years ay ON ay.id = t.academic_year_id AND ay.active
+                WHERE t.school_id = ? AND t.status = 'ACTIVE'
+                ORDER BY t.start_date DESC LIMIT 1
+                """, (rs, n) -> new CurrentTerm(rs.getString("id"), rs.getString("name"), rs.getString("year")),
+                schoolId).stream().findFirst().orElse(null);
+    }
+
+    // The current term's assessments in the child's class that are not approved yet, so Skully can say so instead
+    // of showing marks the school hasn't released.
+    List<PendingAssessment> pending(Student student, String termId) {
+        if (student.getSession() == null) return List.of();
+        return jdbc.query("""
+                SELECT s.name AS subject, a.name AS assessment, lc.status
+                FROM class_subject_assessment_life_cycle lc
+                JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id AND ts.class_session_id = ?
+                JOIN subjects s ON s.id = ts.subject_id
+                JOIN assessments a ON a.id = lc.assessment_id
+                WHERE lc.school_id = ? AND lc.term_id = ? AND lc.status IN ('DRAFT', 'SUBMITTED', 'RETURNED')
+                ORDER BY s.name, a.position
+                """, (rs, n) -> new PendingAssessment(rs.getString("subject"), rs.getString("assessment"),
+                "SUBMITTED".equals(rs.getString("status")) ? "waiting for approval" : "not submitted yet"),
+                student.getSession().getId(), student.getSchoolId(), termId);
     }
 
     private List<Loan> loans(Student student) {
@@ -405,8 +481,9 @@ public class SkullyParentService {
                 .toList();
     }
 
-    // The most recent term with approved marks for this child, per subject.
-    List<SubjectMarks> subjects(String schoolId, String studentId) {
+    // This child's approved marks per subject for the current term (termId), or - between terms, termId null - for
+    // the most recent term that has approved marks.
+    List<SubjectMarks> subjects(String schoolId, String studentId, String termId) {
         return jdbc.query("""
                 WITH mine AS (
                     SELECT lc.id AS lc_id, lc.term_id, t.name AS term, t.start_date, s.name AS subject, sc.score,
@@ -420,7 +497,10 @@ public class SkullyParentService {
                     JOIN teacher_subjects ts ON ts.id = lc.teacher_subject_id
                     JOIN subjects s ON s.id = ts.subject_id
                     WHERE sc.school_id = ?
-                ), latest_term AS (SELECT term_id FROM mine ORDER BY start_date DESC LIMIT 1)
+                ), latest_term AS (
+                    SELECT COALESCE(CAST(? AS varchar), (SELECT term_id FROM mine ORDER BY start_date DESC LIMIT 1))
+                        AS term_id
+                )
                 SELECT m.term, m.subject, ROUND(AVG(m.score)) AS average, COUNT(*) AS assessments,
                        (ARRAY_AGG(m.score ORDER BY m.updated_at DESC))[1] AS latest,
                        (SELECT ROUND(AVG(o.score)) FROM assessment_scores o
@@ -431,7 +511,8 @@ public class SkullyParentService {
                 ORDER BY m.subject
                 """, (rs, n) -> new SubjectMarks(rs.getString("term"), rs.getString("subject"), rs.getInt("average"),
                 rs.getInt("assessments"), rs.getInt("latest"),
-                rs.getObject("class_average") == null ? null : rs.getInt("class_average")), studentId, schoolId);
+                rs.getObject("class_average") == null ? null : rs.getInt("class_average")), studentId, schoolId,
+                termId);
     }
 
     private static ReportCard card(ReportCardSummaryDTO c) {
