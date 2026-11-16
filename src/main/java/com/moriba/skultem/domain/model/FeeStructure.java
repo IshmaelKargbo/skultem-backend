@@ -165,6 +165,15 @@ public class FeeStructure extends AggregateRoot<String> {
      * way - a student who already had supply issued from the old line-up keeps it; only students
      * who pay after this edit see the new list.
      */
+    // The platform fee's amount follows the school's platform fee setting (see UpdatePlatformFeeSettingUseCase).
+    public void changePlatformAmount(BigDecimal amount) {
+        if (!system) {
+            throw new RuleException("Only the platform fee's amount is set this way");
+        }
+        this.amount = amount;
+        touch(Instant.now());
+    }
+
     public void update(Term term, FeeCategory category, List<FeeStructureSupplyItem> supplyItems, boolean hasSupply,
             LocalDate dueDate, BigDecimal amount, String description, boolean allowInstallment,
             boolean newStudentsOnly, boolean oldStudentsOnly, Gender gender) {

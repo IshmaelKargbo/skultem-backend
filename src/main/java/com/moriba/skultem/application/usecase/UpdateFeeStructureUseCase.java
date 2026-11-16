@@ -28,7 +28,8 @@ import lombok.RequiredArgsConstructor;
  * Lets an admin adjust a fee structure's details - most usefully, the ones a new academic year just
  * copied forward from last year (see {@link ConfigureNextAcademicYearUseCase}) that need this year's
  * new amount/due date before they're used. What it applies to (academic year, class, type) isn't
- * editable - see {@link com.moriba.skultem.domain.model.FeeStructure#update}.
+ * editable - see {@link com.moriba.skultem.domain.model.FeeStructure#update}. Students already charged
+ * have their accounts brought in line - see {@link ReconcileFeeChargesUseCase}.
  */
 @Service
 @Transactional
@@ -40,6 +41,7 @@ public class UpdateFeeStructureUseCase {
     private final TermRepository termRepo;
     private final MaterialRepository materialRepo;
     private final LogActivityUseCase logActivityUseCase;
+    private final ReconcileFeeChargesUseCase reconcileCharges;
 
     @AuditLogAnnotation(action = "FEE_STRUCTURE_UPDATED")
     public FeeStructureDTO execute(UpdateRecord param) {
@@ -62,6 +64,12 @@ public class UpdateFeeStructureUseCase {
             }
         }
 
+        // Who it reaches, before the edit - if that changes, students are charged / un-charged to match.
+        boolean wasNewOnly = fee.isNewStudentsOnly();
+        boolean wasOldOnly = fee.isOldStudentsOnly();
+        Gender wasGender = fee.getGender();
+        String wasTermId = fee.getTerm() == null ? null : fee.getTerm().getId();
+
         fee.update(term, category, supplyItems, param.hasSupply(), param.dueDate(), param.amount(),
                 param.description(), param.allowInstallment(), param.newStudentsOnly(), param.oldStudentsOnly(),
                 param.gender());
@@ -69,12 +77,21 @@ public class UpdateFeeStructureUseCase {
 
         repo.save(fee);
 
+        boolean rulesChanged = wasNewOnly != fee.isNewStudentsOnly() || wasOldOnly != fee.isOldStudentsOnly()
+                || wasGender != fee.getGender() || !java.util.Objects.equals(wasTermId, term.getId());
+        // Students already charged get the new amount/term on their account (refused if that would
+        // drop below what someone already paid - the whole edit is then rolled back).
+        var reconciled = reconcileCharges.execute(fee, rulesChanged);
+
         logActivityUseCase.log(
                 param.schoolId(),
                 ActivityType.FEES,
                 "Fee structure updated",
                 category.getName() + " - " + term.getName(),
-                null,
+                reconciled.changedAnything()
+                        ? "accountsUpdated=" + reconciled.updated() + ";charged=" + reconciled.added()
+                                + ";uncharged=" + reconciled.removed()
+                        : null,
                 fee.getId());
 
         return FeeStructureMapper.toDTO(fee);

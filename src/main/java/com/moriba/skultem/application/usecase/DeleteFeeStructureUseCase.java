@@ -1,23 +1,25 @@
 package com.moriba.skultem.application.usecase;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.audit.AuditLogAnnotation;
+import com.moriba.skultem.domain.repository.FeeChargePurgeRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
-import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Deletes a fee structure the school doesn't want - most usefully, one a new academic year just
- * copied forward that isn't needed for this year (see {@link ConfigureNextAcademicYearUseCase}).
- * Blocked once it has actually been charged to at least one student: reversing already-issued
- * {@code StudentFee}/ledger entries isn't something this does, so an in-use fee structure has to be
- * left alone rather than deleted out from under students who are already carrying that charge.
+ * Deletes a fee structure the school doesn't want - one charged by mistake, or one a new academic year
+ * just copied forward that isn't needed (see {@link ConfigureNextAcademicYearUseCase}).
+ * If it was already charged to students, the charge is taken back off each of them: their student fee,
+ * any discount on it, and the matching ledger entries go, and their running balances are recomputed.
+ * Refused once anyone has paid towards it - that money has to stay on record.
  */
 @Service
 @Transactional
@@ -25,7 +27,8 @@ import lombok.RequiredArgsConstructor;
 public class DeleteFeeStructureUseCase {
 
     private final FeeStructureRepository repo;
-    private final StudentFeeRepository studentFeeRepo;
+    private final FeeChargePurgeRepository chargeRepo;
+    private final RecomputeStudentLedgerBalancesUseCase recomputeBalances;
     private final LogActivityUseCase logActivityUseCase;
 
     @AuditLogAnnotation(action = "FEE_STRUCTURE_DELETED")
@@ -37,12 +40,14 @@ public class DeleteFeeStructureUseCase {
             throw new RuleException("The platform fee can't be deleted");
         }
 
-        long assignedCount = studentFeeRepo.countByFeeAndSchool(feeId, schoolId);
-        if (assignedCount > 0) {
-            throw new RuleException(
-                    "This fee structure is already charged to " + assignedCount
-                            + " student(s) and can't be deleted. Edit it instead, or remove it before it's applied to anyone.");
+        long payments = chargeRepo.countPayments(schoolId, feeId);
+        if (payments > 0) {
+            throw new RuleException("This fee has " + payments + " payment(s) recorded against it, so it can't be "
+                    + "deleted. Edit it instead.");
         }
+
+        List<String> students = chargeRepo.removeCharges(schoolId, feeId);
+        students.forEach(studentId -> recomputeBalances.recomputeForStudent(studentId, schoolId));
 
         repo.deleteById(feeId);
 
@@ -51,7 +56,7 @@ public class DeleteFeeStructureUseCase {
                 ActivityType.FEES,
                 "Fee structure deleted",
                 fee.getCategory().getName() + " - " + fee.getAcademicYear().getName(),
-                null,
+                students.isEmpty() ? null : "chargesRemoved=" + students.size(),
                 feeId);
     }
 }

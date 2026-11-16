@@ -17,9 +17,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * SYSTEM_ADMIN-only: sets the amount a specific school's platform fee is seeded with (see
- * SeedPlatformFeeForAcademicYearUseCase) - each school has its own, independent amount. Changing
- * it only affects platform fees seeded after the change - it never rewrites amounts already
- * charged to students. Not logged to that school's own activity feed (this isn't something the
+ * SeedPlatformFeeForAcademicYearUseCase) - each school has its own, independent amount. A new amount
+ * also applies to this academic year's platform fee: every student charged it has their account updated
+ * (see ReconcileFeeChargesUseCase) - refused if a student already paid more than the new amount. Not logged to that school's own activity feed (this isn't something the
  * school did) - the {@code @AuditLogAnnotation} still records who made the change in the system
  * audit log.
  */
@@ -31,14 +31,15 @@ public class UpdatePlatformFeeSettingUseCase {
     private final SchoolRepository schoolRepo;
     private final com.moriba.skultem.domain.repository.TermRepository termRepo;
     private final com.moriba.skultem.domain.repository.FeeStructureRepository feeStructureRepo;
+    private final ReconcileFeeChargesUseCase reconcileCharges;
 
     @AuditLogAnnotation(action = "PLATFORM_FEE_SETTING_UPDATED")
     public PlatformFeeSettingDTO execute(String schoolId, BigDecimal amount) {
         return execute(schoolId, amount, null, null);
     }
 
-    // mode/shares null keep the current plan. The plan is applied straight away to this academic year's platform
-    // fee if it already exists - only how it is split and when each part is due; what students owe doesn't change.
+    // mode/shares null keep the current plan. The amount and plan are applied straight away to this academic year's
+    // platform fee if it already exists, and students' accounts follow the new amount.
     @AuditLogAnnotation(action = "PLATFORM_FEE_SETTING_UPDATED")
     public PlatformFeeSettingDTO execute(String schoolId, BigDecimal amount, PlatformFeeSetting.InstallmentMode mode,
             java.util.List<Integer> shares) {
@@ -57,9 +58,16 @@ public class UpdatePlatformFeeSettingUseCase {
                 .flatMap(term -> feeStructureRepo.findSystemFeeBySchoolAndAcademicYear(schoolId,
                         term.getAcademicYear().getId()))
                 .ifPresent(fee -> {
+                    boolean amountChanged = fee.getAmount() == null || fee.getAmount().compareTo(amount) != 0;
+                    if (amountChanged) {
+                        fee.changePlatformAmount(amount);
+                    }
                     var terms = termRepo.findByAcademicYearIdAndSchool(fee.getAcademicYear().getId(), schoolId);
                     fee.applyPlatformPlan(setting.planFor(fee.getAmount(), terms, fee.getAcademicYear()));
                     feeStructureRepo.save(fee);
+                    if (amountChanged) {
+                        reconcileCharges.execute(fee, false);
+                    }
                 });
 
         return PlatformFeeSettingDTO.of(schoolId, setting);
