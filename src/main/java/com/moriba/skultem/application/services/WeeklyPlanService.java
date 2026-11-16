@@ -38,12 +38,17 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * Auto-fill goes through the class's subjects in turn over every school day of the term (school holidays left
  * out); staff then change any day by hand and publish. Parents (portal and Skully) only see published plans.
+ * <p>
+ * A plan can instead repeat (cycleWeeks > 0): the school plans a few weeks by weekday - e.g. a 4-week month for
+ * nursery - and that pattern is written onto every school day of the term, so parents and Skully read it like
+ * any other plan.
  */
 @Service
 @RequiredArgsConstructor
 public class WeeklyPlanService {
 
     public static final int MAX_SLOTS = 6;
+    public static final int MAX_CYCLE_WEEKS = 8;
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
     private static final List<Slot> DEFAULT_SLOTS = List.of(new Slot("Morning", "08:30", "10:00"),
             new Slot("After break", "10:30", "12:00"));
@@ -69,10 +74,20 @@ public class WeeklyPlanService {
     public record PlanWeek(String label, String start, String end, List<PlanDay> days) {
     }
 
-    /** slotsSource: CLASS when the class has its own sessions, SCHOOL when it uses the school's. */
+    /**
+     * slotsSource: CLASS when the class has its own sessions, SCHOOL when it uses the school's. cycleWeeks: how many
+     * weeks repeat (0 = every week planned on its own); cycle: the repeating pattern (empty when not repeating).
+     */
     public record Plan(String id, String classSessionId, String className, String termId, String termName,
             String termStart, String termEnd, String status, List<Slot> slots, String slotsSource, List<Subject> subjects,
-            List<PlanWeek> weeks) {
+            List<PlanWeek> weeks, int cycleWeeks, List<CycleEntry> cycle) {
+    }
+
+    /** One cell of a repeating plan: week of the cycle (1..), weekday (1 Monday .. 5 Friday), session slot. */
+    public record CycleEntry(int week, int weekday, int slot, String subjectId, String subjectName) {
+    }
+
+    public record CycleInput(int week, int weekday, int slot, String subjectId) {
     }
 
     // A school term: the plan runs from its first day to its last.
@@ -189,15 +204,26 @@ public class WeeklyPlanService {
         var row = planRow(classSessionId, term.id());
         String planId = row == null ? null : (String) row.get("id");
         String status = row == null ? "DRAFT" : (String) row.get("status");
+        int cycleWeeks = row == null || row.get("cycle_weeks") == null ? 0 : ((Number) row.get("cycle_weeks")).intValue();
         ClassSlots slots = slotsFor(schoolId, classSessionId);
         return new Plan(planId, classSessionId, className, term.id(), term.name(), term.start().toString(),
                 term.end().toString(), status, slots.slots(), slots.source(), subjects(schoolId, classSessionId),
-                weeks(schoolId, term, entries(planId, slots.slots().size())));
+                weeks(schoolId, term, entries(planId, slots.slots().size())), cycleWeeks,
+                cycleWeeks > 0 ? cycleEntries(planId, cycleWeeks, slots.slots().size()) : List.of());
     }
 
     /** Fills every school day of the term, going through the class's subjects in turn. Replaces what was there. */
     @Transactional
     public Plan autoFill(String schoolId, String classSessionId, String termId) {
+        return autoFill(schoolId, classSessionId, termId, 0);
+    }
+
+    /** As above; with cycleWeeks > 0 it fills that many weeks in turn and repeats them over the term instead. */
+    @Transactional
+    public Plan autoFill(String schoolId, String classSessionId, String termId, int cycleWeeks) {
+        if (cycleWeeks > 0) {
+            return autoFillCycle(schoolId, classSessionId, termId, cycleWeeks);
+        }
         Term term = term(schoolId, termId);
         className(schoolId, classSessionId);
         List<Subject> subjects = subjects(schoolId, classSessionId);
@@ -206,6 +232,7 @@ public class WeeklyPlanService {
         }
         int perDay = slotsFor(schoolId, classSessionId).slots().size();
         String planId = ensurePlan(schoolId, classSessionId, term.id());
+        setCycle(planId, 0);
         jdbc.update("DELETE FROM weekly_plan_entries WHERE plan_id = ?", planId);
         int next = 0;
         for (LocalDate day : schoolDays(schoolId, term.start(), term.end())) {
@@ -234,6 +261,8 @@ public class WeeklyPlanService {
         Set<String> allowed = new HashSet<>(subjects(schoolId, classSessionId).stream().map(Subject::id).toList());
         Set<LocalDate> days = new HashSet<>(schoolDays(schoolId, term.start(), term.end()));
         String planId = ensurePlan(schoolId, classSessionId, term.id());
+        // Planned week by week from now on (the days a repeating plan wrote come in as ordinary entries).
+        setCycle(planId, 0);
         jdbc.update("DELETE FROM weekly_plan_entries WHERE plan_id = ?", planId);
         Set<String> seen = new HashSet<>();
         for (EntryInput e : entries == null ? List.<EntryInput>of() : entries) {
@@ -252,6 +281,117 @@ public class WeeklyPlanService {
         }
         touch(planId);
         return plan(schoolId, classSessionId, term.id());
+    }
+
+    /**
+     * Saves a repeating plan: the pattern for cycleWeeks weeks (by weekday), then writes it onto every school day of
+     * the term - the term's week 1 takes the pattern's week 1, week 5 takes week 1 again (with 4), and so on.
+     */
+    @Transactional
+    public Plan saveCycle(String schoolId, String classSessionId, String termId, int cycleWeeks, List<CycleInput> entries) {
+        checkCycle(cycleWeeks);
+        Term term = term(schoolId, termId);
+        className(schoolId, classSessionId);
+        int perDay = slotsFor(schoolId, classSessionId).slots().size();
+        Set<String> allowed = new HashSet<>(subjects(schoolId, classSessionId).stream().map(Subject::id).toList());
+        Map<String, String> pattern = new LinkedHashMap<>();
+        for (CycleInput e : entries == null ? List.<CycleInput>of() : entries) {
+            if (e.subjectId() == null || e.subjectId().isBlank()) continue;
+            if (e.week() < 1 || e.week() > cycleWeeks) throw new RuleException("Week " + e.week() + " isn't in the plan");
+            if (e.weekday() < 1 || e.weekday() > 5) throw new RuleException("Plans run Monday to Friday");
+            if (e.slot() < 0 || e.slot() >= perDay) throw new RuleException("Unknown session in week " + e.week());
+            if (!allowed.contains(e.subjectId())) {
+                throw new RuleException("A subject in week " + e.week() + " isn't one of this class's");
+            }
+            pattern.putIfAbsent(key(e.week(), e.weekday(), e.slot()), e.subjectId());
+        }
+        String planId = ensurePlan(schoolId, classSessionId, term.id());
+        writeCycle(schoolId, planId, term, cycleWeeks, pattern);
+        return plan(schoolId, classSessionId, term.id());
+    }
+
+    // Auto-fill for a repeating plan: the class's subjects in turn over the cycle's weekdays, then spread over the term.
+    private Plan autoFillCycle(String schoolId, String classSessionId, String termId, int cycleWeeks) {
+        checkCycle(cycleWeeks);
+        Term term = term(schoolId, termId);
+        className(schoolId, classSessionId);
+        List<Subject> subjects = subjects(schoolId, classSessionId);
+        if (subjects.isEmpty()) {
+            throw new RuleException("This class has no subjects yet - assign subjects to it first");
+        }
+        int perDay = slotsFor(schoolId, classSessionId).slots().size();
+        Map<String, String> pattern = new LinkedHashMap<>();
+        int next = 0;
+        for (int week = 1; week <= cycleWeeks; week++) {
+            for (int weekday = 1; weekday <= 5; weekday++) {
+                Set<String> today = new HashSet<>();
+                for (int slot = 0; slot < perDay; slot++) {
+                    Subject s = subjects.get(next % subjects.size());
+                    if (subjects.size() >= perDay) {
+                        while (today.contains(s.id())) s = subjects.get(++next % subjects.size());
+                    }
+                    today.add(s.id());
+                    pattern.put(key(week, weekday, slot), s.id());
+                    next++;
+                }
+            }
+        }
+        String planId = ensurePlan(schoolId, classSessionId, term.id());
+        writeCycle(schoolId, planId, term, cycleWeeks, pattern);
+        return plan(schoolId, classSessionId, term.id());
+    }
+
+    private static void checkCycle(int cycleWeeks) {
+        if (cycleWeeks < 1 || cycleWeeks > MAX_CYCLE_WEEKS) {
+            throw new RuleException("A plan can repeat every 1 to " + MAX_CYCLE_WEEKS + " weeks");
+        }
+    }
+
+    // Stores the pattern and rewrites the term's days from it.
+    private void writeCycle(String schoolId, String planId, Term term, int cycleWeeks, Map<String, String> pattern) {
+        setCycle(planId, cycleWeeks);
+        jdbc.update("DELETE FROM weekly_plan_cycle_entries WHERE plan_id = ?", planId);
+        for (var e : pattern.entrySet()) {
+            String[] k = e.getKey().split("/");
+            jdbc.update("INSERT INTO weekly_plan_cycle_entries (plan_id, week, weekday, slot, subject_id) VALUES (?, ?, ?, ?, ?)",
+                    planId, Integer.parseInt(k[0]), Integer.parseInt(k[1]), Integer.parseInt(k[2]), e.getValue());
+        }
+        jdbc.update("DELETE FROM weekly_plan_entries WHERE plan_id = ?", planId);
+        LocalDate firstMonday = term.start().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        for (LocalDate day : schoolDays(schoolId, term.start(), term.end())) {
+            int week = cycleWeek(firstMonday, day, cycleWeeks);
+            int weekday = day.getDayOfWeek().getValue();
+            for (int slot = 0; slot < MAX_SLOTS; slot++) {
+                String subjectId = pattern.get(key(week, weekday, slot));
+                if (subjectId != null) insertEntry(planId, day, slot, subjectId);
+            }
+        }
+        touch(planId);
+    }
+
+    /** Which week of the cycle a day falls in: the term's first week is week 1. */
+    static int cycleWeek(LocalDate firstMonday, LocalDate day, int cycleWeeks) {
+        long weeks = java.time.temporal.ChronoUnit.WEEKS.between(firstMonday,
+                day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)));
+        return (int) (weeks % cycleWeeks) + 1;
+    }
+
+    private static String key(int week, int weekday, int slot) {
+        return week + "/" + weekday + "/" + slot;
+    }
+
+    private void setCycle(String planId, int cycleWeeks) {
+        jdbc.update("UPDATE weekly_plans SET cycle_weeks = ? WHERE id = ?", cycleWeeks, planId);
+        if (cycleWeeks == 0) jdbc.update("DELETE FROM weekly_plan_cycle_entries WHERE plan_id = ?", planId);
+    }
+
+    private List<CycleEntry> cycleEntries(String planId, int cycleWeeks, int perDay) {
+        if (planId == null) return List.of();
+        return jdbc.query("SELECT c.week, c.weekday, c.slot, s.id AS subject_id, s.name AS subject "
+                + "FROM weekly_plan_cycle_entries c JOIN subjects s ON s.id = c.subject_id "
+                + "WHERE c.plan_id = ? AND c.week <= ? AND c.slot < ? ORDER BY c.week, c.weekday, c.slot",
+                (rs, n) -> new CycleEntry(rs.getInt("week"), rs.getInt("weekday"), rs.getInt("slot"),
+                        rs.getString("subject_id"), rs.getString("subject")), planId, cycleWeeks, perDay);
     }
 
     @Transactional
@@ -430,7 +570,7 @@ public class WeeklyPlanService {
     }
 
     private Map<String, Object> planRow(String classSessionId, String termId) {
-        var rows = jdbc.queryForList("SELECT id, school_id, status FROM weekly_plans WHERE class_session_id = ? AND term_id = ?",
+        var rows = jdbc.queryForList("SELECT id, school_id, status, cycle_weeks FROM weekly_plans WHERE class_session_id = ? AND term_id = ?",
                 classSessionId, termId);
         return rows.isEmpty() ? null : rows.get(0);
     }

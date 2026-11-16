@@ -47,6 +47,9 @@ public class WeeklyPlanController {
     public record Entries(List<WeeklyPlanService.EntryInput> entries) {
     }
 
+    public record Cycle(int cycleWeeks, List<WeeklyPlanService.CycleInput> entries) {
+    }
+
     public record Status(boolean published) {
     }
 
@@ -96,8 +99,19 @@ public class WeeklyPlanController {
     @PostMapping("/auto-fill")
     @PreAuthorize(EDIT)
     public ApiResponse<WeeklyPlanService.Plan> autoFill(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
-            @RequestParam String classSessionId, @RequestParam(required = false) String termId) {
-        return new ApiResponse<>("success", 200, "Weekly plan filled", plans.autoFill(school, classSessionId, termId));
+            @RequestParam String classSessionId, @RequestParam(required = false) String termId,
+            @RequestParam(defaultValue = "0") int cycleWeeks) {
+        return new ApiResponse<>("success", 200, "Weekly plan filled",
+                plans.autoFill(school, classSessionId, termId, cycleWeeks));
+    }
+
+    // A repeating plan: a few weeks by weekday (e.g. a 4-week month), spread over the whole term.
+    @PutMapping("/cycle")
+    @PreAuthorize(EDIT)
+    public ApiResponse<WeeklyPlanService.Plan> saveCycle(@AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam String classSessionId, @RequestParam(required = false) String termId, @RequestBody Cycle body) {
+        return new ApiResponse<>("success", 200, "Weekly plan saved",
+                plans.saveCycle(school, classSessionId, termId, body.cycleWeeks(), body.entries()));
     }
 
     @PutMapping
