@@ -71,7 +71,10 @@ public class StudentMapper {
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name(),
+                param.getAdmissionDate(),
+                param.getPreviousSchool(),
+                param.getLastClass());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment) {
@@ -135,7 +138,10 @@ public class StudentMapper {
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name(),
+                param.getAdmissionDate(),
+                param.getPreviousSchool(),
+                param.getLastClass());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, FeeDetail feeDetail) {
@@ -198,7 +204,10 @@ public class StudentMapper {
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name(),
+                param.getAdmissionDate(),
+                param.getPreviousSchool(),
+                param.getLastClass());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, String teacher, int classSize,
@@ -262,7 +271,10 @@ public class StudentMapper {
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name(),
+                param.getAdmissionDate(),
+                param.getPreviousSchool(),
+                param.getLastClass());
     }
 
     public static StudentDTO toDTO(Student param, Enrollment enrollment, String teacher, int classSize,
@@ -326,6 +338,9 @@ public class StudentMapper {
                 HouseMapper.toDTO(param.getHouse()),
                 param.getCreatedAt(),
                 param.getUpdatedAt(),
-                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name());
+                param.getEnrollmentType() == null ? null : param.getEnrollmentType().name(),
+                param.getAdmissionDate(),
+                param.getPreviousSchool(),
+                param.getLastClass());
     }
 }

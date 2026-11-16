@@ -11,12 +11,14 @@ public record StudentDTO(String id, String photo, String enrollmentId, String ad
                 String familyName, Gender gender, LocalDate dateOfBirth, Integer age, String classId, int classSize,
                 String className, String classTeacher, String nationality, String religion, String city, String street,
                 Family family, ParentDTO guardian, String relationship, String sessionId, Status status,
-                String exitReason, LocalDate exitDate, String exitNote, FeeDetail feeDetail, HouseDTO house, Instant createdAt, Instant updatedAt, String enrollmentType) {
+                String exitReason, LocalDate exitDate, String exitNote, FeeDetail feeDetail, HouseDTO house, Instant createdAt, Instant updatedAt, String enrollmentType,
+                // Admission details captured at enrollment.
+                LocalDate admissionDate, String previousSchool, String lastClass) {
 
         public StudentDTO withClassSize(int size) {
                 return new StudentDTO(id, photo, enrollmentId, admissionNumber, givenNames, familyName, gender, dateOfBirth,
                                 age, classId, size, className, classTeacher, nationality, religion, city, street, family,
                                 guardian, relationship, sessionId, status, exitReason, exitDate, exitNote, feeDetail, house,
-                                createdAt, updatedAt, enrollmentType);
+                                createdAt, updatedAt, enrollmentType, admissionDate, previousSchool, lastClass);
         }
 }

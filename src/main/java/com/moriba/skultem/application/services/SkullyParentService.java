@@ -116,9 +116,18 @@ public class SkullyParentService {
      * This term's fees (plus whole-year fees of the current academic year): billed, paid and still owed, per item.
      * arrears: what is still owed on fees from earlier terms or years - zero when everything earlier is paid.
      * With no active term (between terms) every fee is listed and arrears is zero.
+     * year: the whole current academic year (every term) - what "total fees" means.
      */
     public record Fees(BigDecimal totalBilled, BigDecimal totalPaid, BigDecimal totalOutstanding, List<FeeLine> items,
-            BigDecimal arrears) {
+            BigDecimal arrears, YearFees year) {
+    }
+
+    /** The current academic year's fees for one child: totals, and the same per term. Null if no active year. */
+    public record YearFees(String academicYear, BigDecimal totalBilled, BigDecimal totalPaid,
+            BigDecimal totalOutstanding, List<TermFees> byTerm) {
+    }
+
+    public record TermFees(String term, BigDecimal billed, BigDecimal paid, BigDecimal outstanding) {
     }
 
     // The school's current term (the active term of the active academic year).
@@ -173,11 +182,12 @@ public class SkullyParentService {
     }
 
     /**
-     * How a parent gets into a school's parent portal. status: PENDING (never signed in - temporaryPassword is
-     * set when Skultem still has it), ACTIVE (has their own password), or DISABLED (the school switched it off).
+     * How a parent gets into a school's parent portal. status: PENDING (never signed in), ACTIVE (has their own
+     * password), or DISABLED (the school switched it off). temporaryPasswordAvailable: a PENDING account whose
+     * temporary password Skultem still has; temporaryPassword is only filled in when the parent asked for it.
      */
     public record PortalAccess(String schoolId, String schoolName, String loginUrl, String signInWith, String status,
-            String temporaryPassword, boolean hasEmail) {
+            String temporaryPassword, boolean temporaryPasswordAvailable, boolean hasEmail) {
     }
 
     public record Update(String kind, String title, String body, String category, Instant at, Instant endsAt,
@@ -257,11 +267,12 @@ public class SkullyParentService {
         });
     }
 
-    // The parent's portal sign-in for each of their schools that uses Skully. Handing out a still-pending account's
-    // temporary password is what an admin would do for them; it goes only to the parent's own phone on file, and is
-    // written to the school's activity log.
+    // The parent's portal sign-in for each of their schools that uses Skully. withPassword: the parent said yes to
+    // receiving their temporary password. It is only ever given for an account that has never been signed in
+    // (PENDING) - what an admin would do for them - goes only to the parent's own phone on file, and is written to
+    // the school's activity log.
     @Transactional
-    public List<PortalAccess> portalAccess(String phone) {
+    public List<PortalAccess> portalAccess(String phone, boolean withPassword) {
         List<PortalAccess> out = new ArrayList<>();
         for (Parent parent : parents(phone)) {
             var school = schoolRepo.findById(parent.getSchoolId()).orElse(null);
@@ -272,12 +283,12 @@ public class SkullyParentService {
                 case ACTIVE -> "ACTIVE";
                 default -> "DISABLED";
             };
-            String temporary = "PENDING".equals(status) && user.getHint() != null && !user.getHint().isBlank()
-                    ? user.getHint() : null;
+            boolean available = "PENDING".equals(status) && user.getHint() != null && !user.getHint().isBlank();
+            String temporary = available && withPassword ? user.getHint() : null;
             boolean hasEmail = user.getEmail() != null && !user.getEmail().isBlank();
             String loginUrl = portalUrl.replace("{domain}", nz(school.getDomain())).replaceAll("/+$", "") + "/login";
             out.add(new PortalAccess(school.getId(), school.getName(), loginUrl,
-                    hasEmail ? user.getEmail() : parent.getPhone(), status, temporary, hasEmail));
+                    hasEmail ? user.getEmail() : parent.getPhone(), status, temporary, available, hasEmail));
             if (temporary != null) {
                 activity.log(school.getId(), ActivityType.USER, "Portal sign-in details sent on WhatsApp (Skully)",
                         (nz(user.getGivenNames()) + " " + nz(user.getFamilyName())).trim(), null, user.getId());
@@ -367,6 +378,12 @@ public class SkullyParentService {
                 arrears = BigDecimal.ZERO;
         String yearId = termId == null ? null : jdbc.queryForObject(
                 "SELECT academic_year_id FROM terms WHERE id = ?", String.class, termId);
+        // The whole current academic year, for "total fees".
+        var activeYear = jdbc.queryForList("SELECT id, name FROM academic_years WHERE school_id = ? AND active",
+                student.getSchoolId()).stream().findFirst().orElse(null);
+        String activeYearId = activeYear == null ? null : (String) activeYear.get("id");
+        BigDecimal yearBilled = BigDecimal.ZERO, yearPaid = BigDecimal.ZERO, yearOwed = BigDecimal.ZERO;
+        Map<String, BigDecimal[]> perTerm = new java.util.LinkedHashMap<>();
         List<StudentFee> rows = studentFeeRepo
                 .findAllBySchoolAndStudent(student.getSchoolId(), student.getId(), PageRequest.of(0, 100)).getContent();
         for (StudentFee row : rows) {
@@ -382,6 +399,18 @@ public class SkullyParentService {
             BigDecimal paid = Optional.ofNullable(paymentRepo.sumPaymentsByStudentAndFee(student.getId(), fee.getId()))
                     .orElse(BigDecimal.ZERO);
             BigDecimal outstanding = fee.getAmount().subtract(discount).subtract(paid).max(BigDecimal.ZERO);
+            BigDecimal net = fee.getAmount().subtract(discount);
+            if (activeYearId != null && fee.getAcademicYear() != null
+                    && activeYearId.equals(fee.getAcademicYear().getId())) {
+                yearBilled = yearBilled.add(net);
+                yearPaid = yearPaid.add(paid);
+                yearOwed = yearOwed.add(outstanding);
+                var t = perTerm.computeIfAbsent(fee.getTerm() == null ? "Whole year" : fee.getTerm().getName(),
+                        k -> new BigDecimal[] { BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO });
+                t[0] = t[0].add(net);
+                t[1] = t[1].add(paid);
+                t[2] = t[2].add(outstanding);
+            }
             if (termId != null && !thisTerm(fee, termId, yearId)) {
                 arrears = arrears.add(outstanding);
                 continue;
@@ -395,7 +424,10 @@ public class SkullyParentService {
                     fee.getAcademicYear() == null ? null : fee.getAcademicYear().getName(),
                     fee.getAmount(), discount, paid, outstanding, fee.getDueDate()));
         }
-        return new Fees(billed, paidAll, owed, lines, arrears);
+        YearFees year = activeYear == null ? null : new YearFees((String) activeYear.get("name"), yearBilled,
+                yearPaid, yearOwed, perTerm.entrySet().stream()
+                        .map(e -> new TermFees(e.getKey(), e.getValue()[0], e.getValue()[1], e.getValue()[2])).toList());
+        return new Fees(billed, paidAll, owed, lines, arrears, year);
     }
 
     // A fee for the current term, or a whole-year fee (no term) of the current academic year.

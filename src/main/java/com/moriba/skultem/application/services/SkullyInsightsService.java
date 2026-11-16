@@ -182,9 +182,11 @@ public class SkullyInsightsService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("academicYear", sum.academicYearName());
             m.put("period", term == null ? "whole academic year" : String.valueOf(term.get("name")));
-            if (termId != null) {
-                m.put("wholeYearOutstanding", money(feeSummary.execute(schoolId, null, null).totalOutstanding()));
-            }
+            // The whole academic year (every term) - what "total fees" means.
+            var year = termId == null ? sum : feeSummary.execute(schoolId, null, null);
+            m.put("wholeYear", Map.of("expected", money(year.totalExpected()),
+                    "collected", money(year.totalCollected()), "outstanding", money(year.totalOutstanding()),
+                    "collectionRatePercent", year.collectionRate()));
             m.put("expected", money(sum.totalExpected()));
             m.put("collected", money(sum.totalCollected()));
             m.put("outstanding", money(sum.totalOutstanding()));

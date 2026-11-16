@@ -158,15 +158,15 @@ public class SkullyReminderService {
     private void welcomes(String schoolId, Set<String> optedOut, int limit, List<Message> out) {
         for (Account a : notWelcomed(schoolId)) {
             if (out.size() >= limit) return;
-            if (a.sending() || a.phone() == null || a.temporaryPassword() == null
-                    || optedOut.contains(optOutKey(a.phone()))) continue;
+            if (a.sending() || a.phone() == null || optedOut.contains(optOutKey(a.phone()))) continue;
             String messageId = claim(schoolId, a.parentId(), a.phone(), WELCOME, List.of(WELCOME_KEY));
             if (messageId == null) continue;
-            // Must match the approved skultem_create_new_parent template: 6 values, the temporary password last.
-            String signInWith = a.email() != null ? a.email() : a.savedPhone();
-            out.add(new Message(messageId, WELCOME, a.phone(), a.name(), a.schoolName(), "Welcome and sign-in details",
-                    List.of(a.name(), a.schoolName(), names(a.children()), a.loginUrl(), signInWith,
-                            a.temporaryPassword())));
+            // Must match the approved skultem_create_new_parent template, in this order: {{1}} parent name (shown
+            // twice), {{2}} school, {{3}} created by (the school), {{4}} child name(s), {{5}} registered phone,
+            // {{6}} parent portal link. No password: parents get that from the school or "Forgot password".
+            out.add(new Message(messageId, WELCOME, a.phone(), a.name(), a.schoolName(), "Welcome and portal link",
+                    List.of(a.name(), a.schoolName(), a.schoolName(), names(a.children()), a.savedPhone(),
+                            a.loginUrl())));
         }
     }
 
@@ -457,7 +457,6 @@ public class SkullyReminderService {
             String reason = !on ? "Skully is off for this school"
                     : a.phone() == null ? "The phone number can't be used on WhatsApp - correct it on the guardian"
                     : optedOut.contains(optOutKey(a.phone())) ? "Replied STOP to Skully"
-                    : a.temporaryPassword() == null ? "No temporary password - issue a new one from their account"
                     : a.sending() ? "Sending now"
                     : "Waiting - goes out on Skully's next run (hourly, 08:00-16:00)";
             String name = (a.name() + " " + Optional.ofNullable(a.familyName()).orElse("")).trim();

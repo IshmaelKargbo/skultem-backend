@@ -44,6 +44,7 @@ public class StudentMapper {
                 .admissionDate(param.getAdmissionDate())
                 .enrollmentType(param.getEnrollmentType())
                 .previousSchool(param.getPreviousSchool())
+                .lastClass(param.getLastClass())
                 .nationality(param.getNationality())
                 .family(family)
                 .religion(param.getReligion())

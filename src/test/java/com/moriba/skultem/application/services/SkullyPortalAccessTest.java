@@ -61,10 +61,22 @@ class SkullyPortalAccessTest {
     }
 
     @Test
-    void aPendingAccountGetsItsTemporaryPasswordAndTheSchoolSeesItWasSent() {
+    void aPendingAccountOnlySaysAPasswordCanBeSentUntilTheParentAsks() {
         parentWith(User.Status.RESET_PASSWORD, "Xy7#pQ2mRt9a", null);
 
-        var access = service.portalAccess("23277123456").get(0);
+        var access = service.portalAccess("23277123456", false).get(0);
+
+        assertThat(access.status()).isEqualTo("PENDING");
+        assertThat(access.temporaryPasswordAvailable()).isTrue();
+        assertThat(access.temporaryPassword()).isNull();
+        verify(activity, never()).log(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void aPendingAccountGetsItsTemporaryPasswordWhenAskedAndTheSchoolSeesItWasSent() {
+        parentWith(User.Status.RESET_PASSWORD, "Xy7#pQ2mRt9a", null);
+
+        var access = service.portalAccess("23277123456", true).get(0);
 
         assertThat(access.status()).isEqualTo("PENDING");
         assertThat(access.temporaryPassword()).isEqualTo("Xy7#pQ2mRt9a");
@@ -77,10 +89,11 @@ class SkullyPortalAccessTest {
     void anAccountInUseNeverGetsAPassword() {
         parentWith(User.Status.ACTIVE, "left-over", "mariama@example.com");
 
-        var access = service.portalAccess("23277123456").get(0);
+        var access = service.portalAccess("23277123456", true).get(0);
 
         assertThat(access.status()).isEqualTo("ACTIVE");
         assertThat(access.temporaryPassword()).isNull();
+        assertThat(access.temporaryPasswordAvailable()).isFalse();
         assertThat(access.signInWith()).isEqualTo("mariama@example.com");
         verify(activity, never()).log(any(), any(), any(), any(), any(), any());
     }
@@ -90,6 +103,6 @@ class SkullyPortalAccessTest {
         parentWith(User.Status.RESET_PASSWORD, "Xy7#pQ2mRt9a", null);
         when(modules.isEnabled("S1", FeatureModule.WHATSAPP_ASSISTANT)).thenReturn(false);
 
-        assertThat(service.portalAccess("23277123456")).isEmpty();
+        assertThat(service.portalAccess("23277123456", true)).isEmpty();
     }
 }
