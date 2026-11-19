@@ -24,7 +24,8 @@ public class AssessmentScoreMapper {
                 "",
                 param.isPassed())
                 .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
-                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto())
+                .withAdmissionNumber(param.getStudentAssessment().getEnrollment().getStudent().getAdmissionNumber());
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade, String trend) {
@@ -56,7 +57,8 @@ public class AssessmentScoreMapper {
                 trend,
                 passed)
                 .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
-                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto())
+                .withAdmissionNumber(param.getStudentAssessment().getEnrollment().getStudent().getAdmissionNumber());
     }
 
     public static AssessmentScoreDTO toDTO(AssessmentScore param, String grade) {
@@ -88,7 +90,8 @@ public class AssessmentScoreMapper {
                 "",
                 passed)
                 .withClassSession(ClassSessionLabel.of(param.getStudentAssessment().getEnrollment()))
-                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto());
+                .withStudentPhoto(param.getStudentAssessment().getEnrollment().getStudent().getPhoto())
+                .withAdmissionNumber(param.getStudentAssessment().getEnrollment().getStudent().getAdmissionNumber());
     }
 
     // The plain score plus, when this assessment was opened as continuous assessment, its frozen structure and
@@ -131,6 +134,6 @@ public class AssessmentScoreMapper {
         return new AssessmentScoreDTO(base.id(), base.name(), base.assessment(), base.term(), base.student(),
                 base.teacher(), base.subject(), base.clazz(), base.score(), base.weight(), base.weightScore(),
                 base.level(), base.status(), base.grade(), base.trend(), base.passed(), continuous, base.classSession(),
-                base.studentPhoto());
+                base.studentPhoto(), base.admissionNumber());
     }
 }

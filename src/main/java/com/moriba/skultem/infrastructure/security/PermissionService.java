@@ -387,6 +387,13 @@ public class PermissionService {
                 || canAccessClassSessionAsTeacher(schoolId, classSessionId);
     }
 
+    // A class's grade book (every pupil's submitted marks in every subject): management and the exam office, or a
+    // current class master of that class session. A subject teacher sees their own subject's sheet, not the book.
+    public boolean canViewGradebook(String schoolId, String classSessionId) {
+        return isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT) || hasAnySchoolRole(schoolId, "EXAM_OFFICER")
+                || canAccessClassSessionAsTeacher(schoolId, classSessionId);
+    }
+
     // One attendance record: as for its class's register. The record knows its class, not the exact
     // session, so a class master of any of that class's sessions.
     public boolean canTakeRegisterForAttendance(String schoolId, String attendanceId) {

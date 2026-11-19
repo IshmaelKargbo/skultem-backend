@@ -150,6 +150,28 @@ class TeacherOwnershipPermissionTest {
         assertThat(permissions.canViewClassRoster(SCHOOL, "class-any")).isFalse();
     }
 
+    // ── Grade book ────────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void theClassMasterOpensTheirClasssGradeBook() {
+        when(classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId("teacher-me", "sess-mine", SCHOOL))
+                .thenReturn(true);
+        assertThat(permissions.canViewGradebook(SCHOOL, "sess-mine")).isTrue();
+    }
+
+    @Test
+    void aSubjectTeacherCannotOpenTheGradeBook() {
+        when(classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId("teacher-me", "sess-taught", SCHOOL))
+                .thenReturn(false);
+        assertThat(permissions.canViewGradebook(SCHOOL, "sess-taught")).isFalse();
+    }
+
+    @Test
+    void theExamOfficeOpensAnyGradeBook() {
+        actAs("user-eo", Role.EXAM_OFFICER, Set.of(Role.EXAM_OFFICER));
+        assertThat(permissions.canViewGradebook(SCHOOL, "sess-any")).isTrue();
+    }
+
     // ── Grading ───────────────────────────────────────────────────────────────────────────────
 
     @Test
