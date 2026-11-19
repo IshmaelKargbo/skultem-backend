@@ -253,7 +253,7 @@ public class ClassController {
 
     @SectionScoped
     @GetMapping("/{id}/attention")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'TEACHER') and @sectionScope.clazz(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'EXAM_OFFICER', 'TEACHER') and @sectionScope.clazz(#school, #id) and @permissionService.canViewClassRoster(#school, #id, 'EXAM_OFFICER')")
     public ApiResponse<ClassAttentionDTO> attention(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id,

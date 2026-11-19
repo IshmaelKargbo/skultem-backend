@@ -19,6 +19,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepo;
     private final SimpMessagingTemplate messagingTemplate;
     private final com.moriba.skultem.infrastructure.push.WebPushService webPushService;
+    private final com.moriba.skultem.infrastructure.push.FcmPushService fcmPushService;
 
     public void openNotification(String schoolId, String id) {
         var res = notificationRepo.findByIdAndSchoolId(id, schoolId)
@@ -38,7 +39,9 @@ public class NotificationService {
     public void sendToUser(String userId, long count, NotificationDTO notification) {
         messagingTemplate.convertAndSendToUser(userId, "/queue/notifications",
                 new NotificationPayload(count, Instant.now(), notification));
-        // And as a native notification on the devices they turned them on for (Web Push).
+        // And as a native notification on the devices they turned them on for: browsers (Web Push) and the
+        // mobile app (Firebase Cloud Messaging).
         webPushService.notifyAsync(userId, notification);
+        fcmPushService.notifyAsync(userId, notification);
     }
 }

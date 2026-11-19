@@ -130,6 +130,10 @@ push:
     public-key: ${PUSH_VAPID_PUBLIC_KEY:}
     private-key: ${PUSH_VAPID_PRIVATE_KEY:}
     subject: ${PUSH_VAPID_SUBJECT:mailto:support@skultem.space}
+  # Mobile app notifications via Firebase Cloud Messaging. The Firebase service account key - the JSON itself
+  # or a path to the file. Never commit it. Off when unset.
+  fcm:
+    credentials: ${FIREBASE_CREDENTIALS:}
 # M-Compose, the document engine - see MComposeClient / MComposeSignIn. Each part is off until its settings are set.
 # On the engine: python -m app.accounts create-key skultem server renderer  -> MCOMPOSE_API_KEY
 #                python -m app.accounts set-sso-secret skultem               -> MCOMPOSE_SSO_SECRET

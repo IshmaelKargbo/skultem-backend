@@ -72,7 +72,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.attendance(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.attendance(#school, #id) and @permissionService.canTakeRegisterForAttendance(#school, #id)")
     public ApiResponse<AttendanceDTO> get(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -101,7 +101,7 @@ public class AttendanceController {
 
     @SectionScoped
     @DeleteMapping("/{id}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER') and @sectionScope.attendance(#school, #id)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER') and @sectionScope.attendance(#school, #id) and @permissionService.canTakeRegisterForAttendance(#school, #id)")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String id) {
@@ -111,7 +111,7 @@ public class AttendanceController {
 
     @SectionScoped
     @PostMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId) and @permissionService.canTakeRegister(#school, #classSessionId)")
     public ApiResponse<List<AttendanceDTO>> markClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -124,7 +124,7 @@ public class AttendanceController {
 
     @SectionScoped
     @DeleteMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId) and @permissionService.canTakeRegister(#school, #classSessionId)")
     public ApiResponse<Void> deleteClassSession(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -135,7 +135,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/session/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId) and @permissionService.canTakeRegister(#school, #classSessionId)")
     public ApiResponse<ClassSessionAttendanceDTO> getClassSessionSheet(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -147,7 +147,7 @@ public class AttendanceController {
 
     @SectionScoped
     @GetMapping("/session/report/{classSessionId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.classSession(#school, #classSessionId) and @permissionService.canTakeRegister(#school, #classSessionId)")
     public ApiResponse<List<AttendanceHistoryDTO>> getClassSessionReport(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classSessionId,
@@ -262,7 +262,7 @@ public class AttendanceController {
     // plus accountants, who see the roster too.
     @SectionScoped
     @GetMapping("/term-to-date/class/{classId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT') and @sectionScope.clazz(#school, #classId) and @permissionService.canViewClassRoster(#school, #classId, 'ACCOUNTANT')")
     public ApiResponse<StudentTermAttendanceDTO> getClassTermAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String classId,

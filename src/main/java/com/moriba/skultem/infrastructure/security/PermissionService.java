@@ -37,6 +37,8 @@ public class PermissionService {
     private final com.moriba.skultem.application.services.GradeApprovalResolver gradeApprovalResolver;
     private final com.moriba.skultem.application.services.PlatformAccessService platformAccess;
     private final com.moriba.skultem.domain.repository.LeaveRequestRepository leaveRequestRepo;
+    private final com.moriba.skultem.domain.repository.TeacherSubjectRepository teacherSubjectRepo;
+    private final com.moriba.skultem.domain.repository.AttendanceRepository attendanceRepo;
 
     // SUPER_ADMIN is a staff member with the whole school portal - everything the management and
     // finance roles can do, without being the owner/proprietor. Any gate naming one of these roles
@@ -362,6 +364,93 @@ public class PermissionService {
 
         return classMasterRepo.existsByTeacherIdAndClassSessionIdAndSchoolId(teacher.get().getId(), classSessionId,
                 schoolId);
+    }
+
+    // ── A teacher's own classes and subjects ────────────────────────────────────────────────────
+    // The register, roster and grading endpoints are role-gated to TEACHER, but being *a* teacher at
+    // the level isn't enough: these say which classes and subjects are this teacher's own.
+    // Management (admin, owner, proprietor, principal, super admin) is never limited by them.
+
+    private static final String[] MANAGEMENT = { "ADMIN", "OWNER", "PROPRIETOR", "PRINCIPAL", "SUPER_ADMIN" };
+
+    private java.util.Optional<com.moriba.skultem.domain.model.Teacher> currentTeacher(String schoolId) {
+        if (!hasAnySchoolRole(schoolId, "TEACHER")) {
+            return java.util.Optional.empty();
+        }
+        return teacherRepo.findByUserIdAndSchoolId(currentUserId(), schoolId);
+    }
+
+    // Taking, reading, reporting on or deleting a class's register: management, or a current class master
+    // of that class session - the classes Mark Attendance and the Daily Register list for a teacher.
+    public boolean canTakeRegister(String schoolId, String classSessionId) {
+        return isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT)
+                || canAccessClassSessionAsTeacher(schoolId, classSessionId);
+    }
+
+    // One attendance record: as for its class's register. The record knows its class, not the exact
+    // session, so a class master of any of that class's sessions.
+    public boolean canTakeRegisterForAttendance(String schoolId, String attendanceId) {
+        if (isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT)) {
+            return true;
+        }
+        var classId = attendanceRepo.findByIdAndSchoolId(attendanceId, schoolId)
+                .map(a -> a.getEnrollment() == null || a.getEnrollment().getClazz() == null ? null
+                        : a.getEnrollment().getClazz().getId())
+                .orElse(null);
+        return classId != null && isClassMasterOf(schoolId, classId);
+    }
+
+    // A class's pupils and how they're doing (roster, attention flags, term attendance), as the class
+    // page shows them: management and the other roles the endpoint names, or a teacher who is the
+    // class's class master or teaches a subject in it. Any other teacher is refused, so knowing a
+    // classId isn't enough to read its pupils and their guardians' phone numbers.
+    public boolean canViewClassRoster(String schoolId, String classId, String... otherRoles) {
+        if (isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT)
+                || (otherRoles.length > 0 && hasAnySchoolRole(schoolId, otherRoles))) {
+            return true;
+        }
+        if (classId == null || classId.isBlank()) {
+            return false;
+        }
+        return currentTeacher(schoolId).map(t -> classMasterRepo
+                .existsActiveByTeacherIdAndClassIdAndSchoolId(t.getId(), classId, schoolId)
+                || teacherSubjectRepo.findByTeacherIdAndSchoolId(t.getId(), schoolId).stream()
+                        .anyMatch(ts -> ts.getSession() != null && ts.getSession().getClazz() != null
+                                && classId.equals(ts.getSession().getClazz().getId())))
+                .orElse(false);
+    }
+
+    // Entering, saving and submitting a subject's grades (and its continuous assessment): management, or
+    // the teacher the subject is assigned to - never another teacher of the same level.
+    public boolean ownsTeacherSubject(String schoolId, String teacherSubjectId) {
+        if (isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT)) {
+            return true;
+        }
+        return teacherSubject(schoolId, teacherSubjectId)
+                .map(ts -> ts.getTeacher() != null && ts.getTeacher().getUser() != null
+                        && currentUserId().equals(ts.getTeacher().getUser().getId())
+                        && hasAnySchoolRole(schoolId, "TEACHER"))
+                .orElse(false);
+    }
+
+    // Reading a subject's score sheet: as for grading it, plus the exam office, and the class master of
+    // the subject's class (who reviews the class's grades).
+    public boolean canViewTeacherSubjectScores(String schoolId, String teacherSubjectId) {
+        if (ownsTeacherSubject(schoolId, teacherSubjectId) || hasAnySchoolRole(schoolId, "EXAM_OFFICER")) {
+            return true;
+        }
+        return teacherSubject(schoolId, teacherSubjectId)
+                .map(ts -> ts.getSession() != null && ts.getSession().getClazz() != null
+                        && isClassMasterOf(schoolId, ts.getSession().getClazz().getId()))
+                .orElse(false);
+    }
+
+    private java.util.Optional<com.moriba.skultem.domain.model.TeacherSubject> teacherSubject(String schoolId,
+            String teacherSubjectId) {
+        if (teacherSubjectId == null || teacherSubjectId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return teacherSubjectRepo.findByIdAndSchoolId(teacherSubjectId, schoolId);
     }
 
     // Mirrors canManagePromotionRequest: the approve/return endpoints are role-gated to any
