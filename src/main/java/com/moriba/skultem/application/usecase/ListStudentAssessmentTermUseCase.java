@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ListStudentAssessmentTermUseCase {
 
         private final StudentAssessmentRepository repo;
+        private final com.moriba.skultem.domain.repository.TeacherSubjectRepository teacherSubjectRepo;
         private final AssessmentScoreRepository assessmentScoreRepo;
         private final com.moriba.skultem.domain.repository.AssessmentCaEntryRepository caEntryRepo;
         private final com.moriba.skultem.domain.repository.ClassSubjectAssessmentLifeCycleRepository cycleRepo;
@@ -26,7 +27,15 @@ public class ListStudentAssessmentTermUseCase {
 
         public List<StudentAssessmentDTO> execute(String schoolId, String teacherSubjectId, String termId) {
 
-                var studentAssessments = repo.findAllByTeacherSubjectIdTermId(teacherSubjectId, termId);
+                // The same students saving and submitting work on: everyone taking the subject in this class section
+                // (whichever teacher's assignment their rows were first stamped with - a replaced teacher or a second
+                // teacher of the subject must see the whole class, not an empty or partial sheet), minus those who left.
+                var ts = teacherSubjectRepo.findByIdAndSchoolId(teacherSubjectId, schoolId).orElse(null);
+                if (ts == null || ts.getSubject() == null || ts.getSession() == null) {
+                        return List.of();
+                }
+                var studentAssessments = repo.findAllBySubjectAndSessionAndTermId(ts.getSubject().getId(),
+                                ts.getSession().getId(), termId);
 
                 var scoresByStudent = loadScores(studentAssessments);
 

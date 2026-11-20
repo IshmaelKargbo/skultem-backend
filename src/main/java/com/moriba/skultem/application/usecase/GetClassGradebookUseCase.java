@@ -38,7 +38,8 @@ public class GetClassGradebookUseCase {
     }
 
     static final String CLASS_SQL = """
-                SELECT c.name AS class_name, sec.name AS section_name, st.name AS stream_name, at.pass_mark
+                SELECT c.id AS class_id, cs.section_id, cs.stream_id, c.name AS class_name, sec.name AS section_name,
+                       st.name AS stream_name, at.pass_mark
                 FROM class_sessions cs
                 JOIN classes c ON c.id = cs.class_id
                 LEFT JOIN sections sec ON sec.id = cs.section_id
@@ -93,7 +94,8 @@ public class GetClassGradebookUseCase {
                 name.append(" · ").append(stream);
             }
             int pass = rs.getInt("pass_mark");
-            return new Object[] { name.toString(), rs.wasNull() ? DEFAULT_PASS_MARK : pass };
+            return new Object[] { name.toString(), rs.wasNull() ? DEFAULT_PASS_MARK : pass, rs.getString("class_id"),
+                    rs.getString("section_id"), rs.getString("stream_id") };
         }, classSessionId, schoolId).stream().findFirst()
                 .orElseThrow(() -> new NotFoundException("Class not found"));
         String className = (String) classInfo[0];
@@ -107,8 +109,11 @@ public class GetClassGradebookUseCase {
                 rs.getString("admission_number"), rs.getString("photo"), (Integer) rs.getObject("score")),
                 schoolId, classSessionId, term.getId());
 
-        return assemble(classSessionId, className, term.getId(), term.getName(), passMark, lines,
+        var book = assemble(classSessionId, className, term.getId(), term.getName(), passMark, lines,
                 score -> resolveScoreGradeUseCase.execute(schoolId, score));
+        return new GradebookDTO(book.classSessionId(), book.className(), book.termId(), book.termName(),
+                book.passMark(), book.subjects(), book.students(), (String) classInfo[2], (String) classInfo[3],
+                (String) classInfo[4]);
     }
 
     // Everything after the two reads, kept apart so it can be tested on its own: subjects and their assessments,
@@ -195,7 +200,8 @@ public class GetClassGradebookUseCase {
                     assessments, submitted, classAverage));
         }
 
-        return new GradebookDTO(classSessionId, className, termId, termName, passMark, subjectDTOs, ranked);
+        return new GradebookDTO(classSessionId, className, termId, termName, passMark, subjectDTOs, ranked, null, null,
+                null);
     }
 
     private static String statusOf(String cycleStatus) {

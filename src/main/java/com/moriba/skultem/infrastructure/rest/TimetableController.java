@@ -9,6 +9,7 @@ import com.moriba.skultem.application.dto.TimingDTO;
 import com.moriba.skultem.application.dto.TimingLevelDTO;
 import com.moriba.skultem.application.dto.WorkingDayDTO;
 import com.moriba.skultem.application.error.BadRequestException;
+import com.moriba.skultem.application.services.ClassTimetableTypeService;
 import com.moriba.skultem.application.services.TimetableService;
 import com.moriba.skultem.application.usecase.SetWorkingDayUseCase;
 import com.moriba.skultem.domain.model.WorkingDay;
@@ -37,6 +38,10 @@ import java.util.Map;
 public class TimetableController {
 
     private final TimetableService timetableSvc;
+    private final ClassTimetableTypeService timetableTypes;
+
+    public record ClassTypeBody(ClassTimetableTypeService.Type type) {
+    }
 
     @PostMapping()
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
@@ -193,7 +198,7 @@ public class TimetableController {
     @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT') and @sectionScope.classSession(#school, #id)")
     public ApiResponse<List<PeriodDTO>> getTimetable(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school, @Valid @PathVariable String id) {
-        var res = timetableSvc.getTimeTable(id);
+        var res = timetableSvc.getTimeTable(school, id);
         return new ApiResponse<>("success", 200, "timetable fetch successfully", res);
     }
 
@@ -253,5 +258,23 @@ public class TimetableController {
             @Valid @RequestBody CreatePeriodDTO param) {
         var res = timetableSvc.createLunch(school, param.session());
         return new ApiResponse<>("success", 200, "Lunch added successfully", res);
+    }
+
+    // Which timetable each class runs on - the normal one or the weekly plan, never both. Teachers and parents read
+    // it so their screens open the right one.
+    @GetMapping("/class-types")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR', 'TEACHER', 'PARENT')")
+    public ApiResponse<List<ClassTimetableTypeService.ClassType>> classTypes(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+        return new ApiResponse<>("success", 200, "Class timetable types", timetableTypes.list(school));
+    }
+
+    @PutMapping("/class-types/{classId}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR')")
+    public ApiResponse<ClassTimetableTypeService.ClassType> setClassType(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school, @PathVariable String classId,
+            @RequestBody ClassTypeBody body) {
+        if (body == null || body.type() == null) throw new BadRequestException("Choose a timetable type");
+        return new ApiResponse<>("success", 200, "Timetable type saved", timetableTypes.set(school, classId, body.type()));
     }
 }

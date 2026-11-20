@@ -40,15 +40,26 @@ public class GetBroadsheetUseCase {
     private final SectionScopeService sectionScopeService;
 
     public BroadsheetDTO execute(String schoolId, String classId, String termId, String sectionId, String streamId) {
+        return execute(schoolId, classId, termId, sectionId, streamId, null);
+    }
+
+    // scopeKey picks which report cards to read: as asked if they exist, else the full-term ones ("ALL"), else the
+    // most recently generated kind - so a class with only mid-term cards still gets a broadsheet.
+    public BroadsheetDTO execute(String schoolId, String classId, String termId, String sectionId, String streamId,
+            String scopeKey) {
         var clazz = classRepo.findByIdAndSchool(classId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Class not found"));
         var term = termRepo.findByIdAndSchoolId(termId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Term not found"));
 
-        List<ReportCard> cards = reportCardRepo.search(schoolId, classId, termId, null, blank(sectionId),
-                blank(streamId), sectionScopeService.levels(), Pageable.unpaged()).getContent().stream()
-                .filter(c -> "ALL".equals(c.getScopeKey()))
-                .toList();
+        List<ReportCard> all = reportCardRepo.search(schoolId, classId, termId, null, blank(sectionId),
+                blank(streamId), sectionScopeService.levels(), Pageable.unpaged()).getContent();
+        var scopes = scopesOf(all);
+        String chosen = chooseScope(scopes, scopeKey);
+        List<ReportCard> cards = chosen == null ? List.of()
+                : all.stream().filter(c -> chosen.equals(c.getScopeKey())).toList();
+        String chosenLabel = scopes.stream().filter(sc -> sc.key().equals(chosen)).map(BroadsheetDTO.Scope::label)
+                .findFirst().orElse(null);
 
         // Subjects in the order they first appear on the cards.
         var subjects = new LinkedHashSet<String>();
@@ -99,7 +110,45 @@ public class GetBroadsheetUseCase {
         double classAverage = round(ranked.stream().mapToDouble(BroadsheetDTO.Row::average).average().orElse(0));
 
         return new BroadsheetDTO(clazz.getId(), clazz.getName(), term.getId(), term.getName(),
-                List.copyOf(subjects), ranked, summaries, ranked.size(), passed, classAverage, lastGenerated);
+                List.copyOf(subjects), ranked, summaries, ranked.size(), passed, classAverage, lastGenerated, chosen,
+                chosenLabel, scopes);
+    }
+
+    // Every kind of report card generated for the class and term: the full term first, then newest first.
+    static List<BroadsheetDTO.Scope> scopesOf(List<ReportCard> cards) {
+        var byKey = new LinkedHashMap<String, List<ReportCard>>();
+        for (var c : cards) {
+            if (c.getScopeKey() != null) {
+                byKey.computeIfAbsent(c.getScopeKey(), k -> new ArrayList<>()).add(c);
+            }
+        }
+        var out = new ArrayList<BroadsheetDTO.Scope>();
+        byKey.forEach((key, list) -> {
+            Instant latest = list.stream().map(ReportCard::getGeneratedAt).filter(Objects::nonNull)
+                    .max(Comparator.naturalOrder()).orElse(null);
+            String label = list.stream().map(ReportCard::getScopeLabel).filter(l -> l != null && !l.isBlank())
+                    .findFirst().orElse(defaultLabel(key));
+            out.add(new BroadsheetDTO.Scope(key, label, list.size(), latest));
+        });
+        out.sort(Comparator.comparing((BroadsheetDTO.Scope sc) -> !"ALL".equals(sc.key()))
+                .thenComparing(BroadsheetDTO.Scope::generatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        return out;
+    }
+
+    static String chooseScope(List<BroadsheetDTO.Scope> scopes, String wanted) {
+        if (wanted != null && scopes.stream().anyMatch(sc -> sc.key().equals(wanted))) {
+            return wanted;
+        }
+        // Full term if there is one (it sorts first), else the newest.
+        return scopes.isEmpty() ? null : scopes.get(0).key();
+    }
+
+    private static String defaultLabel(String key) {
+        return switch (key) {
+            case "ALL" -> "Full term";
+            case "YEAR" -> "Whole year";
+            default -> "Selected assessments";
+        };
     }
 
     private static String blank(String value) {

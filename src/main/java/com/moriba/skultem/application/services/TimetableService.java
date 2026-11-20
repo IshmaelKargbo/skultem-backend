@@ -45,6 +45,8 @@ public class TimetableService {
     private final PeriodRepository periodRepo;
     private final WorkingDayRepository workingDayRepo;
     private final ClassSessionRepository classSessionRepo;
+    // A class runs on the normal timetable or the weekly plan, never both (see ClassTimetableTypeService).
+    private final ClassTimetableTypeService timetableTypes;
     private final ResolveTimingForLevelUseCase resolveTimingForLevelUseCase;
     private final SaveTimingUseCase saveTimingUseCase;
     private final DeleteTimingUseCase deleteTimingUseCase;
@@ -77,12 +79,14 @@ public class TimetableService {
     }
 
     public PeriodDTO createPeriod(String schoolId, String session) {
+        timetableTypes.requirePeriods(schoolId, session);
         var domain = createPeriodUseCase.execute(schoolId, session);
         var subjects = getSlots(domain.getSchoolId(), domain.getId(), domain.getSession().getId());
         return PeriodMapper.toDTO(domain, subjects);
     }
 
     public PeriodDTO createBreak(String schoolId, String session) {
+        timetableTypes.requirePeriods(schoolId, session);
         var domain = createPeriodUseCase.executeBreak(schoolId, session);
         List<List<TimetableDTO>> subjects = new ArrayList<>();
 
@@ -95,11 +99,13 @@ public class TimetableService {
 
     // Assembly holds no lessons, so - like a break - it has no slots.
     public PeriodDTO createAssembly(String schoolId, String session) {
+        timetableTypes.requirePeriods(schoolId, session);
         var domain = createPeriodUseCase.executeAssembly(schoolId, session);
         return PeriodMapper.toDTO(domain, new ArrayList<>());
     }
 
     public PeriodDTO createLunch(String schoolId, String session) {
+        timetableTypes.requirePeriods(schoolId, session);
         var domain = createPeriodUseCase.executeLunch(schoolId, session);
         List<List<TimetableDTO>> subjects = new ArrayList<>();
         if (!domain.isFixed()) {
@@ -111,6 +117,7 @@ public class TimetableService {
 
     public TimetableDTO createTimetable(String schoolId, String periodId, String subject, Day day, String roomId,
             String color, String entryId, com.moriba.skultem.domain.model.Timetable.Kind kind) {
+        timetableTypes.requirePeriodsForPeriod(schoolId, periodId);
         var domain = timetableUseCase.execut(schoolId, periodId, subject, day, roomId, color, entryId, kind);
         return TimetableMapper.toDTO(domain);
     }
@@ -118,6 +125,7 @@ public class TimetableService {
     // The lesson in this period and the next one (a double period); returns both entries.
     public List<TimetableDTO> createDoublePeriod(String schoolId, String periodId, String subject, Day day,
             String roomId, String color, String entryId, com.moriba.skultem.domain.model.Timetable.Kind kind) {
+        timetableTypes.requirePeriodsForPeriod(schoolId, periodId);
         return timetableUseCase.executeDouble(schoolId, periodId, subject, day, roomId, color, entryId, kind).stream()
                 .map(TimetableMapper::toDTO).toList();
     }
@@ -126,7 +134,11 @@ public class TimetableService {
         return TimetableMapper.toDTO(deleteTimetableEntryUseCase.execute(schoolId, id));
     }
 
-    public List<PeriodDTO> getTimeTable(String session) {
+    // A class on the weekly plan has no normal timetable to show (any it had before switching is kept, hidden).
+    public List<PeriodDTO> getTimeTable(String schoolId, String session) {
+        if (timetableTypes.typeOfSession(schoolId, session) != ClassTimetableTypeService.Type.PERIODS) {
+            return List.of();
+        }
         return periodRepo.findAllBySessionId(session).stream().map((e) -> {
             List<List<TimetableDTO>> slots = new ArrayList<>();
 

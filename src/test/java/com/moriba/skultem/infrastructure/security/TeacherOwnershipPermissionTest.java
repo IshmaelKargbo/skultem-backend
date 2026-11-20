@@ -198,6 +198,39 @@ class TeacherOwnershipPermissionTest {
         assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-theirs")).isFalse();
     }
 
+    // ── Owners and proprietors: read every mark, change none ────────────────────────────────────
+
+    @Test
+    void anOwnerReadsEveryScoreButCannotChangeThem() {
+        actAs("user-owner", Role.OWNER, Set.of(Role.OWNER));
+        assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-any")).isFalse();
+        assertThat(permissions.canViewTeacherSubjectScores(SCHOOL, "ts-any")).isTrue();
+    }
+
+    @Test
+    void aProprietorReadsEveryScoreButCannotChangeThem() {
+        actAs("user-prop", Role.PROPRIETOR, Set.of(Role.PROPRIETOR));
+        assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-any")).isFalse();
+        assertThat(permissions.canViewTeacherSubjectScores(SCHOOL, "ts-any")).isTrue();
+    }
+
+    @Test
+    void thePrincipalStillEntersAndCorrectsMarks() {
+        actAs("user-head", Role.PRINCIPAL, Set.of(Role.PRINCIPAL));
+        assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-any")).isTrue();
+    }
+
+    @Test
+    void anOwnerWhoTeachesGradesOnlyTheirOwnSubjects() {
+        actAs("user-me", Role.OWNER, Set.of(Role.OWNER, Role.TEACHER));
+        var mine = subject("ts-mine", me, "class-1");
+        var theirs = subject("ts-theirs", other, "class-1");
+        when(teacherSubjectRepo.findByIdAndSchoolId("ts-mine", SCHOOL)).thenReturn(Optional.of(mine));
+        when(teacherSubjectRepo.findByIdAndSchoolId("ts-theirs", SCHOOL)).thenReturn(Optional.of(theirs));
+        assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-mine")).isTrue();
+        assertThat(permissions.ownsTeacherSubject(SCHOOL, "ts-theirs")).isFalse();
+    }
+
     @Test
     void anUnknownSubjectIsRefused() {
         when(teacherSubjectRepo.findByIdAndSchoolId("ts-gone", SCHOOL)).thenReturn(Optional.empty());

@@ -5,8 +5,9 @@ import java.util.Map;
 
 // A class master's grade book for a term: every pupil against every subject, from the marks the subject teachers
 // have submitted (awaiting approval or approved). Drafts aren't shown - they're still the subject teacher's work.
+// classId/sectionId/streamId: the section's class - what the report-card view (the broadsheet) of the same class reads.
 public record GradebookDTO(String classSessionId, String className, String termId, String termName, int passMark,
-        List<Subject> subjects, List<Student> students) {
+        List<Subject> subjects, List<Student> students, String classId, String sectionId, String streamId) {
 
     // status: APPROVED (approved or completed), SUBMITTED (awaiting approval) or NOT_SUBMITTED (draft or returned).
     public record Assessment(String id, String name, int position, Integer weight, String status) {

@@ -157,6 +157,12 @@ public class WeeklyPlanService {
         }
     }
 
+    // A class runs on the weekly plan or the normal timetable, never both. Built here rather than injected so the
+    // service keeps its two-argument constructor.
+    private ClassTimetableTypeService types() {
+        return new ClassTimetableTypeService(jdbc);
+    }
+
     private String classId(String schoolId, String classSessionId) {
         var rows = jdbc.queryForList("SELECT class_id FROM class_sessions WHERE id = ? AND school_id = ?", String.class,
                 classSessionId, schoolId);
@@ -199,6 +205,7 @@ public class WeeklyPlanService {
     // Plans (staff)
 
     public Plan plan(String schoolId, String classSessionId, String termId) {
+        types().requireWeeklyPlan(schoolId, classSessionId);
         Term term = term(schoolId, termId);
         String className = className(schoolId, classSessionId);
         var row = planRow(classSessionId, term.id());
@@ -221,6 +228,7 @@ public class WeeklyPlanService {
     /** As above; with cycleWeeks > 0 it fills that many weeks in turn and repeats them over the term instead. */
     @Transactional
     public Plan autoFill(String schoolId, String classSessionId, String termId, int cycleWeeks) {
+        types().requireWeeklyPlan(schoolId, classSessionId);
         if (cycleWeeks > 0) {
             return autoFillCycle(schoolId, classSessionId, termId, cycleWeeks);
         }
@@ -255,6 +263,7 @@ public class WeeklyPlanService {
     /** Saves the whole term as edited: every entry given replaces what was there. */
     @Transactional
     public Plan save(String schoolId, String classSessionId, String termId, List<EntryInput> entries) {
+        types().requireWeeklyPlan(schoolId, classSessionId);
         Term term = term(schoolId, termId);
         className(schoolId, classSessionId);
         int perDay = slotsFor(schoolId, classSessionId).slots().size();
@@ -289,6 +298,7 @@ public class WeeklyPlanService {
      */
     @Transactional
     public Plan saveCycle(String schoolId, String classSessionId, String termId, int cycleWeeks, List<CycleInput> entries) {
+        types().requireWeeklyPlan(schoolId, classSessionId);
         checkCycle(cycleWeeks);
         Term term = term(schoolId, termId);
         className(schoolId, classSessionId);
@@ -396,6 +406,7 @@ public class WeeklyPlanService {
 
     @Transactional
     public Plan setStatus(String schoolId, String classSessionId, String termId, boolean published) {
+        types().requireWeeklyPlan(schoolId, classSessionId);
         Term term = term(schoolId, termId);
         var row = planRow(classSessionId, term.id());
         if (row == null || !schoolId.equals(row.get("school_id"))) throw new NotFoundException("Save the plan first");
@@ -434,6 +445,10 @@ public class WeeklyPlanService {
                 studentId, schoolId);
         if (session.isEmpty() || session.get(0) == null) return Optional.empty();
         String classSessionId = session.get(0);
+        // A class on the normal timetable has no weekly plan to show (one kept from before a switch stays hidden).
+        if (types().typeOfSession(schoolId, classSessionId) != ClassTimetableTypeService.Type.WEEKLY_PLAN) {
+            return Optional.empty();
+        }
         LocalDate monday = from.with(DayOfWeek.MONDAY), friday = monday.plusWeeks(1).plusDays(4);
         List<Slot> slots = slotsFor(schoolId, classSessionId).slots();
         Map<String, String> holidays = holidays(schoolId, monday, friday);

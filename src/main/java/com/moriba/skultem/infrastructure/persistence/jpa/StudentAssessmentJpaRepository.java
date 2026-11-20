@@ -32,14 +32,19 @@ public interface StudentAssessmentJpaRepository extends JpaRepository<StudentAss
     // shared set of student assessments rather than each seeing only the rows stamped with their
     // own teacher_subject_id (whichever teacher's assignment happened to trigger provisioning
     // first "owns" that stamp, see ProvisionStudentAssessmentsUseCase).
+    //
+    // Students who have left the class (withdrawn, expelled - enrollment LEFT) are not on it: nobody grades them, and
+    // saving or submitting never waits on a mark for them. Their past marks stay in the database.
     @Query("""
                 select sa from StudentAssessmentEntity sa
                 where sa.teacherSubject.subject.id = :subjectId
                 and sa.teacherSubject.session.id = :sessionId
                 and sa.term.id = :termId
+                and sa.enrollment.status <> :left
             """)
     List<StudentAssessmentEntity> findAllBySubjectAndSessionAndTermId(
             @Param("subjectId") String subjectId,
             @Param("sessionId") String sessionId,
-            @Param("termId") String termId);
+            @Param("termId") String termId,
+            @Param("left") com.moriba.skultem.domain.model.Enrollment.Status left);
 }

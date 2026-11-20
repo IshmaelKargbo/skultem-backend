@@ -203,15 +203,19 @@ public class ExamOfficeController {
     }
 
     @SectionScoped
+    // The exam office and management - and the class's own class master, who already sees its report cards; it is the
+    // report-card view of their Grade Book.
     @GetMapping("/broadsheet")
-    @PreAuthorize(MANAGE + " and @sectionScope.clazz(#school, #classId)")
+    @PreAuthorize("(" + MANAGE + " or @permissionService.canManageReportCardsForClass(#school, #classId)) "
+            + "and @sectionScope.clazz(#school, #classId)")
     public ApiResponse<BroadsheetDTO> broadsheet(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @RequestParam String classId,
             @RequestParam String termId,
             @RequestParam(required = false) String sectionId,
-            @RequestParam(required = false) String streamId) {
-        var res = getBroadsheetUseCase.execute(school, classId, termId, sectionId, streamId);
+            @RequestParam(required = false) String streamId,
+            @RequestParam(required = false) String scope) {
+        var res = getBroadsheetUseCase.execute(school, classId, termId, sectionId, streamId, scope);
         return new ApiResponse<>("success", 200, "Broadsheet fetched successfully", res);
     }
 

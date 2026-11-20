@@ -336,7 +336,7 @@ public class AssessmentController {
     // structure the assessment froze when it opened; nothing here can change it.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> recordContinuous(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -359,7 +359,7 @@ public class AssessmentController {
     // Locks a completed CA recording (every student has it) so it can't be edited afterwards.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/lock-week")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> lockContinuousWeek(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -384,7 +384,7 @@ public class AssessmentController {
     // Refreshes the CA part that is taken from attendance (days present or late over the term's school days).
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/sync-attendance")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> syncContinuousAttendance(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -397,7 +397,7 @@ public class AssessmentController {
     // can be entered next.
     @SectionScoped
     @PostMapping("/continuous/{teacherSubjectId}/submit-ca")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> submitContinuousCa(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -408,7 +408,7 @@ public class AssessmentController {
 
     @SectionScoped
     @PostMapping("/grade/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> gradeAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,
@@ -422,7 +422,7 @@ public class AssessmentController {
 
     @SectionScoped
     @PostMapping("/submit/{teacherSubjectId}")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PROPRIETOR', 'SUPER_ADMIN', 'PRINCIPAL', 'OWNER', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'SUPER_ADMIN', 'PRINCIPAL', 'TEACHER') and @sectionScope.teacherSubject(#school, #teacherSubjectId) and @permissionService.ownsTeacherSubject(#school, #teacherSubjectId)")
     public ApiResponse<Object> submitAssessment(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @PathVariable String teacherSubjectId,

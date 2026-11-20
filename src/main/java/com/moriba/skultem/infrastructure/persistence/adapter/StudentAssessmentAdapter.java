@@ -67,7 +67,8 @@ public class StudentAssessmentAdapter implements StudentAssessmentRepository {
     @Override
     public List<StudentAssessment> findAllBySubjectAndSessionAndTermId(String subjectId, String sessionId,
             String termId) {
-        return repo.findAllBySubjectAndSessionAndTermId(subjectId, sessionId, termId).stream()
+        return repo.findAllBySubjectAndSessionAndTermId(subjectId, sessionId, termId,
+                com.moriba.skultem.domain.model.Enrollment.Status.LEFT).stream()
                 .map(StudentAssessmentMapper::toDomain)
                 .toList();
     }

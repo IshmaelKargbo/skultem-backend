@@ -372,6 +372,10 @@ public class PermissionService {
     // Management (admin, owner, proprietor, principal, super admin) is never limited by them.
 
     private static final String[] MANAGEMENT = { "ADMIN", "OWNER", "PROPRIETOR", "PRINCIPAL", "SUPER_ADMIN" };
+    // Who may enter or change marks for any subject: the school's admins and the principal. Owners and proprietors
+    // see every mark but don't change them - marks changed by whoever owns the school would put their integrity in
+    // doubt, and admins and the principal already cover a teacher who is away.
+    private static final String[] GRADE_EDITORS = { "ADMIN", "PRINCIPAL", "SUPER_ADMIN" };
 
     private java.util.Optional<com.moriba.skultem.domain.model.Teacher> currentTeacher(String schoolId) {
         if (!hasAnySchoolRole(schoolId, "TEACHER")) {
@@ -427,10 +431,11 @@ public class PermissionService {
                 .orElse(false);
     }
 
-    // Entering, saving and submitting a subject's grades (and its continuous assessment): management, or
-    // the teacher the subject is assigned to - never another teacher of the same level.
+    // Entering, saving and submitting a subject's grades (and its continuous assessment): admins and the principal,
+    // or the teacher the subject is assigned to - never another teacher of the same level, and not an owner or
+    // proprietor (they read every mark; see GRADE_EDITORS).
     public boolean ownsTeacherSubject(String schoolId, String teacherSubjectId) {
-        if (isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT)) {
+        if (isSystemAdmin() || hasAnySchoolRole(schoolId, GRADE_EDITORS)) {
             return true;
         }
         return teacherSubject(schoolId, teacherSubjectId)
@@ -443,7 +448,9 @@ public class PermissionService {
     // Reading a subject's score sheet: as for grading it, plus the exam office, and the class master of
     // the subject's class (who reviews the class's grades).
     public boolean canViewTeacherSubjectScores(String schoolId, String teacherSubjectId) {
-        if (ownsTeacherSubject(schoolId, teacherSubjectId) || hasAnySchoolRole(schoolId, "EXAM_OFFICER")) {
+        // Every mark is open to read for management (owners and proprietors included) and the exam office.
+        if (isSystemAdmin() || hasAnySchoolRole(schoolId, MANAGEMENT) || hasAnySchoolRole(schoolId, "EXAM_OFFICER")
+                || ownsTeacherSubject(schoolId, teacherSubjectId)) {
             return true;
         }
         return teacherSubject(schoolId, teacherSubjectId)
