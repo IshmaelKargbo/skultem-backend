@@ -68,8 +68,11 @@ public class SkullyReminderService {
     private static final String WELCOME_KEY = "welcome";
 
     /** What Skully can send, one WhatsApp template each. */
-    public static final String REMINDER = "REMINDER", WELCOME = "WELCOME", LINKED = "LINKED", WEEKLY = "WEEKLY";
-    public static final Set<String> ALL_KINDS = Set.of(REMINDER, WELCOME, LINKED, WEEKLY);
+    // WEEKLY: the old per-child weekly template. WEEKLY_FAMILY: one weekly message per parent covering all their
+    // children, written by Skully; when Skully asks for both, WEEKLY_FAMILY wins.
+    public static final String REMINDER = "REMINDER", WELCOME = "WELCOME", LINKED = "LINKED", WEEKLY = "WEEKLY",
+            WEEKLY_FAMILY = "WEEKLY_FAMILY";
+    public static final Set<String> ALL_KINDS = Set.of(REMINDER, WELCOME, LINKED, WEEKLY, WEEKLY_FAMILY);
     // The kinds of item that make up the one reminder message a day.
     private static final List<String> REMINDER_ITEMS = List.of("EXAM", "EVENT", "FEE");
 
@@ -96,10 +99,15 @@ public class SkullyReminderService {
 
     /**
      * One WhatsApp message for one parent. kind picks the template (REMINDER, WELCOME, LINKED) and values fill its
-     * {{1}}, {{2}}... in order. text is a short description (for a reminder, the reminder itself).
+     * {{1}}, {{2}}... in order. text is a short description (for a reminder, the reminder itself). facts, when set,
+     * is what Skully writes the message from (the family weekly summary); values then hold a plain fallback.
      */
     public record Message(String id, String kind, String phone, String parentName, String schoolName, String text,
-            List<String> values) {
+            List<String> values, Map<String, Object> facts) {
+        public Message(String id, String kind, String phone, String parentName, String schoolName, String text,
+                List<String> values) {
+            this(id, kind, phone, parentName, schoolName, text, values, null);
+        }
     }
 
     /** A parent who hasn't had the welcome yet, and why (the school's Skully page). */
@@ -146,8 +154,11 @@ public class SkullyReminderService {
                 if (kinds.contains(WELCOME)) welcomes(schoolId, optedOut, limit, out);
                 if (kinds.contains(LINKED)) linked(schoolId, optedOut, limit, out);
                 if (kinds.contains(REMINDER)) reminders(schoolId, today, optedOut, limit, out);
-                if (kinds.contains(WEEKLY) && weeklyTime(ZonedDateTime.now(SchoolTimeZone.ZONE))
-                        && settings(schoolId).weeklySummary()) weekly(schoolId, today, optedOut, limit, out);
+                if ((kinds.contains(WEEKLY) || kinds.contains(WEEKLY_FAMILY))
+                        && weeklyTime(ZonedDateTime.now(SchoolTimeZone.ZONE)) && settings(schoolId).weeklySummary()) {
+                    if (kinds.contains(WEEKLY_FAMILY)) weeklyFamily(schoolId, today, optedOut, limit, out);
+                    else weekly(schoolId, today, optedOut, limit, out);
+                }
             } catch (RuntimeException e) {
                 log.error("Skully messages for school {} failed: {}", schoolId, e.getMessage(), e);
             }
@@ -259,16 +270,23 @@ public class SkullyReminderService {
     // Records a message's items as handed to Skully. null when they were already claimed (another run has them).
     private String claim(String schoolId, String parentId, String phone, String kind, List<String> keys) {
         String messageId = UUID.randomUUID().toString();
+        return claimKeys(messageId, schoolId, parentId, phone, kind, keys).isEmpty() ? null : messageId;
+    }
+
+    // The keys this message got (the others were already claimed by an earlier message).
+    private List<String> claimKeys(String messageId, String schoolId, String parentId, String phone, String kind,
+            List<String> keys) {
         Timestamp now = Timestamp.from(Instant.now());
-        int claimed = 0;
+        List<String> claimed = new ArrayList<>();
         for (String key : keys) {
-            claimed += jdbc.update("""
+            if (jdbc.update("""
                     INSERT INTO skully_reminders (id, message_id, school_id, parent_id, phone, kind, item_key,
                         status, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'SENDING', ?, ?) ON CONFLICT (parent_id, item_key) DO NOTHING
-                    """, UUID.randomUUID().toString(), messageId, schoolId, parentId, phone, kind, key, now, now);
+                    """, UUID.randomUUID().toString(), messageId, schoolId, parentId, phone, kind, key, now, now) > 0)
+                claimed.add(key);
         }
-        return claimed > 0 ? messageId : null;
+        return claimed;
     }
 
     private Set<String> optedOut() {
@@ -278,9 +296,10 @@ public class SkullyReminderService {
     }
 
     // ---------------------------------------------------------------------------------------------------------
-    // The weekly academic summary: on Friday afternoon (Saturday as a catch-up), one message per child with their
-    // week - marks the school approved this week, attendance, and behaviour notes as the teacher's remark. A child
-    // with nothing recorded this week gets no message. Fills the approved weekly_academic_summary template.
+    // The weekly academic summary: on Friday afternoon (Saturday as a catch-up), each child's week - marks the school
+    // approved this week, attendance, and behaviour notes as the teacher's remark. A child with nothing recorded this
+    // week is left out. Sent as one message per parent written by Skully (weekly_family_summary), or one per child
+    // (weekly_academic_summary) while Skully only has the old template.
 
     static boolean weeklyTime(ZonedDateTime now) {
         return (now.getDayOfWeek() == DayOfWeek.FRIDAY && now.getHour() >= 14) || now.getDayOfWeek() == DayOfWeek.SATURDAY;
@@ -296,13 +315,16 @@ public class SkullyReminderService {
         return from + " - " + friday.format(WEEK_DAY) + " " + friday.getYear();
     }
 
-    private static final class Week {
+    static final class Week {
         long days, present;
+        final List<String> absentOn = new ArrayList<>();
+        final List<Map<String, Object>> marks = new ArrayList<>();
         final List<Integer> scores = new ArrayList<>();
         final Set<String> subjects = new java.util.TreeSet<>();
         String best;
         int bestScore = -1;
         final List<String> remarks = new ArrayList<>();
+        final List<Map<String, Object>> notes = new ArrayList<>();
 
         boolean empty() {
             return days == 0 && scores.isEmpty() && remarks.isEmpty();
@@ -311,38 +333,84 @@ public class SkullyReminderService {
         void mark(String subject, int score) {
             scores.add(score);
             subjects.add(subject);
+            marks.add(Map.of("subject", subject == null ? "" : subject, "score", score));
             if (score > bestScore) {
                 bestScore = score;
                 best = score + "% (" + subject + ")";
             }
         }
 
-        /** {{6}} to {{11}} of the template. */
+        void note(String kind, String note) {
+            remarks.add("NEGATIVE".equals(kind) ? "To talk about: " + note : note);
+            notes.add(Map.of("kind", kind == null ? "NEUTRAL" : kind, "note", note));
+        }
+
+        Long average() {
+            return scores.isEmpty() ? null : Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(0));
+        }
+
+        /** {{6}} to {{11}} of the old per-child template. */
         List<String> values() {
             boolean marked = !scores.isEmpty();
-            String average = marked
-                    ? Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(0)) + "%" : "No marks this week";
             String remark = remarks.isEmpty() ? "Normal this week" : String.join("; ", remarks);
             if (remark.length() > MAX_REMARK) remark = remark.substring(0, MAX_REMARK - 3).trim() + "...";
             return List.of(
                     marked ? subjects.size() + " (" + String.join(", ", subjects) + ")" : "None this week",
-                    average,
+                    marked ? average() + "%" : "No marks this week",
                     marked ? best : "-",
                     days == 0 ? "Not recorded" : present + " of " + days,
                     days == 0 ? "Not recorded" : String.valueOf(days - present),
                     remark);
         }
+
+        /** What Skully writes this child's part of the family summary from. */
+        Map<String, Object> facts(String name, String clazz) {
+            Map<String, Object> f = new LinkedHashMap<>();
+            f.put("name", name);
+            f.put("class", clazz);
+            f.put("attendance", days == 0 ? null
+                    : Map.of("schoolDays", days, "present", present, "absentOn", absentOn));
+            f.put("marks", marks);
+            f.put("averageMark", average());
+            f.put("teacherNotes", notes);
+            return f;
+        }
+
+        /** One child's part of the plain summary (used when Skully can't write one). */
+        String plain(String name, String clazz) {
+            List<String> parts = new ArrayList<>();
+            if (days > 0) parts.add("present " + present + " of " + days + " days");
+            if (!scores.isEmpty()) parts.add("average " + average() + "% in " + subjects.size()
+                    + (subjects.size() == 1 ? " subject" : " subjects") + ", best " + best);
+            if (!remarks.isEmpty()) parts.add("teacher's note: " + String.join("; ", remarks));
+            return name + " (" + clazz + "): " + String.join(", ", parts) + ".";
+        }
     }
 
-    private void weekly(String schoolId, LocalDate today, Set<String> optedOut, int limit, List<Message> out) {
-        LocalDate monday = today.with(DayOfWeek.MONDAY);
+    /** One child in this week's summaries. */
+    private record ChildWeek(String studentId, String parentId, String name, String firstName, String clazz, Week week) {
+    }
+
+    // The family summary goes in one template value, which must stay short: the whole WhatsApp template body is
+    // limited to 1024 characters. The worker caps what Gemini writes to the same length.
+    static final int MAX_SUMMARY = 600;
+
+    /** The plain family summary: each child's week, cut to fit the template. */
+    static String plainSummary(List<String> childParts) {
+        String text = String.join(" ", childParts).replaceAll("\\s+", " ").trim();
+        return text.length() <= MAX_SUMMARY ? text : text.substring(0, MAX_SUMMARY - 3).trim() + "...";
+    }
+
+    /** This week's attendance, approved marks and behaviour notes for each child at the school with something recorded. */
+    private List<ChildWeek> weekOf(String schoolId, LocalDate monday, LocalDate today) {
         Timestamp weekStart = Timestamp.from(monday.atStartOfDay(SchoolTimeZone.ZONE).toInstant());
         Map<String, Week> weeks = new LinkedHashMap<>();
 
         for (var r : jdbc.queryForList("""
                 SELECT e.student_id,
                        COUNT(*) FILTER (WHERE NOT a.holiday) AS days,
-                       COUNT(*) FILTER (WHERE a.present AND NOT a.holiday) AS present
+                       COUNT(*) FILTER (WHERE a.present AND NOT a.holiday) AS present,
+                       ARRAY_AGG(a.date ORDER BY a.date) FILTER (WHERE NOT a.present AND NOT a.holiday) AS absent
                 FROM attendance a JOIN enrollments e ON e.id = a.enrollment_id AND e.status = 'ACTIVE'
                 WHERE a.school_id = ? AND a.date BETWEEN ? AND ?
                 GROUP BY e.student_id
@@ -350,6 +418,14 @@ public class SkullyReminderService {
             Week w = weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week());
             w.days = ((Number) r.get("days")).longValue();
             w.present = ((Number) r.get("present")).longValue();
+            if (r.get("absent") instanceof java.sql.Array absent) {
+                try {
+                    for (Object d : (Object[]) absent.getArray())
+                        w.absentOn.add(dayName(d));
+                } catch (java.sql.SQLException e) {
+                    log.warn("Skully weekly: could not read absent days: {}", e.getMessage());
+                }
+            }
         }
 
         // Marks once the school has approved them (what report cards use), not drafts a teacher may still change.
@@ -377,45 +453,99 @@ public class SkullyReminderService {
                 """, schoolId, weekStart)) {
             String note = Optional.ofNullable((String) r.get("note")).map(n -> n.replaceAll("\\s+", " ").trim()).orElse("");
             if (note.isEmpty()) continue;
-            String kind = (String) r.get("kind");
-            weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week()).remarks
-                    .add("NEGATIVE".equals(kind) ? "To talk about: " + note : note);
+            weeks.computeIfAbsent((String) r.get("student_id"), k -> new Week()).note((String) r.get("kind"), note);
         }
 
         weeks.values().removeIf(Week::empty);
-        if (weeks.isEmpty()) return;
+        if (weeks.isEmpty()) return List.of();
 
         // The children, their class and their parent.
         String in = String.join(",", weeks.keySet().stream().map(k -> "?").toList());
         List<Object> args = new ArrayList<>(List.of(schoolId));
         args.addAll(weeks.keySet());
-        var students = jdbc.queryForList("""
+        List<ChildWeek> out = new ArrayList<>();
+        for (var s : jdbc.queryForList("""
                 SELECT st.id, st.parent_id, st.given_names, st.family_name, c.name AS class_name, sec.name AS section
                 FROM students st
                 JOIN enrollments e ON e.student_id = st.id AND e.status = 'ACTIVE'
                 JOIN classes c ON c.id = e.class_id
                 LEFT JOIN sections sec ON sec.id = e.section_id
-                WHERE st.school_id = ? AND st.status = 'ACTIVE' AND st.parent_id IS NOT NULL AND st.id IN (""" + in + ")",
-                args.toArray());
-        Map<String, Recipient> recipients = recipients(schoolId,
-                students.stream().map(s -> (String) s.get("parent_id")).collect(java.util.stream.Collectors.toSet()));
-        String week = weekLabel(monday);
-
-        for (var s : students) {
-            if (out.size() >= limit) return;
-            Recipient to = recipients.get((String) s.get("parent_id"));
-            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
-            String studentId = (String) s.get("id");
-            String messageId = claim(schoolId, to.parentId(), to.phone(), WEEKLY, List.of("weekly:" + monday + ":" + studentId));
-            if (messageId == null) continue;
-            String child = (Optional.ofNullable((String) s.get("given_names")).orElse("") + " "
+                WHERE st.school_id = ? AND st.status = 'ACTIVE' AND st.parent_id IS NOT NULL AND st.id IN (""" + in + """
+                ) ORDER BY st.parent_id, st.given_names""", args.toArray())) {
+            String name = (Optional.ofNullable((String) s.get("given_names")).orElse("") + " "
                     + Optional.ofNullable((String) s.get("family_name")).orElse("")).trim();
             String section = (String) s.get("section");
             String clazz = s.get("class_name") + (section == null || section.isBlank() ? "" : " " + section);
-            List<String> values = new ArrayList<>(List.of(to.name(), to.schoolName(), child, week, clazz));
-            values.addAll(weeks.get(studentId).values());
+            out.add(new ChildWeek((String) s.get("id"), (String) s.get("parent_id"), name, first(s.get("given_names")),
+                    clazz, weeks.get((String) s.get("id"))));
+        }
+        return out;
+    }
+
+    private static String dayName(Object date) {
+        LocalDate d = date instanceof Date sql ? sql.toLocalDate() : LocalDate.parse(date.toString().substring(0, 10));
+        return d.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, Locale.ENGLISH);
+    }
+
+    private static String weeklyKey(LocalDate monday, String studentId) {
+        return "weekly:" + monday + ":" + studentId;
+    }
+
+    // The old per-child template (weekly_academic_summary, 12 values), until the family one is approved.
+    private void weekly(String schoolId, LocalDate today, Set<String> optedOut, int limit, List<Message> out) {
+        LocalDate monday = today.with(DayOfWeek.MONDAY);
+        List<ChildWeek> children = weekOf(schoolId, monday, today);
+        if (children.isEmpty()) return;
+        Map<String, Recipient> recipients = recipients(schoolId,
+                children.stream().map(ChildWeek::parentId).collect(java.util.stream.Collectors.toSet()));
+        String week = weekLabel(monday);
+
+        for (ChildWeek c : children) {
+            if (out.size() >= limit) return;
+            Recipient to = recipients.get(c.parentId());
+            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
+            String messageId = claim(schoolId, to.parentId(), to.phone(), WEEKLY, List.of(weeklyKey(monday, c.studentId())));
+            if (messageId == null) continue;
+            List<String> values = new ArrayList<>(List.of(to.name(), to.schoolName(), c.name(), week, c.clazz()));
+            values.addAll(c.week().values());
             values.add(portal(to.schoolDomain()));
-            out.add(new Message(messageId, WEEKLY, to.phone(), to.name(), to.schoolName(), child + "'s week", values));
+            out.add(new Message(messageId, WEEKLY, to.phone(), to.name(), to.schoolName(), c.name() + "'s week", values));
+        }
+    }
+
+    // The family weekly summary: one message per parent covering all their children with something recorded this
+    // week. Skully writes it from facts; values carry a plain version in case it can't. Each child is still claimed
+    // on its own key, so a child already sent this week (e.g. by the old template) is left out.
+    // Template (weekly_family_summary): {{1}} parent, {{2}} school, {{3}} week, {{4}} summary, {{5}} parent portal.
+    private void weeklyFamily(String schoolId, LocalDate today, Set<String> optedOut, int limit, List<Message> out) {
+        LocalDate monday = today.with(DayOfWeek.MONDAY);
+        Map<String, List<ChildWeek>> byParent = new LinkedHashMap<>();
+        for (ChildWeek c : weekOf(schoolId, monday, today))
+            byParent.computeIfAbsent(c.parentId(), k -> new ArrayList<>()).add(c);
+        if (byParent.isEmpty()) return;
+        Map<String, Recipient> recipients = recipients(schoolId, byParent.keySet());
+        String week = weekLabel(monday);
+
+        for (var entry : byParent.entrySet()) {
+            if (out.size() >= limit) return;
+            Recipient to = recipients.get(entry.getKey());
+            if (to == null || to.phone() == null || optedOut.contains(optOutKey(to.phone()))) continue;
+            String messageId = UUID.randomUUID().toString();
+            Set<String> claimed = new HashSet<>(claimKeys(messageId, schoolId, to.parentId(), to.phone(), WEEKLY_FAMILY,
+                    entry.getValue().stream().map(c -> weeklyKey(monday, c.studentId())).toList()));
+            List<ChildWeek> children = entry.getValue().stream()
+                    .filter(c -> claimed.contains(weeklyKey(monday, c.studentId()))).toList();
+            if (children.isEmpty()) continue;
+
+            Map<String, Object> facts = new LinkedHashMap<>();
+            facts.put("parentName", to.name());
+            facts.put("school", to.schoolName());
+            facts.put("week", week);
+            facts.put("children", children.stream().map(c -> c.week().facts(c.firstName(), c.clazz())).toList());
+            String plain = plainSummary(children.stream().map(c -> c.week().plain(c.firstName(), c.clazz())).toList());
+            out.add(new Message(messageId, WEEKLY_FAMILY, to.phone(), to.name(), to.schoolName(),
+                    names(children.stream().map(ChildWeek::firstName).toList()) + "'s week",
+                    List.of(to.name(), to.schoolName(), week, plain, portal(to.schoolDomain())), facts));
         }
     }
 

@@ -50,6 +50,42 @@ class SkullyReminderServiceTest {
     }
 
     @Test
+    void aChildsWeekBecomesFactsAndAPlainLine() {
+        var week = new SkullyReminderService.Week();
+        week.days = 5;
+        week.present = 4;
+        week.absentOn.add("Wednesday");
+        week.mark("Maths", 90);
+        week.mark("English", 80);
+        week.note("POSITIVE", "Helped a classmate");
+        week.note("NEGATIVE", "Late homework");
+
+        assertThat(week.plain("Fatu", "JSS 1 A")).isEqualTo("Fatu (JSS 1 A): present 4 of 5 days, average 85% in 2 subjects, "
+                + "best 90% (Maths), teacher's note: Helped a classmate; To talk about: Late homework.");
+        var facts = week.facts("Fatu", "JSS 1 A");
+        assertThat(facts.get("averageMark")).isEqualTo(85L);
+        assertThat(facts.get("attendance")).isEqualTo(java.util.Map.of("schoolDays", 5L, "present", 4L, "absentOn", List.of("Wednesday")));
+        assertThat((List<?>) facts.get("marks")).hasSize(2);
+        assertThat((List<?>) facts.get("teacherNotes")).hasSize(2);
+    }
+
+    @Test
+    void aChildWithOnlyAttendanceGetsAShortLine() {
+        var week = new SkullyReminderService.Week();
+        week.days = 5;
+        week.present = 5;
+        assertThat(week.plain("Musa", "Class 3")).isEqualTo("Musa (Class 3): present 5 of 5 days.");
+        assertThat(week.facts("Musa", "Class 3").get("averageMark")).isNull();
+    }
+
+    @Test
+    void thePlainFamilySummaryFitsTheTemplate() {
+        assertThat(SkullyReminderService.plainSummary(List.of("Fatu: a.", "Musa: b."))).isEqualTo("Fatu: a. Musa: b.");
+        String longOne = SkullyReminderService.plainSummary(List.of("x".repeat(500), "y".repeat(500)));
+        assertThat(longOne).hasSize(SkullyReminderService.MAX_SUMMARY).endsWith("...");
+    }
+
+    @Test
     void childrenAreNamedTogether() {
         assertThat(SkullyReminderService.names(List.of())).isEqualTo("your child");
         assertThat(SkullyReminderService.names(List.of("Fatu"))).isEqualTo("Fatu");
