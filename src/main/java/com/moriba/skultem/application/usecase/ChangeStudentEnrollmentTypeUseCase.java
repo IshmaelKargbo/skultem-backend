@@ -91,9 +91,7 @@ public class ChangeStudentEnrollmentTypeUseCase {
 
             for (StudentFee sf : current) {
                 FeeStructure fee = sf.getFee();
-                boolean stillApplies = !(fee.isNewStudentsOnly() && !newType.isNewAdmission())
-                        && !(fee.isOldStudentsOnly() && newType.isNewAdmission());
-                if (!stillApplies) {
+                if (!fee.appliesToEnrollmentType(newType)) {
                     toRemove.add(sf);
                 }
             }

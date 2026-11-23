@@ -20,7 +20,6 @@ import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeCategory;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.FeeStructureSupplyItem;
-import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.FeeStructure.Type;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -186,18 +185,11 @@ public class CreateFeeStructureUseCase {
                 // Only reach students whose overall admission was NEW/TRANSFER - not the explicit
                 // selection above, same as ApplyApplicableFeesToEnrollmentUseCase (which is what
                 // enforces this same rule for enrollments created after this fee already exists).
-                if (param.newStudentsOnly() && !hasExplicitStudents) {
+                // "Old students only" reaches everyone else (RE_ENROLLMENT and EXISTING) - see
+                // FeeStructure#appliesToEnrollmentType, the one rule every path uses.
+                if ((param.newStudentsOnly() || param.oldStudentsOnly()) && !hasExplicitStudents) {
                         enrollments = enrollments.stream()
-                                        .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.NEW
-                                                        || e.getStudent().getEnrollmentType() == EnrollmentType.TRANSFER)
-                                        .toList();
-                }
-
-                // Mirror image of the above - only reach students whose overall admission was
-                // RE_ENROLLMENT (a returning student), same as ApplyApplicableFeesToEnrollmentUseCase.
-                if (param.oldStudentsOnly() && !hasExplicitStudents) {
-                        enrollments = enrollments.stream()
-                                        .filter(e -> e.getStudent().getEnrollmentType() == EnrollmentType.RE_ENROLLMENT)
+                                        .filter(e -> fee.appliesToEnrollmentType(e.getStudent().getEnrollmentType()))
                                         .toList();
                 }
 

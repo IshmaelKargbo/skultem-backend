@@ -19,7 +19,6 @@ import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeDiscount;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -188,11 +187,7 @@ public class ReconcileFeeChargesUseCase {
         if (s == null) {
             return false;
         }
-        boolean isNew = s.getEnrollmentType() == EnrollmentType.NEW || s.getEnrollmentType() == EnrollmentType.TRANSFER;
-        if (fee.isNewStudentsOnly() && !isNew) {
-            return false;
-        }
-        if (fee.isOldStudentsOnly() && s.getEnrollmentType() != EnrollmentType.RE_ENROLLMENT) {
+        if (!fee.appliesToEnrollmentType(s.getEnrollmentType())) {
             return false;
         }
         if (fee.getGender() != null && fee.getGender() != s.getGender()) {

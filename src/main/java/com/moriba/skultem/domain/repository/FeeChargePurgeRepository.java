@@ -22,4 +22,13 @@ public interface FeeChargePurgeRepository {
 
     record Charge(String studentId, String enrollmentId, BigDecimal paid) {
     }
+
+    // Charges in open academic years where a "new students only" fee sits on an old student, or an
+    // "old students only" fee on a new one (see FeeStructure#appliesToEnrollmentType).
+    List<WrongGroupCharge> wrongGroupCharges(String schoolId);
+
+    record WrongGroupCharge(String studentId, String studentName, String admissionNumber, String enrollmentType,
+            String className, String feeId, String feeName, String termName, boolean newStudentsOnly,
+            BigDecimal amount, BigDecimal paid, boolean discounted) {
+    }
 }

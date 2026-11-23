@@ -40,6 +40,7 @@ import com.moriba.skultem.application.usecase.DeleteFeeCategoryUseCase;
 import com.moriba.skultem.application.usecase.DeleteFeeDiscountUseCase;
 import com.moriba.skultem.application.usecase.DeleteFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.FeeDiscountReportUseCase;
+import com.moriba.skultem.application.usecase.FixWrongGroupFeesUseCase;
 import com.moriba.skultem.application.usecase.GetFeeStructureUseCase;
 import com.moriba.skultem.application.usecase.ListFeeCategoryBySchoolUseCase;
 import com.moriba.skultem.application.usecase.ListFeeDiscountBySchoolUseCase;
@@ -96,6 +97,7 @@ public class FeeController {
         private final RecomputeStudentLedgerBalancesUseCase recomputeStudentLedgerBalancesUseCase;
         private final UpdateFeeCategoryUseCase updateFeeCategoryUseCase;
         private final DeleteFeeCategoryUseCase deleteFeeCategoryUseCase;
+        private final FixWrongGroupFeesUseCase fixWrongGroupFeesUseCase;
 
         // A category is just a school-wide label (Tuition, Exam Fee) with no level/class of its own -
         // see FeeCategory - so it's section-neutral like the list endpoint below, not scoped.
@@ -373,6 +375,27 @@ public class FeeController {
                                 res.entriesCorrected() + " ledger entrie(s) corrected across "
                                                 + res.studentsCorrected() + " student(s)",
                                 res);
+        }
+
+        // Students charged a "new students only" fee while marked old, or the other way round (how a student ends up
+        // with both the new and the old student fee). GET lists them; POST takes off the ones with no payment/discount.
+        @com.moriba.skultem.infrastructure.security.SectionNeutral
+        @GetMapping("/wrong-group-charges")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT')")
+        public ApiResponse<FixWrongGroupFeesUseCase.Result> wrongGroupCharges(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+                var res = fixWrongGroupFeesUseCase.preview(school);
+                return new ApiResponse<>("success", 200, res.items().size() + " wrong new/old student charge(s) found", res);
+        }
+
+        @com.moriba.skultem.infrastructure.security.SectionNeutral
+        @PostMapping("/wrong-group-charges/fix")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+        public ApiResponse<FixWrongGroupFeesUseCase.Result> fixWrongGroupCharges(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school) {
+                var res = fixWrongGroupFeesUseCase.fix(school);
+                return new ApiResponse<>("success", 200, res.removed() + " charge(s) removed"
+                                + (res.needsAttention() > 0 ? ", " + res.needsAttention() + " need a look first" : ""), res);
         }
 
     @com.moriba.skultem.infrastructure.security.SectionNeutral

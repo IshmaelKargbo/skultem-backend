@@ -11,7 +11,6 @@ import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.domain.model.Enrollment;
 import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.model.Student;
-import com.moriba.skultem.domain.model.Student.EnrollmentType;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.TransactionType;
@@ -72,9 +71,6 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
         List<FeeStructure> fees = feeStructureRepo.findApplicableFees(schoolId, enrollment.getAcademicYear().getId(),
                 enrollment.getClazz().getId(), enrollment.getStream() != null ? enrollment.getStream().getId() : null);
 
-        boolean isNewlyEnrolling = student.getEnrollmentType() == EnrollmentType.NEW
-                || student.getEnrollmentType() == EnrollmentType.TRANSFER;
-
         int assignedCount = 0;
         BigDecimal totalAssignedAmount = BigDecimal.ZERO;
 
@@ -90,11 +86,7 @@ public class ApplyApplicableFeesToEnrollmentUseCase {
                 continue;
             }
 
-            if (fee.isNewStudentsOnly() && !isNewlyEnrolling) {
-                continue;
-            }
-
-            if (fee.isOldStudentsOnly() && isNewlyEnrolling) {
+            if (!fee.appliesToEnrollmentType(student.getEnrollmentType())) {
                 continue;
             }
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.moriba.skultem.application.dto.StudentFeeDTO;
 import com.moriba.skultem.application.error.AlreadyExistsException;
 import com.moriba.skultem.application.error.NotFoundException;
+import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.StudentFeeMapper;
 import com.moriba.skultem.domain.model.StudentFee;
 import com.moriba.skultem.domain.model.StudentLedgerEntry.Direction;
@@ -47,6 +48,13 @@ public class AssignFeeToStudentUseCase {
         if (studentFeeRepo.existsBySchoolAndEnrollmentAndStudentAndFee(
                 param.schoolId(), enrollment.getId(), param.studentId(), fee.getId())) {
             throw new AlreadyExistsException("Fee already assigned to this student");
+        }
+
+        // A student is either new or old, never both - see FeeStructure#appliesToEnrollmentType.
+        if (!fee.appliesToEnrollmentType(enrollment.getStudent().getEnrollmentType())) {
+            throw new RuleException("This fee is for " + (fee.isNewStudentsOnly() ? "new" : "old")
+                    + " students only, and this student is marked as " + (fee.isNewStudentsOnly() ? "an old" : "a new")
+                    + " student. If that's wrong, change the student's enrollment type instead - their fees follow it.");
         }
 
         var studentFee = StudentFee.create(

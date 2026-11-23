@@ -277,6 +277,19 @@ public class FeeStructure extends AggregateRoot<String> {
         touch(Instant.now());
     }
 
+    /**
+     * The one new/old-student rule, used everywhere a fee is charged or checked: a "new students only" fee is for
+     * NEW and TRANSFER students, an "old students only" fee for everyone else (RE_ENROLLMENT, EXISTING). A student
+     * is always on exactly one side, so they can never qualify for both.
+     */
+    public boolean appliesToEnrollmentType(Student.EnrollmentType type) {
+        boolean isNew = type != null && type.isNewAdmission();
+        if (newStudentsOnly && !isNew) {
+            return false;
+        }
+        return !(oldStudentsOnly && isNew);
+    }
+
     public boolean hasInstallmentPlan() {
         return installments != null && !installments.isEmpty();
     }

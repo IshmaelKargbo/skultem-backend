@@ -71,4 +71,36 @@ public class FeeChargePurgeAdapter implements FeeChargePurgeRepository {
                     feeId, schoolId, studentId, schoolId);
         }
     }
+
+    @Override
+    public List<WrongGroupCharge> wrongGroupCharges(String schoolId) {
+        return jdbc.query("""
+                SELECT sf.student_id, concat_ws(' ', s.given_names, s.family_name) AS student_name,
+                       s.admission_number, s.enrollment_type, c.name AS class_name, f.id AS fee_id,
+                       cat.name AS fee_name, t.name AS term_name, f.new_students_only, f.amount,
+                       COALESCE((SELECT sum(p.amount) FROM payments p
+                                 WHERE p.fee_id = sf.fee_id AND p.student_id = sf.student_id
+                                   AND p.school_id = sf.school_id), 0) AS paid,
+                       (sf.discount_id IS NOT NULL OR EXISTS (SELECT 1 FROM fee_discounts d
+                            WHERE d.fee_id = sf.fee_id AND d.enrollment_id = sf.enrollment_id
+                              AND d.school_id = sf.school_id)) AS discounted
+                FROM student_fees sf
+                JOIN fee_structures f ON f.id = sf.fee_id
+                JOIN students s ON s.id = sf.student_id
+                JOIN enrollments e ON e.id = sf.enrollment_id
+                JOIN classes c ON c.id = e.class_id
+                JOIN fee_categories cat ON cat.id = f.category_id
+                JOIN terms t ON t.id = f.term_id
+                JOIN academic_years y ON y.id = f.academic_year_id
+                WHERE sf.school_id = ? AND y.status = 'OPENED'
+                  AND ((f.new_students_only AND s.enrollment_type NOT IN ('NEW', 'TRANSFER'))
+                    OR (f.old_students_only AND s.enrollment_type IN ('NEW', 'TRANSFER')))
+                ORDER BY c.name, student_name, t.name, cat.name
+                """, (rs, i) -> new WrongGroupCharge(rs.getString("student_id"), rs.getString("student_name"),
+                rs.getString("admission_number"), rs.getString("enrollment_type"), rs.getString("class_name"),
+                rs.getString("fee_id"), rs.getString("fee_name"), rs.getString("term_name"),
+                rs.getBoolean("new_students_only"), rs.getBigDecimal("amount"),
+                rs.getBigDecimal("paid") == null ? BigDecimal.ZERO : rs.getBigDecimal("paid"),
+                rs.getBoolean("discounted")), schoolId);
+    }
 }
