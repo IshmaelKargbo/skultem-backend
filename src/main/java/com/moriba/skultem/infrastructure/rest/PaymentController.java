@@ -46,10 +46,10 @@ public class PaymentController {
             @jakarta.validation.constraints.NotBlank String reason) {
     }
 
-    // Undo a payment recorded by mistake. Senior staff only - the reason and who did it are kept for good.
+    // Undo a payment recorded by mistake. The reason and who did it are kept for good.
     @SectionScoped
     @PostMapping("/{paymentId}/reverse")
-    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.student(#school, #param.studentId())")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR', 'ACCOUNTANT') and @sectionScope.student(#school, #param.studentId())")
     public ApiResponse<com.moriba.skultem.application.usecase.ReversePaymentUseCase.Result> reverse(
             @AuthenticationPrincipal(expression = "activeSchoolId") String school,
             @org.springframework.web.bind.annotation.PathVariable String paymentId,
