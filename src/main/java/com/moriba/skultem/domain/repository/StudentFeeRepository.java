@@ -27,6 +27,9 @@ public interface StudentFeeRepository {
 
         BigDecimal sumTotalFeeByStudent(String studentId, String schoolId);
 
+        // Is this fee on this student's account (any year)?
+        boolean isCharged(String schoolId, String studentId, String feeId);
+
         boolean existsBySchoolAndEnrollmentAndStudentAndFee(String schoolId, String enrollmentId, String studentId,
                         String feeId);
 

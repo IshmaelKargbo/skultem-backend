@@ -28,6 +28,8 @@ public interface StudentFeeJpaRepository
     boolean existsByEnrollment_IdAndFee_IdAndStudent_IdAndSchoolId(String enrollmentId, String feeId,
             String studentId, String schoolId);
 
+    boolean existsByFee_IdAndStudent_IdAndSchoolId(String feeId, String studentId, String schoolId);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM StudentFeeEntity f WHERE f.enrollment.id = :enrollmentId AND f.schoolId = :schoolId")
     void deleteAllByEnrollmentAndSchool(@Param("enrollmentId") String enrollmentId,

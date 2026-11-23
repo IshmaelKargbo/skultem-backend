@@ -24,6 +24,7 @@ import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
 import com.moriba.skultem.domain.repository.FeeStructureRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
+import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 import com.moriba.skultem.domain.repository.SupplyRepository;
 import com.moriba.skultem.domain.vo.ActivityType;
@@ -40,6 +41,7 @@ public class RecordPaymentUseCase {
 
         private final PaymentRepository paymentRepo;
         private final FeeStructureRepository feeRepo;
+        private final StudentFeeRepository studentFeeRepo;
         private final FeeDiscountRepository discountRepo;
         private final AcademicYearRepository academicYearRepo;
         private final StudentRepository studentRepo;
@@ -76,6 +78,13 @@ public class RecordPaymentUseCase {
                                         item.feeId(),
                                         param.schoolId())
                                         .orElseThrow(() -> new RuleException("Fee not found"));
+
+                        // Only a fee on the student's account can be paid - not, say, the new student fee for an
+                        // old student just because it is set up for their class.
+                        if (!studentFeeRepo.isCharged(param.schoolId(), param.studentId(), fee.getId())) {
+                                throw new RuleException(fee.getCategory().getName() + " (" + fee.getTerm().getName()
+                                                + ") isn't charged to this student, so it can't be paid");
+                        }
 
                         BigDecimal outstanding = calculateOutstanding(fee, param.studentId());
 

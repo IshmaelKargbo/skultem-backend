@@ -55,6 +55,11 @@ public class StudentFeeAdapter implements StudentFeeRepository {
     }
 
     @Override
+    public boolean isCharged(String schoolId, String studentId, String feeId) {
+        return repo.existsByFee_IdAndStudent_IdAndSchoolId(feeId, studentId, schoolId);
+    }
+
+    @Override
     public boolean existsBySchoolAndEnrollmentAndStudentAndFee(String schoolId, String enrollmentId, String studentId,
             String feeId) {
         return repo.existsByEnrollment_IdAndFee_IdAndStudent_IdAndSchoolId(enrollmentId, feeId, studentId, schoolId);

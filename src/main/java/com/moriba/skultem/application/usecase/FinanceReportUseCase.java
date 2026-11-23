@@ -4,6 +4,9 @@ import org.springframework.data.domain.Sort;
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.domain.model.AcademicYear;
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,9 +23,10 @@ import com.moriba.skultem.application.dto.PaymentDTO;
 import com.moriba.skultem.application.error.RuleException;
 import com.moriba.skultem.application.mapper.PaymentMapper;
 import com.moriba.skultem.domain.model.FeeDiscount.Kind;
+import com.moriba.skultem.domain.model.FeeStructure;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
 import com.moriba.skultem.domain.repository.FeeDiscountRepository;
-import com.moriba.skultem.domain.repository.FeeStructureRepository;
+import com.moriba.skultem.domain.repository.StudentFeeRepository;
 import com.moriba.skultem.domain.repository.PaymentRepository;
 import com.moriba.skultem.domain.repository.StudentRepository;
 
@@ -35,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class FinanceReportUseCase {
 
         private final PaymentRepository paymentRepo;
-        private final FeeStructureRepository feeRepo;
+        private final StudentFeeRepository studentFeeRepo;
         private final FeeDiscountRepository discountRepo;
         private final EnrollmentRepository enrollmentRepo;
         private final StudentRepository studentRepo;
@@ -61,9 +65,7 @@ public class FinanceReportUseCase {
                                 .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
-                var fees = feeRepo
-                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId(),
-                                                enrollment.getStream() != null ? enrollment.getStream().getId() : null);
+                var fees = chargedFees(schoolId, enrollment.getId());
 
                 LocalDate today = LocalDate.now();
 
@@ -110,9 +112,7 @@ public class FinanceReportUseCase {
                                 .findByStudentAndAcademicYearAndSchoolId(studentId, academicYear.getId(), schoolId)
                                 .orElseThrow(() -> new RuleException("Active academic year not found"));
 
-                var fees = feeRepo
-                                .findApplicableFees(schoolId, academicYear.getId(), enrollment.getClazz().getId(),
-                                                enrollment.getStream() != null ? enrollment.getStream().getId() : null);
+                var fees = chargedFees(schoolId, enrollment.getId());
 
                 LocalDate today = LocalDate.now();
 
@@ -146,6 +146,22 @@ public class FinanceReportUseCase {
                                                         fee.installmentStatuses(paid, totalDiscount, today));
                                 })
                                 .filter(Objects::nonNull)
+                                .toList();
+        }
+
+        // The fees this student is actually charged this year (their student_fees rows) - not every fee set up for
+        // their class, which would also list the other group's new/old student fee, the other gender's or stream's
+        // fee, and miss fees assigned to them by hand.
+        private List<FeeStructure> chargedFees(String schoolId, String enrollmentId) {
+                Map<String, FeeStructure> byId = new LinkedHashMap<>();
+                studentFeeRepo.findBySchoolAndEnrollment(schoolId, enrollmentId, Pageable.unpaged()).getContent()
+                                .forEach(sf -> byId.putIfAbsent(sf.getFee().getId(), sf.getFee()));
+                return byId.values().stream()
+                                .sorted(Comparator
+                                                .comparing((FeeStructure f) -> f.getTerm() == null ? 0
+                                                                : f.getTerm().getTermNumber())
+                                                .thenComparing(f -> f.getCategory() == null ? ""
+                                                                : f.getCategory().getName()))
                                 .toList();
         }
 
