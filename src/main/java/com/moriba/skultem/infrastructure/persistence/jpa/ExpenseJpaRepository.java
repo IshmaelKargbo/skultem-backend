@@ -16,6 +16,23 @@ import com.moriba.skultem.infrastructure.persistence.specs.FilterSpecificationBu
 public interface ExpenseJpaRepository extends JpaRepository<ExpenseEntity, String>, JpaSpecificationExecutor<ExpenseEntity> {
     Page<ExpenseEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
+    // Title, description or category name containing the words typed (case ignored).
+    @org.springframework.data.jpa.repository.Query(value = """
+            SELECT e FROM ExpenseEntity e
+            WHERE e.schoolId = :schoolId
+              AND (LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR LOWER(e.category.name) LIKE LOWER(CONCAT('%', :query, '%')))
+            ORDER BY e.createdAt DESC
+            """, countQuery = """
+            SELECT count(e) FROM ExpenseEntity e
+            WHERE e.schoolId = :schoolId
+              AND (LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR LOWER(e.category.name) LIKE LOWER(CONCAT('%', :query, '%')))
+            """)
+    Page<ExpenseEntity> search(@org.springframework.data.repository.query.Param("schoolId") String schoolId, @org.springframework.data.repository.query.Param("query") String query, Pageable pageable);
+
     Optional<ExpenseEntity> findByIdAndSchoolId(String id, String schoolId);
 
     default Page<ExpenseEntity> runReport(String schoolId, List<Filter> filters, Pageable pageable) {

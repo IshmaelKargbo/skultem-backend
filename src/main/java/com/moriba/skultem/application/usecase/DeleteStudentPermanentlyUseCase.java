@@ -44,6 +44,13 @@ public class DeleteStudentPermanentlyUseCase {
                     + "permanently. Withdraw or expel them instead - that keeps the financial record.");
         }
 
+        long loans = purgeRepo.unreturnedLibraryLoans(schoolId, studentId);
+        if (loans > 0) {
+            throw new RuleException(student.getName() + " still has " + loans + " library book"
+                    + (loans == 1 ? "" : "s") + " out. Mark " + (loans == 1 ? "it" : "them")
+                    + " returned (or lost) in the Library first.");
+        }
+
         var purged = purgeRepo.purge(schoolId, studentId);
 
         logActivityUseCase.log(schoolId, ActivityType.STUDENT, "Student permanently deleted",

@@ -10,6 +10,11 @@ import com.moriba.skultem.domain.model.Stream;
 public interface StreamRepository {
     void save(Stream domain);
 
+    void delete(Stream domain);
+
+    // Another stream of the school already has this name (case ignored).
+    boolean existsByNameAndSchoolExcept(String name, String schoolId, String exceptId);
+
     Optional<Stream> findByIdAndSchoolId(String id, String schoolId);
 
     boolean existsByNameAndSchool(String name, String schoolId);

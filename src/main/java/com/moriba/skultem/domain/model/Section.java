@@ -25,6 +25,12 @@ public class Section extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public void update(String name, String description) {
+        this.name = name;
+        this.description = description;
+        touch(Instant.now());
+    }
+
     public static Section create(String id, String schoolId, String name, String description) {
         return create(id, schoolId, name, description, 0);
     }

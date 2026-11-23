@@ -19,10 +19,17 @@ public class ListExpenseBySchoolUseCase {
     private final ExpenseRepository repo;
 
     public Page<ExpenseDTO> execute(String schoolId, int page, int size) {
+        return execute(schoolId, page, size, null);
+    }
+
+    // query: words to look for (blank = everything).
+    public Page<ExpenseDTO> execute(String schoolId, int page, int size, String query) {
         Pageable pageable = Pageable.unpaged();
         if (size > 0) {
             pageable = PageRequest.of(page, size);
         }
-        return repo.findBySchool(schoolId, pageable).map(ExpenseMapper::toDTO);
+        String q = query == null ? "" : query.trim();
+        var found = q.isEmpty() ? repo.findBySchool(schoolId, pageable) : repo.search(schoolId, q, pageable);
+        return found.map(ExpenseMapper::toDTO);
     }
 }

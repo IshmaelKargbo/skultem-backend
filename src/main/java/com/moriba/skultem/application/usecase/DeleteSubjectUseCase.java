@@ -35,7 +35,11 @@ public class DeleteSubjectUseCase {
             new Usage("stream_subjects", "stream", "streams"),
             new Usage("teacher_subjects", "teacher assignment", "teacher assignments"),
             new Usage("enrollment_subjcts", "student enrolment", "student enrolments"),
-            new Usage("scheme_of_works", "scheme of work", "schemes of work")
+            new Usage("scheme_of_works", "scheme of work", "schemes of work"),
+            new Usage("exam_papers", "exam paper", "exam papers"),
+            new Usage("library_sessions", "library session", "library sessions"),
+            new Usage("weekly_plan_entries", "weekly plan entry", "weekly plan entries"),
+            new Usage("weekly_plan_cycle_entries", "weekly plan cycle entry", "weekly plan cycle entries")
     };
 
     @AuditLogAnnotation(action = "SUBJECT_DELETED")

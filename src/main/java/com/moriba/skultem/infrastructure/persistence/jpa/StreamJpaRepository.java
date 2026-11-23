@@ -13,6 +13,8 @@ import com.moriba.skultem.infrastructure.persistence.entity.StreamEntity;
 public interface StreamJpaRepository extends JpaRepository<StreamEntity, String> {
     boolean existsByNameIgnoreCaseAndSchoolId(String name, String schoolId);
 
+    boolean existsByNameIgnoreCaseAndSchoolIdAndIdNot(String name, String schoolId, String id);
+
     Page<StreamEntity> findAllBySchoolIdOrderByCreatedAtDesc(String schoolId, Pageable pageable);
 
     Optional<StreamEntity> findByIdAndSchoolId(String id, String schoolId);

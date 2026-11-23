@@ -7,6 +7,9 @@ public interface StudentPurgeRepository {
     // Money already collected for this student - a recorded payment, or a material sale with anything paid.
     boolean hasRecordedPayments(String schoolId, String studentId);
 
+    // Library books the student has borrowed and not returned - deleting them would lose track of the book.
+    long unreturnedLibraryLoans(String schoolId, String studentId);
+
     Purged purge(String schoolId, String studentId);
 
     record Purged(int enrollments, int fees, int assessments) {

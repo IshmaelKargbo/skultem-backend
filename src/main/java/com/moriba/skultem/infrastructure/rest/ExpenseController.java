@@ -39,6 +39,8 @@ public class ExpenseController {
         private final ListExpenseBySchoolUseCase listExpenseBySchoolUseCase;
         private final ListExpenseCategoryBySchoolUseCase listExpenseCategoryBySchoolUseCase;
         private final CreateExpenseUseCase createExpenseUseCase;
+        private final com.moriba.skultem.application.usecase.UpdateExpenseCategoryUseCase updateExpenseCategoryUseCase;
+        private final com.moriba.skultem.application.usecase.DeleteExpenseCategoryUseCase deleteExpenseCategoryUseCase;
 
         @PostMapping("/category")
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT', 'OWNER')")
@@ -62,10 +64,11 @@ public class ExpenseController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseDTO>> listExpense(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String query,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-                var res = listExpenseBySchoolUseCase.execute(school, page - 1, size);
+                var res = listExpenseBySchoolUseCase.execute(school, page - 1, size, query);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -82,10 +85,11 @@ public class ExpenseController {
         @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'PROPRIETOR', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'ACCOUNTANT')")
         public ApiResponse<List<ExpenseCategoryDTO>> listCategory(
                         @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @RequestParam(required = false) String query,
                         @RequestParam(required = true, defaultValue = "10") Integer size,
                         @RequestParam(required = true, defaultValue = "1") Integer page) {
 
-                var res = listExpenseCategoryBySchoolUseCase.execute(school, page - 1, size);
+                var res = listExpenseCategoryBySchoolUseCase.execute(school, page - 1, size, query);
                 var list = res.getContent();
                 Map<String, Object> meta = Map.of(
                                 "page", res.getNumber() + 1,
@@ -95,5 +99,25 @@ public class ExpenseController {
 
                 return new ApiResponse<>("success", 200, "Expense categories fetch successfully", list,
                                 meta);
+        }
+
+        // Same roles as creating a category.
+        @org.springframework.web.bind.annotation.PutMapping("/category/{id}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT', 'OWNER')")
+        public ApiResponse<Object> updateCategory(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @org.springframework.web.bind.annotation.PathVariable String id,
+                        @Valid @RequestBody CreateExpenseCategoryDTO param) {
+                var res = updateExpenseCategoryUseCase.execute(school, id, param.name(), param.description());
+                return new ApiResponse<>("success", 200, "Expense category updated successfully", res);
+        }
+
+        @org.springframework.web.bind.annotation.DeleteMapping("/category/{id}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ACCOUNTANT', 'OWNER')")
+        public ApiResponse<Object> deleteCategory(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @org.springframework.web.bind.annotation.PathVariable String id) {
+                deleteExpenseCategoryUseCase.execute(school, id);
+                return new ApiResponse<>("success", 200, "Expense category deleted successfully", null);
         }
 }

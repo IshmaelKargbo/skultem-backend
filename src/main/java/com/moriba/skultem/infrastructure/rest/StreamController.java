@@ -32,6 +32,8 @@ public class StreamController {
     private final CreateStreamUseCase createStreamUseCase;
     private final ListStreamBySchoolUseCase listStreamBySchoolUseCase;
     private final GetStreamUseCase getStreamUseCase;
+    private final com.moriba.skultem.application.usecase.UpdateStreamUseCase updateStreamUseCase;
+    private final com.moriba.skultem.application.usecase.DeleteStreamUseCase deleteStreamUseCase;
 
     // A Stream (Science/Arts/Commercial) is just a school-wide label with no level of its own - see
     // Stream - so it's section-neutral like the reads below, not scoped.
@@ -72,5 +74,31 @@ public class StreamController {
             @PathVariable String id) {
         var res = getStreamUseCase.execute(id, school);
         return new ApiResponse<>("success", 200, "Stream fetched successfully", res);
+    }
+
+    @SectionNeutral
+    @org.springframework.web.bind.annotation.PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    public ApiResponse<StreamDTO> update(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id,
+            @Valid @RequestBody UpdateStreamDTO param) {
+        var res = updateStreamUseCase.execute(school, id, param.name(), param.description());
+        return new ApiResponse<>("success", 200, "Stream updated successfully", res);
+    }
+
+    @SectionNeutral
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    public ApiResponse<Object> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String id) {
+        deleteStreamUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Stream deleted successfully", null);
+    }
+
+    public record UpdateStreamDTO(
+            @jakarta.validation.constraints.NotBlank(message = "Name is required") String name,
+            String description) {
     }
 }

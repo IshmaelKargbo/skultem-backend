@@ -32,6 +32,11 @@ public class ExpenseAdapter implements ExpenseRepository {
     }
 
     @Override
+    public Page<Expense> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(ExpenseMapper::toDomain);
+    }
+
+    @Override
     public Page<Expense> findBySchool(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByCreatedAtDesc(schoolId, pageable).map(ExpenseMapper::toDomain);
     }

@@ -38,6 +38,8 @@ public class SectionController {
     private final ListSectionBySchoolUseCase listSectionBySchoolUseCase;
     private final GetSectionUseCase getSectionUseCase;
     private final ReorderSectionsUseCase reorderSectionsUseCase;
+    private final com.moriba.skultem.application.usecase.UpdateSectionUseCase updateSectionUseCase;
+    private final com.moriba.skultem.application.usecase.DeleteSectionUseCase deleteSectionUseCase;
 
     // A class Section ("A"/"B") is just a school-wide label with no level of its own - see Section -
     // so it's section-neutral like the reads below, not scoped.
@@ -88,5 +90,31 @@ public class SectionController {
             @PathVariable String id) {
         var res = getSectionUseCase.execute(school, id);
         return new ApiResponse<SectionDTO>("success", 200, "Section fetched successfully", res);
+    }
+
+    @SectionNeutral
+    @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    public ApiResponse<com.moriba.skultem.application.dto.SectionDTO> update(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @org.springframework.web.bind.annotation.PathVariable String id,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody UpdateSectionDTO param) {
+        var res = updateSectionUseCase.execute(school, id, param.name(), param.description());
+        return new ApiResponse<>("success", 200, "Section updated successfully", res);
+    }
+
+    @SectionNeutral
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR')")
+    public ApiResponse<Object> delete(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @org.springframework.web.bind.annotation.PathVariable String id) {
+        deleteSectionUseCase.execute(school, id);
+        return new ApiResponse<>("success", 200, "Section deleted successfully", null);
+    }
+
+    public record UpdateSectionDTO(
+            @jakarta.validation.constraints.NotBlank(message = "Name is required") String name,
+            String description) {
     }
 }

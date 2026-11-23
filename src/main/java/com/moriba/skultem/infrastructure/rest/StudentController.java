@@ -75,6 +75,7 @@ public class StudentController {
         private final EndStudentEnrollmentUseCase endStudentEnrollmentUseCase;
         private final ReinstateStudentUseCase reinstateStudentUseCase;
         private final DeleteStudentPermanentlyUseCase deleteStudentPermanentlyUseCase;
+        private final com.moriba.skultem.application.usecase.UpdateStudentFamilyUseCase updateStudentFamilyUseCase;
 
         @Idempotent(operation = "student.enroll")
         @SectionScoped
@@ -140,6 +141,18 @@ public class StudentController {
                                 param.parentId(), param.userId(), param.phone(), param.street(), param.city());
                 var res = changeStudentGuardianUseCase.execute(school, id, target, param.relationship());
                 return new ApiResponse<>("success", 200, "Guardian updated successfully", res);
+        }
+
+        // The father's and mother's details recorded on the student - not the guardian account (see above).
+        @SectionScoped
+        @PatchMapping("/{id}/family")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'OWNER', 'PROPRIETOR') and @sectionScope.student(#school, #id)")
+        public ApiResponse<StudentDTO> updateFamily(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @RequestBody com.moriba.skultem.domain.vo.Family param) {
+                var res = updateStudentFamilyUseCase.execute(school, id, param);
+                return new ApiResponse<>("success", 200, "Parent details updated successfully", res);
         }
 
         // Also re-bills the student: moving between "new" and "old" students adds and removes the fees marked for each.

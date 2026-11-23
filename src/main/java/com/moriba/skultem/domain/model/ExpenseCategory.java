@@ -19,6 +19,12 @@ public class ExpenseCategory extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public void update(String name, String description) {
+        this.name = name;
+        this.description = description;
+        touch(Instant.now());
+    }
+
     public static ExpenseCategory create(String id, String schoolId, String name, String description) {
         Instant now = Instant.now();
         return new ExpenseCategory(id, schoolId, name, description, now, now);

@@ -26,4 +26,7 @@ public interface SectionRepository {
     int maxDisplayOrderBySchoolId(String schoolId);
 
     void delete(Section domain);
+
+    // Another section of the school already has this name (case ignored).
+    boolean existsByNameAndSchoolExcept(String name, String schoolId, String exceptId);
 }

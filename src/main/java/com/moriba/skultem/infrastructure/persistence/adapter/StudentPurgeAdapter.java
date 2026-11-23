@@ -29,6 +29,14 @@ public class StudentPurgeAdapter implements StudentPurgeRepository {
     }
 
     @Override
+    public long unreturnedLibraryLoans(String schoolId, String studentId) {
+        Long n = jdbc.queryForObject(
+                "SELECT count(*) FROM library_loans WHERE student_id = ? AND school_id = ? AND returned_at IS NULL",
+                Long.class, studentId, schoolId);
+        return n == null ? 0 : n;
+    }
+
+    @Override
     public Purged purge(String schoolId, String studentId) {
         // Grading: scores -> the student's assessment rows.
         jdbc.update("DELETE FROM assessment_scores WHERE student_assessment_id IN "
@@ -63,6 +71,14 @@ public class StudentPurgeAdapter implements StudentPurgeRepository {
         jdbc.update("DELETE FROM library_session_records WHERE student_id = ? AND school_id = ?", studentId,
                 schoolId);
         jdbc.update("DELETE FROM library_visits WHERE student_id = ? AND school_id = ?", studentId, schoolId);
+
+        // Library loans (all returned - see unreturnedLibraryLoans) and health care: a follow-up visit points at the
+        // earlier one, so those links are cleared first.
+        jdbc.update("DELETE FROM library_loans WHERE student_id = ? AND school_id = ?", studentId, schoolId);
+        jdbc.update("UPDATE health_care_visits SET continues_visit_id = NULL WHERE continues_visit_id IN "
+                + "(SELECT id FROM health_care_visits WHERE student_id = ?)", studentId);
+        jdbc.update("DELETE FROM health_care_visits WHERE student_id = ?", studentId);
+        jdbc.update("DELETE FROM health_care_turned_away WHERE student_id = ?", studentId);
 
         jdbc.update("DELETE FROM report_cards WHERE student_id = ? AND school_id = ?", studentId, schoolId);
         jdbc.update("DELETE FROM student_parents WHERE student_id = ?", studentId);

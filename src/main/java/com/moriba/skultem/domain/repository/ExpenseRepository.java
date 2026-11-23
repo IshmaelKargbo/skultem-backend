@@ -16,5 +16,7 @@ public interface ExpenseRepository {
 
     Page<Expense> findBySchool(String schoolId, Pageable pageable);
 
+    Page<Expense> search(String schoolId, String query, Pageable pageable);
+
     Page<Expense> runReport(String schoolId, List<Filter> filters, Pageable pageable);
 }

@@ -22,6 +22,12 @@ public class Stream extends AggregateRoot<String> {
         touch(updatedAt);
     }
 
+    public void update(String name, String description) {
+        this.name = name;
+        this.description = description;
+        touch(Instant.now());
+    }
+
     public static Stream create(String id, String name, String schoolId, String description) {
         Instant now = Instant.now();
         return new Stream(id, name, schoolId, description, now, now);

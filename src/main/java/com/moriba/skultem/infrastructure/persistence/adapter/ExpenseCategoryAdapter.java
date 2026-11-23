@@ -24,8 +24,28 @@ public class ExpenseCategoryAdapter implements ExpenseCategoryRepository {
     }
 
     @Override
+    public void delete(ExpenseCategory domain) {
+        repo.deleteById(domain.getId());
+    }
+
+    @Override
+    public boolean existsByNameAndSchoolExcept(String name, String schoolId, String exceptId) {
+        return repo.existsByNameIgnoreCaseAndSchoolIdAndIdNot(name, schoolId, exceptId);
+    }
+
+    @Override
+    public long countExpenses(String categoryId, String schoolId) {
+        return repo.countExpenses(categoryId, schoolId);
+    }
+
+    @Override
     public Optional<ExpenseCategory> findByIdAndSchool(String id, String schoolId) {
         return repo.findByIdAndSchoolId(id, schoolId).map(ExpenseCategoryMapper::toDomain);
+    }
+
+    @Override
+    public Page<ExpenseCategory> search(String schoolId, String query, Pageable pageable) {
+        return repo.search(schoolId, query, pageable).map(ExpenseCategoryMapper::toDomain);
     }
 
     @Override

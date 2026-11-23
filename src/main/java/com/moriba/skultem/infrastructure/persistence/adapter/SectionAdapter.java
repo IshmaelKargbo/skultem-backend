@@ -64,4 +64,9 @@ public class SectionAdapter implements SectionRepository {
     public boolean existfindByNameAndSchoolId(String name, String schoolId) {
         return repo.existsByNameIgnoreCaseAndSchoolId(name, schoolId);
     }
+
+    @Override
+    public boolean existsByNameAndSchoolExcept(String name, String schoolId, String exceptId) {
+        return repo.existsByNameIgnoreCaseAndSchoolIdAndIdNot(name, schoolId, exceptId);
+    }
 }

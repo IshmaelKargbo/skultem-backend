@@ -111,6 +111,13 @@ public class Student extends AggregateRoot<String> {
         touchNow();
     }
 
+    // The father's and mother's details recorded on the student (names, phones, occupations) - separate from the
+    // guardian account above.
+    public void changeFamily(Family family) {
+        this.family = family;
+        touchNow();
+    }
+
     // Links the student to a different guardian (the parent account that sees them in the portal).
     public void changeGuardian(Parent parent) {
         this.parent = parent;

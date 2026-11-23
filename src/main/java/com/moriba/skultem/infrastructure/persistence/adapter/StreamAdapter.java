@@ -25,6 +25,16 @@ public class StreamAdapter implements StreamRepository {
     }
 
     @Override
+    public void delete(Stream domain) {
+        repo.deleteById(domain.getId());
+    }
+
+    @Override
+    public boolean existsByNameAndSchoolExcept(String name, String schoolId, String exceptId) {
+        return repo.existsByNameIgnoreCaseAndSchoolIdAndIdNot(name, schoolId, exceptId);
+    }
+
+    @Override
     public boolean existsByNameAndSchool(String name, String schoolId) {
         return repo.existsByNameIgnoreCaseAndSchoolId(name, schoolId);
     }

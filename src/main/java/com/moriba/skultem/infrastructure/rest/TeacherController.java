@@ -50,6 +50,7 @@ public class TeacherController {
         private final ListMyClassMasterAssignmentsUseCase listMyClassMasterAssignmentsUseCase;
         private final TeacherService teacherSvc;
         private final com.moriba.skultem.application.usecase.TeacherSignatureUseCase teacherSignatureUseCase;
+        private final com.moriba.skultem.application.usecase.DeleteTeacherPermanentlyUseCase deleteTeacherPermanentlyUseCase;
 
         // ---- The signed-in teacher's own signature (printed on the report cards they approve as class teacher).
 
@@ -254,5 +255,21 @@ public class TeacherController {
                         @PathVariable String teacherId) {
                 var res = getTeacherSubjectUseCase.execute(school, teacherId);
                 return new ApiResponse<>("success", 200, "Teacher subject fetched successfully", res);
+        }
+
+        // Leadership only, and can't be undone. The staff member's full name in the body is the confirmation.
+        @SectionScoped
+        @PostMapping("/{id}/delete-permanently")
+        @PreAuthorize("@permissionService.isSchoolLeadership(#school) and @sectionScope.teacher(#school, #id)")
+        public ApiResponse<com.moriba.skultem.application.usecase.DeleteTeacherPermanentlyUseCase.Result> deletePermanently(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @PathVariable String id,
+                        @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody DeleteTeacherDTO param) {
+                var res = deleteTeacherPermanentlyUseCase.execute(school, id, param.confirmation());
+                return new ApiResponse<>("success", 200, res.name() + " was permanently deleted", res);
+        }
+
+        public record DeleteTeacherDTO(
+                        @jakarta.validation.constraints.NotBlank(message = "Type the full name to confirm") String confirmation) {
         }
 }
