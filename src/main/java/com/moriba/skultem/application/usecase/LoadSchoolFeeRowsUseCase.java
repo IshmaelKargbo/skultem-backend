@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LoadSchoolFeeRowsUseCase {
 
+    private final com.moriba.skultem.domain.repository.FeeDiscountRepository discountRepo;
     private final StudentFeeRepository studentFeeRepo;
     private final PaymentRepository paymentRepo;
     // Section-limited staff (an accountant for one section) see only their sections' classes.
@@ -58,9 +59,13 @@ public class LoadSchoolFeeRowsUseCase {
             var section = enrollment.getSection();
             var stream = enrollment.getStream();
 
-            BigDecimal discount = studentFee.getDiscount() != null
+            // The linked discount, or - for a discount recorded without that link - every discount on this
+            // student's fee (the same rule the student fee screens use), never more than the fee itself.
+            BigDecimal discount = (studentFee.getDiscount() != null
                     ? studentFee.getDiscount().computeSavings()
-                    : BigDecimal.ZERO;
+                    : discountRepo.findBySchoolAndStudentIdAndFeeId(schoolId, student.getId(), fee.getId()).stream()
+                            .map(d -> d.computeSavings()).reduce(BigDecimal.ZERO, BigDecimal::add))
+                    .min(fee.getAmount());
             BigDecimal netPayable = fee.getAmount().subtract(discount);
             BigDecimal paid = paidByStudentAndFee.getOrDefault(student.getId() + "|" + fee.getId(), BigDecimal.ZERO);
             BigDecimal balance = FeeCollectionCalculator.balance(netPayable, paid);
