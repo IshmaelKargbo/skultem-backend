@@ -33,6 +33,16 @@ public class PaymentAdapter implements PaymentRepository {
     }
 
     @Override
+    public java.util.Optional<Payment> findByIdAndSchoolId(String id, String schoolId) {
+        return repo.findById(id).filter(e -> schoolId.equals(e.getSchoolId())).map(PaymentMapper::toDomain);
+    }
+
+    @Override
+    public void delete(Payment domain) {
+        repo.deleteById(domain.getId());
+    }
+
+    @Override
     public Page<Payment> findAllByAcademicYearAndSchoolId(String academicYearId, String schoolId,
             Collection<Level> levels, Pageable pageable) {
         return repo.findAllInYearForLevels(academicYearId, schoolId, levels, pageable).map(PaymentMapper::toDomain);

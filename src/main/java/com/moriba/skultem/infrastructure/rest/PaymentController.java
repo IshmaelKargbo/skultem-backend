@@ -40,6 +40,24 @@ public class PaymentController {
     private final SumStudentPaymentByFeeThisYearUseCase studentPaymentByFeeThisYearUseCase;
     private final ListStudentPaymentBySchoolUseCase listStudentPaymentBySchoolUseCase;
     private final GetReceiptUseCase getReceiptUseCase;
+    private final com.moriba.skultem.application.usecase.ReversePaymentUseCase reversePaymentUseCase;
+
+    public record ReversePaymentDTO(@jakarta.validation.constraints.NotBlank String studentId,
+            @jakarta.validation.constraints.NotBlank String reason) {
+    }
+
+    // Undo a payment recorded by mistake. Senior staff only - the reason and who did it are kept for good.
+    @SectionScoped
+    @PostMapping("/{paymentId}/reverse")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'OWNER', 'PRINCIPAL', 'SUPER_ADMIN', 'PROPRIETOR') and @sectionScope.student(#school, #param.studentId())")
+    public ApiResponse<com.moriba.skultem.application.usecase.ReversePaymentUseCase.Result> reverse(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @org.springframework.web.bind.annotation.PathVariable String paymentId,
+            @Valid @RequestBody ReversePaymentDTO param) {
+        var userId = com.moriba.skultem.infrastructure.security.PermissionService.getCurrentUser().userId();
+        var res = reversePaymentUseCase.execute(school, param.studentId(), paymentId, param.reason(), userId);
+        return new ApiResponse<>("success", 200, "Payment reversed - " + res.fee() + " is owed again", res);
+    }
 
     @Idempotent(operation = "payment.record")
     @SectionScoped

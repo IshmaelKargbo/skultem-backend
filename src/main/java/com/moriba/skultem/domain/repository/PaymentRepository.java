@@ -20,6 +20,10 @@ public interface PaymentRepository {
 
     void save(Payment domain);
 
+    java.util.Optional<Payment> findByIdAndSchoolId(String id, String schoolId);
+
+    void delete(Payment domain);
+
     Page<Payment> findByStudent(String studentId, Pageable pageable);
 
     /** A student's payments towards the fees of one academic year only. */
