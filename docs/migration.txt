@@ -13,13 +13,6 @@ in the dashboard, don't guess the region suffix.
 Recommended: don't put the production password in this file. Export it as an env var
 instead and reference it, e.g.:
 
-  export FLYWAY_PROD_PASSWORD="7hAhHUxPdmgUFTFCBl6MYkMICDtEGSuv"
-
-  clear && mvn flyway:migrate \
-    -Dflyway.url="jdbc:postgresql://dpg-d78eboedqaus73ct0c10-a.frankfurt-postgres.render.com:5432/skultem" \
-    -Dflyway.user="moriba" \
-    -Dflyway.password="$FLYWAY_PROD_PASSWORD" \
-    -Dflyway.locations="classpath:db/migration"
 
 Tip: run `mvn flyway:info` first (read-only) to see pending migrations before running
 `flyway:migrate` against production.
