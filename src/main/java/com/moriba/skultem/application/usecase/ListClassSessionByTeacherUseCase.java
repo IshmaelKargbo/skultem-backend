@@ -89,7 +89,6 @@ public class ListClassSessionByTeacherUseCase {
         BigDecimal totalExpected = BigDecimal.ZERO;
         BigDecimal totalCollected = BigDecimal.ZERO;
         BigDecimal totalOutstanding = BigDecimal.ZERO;
-        String status = "";
 
         for (Enrollment enrollment : enrollments) {
 
@@ -104,11 +103,9 @@ public class ListClassSessionByTeacherUseCase {
 
                 if (detail.balance() != null)
                     totalOutstanding = totalOutstanding.add(detail.balance());
-
-                status = detail.status();
             }
         }
 
-        return new FeeDetail(totalExpected, totalCollected, totalOutstanding, status);
+        return FeeDetail.combined(totalExpected, totalCollected, totalOutstanding);
     }
 }

@@ -45,7 +45,6 @@ public class ParentReportUseCase {
             BigDecimal totalExpected = BigDecimal.ZERO;
             BigDecimal totalCollected = BigDecimal.ZERO;
             BigDecimal totalOutstanding = BigDecimal.ZERO;
-            String status = "";
 
             List<StudentDTO> students = listStudentByParentUseCase.execute(request.schoolId(), parent.getUser().getId(), 0, 0)
                     .getContent();
@@ -63,12 +62,10 @@ public class ParentReportUseCase {
 
                     if (detail.balance() != null)
                         totalOutstanding = totalOutstanding.add(detail.balance());
-
-                    status = detail.status();
                 }
             }
 
-            var feeDetail = new FeeDetail(totalExpected, totalCollected, totalOutstanding, status);
+            var feeDetail = FeeDetail.combined(totalExpected, totalCollected, totalOutstanding);
             return ParentMapper.toDTO(parent, feeDetail, students.size());
         });
     }
