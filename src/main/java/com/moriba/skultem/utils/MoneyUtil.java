@@ -12,6 +12,6 @@ public class MoneyUtil {
         NumberFormat formatter = NumberFormat.getNumberInstance(LOCALE);
         formatter.setMinimumFractionDigits(0);
         formatter.setMaximumFractionDigits(0);
-        return "NLE " + formatter.format(amount);
+        return "Le " + formatter.format(amount);
     }
 }
