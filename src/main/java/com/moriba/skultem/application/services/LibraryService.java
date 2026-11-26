@@ -140,6 +140,13 @@ public class LibraryService {
                 .map(loan -> LibraryMapper.toDTO(loan, today));
     }
 
+    // One student's borrowing history, newest first - limited to the caller's sections like every other loan list.
+    public Page<LibraryLoanDTO> listStudentLoans(String schoolId, String studentId, int page, int size) {
+        LocalDate today = LocalDate.now();
+        return loanRepo.findByStudent(studentId, schoolId, sections(null), pageable(page, size))
+                .map(loan -> LibraryMapper.toDTO(loan, today));
+    }
+
     public Page<LibraryLoanDTO> listBookLoans(String schoolId, String bookId, int page, int size) {
         visibleBook(schoolId, bookId);
         LocalDate today = LocalDate.now();

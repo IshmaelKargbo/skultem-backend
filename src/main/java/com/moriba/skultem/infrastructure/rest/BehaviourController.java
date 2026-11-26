@@ -40,6 +40,7 @@ public class BehaviourController {
         private final CreateBehaviourUseCase createBehaviourUseCase;
         private final CreateBehaviourCategoryUseCase createBehaviourCategoryUseCase;
         private final ListBehaviourBySchoolUseCase listBehaviourBySchoolUseCase;
+        private final com.moriba.skultem.application.usecase.ListStudentBehavioursUseCase listStudentBehavioursUseCase;
         private final ReportBehaviourByClassUseCase reportBehaviourByClassUseCase;
         private final ListBehaviourCategoryBySchoolUseCase listBehaviourCategoryBySchoolUseCase;
 
@@ -97,6 +98,34 @@ public class BehaviourController {
                                 "pages", res.getTotalPages());
 
                 return new ApiResponse<>("success", 200, "Behaviours fetched successfully", list, meta);
+        }
+
+        // One student's records across all their classes and years (the student's profile), and their counts.
+        @com.moriba.skultem.infrastructure.security.SectionScoped
+        @GetMapping("/student/{studentId}")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER') and @sectionScope.student(#school, #studentId)")
+        public ApiResponse<List<BehaviourDTO>> listByStudent(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @org.springframework.web.bind.annotation.PathVariable String studentId,
+                        @RequestParam(defaultValue = "10") Integer size,
+                        @RequestParam(defaultValue = "1") Integer page) {
+                var res = listStudentBehavioursUseCase.execute(school, studentId, page - 1, size);
+                Map<String, Object> meta = Map.of(
+                                "page", res.getNumber() + 1,
+                                "size", res.getSize(),
+                                "count", res.getTotalElements(),
+                                "pages", res.getTotalPages());
+                return new ApiResponse<>("success", 200, "Behaviours fetched successfully", res.getContent(), meta);
+        }
+
+        @com.moriba.skultem.infrastructure.security.SectionScoped
+        @GetMapping("/student/{studentId}/summary")
+        @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER') and @sectionScope.student(#school, #studentId)")
+        public ApiResponse<com.moriba.skultem.application.usecase.ListStudentBehavioursUseCase.Summary> studentSummary(
+                        @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+                        @org.springframework.web.bind.annotation.PathVariable String studentId) {
+                return new ApiResponse<>("success", 200, "Behaviour summary fetched successfully",
+                                listStudentBehavioursUseCase.summary(school, studentId));
         }
 
         @GetMapping("/report")

@@ -27,6 +27,21 @@ public class BehaviourAdapter implements BehaviourRepository {
     }
 
     @Override
+    public org.springframework.data.domain.Page<Behaviour> findByStudent(String schoolId, String studentId,
+            org.springframework.data.domain.Pageable pageable) {
+        return repo.findRecentByStudent(schoolId, studentId, pageable).map(BehaviourMapper::toDomain);
+    }
+
+    @Override
+    public java.util.Map<String, Long> countByKindForStudent(String schoolId, String studentId) {
+        var out = new java.util.HashMap<String, Long>();
+        for (Object[] row : repo.countByKindForStudent(schoolId, studentId)) {
+            out.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        return out;
+    }
+
+    @Override
     public boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId) {
         return repo.existsByEnrollment_IdAndSchoolId(enrollmentId, schoolId);
     }

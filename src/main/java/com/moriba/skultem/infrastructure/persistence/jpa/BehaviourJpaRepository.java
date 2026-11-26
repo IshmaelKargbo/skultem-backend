@@ -15,6 +15,9 @@ public interface BehaviourJpaRepository extends JpaRepository<BehaviourEntity, S
     @Query("select b from BehaviourEntity b where b.schoolId = :school and b.enrollment.student.id = :student order by b.createdAt desc")
     Page<BehaviourEntity> findRecentByStudent(@Param("school") String school, @Param("student") String student, Pageable pageable);
 
+    @Query("select b.kind, count(b) from BehaviourEntity b where b.schoolId = :school and b.enrollment.student.id = :student group by b.kind")
+    java.util.List<Object[]> countByKindForStudent(@Param("school") String school, @Param("student") String student);
+
 
   boolean existsByEnrollment_IdAndSchoolId(String enrollmentId, String schoolId);
 

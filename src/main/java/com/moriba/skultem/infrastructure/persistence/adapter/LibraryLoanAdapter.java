@@ -110,6 +110,13 @@ public class LibraryLoanAdapter implements LibraryLoanRepository {
     }
 
     @Override
+    public Page<LibraryLoan> findByStudent(String studentId, String schoolId, Collection<String> sectionIds,
+            Pageable pageable) {
+        return repo.findByStudent(studentId, schoolId, LibraryBookAdapter.all(sectionIds), LibraryBookAdapter.ids(sectionIds),
+                pageable).map(LibraryLoanMapper::toDomain);
+    }
+
+    @Override
     public Page<LibraryLoan> findByBook(String bookId, String schoolId, Pageable pageable) {
         return repo.findAllByBook_IdAndSchoolIdOrderByIssueDateDescCreatedAtDesc(bookId, schoolId, pageable)
                 .map(LibraryLoanMapper::toDomain);

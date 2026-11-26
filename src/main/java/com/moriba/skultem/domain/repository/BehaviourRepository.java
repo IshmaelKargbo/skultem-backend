@@ -12,6 +12,13 @@ public interface BehaviourRepository {
     // A student's most recent records, newest first (Skully).
     List<Behaviour> findRecentByStudent(String schoolId, String studentId, int limit);
 
+    // Every record for one student, across all their classes and years, newest first.
+    org.springframework.data.domain.Page<Behaviour> findByStudent(String schoolId, String studentId,
+            org.springframework.data.domain.Pageable pageable);
+
+    // How many of each kind (POSITIVE / NEGATIVE) one student has, across all their records.
+    java.util.Map<String, Long> countByKindForStudent(String schoolId, String studentId);
+
     void save(Behaviour domain);
 
     boolean existsByEnrollmentIdAndSchoolId(String enrollmentId, String schoolId);

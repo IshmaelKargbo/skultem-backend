@@ -51,5 +51,8 @@ public interface LibraryLoanRepository {
 
     Page<LibraryLoan> findByBook(String bookId, String schoolId, Pageable pageable);
 
+    // One student's loans, newest first - only books in these sections (null = every section).
+    Page<LibraryLoan> findByStudent(String studentId, String schoolId, Collection<String> sectionIds, Pageable pageable);
+
     long countOverdue(String schoolId, LocalDate today, Collection<String> sectionIds);
 }

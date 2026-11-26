@@ -103,6 +103,21 @@ public interface LibraryLoanJpaRepository extends JpaRepository<LibraryLoanEntit
             @Param("sectionIds") Collection<String> sectionIds, Pageable pageable);
 
     @EntityGraph(attributePaths = { "book", "book.category" })
+    @Query(value = """
+                select l from LibraryLoanEntity l
+                where l.schoolId = :schoolId and l.studentId = :studentId
+                and (:allSections = true or l.book.managementSectionId in :sectionIds)
+                order by l.issueDate desc, l.createdAt desc
+            """, countQuery = """
+                select count(l) from LibraryLoanEntity l
+                where l.schoolId = :schoolId and l.studentId = :studentId
+                and (:allSections = true or l.book.managementSectionId in :sectionIds)
+            """)
+    Page<LibraryLoanEntity> findByStudent(@Param("studentId") String studentId, @Param("schoolId") String schoolId,
+            @Param("allSections") boolean allSections, @Param("sectionIds") Collection<String> sectionIds,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = { "book", "book.category" })
     Page<LibraryLoanEntity> findAllByBook_IdAndSchoolIdOrderByIssueDateDescCreatedAtDesc(String bookId,
             String schoolId, Pageable pageable);
 

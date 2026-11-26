@@ -173,6 +173,16 @@ public class LibraryController {
         return new ApiResponse<>("success", 200, "Book fetched successfully", service.getBook(school, id));
     }
 
+    @GetMapping("/students/{studentId}/loans")
+    @PreAuthorize(VIEW)
+    public ApiResponse<List<LibraryLoanDTO>> listStudentLoans(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @PathVariable String studentId,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "1") Integer page) {
+        return paged(service.listStudentLoans(school, studentId, page, size), "Student loans fetched successfully");
+    }
+
     @GetMapping("/books/{id}/loans")
     @PreAuthorize(VIEW)
     public ApiResponse<List<LibraryLoanDTO>> listBookLoans(
