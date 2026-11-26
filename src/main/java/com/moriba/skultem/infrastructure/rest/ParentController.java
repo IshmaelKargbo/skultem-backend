@@ -47,6 +47,7 @@ public class ParentController {
         private final AddParentEmailUseCase addParentEmailUseCase;
         private final EditParentUseCase editParentUseCase;
         private final DeleteParentPermanentlyUseCase deleteParentPermanentlyUseCase;
+        private final com.moriba.skultem.application.usecase.GetFeeDetailUsecase getFeeDetailUsecase;
         private final ParentRepository parentRepo;
         private final ListParentBySchoolUseCase listParentBySchoolUseCase;
         private final ListStudentByParentUseCase listStudentByParentUseCase;
@@ -149,7 +150,11 @@ public class ParentController {
                 var parent = parentRepo.findByIdAndSchoolId(id, school)
                                 .orElseThrow(() -> new NotFoundException("Parent not found"));
                 var res = listStudentByParentUseCase.execute(school, parent.getUser().getId(), 1, 0);
-                return new ApiResponse<>("success", 200, "Parent students fetched successfully", res.getContent());
+                // Each child's fees this year, for the parent's page (a parent calls or comes in about all of them).
+                var withFees = res.getContent().stream()
+                                .map(s -> s.withFeeDetail(getFeeDetailUsecase.execute(school, s.id())))
+                                .toList();
+                return new ApiResponse<>("success", 200, "Parent students fetched successfully", withFees);
         }
 
         @SectionScoped

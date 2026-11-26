@@ -29,8 +29,9 @@ public class TeacherSubjectMapper {
            sessionId = session.getId();
         }
 
+        var year = session != null ? session.getAcademicYear() : null;
         return new TeacherSubjectDTO(param.getId(), className, sessionId, classId, sectionName, sectionId, streamName, streamId,
                 teacherName, teacherId, subjectName, subjectId, param.getAssignedAt(), param.getCreatedAt(),
-                param.getUpdatedAt());
+                param.getUpdatedAt(), year != null ? year.getName() : null, year == null || year.isActive());
     }
 }

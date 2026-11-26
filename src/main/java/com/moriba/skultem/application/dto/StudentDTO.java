@@ -21,4 +21,12 @@ public record StudentDTO(String id, String photo, String enrollmentId, String ad
                                 guardian, relationship, sessionId, status, exitReason, exitDate, exitNote, feeDetail, house,
                                 createdAt, updatedAt, enrollmentType, admissionDate, previousSchool, lastClass);
         }
+
+        // The same student with their fee totals (see GetFeeDetailUsecase).
+        public StudentDTO withFeeDetail(FeeDetail detail) {
+                return new StudentDTO(id, photo, enrollmentId, admissionNumber, givenNames, familyName, gender, dateOfBirth,
+                                age, classId, classSize, className, classTeacher, nationality, religion, city, street, family,
+                                guardian, relationship, sessionId, status, exitReason, exitDate, exitNote, detail, house,
+                                createdAt, updatedAt, enrollmentType, admissionDate, previousSchool, lastClass);
+        }
 }

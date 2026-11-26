@@ -57,7 +57,9 @@ public class ListStudentByParentUseCase {
 
                         var enrollment = enrollmentRepo.findByStudentAndAcademicYearAndSchoolId(e.getId(),
                                         e.getSession().getAcademicYear().getId(), schoolId)
-                                        .orElseThrow(() -> new NotFoundException("Class master not found"));
+                                        // A child with no enrollment that year still belongs on the list - one bad record
+                                        // used to fail the whole list (with a misleading "Class master not found").
+                                        .orElse(null);
 
                         List<Filter> filters = new ArrayList<Filter>();
                         filters.add(new Filter("clazz.id", FilterOperator.EQUALS, "select",
