@@ -14,5 +14,7 @@ public record TermAttendanceSummaryDTO(
         long totalGirls,
         long presentBoys,
         long presentGirls,
-        double threshold) {
+        double threshold,
+        // School days in the term so far - what every student is measured against.
+        int schoolDays) {
 }

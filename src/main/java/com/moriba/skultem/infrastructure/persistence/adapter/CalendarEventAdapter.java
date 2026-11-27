@@ -43,6 +43,12 @@ public class CalendarEventAdapter implements CalendarEventRepository {
     }
 
     @Override
+    public List<CalendarEvent> findNoSchoolDays(String schoolId) {
+        return repo.findBySchoolIdAndManagementSectionIdIsNullAndNoSchoolTrue(schoolId).stream()
+                .map(CalendarEventMapper::toDomain).toList();
+    }
+
+    @Override
     public Page<CalendarEvent> findAllBySchoolId(String schoolId, Pageable pageable) {
         return repo.findAllBySchoolIdOrderByStartDateAsc(schoolId, pageable).map(CalendarEventMapper::toDomain);
     }

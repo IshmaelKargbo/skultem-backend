@@ -35,7 +35,7 @@ class EndpointAuthorizationCoverageTest {
             // the contact form is the one thing it can send. Also the public school directory it reads.
             "PublicMarketingController#testimonials", "PublicMarketingController#posts",
             "PublicMarketingController#post", "PublicMarketingController#contact", "PublicMarketingController#settings",
-            "PublicMarketingController#videos",
+            "PublicMarketingController#videos", "PublicMarketingController#categories",
             "SchoolController#listPublic",
             // Email: the check behind email fields (public forms use it too; rate-limited, says nothing about
             // accounts), and opening a verification link from an email - the token in it is the proof.

@@ -17,5 +17,7 @@ public record StudentTermAttendanceDetailDTO(
         long absent,
         long excused,
         long notMarked,
-        Double percentage) {
+        Double percentage,
+        // The minimum attendance % for the student's class (its section's, else the school's); null if unknown.
+        Double threshold) {
 }

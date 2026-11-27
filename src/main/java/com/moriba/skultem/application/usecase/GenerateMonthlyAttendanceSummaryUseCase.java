@@ -25,6 +25,8 @@ public class GenerateMonthlyAttendanceSummaryUseCase {
     private final SchoolRepository schoolRepo;
     private final AttendanceRepository attendanceRepo;
     private final AttendanceRulesResolver attendanceRulesResolver;
+    private final ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
+    private final com.moriba.skultem.domain.repository.EnrollmentRepository enrollmentRepo;
 
     // Scoped to one class SESSION (class + section + stream), not the whole class - "SSS 1
     // Science" and "SSS 1 Art" report separately, matching the same section/stream boundary
@@ -37,11 +39,18 @@ public class GenerateMonthlyAttendanceSummaryUseCase {
 
         String streamId = classSession.getStream() != null ? classSession.getStream().getId() : null;
 
-        var rows = attendanceRepo.attendanceCountsBySessionAndDateRange(schoolId,
+        var recorded = attendanceRepo.attendanceCountsBySessionAndDateRange(schoolId,
                 classSession.getClazz().getId(), classSession.getSection().getId(), streamId,
                 classSession.getAcademicYear().getId(), month.atDay(1), month.atEndOfMonth());
+        // Everyone enrolled in the class session, including students never marked in the period.
+        var rows = AttendanceSummaryRowMapper.withUnmarked(recorded,
+                enrollmentRepo.findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(
+                        classSession.getClazz().getId(), classSession.getSection().getId(), streamId,
+                        classSession.getAcademicYear().getId(), schoolId));
 
+        int schoolDays = resolveTermSchoolDaysUseCase.between(schoolId, classSession.getAcademicYear().getId(),
+                month.atDay(1), month.atEndOfMonth()).size();
         return AttendanceSummaryRowMapper.toStudentSummaries(rows, classSession.getName(),
-                attendanceRulesResolver.forLevel(school, classSession.getClazz().getLevel()).threshold());
+                attendanceRulesResolver.forLevel(school, classSession.getClazz().getLevel()).threshold(), schoolDays);
     }
 }

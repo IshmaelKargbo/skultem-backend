@@ -32,6 +32,9 @@ public interface TeacherRepository {
 
     long countAllBySchool(String schoolid);
 
+    // Active teaching staff only - the dashboard's teacher count.
+    long countActiveTeachers(String schoolId);
+
     default Page<Teacher> search(String value, String schoolId, Pageable pageable) {
         return search(value, null, schoolId, pageable);
     }

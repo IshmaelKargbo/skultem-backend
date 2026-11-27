@@ -76,6 +76,11 @@ public class TeacherAdapter implements TeacherRepository {
     }
 
     @Override
+    public long countActiveTeachers(String schoolId) {
+        return repo.countBySchoolIdAndStatusAndTeachingTrue(schoolId, com.moriba.skultem.domain.model.Teacher.Status.ACTIVE);
+    }
+
+    @Override
     public Page<Teacher> runReport(String schoolId, List<Filter> filters, Pageable pageable) {
         return repo.runTeacherReport(schoolId, filters, pageable)
                 .map(TeacherMapper::toDomain);

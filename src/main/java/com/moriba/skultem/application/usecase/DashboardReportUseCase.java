@@ -46,7 +46,7 @@ public class DashboardReportUseCase {
                 // in their sections - whole-school staff headcount stays off-limits, same as the
                 // staff directory and payroll.
                 long totalTeachers = scope.wholeSchool()
-                        ? teacherRepo.countAllBySchool(schoolId)
+                        ? teacherRepo.countActiveTeachers(schoolId)
                         : classMasterRepo.countDistinctTeachersInLevels(schoolId, academicYear.getId(), scope.levels());
 
                 String activeYearStr = academicYear.getName();
@@ -111,8 +111,8 @@ public class DashboardReportUseCase {
                 long totalStudents = enrollmentRepo.countByAcademicSchoolId(academicYearId, schoolId, levels);
                 ZoneId zone = ZoneId.systemDefault();
 
+                // Enrolled before this month began - the difference is who joined this month.
                 Instant lastMonth = LocalDate.now()
-                                .minusMonths(1)
                                 .withDayOfMonth(1)
                                 .atStartOfDay(zone)
                                 .toInstant();

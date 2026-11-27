@@ -32,7 +32,7 @@ import com.moriba.skultem.domain.repository.AcademicYearRepository;
 import com.moriba.skultem.domain.repository.AttendanceRepository;
 import com.moriba.skultem.domain.repository.ClassSessionRepository;
 import com.moriba.skultem.domain.repository.EnrollmentRepository;
-import com.moriba.skultem.domain.repository.HolidayRepository;
+import com.moriba.skultem.application.services.SchoolClosedDays;
 import com.moriba.skultem.domain.repository.NotificationRepository;
 import com.moriba.skultem.domain.repository.SchoolRepository;
 import com.moriba.skultem.domain.repository.StudentParentRepository;
@@ -54,7 +54,7 @@ public class MarkClassSessionAttendanceUseCase {
     private final NotificationRepository notificationRepo;
     private final NotificationService notificationService;
     private final StudentParentRepository studentParentRepo;
-    private final HolidayRepository holidayRepo;
+    private final SchoolClosedDays closedDays;
     private final EnrollmentRepository enrollmentRepo;
     private final SchoolRepository schoolRepo;
     private final AttendanceRulesResolver attendanceRulesResolver;
@@ -92,12 +92,7 @@ public class MarkClassSessionAttendanceUseCase {
                         Function.identity(),
                         (a, b) -> a));
 
-        List<LocalDate> schoolHolidays = holidayRepo
-                .findAllBySchoolIdAndAcademicYear(schoolId, academicYear.getId(), Pageable.unpaged())
-                .getContent()
-                .stream()
-                .map(h -> h.getDate())
-                .toList();
+        var schoolHolidays = closedDays.forYear(schoolId, academicYear.getId());
 
         boolean isHoliday = date.getDayOfWeek() == DayOfWeek.SATURDAY
                 || date.getDayOfWeek() == DayOfWeek.SUNDAY

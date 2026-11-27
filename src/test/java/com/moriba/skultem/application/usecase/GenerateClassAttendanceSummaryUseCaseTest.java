@@ -47,6 +47,10 @@ class GenerateClassAttendanceSummaryUseCaseTest {
     private com.moriba.skultem.application.services.SectionScopeService sectionScopeService;
     @Mock
     private com.moriba.skultem.application.services.AttendanceRulesResolver attendanceRulesResolver;
+    @Mock
+    private ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
+    @Mock
+    private com.moriba.skultem.domain.repository.EnrollmentRepository enrollmentRepo;
 
     private GenerateClassAttendanceSummaryUseCase useCase;
 
@@ -75,12 +79,18 @@ class GenerateClassAttendanceSummaryUseCaseTest {
                 org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
                 .thenReturn(org.springframework.data.domain.Page.empty());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver,
+                resolveTermSchoolDaysUseCase, enrollmentRepo);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
         when(resolveAcademicYearUseCase.execute(SCHOOL_ID, null)).thenReturn(academicYear);
         when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(75.0)));
+
+        // 20 school days so far - what every student is measured against.
+        when(resolveTermSchoolDaysUseCase.between(eq(SCHOOL_ID), eq(ACADEMIC_YEAR_ID), any(), any()))
+                .thenReturn(java.util.stream.IntStream.range(0, 20)
+                        .mapToObj(i -> LocalDate.of(2025, 9, 1).plusDays(i)).toList());
 
         // SSS 1 Science: one boy at 100%, one girl at 40% - class average 70%, below threshold.
         // SSS 1 Art: one boy at 90%.
@@ -111,6 +121,7 @@ class GenerateClassAttendanceSummaryUseCaseTest {
         assertThat(art.attendancePercentage()).isEqualTo(90.0); // (18+2)/20 - late counts as attended
         assertThat(art.belowThreshold()).isFalse();
 
+        assertThat(result.schoolDays()).isEqualTo(20);
         assertThat(result.classesBelowThreshold()).isEqualTo(1);
         assertThat(result.totalStudents()).isEqualTo(3);
         assertThat(result.totalBoys()).isEqualTo(2);
@@ -130,7 +141,8 @@ class GenerateClassAttendanceSummaryUseCaseTest {
                 org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
                 .thenReturn(org.springframework.data.domain.Page.empty());
         useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
-                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver);
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver,
+                resolveTermSchoolDaysUseCase, enrollmentRepo);
 
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
                 LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
@@ -149,5 +161,82 @@ class GenerateClassAttendanceSummaryUseCaseTest {
 
         assertThat(result.termLabel()).isEqualTo("First Term");
         assertThat(result.totalClasses()).isEqualTo(0);
+    }
+
+    @Test
+    void daysWithNoMarkCountAsAbsentAgainstTheSchoolDaysSoFar() {
+        org.mockito.Mockito.lenient().when(sectionScopeService.effective())
+                .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
+        org.mockito.Mockito.lenient().when(classRepo.findBySchool(eq(SCHOOL_ID),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+        useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver,
+                resolveTermSchoolDaysUseCase, enrollmentRepo);
+
+        var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
+                LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
+        when(resolveAcademicYearUseCase.execute(SCHOOL_ID, null)).thenReturn(academicYear);
+        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(75.0)));
+        when(resolveTermSchoolDaysUseCase.between(eq(SCHOOL_ID), eq(ACADEMIC_YEAR_ID), any(), any()))
+                .thenReturn(java.util.stream.IntStream.range(0, 10)
+                        .mapToObj(i -> LocalDate.of(2025, 9, 1).plusDays(i)).toList());
+        // Marked on 8 of the 10 days, present on all 8: 2 days never marked.
+        when(attendanceRepo.attendanceCountsBySchoolAndDateRange(eq(SCHOOL_ID), eq(ACADEMIC_YEAR_ID), any(), any()))
+                .thenReturn(List.<Object[]>of(row("class-1", "JSS 1", "sec-1", "All", null, null, "e1", "s1", "MALE", 8,
+                        0, 8)));
+
+        var jss = useCase.execute(SCHOOL_ID, null, null).classes().get(0);
+        assertThat(jss.present()).isEqualTo(8);
+        assertThat(jss.absent()).isEqualTo(2);
+        assertThat(jss.attendancePercentage()).isEqualTo(80.0);
+    }
+
+    @Test
+    void anEnrolledStudentNeverMarkedStillCountsMissingEverySchoolDay() {
+        org.mockito.Mockito.lenient().when(sectionScopeService.effective())
+                .thenReturn(com.moriba.skultem.domain.vo.SectionScope.all());
+        org.mockito.Mockito.lenient().when(classRepo.findBySchool(eq(SCHOOL_ID),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+        useCase = new GenerateClassAttendanceSummaryUseCase(schoolRepo, termRepo, attendanceRepo,
+                resolveAcademicYearUseCase, classRepo, sectionScopeService, attendanceRulesResolver,
+                resolveTermSchoolDaysUseCase, enrollmentRepo);
+
+        var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
+                LocalDate.of(2025, 9, 1), LocalDate.of(2026, 7, 31));
+        when(resolveAcademicYearUseCase.execute(SCHOOL_ID, null)).thenReturn(academicYear);
+        when(schoolRepo.findById(SCHOOL_ID)).thenReturn(Optional.of(schoolWithThreshold(75.0)));
+        when(resolveTermSchoolDaysUseCase.between(eq(SCHOOL_ID), eq(ACADEMIC_YEAR_ID), any(), any()))
+                .thenReturn(java.util.stream.IntStream.range(0, 10)
+                        .mapToObj(i -> LocalDate.of(2025, 9, 1).plusDays(i)).toList());
+        // e1 was present all 10 days; e2 is enrolled in the same class but was never marked.
+        when(attendanceRepo.attendanceCountsBySchoolAndDateRange(eq(SCHOOL_ID), eq(ACADEMIC_YEAR_ID), any(), any()))
+                .thenReturn(List.<Object[]>of(row("class-1", "JSS 1", "sec-1", "All", null, null, "e1", "s1", "MALE", 10,
+                        0, 10)));
+        var clazz = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Clazz.class);
+        when(clazz.getId()).thenReturn("class-1");
+        when(clazz.getName()).thenReturn("JSS 1");
+        var section = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Section.class);
+        when(section.getId()).thenReturn("sec-1");
+        when(section.getName()).thenReturn("All");
+        var student = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Student.class);
+        when(student.getId()).thenReturn("s2");
+        when(student.getGender()).thenReturn(com.moriba.skultem.domain.vo.Gender.FEMALE);
+        var e2 = org.mockito.Mockito.mock(com.moriba.skultem.domain.model.Enrollment.class);
+        when(e2.getId()).thenReturn("e2");
+        when(e2.getStatus()).thenReturn(com.moriba.skultem.domain.model.Enrollment.Status.ACTIVE);
+        when(e2.getClazz()).thenReturn(clazz);
+        when(e2.getSection()).thenReturn(section);
+        when(e2.getStudent()).thenReturn(student);
+        when(enrollmentRepo.findAllByAcademicSchoolId(ACADEMIC_YEAR_ID, SCHOOL_ID)).thenReturn(List.of(e2));
+
+        var result = useCase.execute(SCHOOL_ID, null, null);
+        var jss = result.classes().get(0);
+        assertThat(result.totalClasses()).isEqualTo(1);
+        assertThat(jss.totalStudents()).isEqualTo(2);
+        assertThat(jss.totalGirls()).isEqualTo(1);
+        assertThat(jss.absent()).isEqualTo(10);
+        assertThat(jss.attendancePercentage()).isEqualTo(50.0); // 10 of 20 student-days
     }
 }

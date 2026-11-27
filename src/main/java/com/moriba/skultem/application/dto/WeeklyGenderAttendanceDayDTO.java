@@ -14,5 +14,8 @@ public record WeeklyGenderAttendanceDayDTO(
         int girlsAbsent,
         double boysAttendancePercentage,
         double girlsAttendancePercentage,
-        double overallAttendancePercentage) {
+        double overallAttendancePercentage,
+        // False for a holiday, a no-school day, a day outside the term or a day still to come: nothing is
+        // expected that day, so it has no absences and doesn't count toward the week's percentages.
+        boolean schoolDay) {
 }

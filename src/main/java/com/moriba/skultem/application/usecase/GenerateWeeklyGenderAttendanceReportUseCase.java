@@ -37,6 +37,7 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
     private final EnrollmentRepository enrollmentRepo;
     private final AttendanceRepository attendanceRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
+    private final ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
 
     // sectionId/streamId optionally narrow the class to one section and/or stream - null means all of it.
     public WeeklyGenderAttendanceDTO execute(String schoolId, String classId, String sectionId, String streamId,
@@ -64,6 +65,9 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
                 .filter(e -> e.getStudent().getGender() == Gender.FEMALE)
                 .count();
 
+        var schoolDays = new java.util.HashSet<>(
+                resolveTermSchoolDaysUseCase.between(schoolId, academicYear.getId(), start, end));
+
         var rows = attendanceRepo.attendanceCountsByClassGenderAndDateRange(schoolId, classId, sectionId, streamId,
                 academicYear.getId(), start, end);
 
@@ -88,8 +92,14 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
 
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             long[] counts = presentByDate.getOrDefault(date, new long[2]);
-            long boysPresent = counts[0];
-            long girlsPresent = counts[1];
+            boolean schoolDay = schoolDays.contains(date);
+            if (!schoolDay) {
+                days.add(new WeeklyGenderAttendanceDayDTO(date, date.getDayOfWeek().toString(), 0, 0, 0, 0, 0, 0, 0,
+                        false));
+                continue;
+            }
+            long boysPresent = Math.min(counts[0], boysEnrolled);
+            long girlsPresent = Math.min(counts[1], girlsEnrolled);
             long boysAbsent = Math.max(0, boysEnrolled - boysPresent);
             long girlsAbsent = Math.max(0, girlsEnrolled - girlsPresent);
 
@@ -100,7 +110,7 @@ public class GenerateWeeklyGenderAttendanceReportUseCase {
 
             days.add(new WeeklyGenderAttendanceDayDTO(date, date.getDayOfWeek().toString(),
                     (int) boysPresent, (int) boysAbsent, (int) girlsPresent, (int) girlsAbsent,
-                    boysPct, girlsPct, overallPct));
+                    boysPct, girlsPct, overallPct, true));
 
             totalBoysPresent += boysPresent;
             totalGirlsPresent += girlsPresent;

@@ -77,6 +77,7 @@ public class SkullyParentService {
     private final HealthCareVisitRepository visitRepo;
     private final BehaviourRepository behaviourRepo;
     private final JdbcTemplate jdbc;
+    private final SkullyRecentAttendance recentAttendance;
 
     // The optional modules Skully can also report on, when the school has installed them.
     private static final List<FeatureModule> EXTRAS = List.of(FeatureModule.LIBRARY, FeatureModule.HEALTH_CARE,
@@ -157,13 +158,14 @@ public class SkullyParentService {
     // currentTerm: the term attendance, fees, subjects and pendingAssessments are for (null between terms).
     // library, sickBay and behaviour are null when the school does not use that module.
     // weeklyPlan: the class's published weekly plan for this week and next (WeeklyPlanService), or null.
+    // recentAttendance: today, this week and last week day by day (SkullyRecentAttendance), or null.
     public record ChildSummary(Child child, String schoolName, CurrentTerm currentTerm,
-            StudentTermAttendanceDetailDTO attendance, Fees fees, List<ReportCard> reportCards,
+            StudentTermAttendanceDetailDTO attendance, SkullyRecentAttendance.Recent recentAttendance, Fees fees, List<ReportCard> reportCards,
             List<SubjectMarks> subjects, List<PendingAssessment> pendingAssessments, List<Loan> library,
             List<SickBayVisit> sickBay, List<BehaviourNote> behaviour, Map<String, Object> weeklyPlan) {
 
         public ChildSummary withWeeklyPlan(Map<String, Object> plan) {
-            return new ChildSummary(child, schoolName, currentTerm, attendance, fees, reportCards, subjects,
+            return new ChildSummary(child, schoolName, currentTerm, attendance, recentAttendance, fees, reportCards, subjects,
                     pendingAssessments, library, sickBay, behaviour, plan);
         }
     }
@@ -232,6 +234,12 @@ public class SkullyParentService {
             } catch (RuntimeException e) {
                 log.debug("Skully: no attendance for {}: {}", studentId, e.getMessage());
             }
+            SkullyRecentAttendance.Recent recent = null;
+            try {
+                recent = recentAttendance.of(school, studentId);
+            } catch (RuntimeException e) {
+                log.debug("Skully: no recent attendance for {}: {}", studentId, e.getMessage());
+            }
             List<ReportCard> cards = List.of();
             try {
                 cards = reportCardsUseCase.execute(school, studentId, true).stream()
@@ -259,7 +267,7 @@ public class SkullyParentService {
                 log.debug("Skully: no pending assessments for {}: {}", studentId, e.getMessage());
             }
             String schoolName = schoolRepo.findById(school).map(s -> s.getName()).orElse(null);
-            return new ChildSummary(child(student), schoolName, term, attendance, fees(student, termId), cards,
+            return new ChildSummary(child(student), schoolName, term, attendance, recent, fees(student, termId), cards,
                     subjects, pending,
                     modules.isEnabled(school, FeatureModule.LIBRARY) ? loans(student) : null,
                     modules.isEnabled(school, FeatureModule.HEALTH_CARE) ? sickBay(student) : null,

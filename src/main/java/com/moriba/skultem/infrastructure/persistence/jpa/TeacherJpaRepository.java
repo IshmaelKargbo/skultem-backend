@@ -3,6 +3,7 @@ package com.moriba.skultem.infrastructure.persistence.jpa;
 import java.util.List;
 import java.util.Optional;
 
+import com.moriba.skultem.domain.model.Teacher.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -169,6 +170,9 @@ public interface TeacherJpaRepository
             @Param("levels") java.util.Collection<com.moriba.skultem.domain.vo.Level> levels);
 
     long countBySchoolId(String schoolId);
+
+    // Teachers who are working now: active and teaching (not accountants, librarians... nor staff who left).
+    long countBySchoolIdAndStatusAndTeachingTrue(String schoolId, Status status);
 
     boolean existsByStaffIdAndSchoolIdAndIdNot(String staffId, String schoolId, String id);
 

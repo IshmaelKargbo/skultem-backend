@@ -6,20 +6,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import com.moriba.skultem.application.error.NotFoundException;
 import com.moriba.skultem.application.error.RuleException;
-import com.moriba.skultem.domain.model.Holiday;
 import com.moriba.skultem.domain.model.LibrarySession.Slot;
 import com.moriba.skultem.domain.model.Period;
 import com.moriba.skultem.domain.model.Term;
 import com.moriba.skultem.domain.model.Timetable;
 import com.moriba.skultem.domain.repository.AcademicYearRepository;
-import com.moriba.skultem.domain.repository.HolidayRepository;
 import com.moriba.skultem.domain.repository.TermRepository;
 import com.moriba.skultem.domain.repository.TimetableRepository;
 
@@ -43,7 +39,7 @@ public class LibrarySessionSchedule {
 
     private final AcademicYearRepository academicYearRepo;
     private final TermRepository termRepo;
-    private final HolidayRepository holidayRepo;
+    private final SchoolClosedDays closedDays;
     private final TimetableRepository timetableRepo;
 
     /** Everything needed to work out a school's sessions, loaded once. */
@@ -61,11 +57,7 @@ public class LibrarySessionSchedule {
                 .filter(t -> t.getPeriod() != null && t.getPeriod().getType() == Period.Type.PERIOD)
                 .toList();
         var terms = termRepo.findByAcademicYearIdAndSchool(yearId, schoolId);
-        Set<LocalDate> holidays = holidayRepo
-                .findAllBySchoolIdAndAcademicYear(schoolId, yearId, Pageable.unpaged())
-                .getContent().stream()
-                .map(Holiday::getDate)
-                .collect(Collectors.toSet());
+        Set<LocalDate> holidays = closedDays.forYear(schoolId, yearId);
         return Optional.of(new Calendar(entries, terms, holidays));
     }
 

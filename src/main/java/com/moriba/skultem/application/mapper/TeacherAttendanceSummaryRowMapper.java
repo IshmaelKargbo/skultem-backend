@@ -19,24 +19,27 @@ public final class TeacherAttendanceSummaryRowMapper {
     private TeacherAttendanceSummaryRowMapper() {
     }
 
-    public static List<TeacherAttendanceSummaryRowDTO> merge(List<Teacher> activeTeachers, List<Object[]> rows) {
+    // schoolDays: the school days in the period so far. Every teacher is measured against all of them - a day
+    // with no record counts as absent, so 12 days marked out of 19 is 63.2%, not 100%.
+    public static List<TeacherAttendanceSummaryRowDTO> merge(List<Teacher> activeTeachers, List<Object[]> rows,
+            long schoolDays) {
         Map<String, Object[]> byTeacherId = rows.stream()
                 .collect(Collectors.toMap(r -> (String) r[0], Function.identity()));
 
         return activeTeachers.stream().map(teacher -> {
             var row = byTeacherId.get(teacher.getId());
 
-            if (row == null) {
-                return new TeacherAttendanceSummaryRowDTO(teacher.getId(), teacher.getName(), 0, 0, 0, 0, null);
-            }
+            long presentRaw = row == null ? 0 : ((Number) row[1]).longValue();
+            long lateRaw = row == null ? 0 : ((Number) row[2]).longValue();
 
-            long present = ((Number) row[1]).longValue();
-            long late = ((Number) row[2]).longValue();
-            long absent = ((Number) row[3]).longValue();
-            long total = ((Number) row[4]).longValue();
-            Double percentage = total > 0 ? AttendanceRateCalculator.rate(present + late, total) : null;
+            // Capped: records on a weekend or a closed day can't push anyone past 100%.
+            long attended = Math.min(presentRaw + lateRaw, schoolDays);
+            long late = Math.min(lateRaw, attended);
+            long present = attended - late;
+            long absent = schoolDays - attended;
+            Double percentage = schoolDays > 0 ? AttendanceRateCalculator.rate(attended, schoolDays) : null;
 
-            return new TeacherAttendanceSummaryRowDTO(teacher.getId(), teacher.getName(), total, present, absent,
+            return new TeacherAttendanceSummaryRowDTO(teacher.getId(), teacher.getName(), schoolDays, present, absent,
                     late, percentage);
         }).toList();
     }

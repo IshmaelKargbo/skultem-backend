@@ -12,5 +12,6 @@ public record CalendarEventDTO(
         Instant startDate,
         Instant endDate,
         String location,
-        String managementSectionId) {
+        String managementSectionId,
+        boolean noSchool) {
 }

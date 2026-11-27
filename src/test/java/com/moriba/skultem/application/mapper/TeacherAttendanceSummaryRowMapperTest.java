@@ -13,7 +13,7 @@ import com.moriba.skultem.domain.vo.Gender;
 import com.moriba.skultem.domain.vo.Title;
 
 // Covers the Monthly/Term Summary merge: a teacher with recorded rows gets real counts, and a
-// teacher with none still appears (workingDays=0, a "missing attendance" signal management should
+// teacher with none still appears (every school day absent, a "missing attendance" signal management should
 // see, not silently dropped) rather than only ever showing teachers the query happened to return.
 class TeacherAttendanceSummaryRowMapperTest {
 
@@ -26,10 +26,10 @@ class TeacherAttendanceSummaryRowMapperTest {
     @Test
     void aTeacherWithRecordedRowsGetsRealCounts() {
         var teachers = List.of(teacher("t1", "Ama", "Kamara"));
-        // 18 present, 2 late, 5 absent-or-excused = 25 recorded days.
+        // 18 present, 2 late, 5 absent-or-excused over 25 school days.
         var rows = List.<Object[]>of(new Object[] { "t1", 18L, 2L, 5L, 25L });
 
-        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows);
+        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows, 25);
 
         TeacherAttendanceSummaryRowDTO row = result.get(0);
         assertThat(row.workingDays()).isEqualTo(25);
@@ -45,12 +45,14 @@ class TeacherAttendanceSummaryRowMapperTest {
         // Only t1 has any recorded attendance for the period.
         var rows = List.<Object[]>of(new Object[] { "t1", 10L, 0L, 0L, 10L });
 
-        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows);
+        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows, 10);
 
         assertThat(result).hasSize(2);
+        // Measured against the same 10 school days: every one of them missed.
         var missing = result.stream().filter(r -> r.teacherId().equals("t2")).findFirst().orElseThrow();
-        assertThat(missing.workingDays()).isZero();
-        assertThat(missing.attendancePercentage()).isNull();
+        assertThat(missing.workingDays()).isEqualTo(10);
+        assertThat(missing.absent()).isEqualTo(10);
+        assertThat(missing.attendancePercentage()).isEqualTo(0.0);
     }
 
     @Test
@@ -60,7 +62,7 @@ class TeacherAttendanceSummaryRowMapperTest {
         var teachers = List.of(teacher("t1", "Ama", "Kamara"));
         var rows = List.<Object[]>of(new Object[] { "t1", 1L, 0L, 9L, 10L }); // 10% attendance
 
-        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows);
+        var result = TeacherAttendanceSummaryRowMapper.merge(teachers, rows, 10);
 
         assertThat(result.get(0).attendancePercentage()).isEqualTo(10.0);
     }

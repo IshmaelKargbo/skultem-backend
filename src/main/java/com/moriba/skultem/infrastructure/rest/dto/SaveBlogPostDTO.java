@@ -19,5 +19,7 @@ public record SaveBlogPostDTO(
         @Size(max = 4, message = "A post can have at most 4 photos") List<@Size(max = 1024) String> images,
         @Size(max = 255) String authorName,
         List<@Size(max = 40) String> tags,
-        boolean published) {
+        boolean published,
+        // The category it goes in; blank or left out = none.
+        String categoryId) {
 }

@@ -72,7 +72,7 @@ class NoticeCalendarSyncTest {
     void editingTheNoticeUpdatesItsCalendarEntryInsteadOfMakingAnother() {
         var notice = ptaNotice(pta, null);
         var entry = CalendarEvent.create("e1", SCHOOL, "PTA Meeting", "x", CalendarEvent.Type.EVENT, pta,
-                pta.plusSeconds(3600), "School hall", "u1", "Head Teacher", null);
+                pta.plusSeconds(3600), "School hall", "u1", "Head Teacher", null, false);
         notice.linkCalendarEvent("e1");
         when(calendarRepo.findByIdAndSchool("e1", SCHOOL)).thenReturn(Optional.of(entry));
 
@@ -93,7 +93,7 @@ class NoticeCalendarSyncTest {
     void takingItOffTheCalendarOrDeletingTheNoticeRemovesTheEntry() {
         var notice = ptaNotice(pta, null);
         var entry = CalendarEvent.create("e1", SCHOOL, "PTA Meeting", "x", CalendarEvent.Type.EVENT, pta,
-                pta.plusSeconds(3600), null, "u1", "Head Teacher", null);
+                pta.plusSeconds(3600), null, "u1", "Head Teacher", null, false);
         notice.linkCalendarEvent("e1");
         when(calendarRepo.findByIdAndSchool("e1", SCHOOL)).thenReturn(Optional.of(entry));
 

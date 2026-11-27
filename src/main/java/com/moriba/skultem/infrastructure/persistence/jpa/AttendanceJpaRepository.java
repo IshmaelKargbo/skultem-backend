@@ -307,7 +307,8 @@ public interface AttendanceJpaRepository
                                 st.name,
                                 s.gender,
                                 SUM(CASE WHEN a.present = true OR a.late = true THEN 1 ELSE 0 END),
-                                COUNT(a)
+                                COUNT(a),
+                                e.id
                             FROM AttendanceEntity a
                             JOIN a.enrollment e
                             JOIN e.student s
@@ -322,7 +323,7 @@ public interface AttendanceJpaRepository
                               AND a.date BETWEEN :startDate AND :endDate
                               AND a.holiday = false
                             GROUP BY e.clazz.id, e.clazz.name, e.clazz.levelOrder, sec.id, sec.name, sec.displayOrder,
-                                     st.id, st.name, s.gender
+                                     st.id, st.name, s.gender, e.id
                             ORDER BY e.clazz.levelOrder, e.clazz.name, sec.displayOrder, sec.name, st.name
                         """)
     List<Object[]> attendanceCountsByClassAndGender(
@@ -360,7 +361,7 @@ public interface AttendanceJpaRepository
                             FROM EnrollmentEntity e
                             JOIN e.student s
                             LEFT JOIN AttendanceEntity a ON a.enrollment = e
-                                AND a.date BETWEEN :startDate AND :endDate
+                                AND a.date IN :days
                                 AND a.holiday = false
                             WHERE e.schoolId = :schoolId
                               AND e.academicYear.id = :academicYearId
@@ -373,8 +374,7 @@ public interface AttendanceJpaRepository
             @Param("academicYearId") String academicYearId,
             @Param("classId") String classId,
             @Param("levels") Collection<Level> levels,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("days") Collection<LocalDate> days);
 
     // See AttendanceRepository#markedDaysByClassSession. Stream is a LEFT JOIN so classes without one count.
     @Query("""
@@ -413,7 +413,7 @@ public interface AttendanceJpaRepository
                                 COUNT(a)
                             FROM EnrollmentEntity e
                             LEFT JOIN AttendanceEntity a ON a.enrollment = e
-                                AND a.date BETWEEN :startDate AND :endDate
+                                AND a.date IN :days
                                 AND a.holiday = false
                             WHERE e.schoolId = :schoolId
                               AND e.student.id = :studentId
@@ -424,6 +424,5 @@ public interface AttendanceJpaRepository
             @Param("schoolId") String schoolId,
             @Param("studentId") String studentId,
             @Param("academicYearId") String academicYearId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("days") Collection<LocalDate> days);
 }

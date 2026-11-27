@@ -36,6 +36,7 @@ import com.moriba.skultem.application.usecase.GenerateDailyAttendanceRegisterUse
 import com.moriba.skultem.application.usecase.GenerateInspectionReportUseCase;
 import com.moriba.skultem.application.usecase.GetAttendanceMarkingComplianceUseCase;
 import com.moriba.skultem.application.usecase.GetStudentTermAttendanceUseCase;
+import com.moriba.skultem.application.usecase.ResolveTermSchoolDaysUseCase;
 import com.moriba.skultem.application.usecase.GenerateMonthlyAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GenerateTermAttendanceSummaryUseCase;
 import com.moriba.skultem.application.usecase.GetAttendanceUseCase;
@@ -46,6 +47,7 @@ import com.moriba.skultem.application.usecase.MarkClassSessionAttendanceUseCase.
 import com.moriba.skultem.infrastructure.rest.dto.ApiResponse;
 import com.moriba.skultem.infrastructure.rest.dto.ClassAttendanceMarkDTO;
 import com.moriba.skultem.infrastructure.rest.dto.MarkClassAttendanceDTO;
+import com.moriba.skultem.infrastructure.security.SectionNeutral;
 import com.moriba.skultem.infrastructure.security.SectionScoped;
 
 import jakarta.validation.Valid;
@@ -67,6 +69,7 @@ public class AttendanceController {
     private final GenerateTermAttendanceSummaryUseCase generateTermAttendanceSummaryUseCase;
     private final GenerateInspectionReportUseCase generateInspectionReportUseCase;
     private final GetStudentTermAttendanceUseCase getStudentTermAttendanceUseCase;
+    private final ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
     private final GetAttendanceMarkingComplianceUseCase getAttendanceMarkingComplianceUseCase;
     private final GenerateClassAttendanceSummaryUseCase generateClassAttendanceSummaryUseCase;
 
@@ -283,6 +286,19 @@ public class AttendanceController {
             @RequestParam(required = false) String termId) {
         var res = getStudentTermAttendanceUseCase.executeForStudent(school, studentId, academicYearId, termId);
         return new ApiResponse<>("success", 200, "Student term attendance fetched successfully", res);
+    }
+
+    // The school days between two dates this academic year: weekdays inside a term, up to today, less the days
+    // the school is closed. The attendance calendars (a student's, a teacher's) are measured against them.
+    @SectionNeutral
+    @GetMapping("/school-days")
+    @PreAuthorize("@permissionService.hasAnySchoolRole(#school, 'ADMIN', 'OWNER', 'SUPER_ADMIN', 'PRINCIPAL', 'PROPRIETOR', 'TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'NURSE', 'EXAM_OFFICER', 'PARENT')")
+    public ApiResponse<java.util.List<java.time.LocalDate>> schoolDays(
+            @AuthenticationPrincipal(expression = "activeSchoolId") String school,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
+        return new ApiResponse<>("success", 200, "School days fetched successfully",
+                resolveTermSchoolDaysUseCase.inActiveYear(school, from, to));
     }
 
     // How completely each class's register has been marked this term so far.

@@ -20,11 +20,13 @@ public class UpdateCalendarEventUseCase {
     private final CalendarEventRepository repo;
 
     public CalendarEventDTO execute(String schoolId, String id, String title, String description,
-            CalendarEvent.Type type, Instant startDate, Instant endDate, String location) {
+            CalendarEvent.Type type, Instant startDate, Instant endDate, String location,
+            Boolean noSchool) {
         var entry = repo.findByIdAndSchool(id, schoolId)
                 .orElseThrow(() -> new NotFoundException("Calendar entry not found"));
 
-        entry.update(title, description, type, startDate, endDate, location);
+        entry.update(title, description, type, startDate, endDate, location,
+                noSchool != null ? noSchool : entry.isNoSchool());
         repo.save(entry);
         return CalendarEventMapper.toDTO(entry);
     }

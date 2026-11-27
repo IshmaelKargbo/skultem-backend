@@ -11,5 +11,7 @@ public record UpdateCalendarEventDTO(
         @NotBlank(message = "Type is required") String type,
         @NotNull(message = "Start date is required") Instant startDate,
         @NotNull(message = "End date is required") Instant endDate,
-        String location) {
+        String location,
+        // No school on these days; left out = yes for a holiday, no for an event (on edit: unchanged).
+        Boolean noSchool) {
 }

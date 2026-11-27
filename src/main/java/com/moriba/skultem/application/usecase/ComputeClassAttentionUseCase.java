@@ -55,6 +55,7 @@ public class ComputeClassAttentionUseCase {
     private final SchoolRepository schoolRepo;
     private final ResolveAcademicYearUseCase resolveAcademicYearUseCase;
     private final AttendanceRulesResolver attendanceRulesResolver;
+    private final com.moriba.skultem.application.services.SchoolClosedDays closedDays;
 
     // Calendar days of attendance to fetch: two windows of school days (~5 per 7 calendar days), with
     // slack for breaks - never less than MIN_LOOKBACK_DAYS so term to date is covered too.
@@ -91,8 +92,11 @@ public class ComputeClassAttentionUseCase {
         if (termStart != null && termStart.isBefore(since)) {
             since = termStart;
         }
+        // Marks on a weekend or a closed day are left out, like every other attendance figure.
         var daysByEnrollment = AttendanceAttentionCalculator.groupByEnrollment(
-                attendanceRepo.attendanceDaysSince(schoolId, classId, academicYear.getId(), since));
+                com.moriba.skultem.application.services.SchoolClosedDays.onSchoolDays(
+                        attendanceRepo.attendanceDaysSince(schoolId, classId, academicYear.getId(), since), 1,
+                        closedDays.forYear(schoolId, academicYear.getId())));
 
         // Marked, approved work only (AssessmentScoreRepository#settledAverageScoresByClassAndTerm) - the same
         // averages every Class Rank uses and the class page shows, so a flag never cites a number found nowhere

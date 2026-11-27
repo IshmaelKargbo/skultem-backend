@@ -29,14 +29,16 @@ public class CreateCalendarEventUseCase {
 
     @AuditLogAnnotation(action = "CALENDAR_EVENT_CREATED")
     public CalendarEventDTO execute(String schoolId, String userId, String title, String description,
-            CalendarEvent.Type type, Instant startDate, Instant endDate, String location, String managementSectionId) {
+            CalendarEvent.Type type, Instant startDate, Instant endDate, String location, String managementSectionId,
+            Boolean noSchool) {
         var user = userRepo.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         var id = UUID.randomUUID().toString();
         var createdByName = user.getGivenNames() + " " + user.getFamilyName();
         var entry = CalendarEvent.create(id, schoolId, title, description, type, startDate, endDate, location,
-                userId, createdByName, scopeService.resolveTarget(schoolId, managementSectionId));
+                userId, createdByName, scopeService.resolveTarget(schoolId, managementSectionId),
+                noSchool != null ? noSchool : type == CalendarEvent.Type.HOLIDAY);
         repo.save(entry);
 
         logActivityUseCase.log(schoolId, ActivityType.SCHOOL, "Calendar entry added", entry.getTitle(), null,

@@ -41,6 +41,7 @@ public class MarketingAdminController {
     private final TestimonialService testimonialService;
     private final com.moriba.skultem.application.services.MarketingVideoService videoService;
     private final BlogPostService blogPostService;
+    private final com.moriba.skultem.application.services.BlogCategoryService blogCategoryService;
     private final ContactMessageService contactMessageService;
 
     private static Map<String, Object> meta(Page<?> res) {
@@ -115,10 +116,40 @@ public class MarketingAdminController {
 
     // ---- Blog ----
 
+    // ---- Blog categories ----
+
+    @GetMapping("/blog/categories")
+    public ApiResponse<List<com.moriba.skultem.application.dto.BlogCategoryDTO>> listCategories() {
+        return new ApiResponse<>("success", 200, "Blog categories fetched successfully", blogCategoryService.list());
+    }
+
+    @PostMapping("/blog/categories")
+    public ApiResponse<com.moriba.skultem.application.dto.BlogCategoryDTO> createCategory(
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SaveBlogCategoryDTO param) {
+        return new ApiResponse<>("success", 200, "Category created successfully", blogCategoryService.create(param));
+    }
+
+    @PutMapping("/blog/categories/{id}")
+    public ApiResponse<com.moriba.skultem.application.dto.BlogCategoryDTO> updateCategory(@PathVariable String id,
+            @Valid @RequestBody com.moriba.skultem.infrastructure.rest.dto.SaveBlogCategoryDTO param) {
+        return new ApiResponse<>("success", 200, "Category updated successfully", blogCategoryService.update(id, param));
+    }
+
+    // Its posts stay, uncategorised.
+    @DeleteMapping("/blog/categories/{id}")
+    public ApiResponse<Object> deleteCategory(@PathVariable String id) {
+        blogCategoryService.delete(id);
+        return new ApiResponse<>("success", 200, "Category deleted successfully", null);
+    }
+
+    // ---- Blog posts ----
+
+    // category: a category id, "none" for uncategorised posts, or left out for all.
     @GetMapping("/blog")
     public ApiResponse<List<BlogPostDTO>> listPosts(
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "10") Integer size, @RequestParam(defaultValue = "1") Integer page) {
-        var res = blogPostService.list(page, size);
+        var res = blogPostService.list(page, size, category);
         return new ApiResponse<>("success", 200, "Blog posts fetched successfully", res.getContent(), meta(res));
     }
 

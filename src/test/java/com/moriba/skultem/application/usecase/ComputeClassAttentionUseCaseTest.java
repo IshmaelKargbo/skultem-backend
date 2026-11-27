@@ -65,7 +65,8 @@ class ComputeClassAttentionUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new ComputeClassAttentionUseCase(classRepo, termRepo, enrollmentRepo, attendanceRepo, scoreRepo,
-                schoolRepo, resolveAcademicYearUseCase, attendanceRulesResolver);
+                schoolRepo, resolveAcademicYearUseCase, attendanceRulesResolver,
+                org.mockito.Mockito.mock(com.moriba.skultem.application.services.SchoolClosedDays.class));
 
         var clazz = Clazz.create(CLASS_ID, SCHOOL_ID, null, "Primary 5", Level.PRIMARY, 1);
         var academicYear = AcademicYear.create(ACADEMIC_YEAR_ID, SCHOOL_ID, "2025/2026",
@@ -104,12 +105,17 @@ class ComputeClassAttentionUseCaseTest {
         return school;
     }
 
-    // pattern is oldest -> newest ('P' present, 'A' absent), one recorded day each, ending today.
+    // pattern is oldest -> newest ('P' present, 'A' absent), one recorded school day (a weekday) each, ending
+    // on the latest weekday - marks on weekends don't count.
     private void stubDays(String pattern) {
         List<Object[]> rows = new java.util.ArrayList<>();
-        for (int i = 0; i < pattern.length(); i++) {
-            rows.add(new Object[] { ENROLLMENT_ID, LocalDate.now().minusDays(pattern.length() - 1 - i),
-                    pattern.charAt(i) == 'P' ? 1 : 0 });
+        LocalDate day = LocalDate.now();
+        for (int i = pattern.length() - 1; i >= 0; i--) {
+            while (day.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || day.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+                day = day.minusDays(1);
+            }
+            rows.add(0, new Object[] { ENROLLMENT_ID, day, pattern.charAt(i) == 'P' ? 1 : 0 });
+            day = day.minusDays(1);
         }
         when(attendanceRepo.attendanceDaysSince(eq(SCHOOL_ID), eq(CLASS_ID), eq(ACADEMIC_YEAR_ID), any()))
                 .thenReturn(rows);

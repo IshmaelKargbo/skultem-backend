@@ -51,6 +51,8 @@ public class TeacherAttendanceService {
     private final AdminClockInUseCase adminClockInUseCase;
     private final AdminClockOutUseCase adminClockOutUseCase;
     private final AdminUnclockUseCase adminUnclockUseCase;
+    private final com.moriba.skultem.application.usecase.ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
+    private final com.moriba.skultem.domain.repository.AcademicYearRepository academicYearRepo;
 
     public ClockInResponseDTO clockIn(String schoolId, String userId, double latitude, double longitude, Double accuracyMeters) {
         return clockInUseCase.execute(schoolId, userId, latitude, longitude, accuracyMeters);
@@ -163,7 +165,14 @@ public class TeacherAttendanceService {
         // does for any single date regardless of how long ago it was.
         long activeCount = activeTeachers(schoolId).size();
 
-        var summaries = byDate.entrySet().stream()
+        // School days so far this year that nobody was marked on still belong in the history - as 0 of N,
+        // the gap management needs to see - rather than silently missing from the list.
+        var days = new java.util.HashMap<LocalDate, List<TeacherAttendance>>(byDate);
+        academicYearRepo.findActiveBySchool(schoolId).ifPresent(year -> resolveTermSchoolDaysUseCase
+                .between(schoolId, year.getId(), year.getStartDate(), year.getEndDate())
+                .forEach(d -> days.putIfAbsent(d, List.of())));
+
+        var summaries = days.entrySet().stream()
                 .map(entry -> toDaySummary(entry.getKey(), entry.getValue(), activeCount))
                 .sorted(Comparator.comparing(TeacherAttendanceDaySummaryDTO::date).reversed())
                 .toList();
@@ -176,6 +185,17 @@ public class TeacherAttendanceService {
         int to = Math.min(from + size, summaries.size());
 
         return new TeacherAttendanceHistoryPageDTO(summaries.subList(from, to), summaries.size());
+    }
+
+    // The school days (this academic year) between from and to: weekdays inside a term, up to today, less the
+    // days the school is closed. What a teacher's attendance is measured against.
+    public List<LocalDate> schoolDays(String schoolId, LocalDate from, LocalDate to) {
+        return resolveTermSchoolDaysUseCase.inActiveYear(schoolId, from, to);
+    }
+
+    // The active teachers the caller may see - their own section(s) for a section-limited admin.
+    public List<Teacher> visibleActiveTeachers(String schoolId) {
+        return activeTeachers(schoolId);
     }
 
     // search() has no status filter - it also returns INACTIVE/DELETED teachers, who have no

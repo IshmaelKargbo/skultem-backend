@@ -61,7 +61,7 @@ public interface AttendanceRepository {
             String streamId, String academicYearId, LocalDate startDate, LocalDate endDate);
 
     // Rows of [classId, className, sectionId, sectionName, streamId, streamName, Gender, presentOrLate,
-    // totalRecorded] for non-holiday records in the range - streamId/streamName are null for no stream.
+    // totalRecorded, enrollmentId] - one per enrollment - for non-holiday records in the range - streamId/streamName are null for no stream.
     // classId/sectionId/streamId are optional filters - null means any.
     List<Object[]> attendanceCountsByClassAndGender(String schoolId, String academicYearId, String classId,
             String sectionId, String streamId, Collection<Level> levels, LocalDate startDate, LocalDate endDate);
@@ -73,14 +73,16 @@ public interface AttendanceRepository {
 
     // One row per enrollment of the year (classes at these levels; classId optionally narrows to one class),
     // including enrollments with no records: [studentId, enrolledAt (Instant), presentOrLate] over
-    // non-holiday records in the range. A student who changed class has a row per enrollment.
+    // non-holiday records on these school days (must not be empty) - a record on a weekend or a day the
+    // school was closed doesn't count. A student who changed class has a row per enrollment.
     List<Object[]> presentCountsByStudent(String schoolId, String academicYearId, String classId,
-            Collection<Level> levels, LocalDate startDate, LocalDate endDate);
+            Collection<Level> levels, Collection<LocalDate> days);
 
     // One row per enrollment of the student's year, including ones with no records: [enrolledAt (Instant),
-    // present (on time), late, excused, totalRecorded] over non-holiday records in the range.
+    // present (on time), late, excused, totalRecorded] over non-holiday records on these school days (must
+    // not be empty).
     List<Object[]> statusCountsForStudent(String schoolId, String studentId, String academicYearId,
-            LocalDate startDate, LocalDate endDate);
+            Collection<LocalDate> days);
 
     // Rows of [classId, sectionId, streamId, date] - each day a class (class + section + stream) has any
     // non-holiday record in the range, i.e. the days it was marked. streamId is null for no stream.

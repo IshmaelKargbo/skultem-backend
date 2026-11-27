@@ -9,5 +9,7 @@ public record TermTeacherAttendanceSummaryDTO(
         double averageAttendance,
         long totalPresent,
         long totalAbsent,
-        long totalLate) {
+        long totalLate,
+        // School days in the term so far - what every teacher is measured against.
+        int schoolDays) {
 }

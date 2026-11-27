@@ -46,6 +46,9 @@ public class BlogPostEntity {
     @Column(length = 500)
     private String tags;
 
+    // The category it sits in (marketing_blog_categories), or null for none.
+    private UUID categoryId;
+
     @Column(nullable = false)
     private boolean published;
 

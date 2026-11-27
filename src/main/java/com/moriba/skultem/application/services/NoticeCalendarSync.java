@@ -63,14 +63,14 @@ public class NoticeCalendarSync {
 
         if (existing != null) {
             existing.update(notice.getTitle(), notice.getContent(), CalendarEvent.Type.EVENT, notice.getEventAt(),
-                    end, notice.getEventLocation());
+                    end, notice.getEventLocation(), existing.isNoSchool());
             calendarRepo.save(existing);
             return;
         }
 
         var entry = CalendarEvent.create(UUID.randomUUID().toString(), notice.getSchoolId(), notice.getTitle(),
                 notice.getContent(), CalendarEvent.Type.EVENT, notice.getEventAt(), end, notice.getEventLocation(),
-                notice.getPostedByUserId(), notice.getPostedByName(), notice.getManagementSectionId());
+                notice.getPostedByUserId(), notice.getPostedByName(), notice.getManagementSectionId(), false);
         calendarRepo.save(entry);
         notice.linkCalendarEvent(entry.getId());
     }

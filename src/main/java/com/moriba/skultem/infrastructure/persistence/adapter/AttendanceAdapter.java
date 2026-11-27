@@ -144,14 +144,14 @@ public class AttendanceAdapter implements AttendanceRepository {
 
     @Override
     public List<Object[]> presentCountsByStudent(String schoolId, String academicYearId, String classId,
-            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, LocalDate startDate, LocalDate endDate) {
-        return repo.presentCountsByStudent(schoolId, academicYearId, classId, levels, startDate, endDate);
+            java.util.Collection<com.moriba.skultem.domain.vo.Level> levels, Collection<LocalDate> days) {
+        return repo.presentCountsByStudent(schoolId, academicYearId, classId, levels, days);
     }
 
     @Override
     public List<Object[]> statusCountsForStudent(String schoolId, String studentId, String academicYearId,
-            LocalDate startDate, LocalDate endDate) {
-        return repo.statusCountsForStudent(schoolId, studentId, academicYearId, startDate, endDate);
+            Collection<LocalDate> days) {
+        return repo.statusCountsForStudent(schoolId, studentId, academicYearId, days);
     }
 
     @Override

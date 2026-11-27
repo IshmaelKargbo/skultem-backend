@@ -10,7 +10,7 @@ public class CalendarEventMapper {
         return new CalendarEvent(param.getId(), param.getSchoolId(), param.getTitle(), param.getDescription(),
                 param.getType(), param.getStartDate(), param.getEndDate(), param.getLocation(),
                 param.getCreatedByUserId(), param.getCreatedByName(), param.getManagementSectionId(),
-                param.getCreatedAt(), param.getUpdatedAt());
+                param.isNoSchool(), param.getCreatedAt(), param.getUpdatedAt());
     }
 
     public static CalendarEventEntity toEntity(CalendarEvent param) {
@@ -28,6 +28,7 @@ public class CalendarEventMapper {
                 .createdByUserId(param.getCreatedByUserId())
                 .createdByName(param.getCreatedByName())
                 .managementSectionId(param.getManagementSectionId())
+                .noSchool(param.isNoSchool())
                 .createdAt(param.getCreatedAt())
                 .updatedAt(param.getUpdatedAt())
                 .build();

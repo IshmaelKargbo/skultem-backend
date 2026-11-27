@@ -26,6 +26,8 @@ public class GenerateTermAttendanceSummaryUseCase {
     private final TermRepository termRepo;
     private final AttendanceRepository attendanceRepo;
     private final AttendanceRulesResolver attendanceRulesResolver;
+    private final ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
+    private final com.moriba.skultem.domain.repository.EnrollmentRepository enrollmentRepo;
 
     // Scoped to one class SESSION (class + section + stream), not the whole class - "SSS 1
     // Science" and "SSS 1 Art" report separately, matching the same section/stream boundary
@@ -41,19 +43,27 @@ public class GenerateTermAttendanceSummaryUseCase {
 
         String streamId = classSession.getStream() != null ? classSession.getStream().getId() : null;
 
-        var rows = attendanceRepo.attendanceCountsBySessionAndDateRange(schoolId,
+        var recorded = attendanceRepo.attendanceCountsBySessionAndDateRange(schoolId,
                 classSession.getClazz().getId(), classSession.getSection().getId(), streamId,
                 classSession.getAcademicYear().getId(), term.getStartDate(), term.getEndDate());
+        // Everyone enrolled in the class session, including students never marked in the period.
+        var rows = AttendanceSummaryRowMapper.withUnmarked(recorded,
+                enrollmentRepo.findActiveByClassIdAndSectionIdAndStreamIdAndAcademicYearIdAndSchoolId(
+                        classSession.getClazz().getId(), classSession.getSection().getId(), streamId,
+                        classSession.getAcademicYear().getId(), schoolId));
 
         double threshold = attendanceRulesResolver.forLevel(school, classSession.getClazz().getLevel()).threshold();
-        var students = AttendanceSummaryRowMapper.toStudentSummaries(rows, classSession.getName(), threshold);
+        int schoolDays = resolveTermSchoolDaysUseCase.between(schoolId, classSession.getAcademicYear().getId(),
+                term.getStartDate(), term.getEndDate()).size();
+        var students = AttendanceSummaryRowMapper.toStudentSummaries(rows, classSession.getName(), threshold,
+                schoolDays);
 
         long totalPresent = students.stream().mapToLong(StudentAttendanceSummaryDTO::present).sum();
         long totalAbsent = students.stream().mapToLong(StudentAttendanceSummaryDTO::absent).sum();
         long totalLate = students.stream().mapToLong(StudentAttendanceSummaryDTO::late).sum();
-        long totalRecorded = totalPresent + totalAbsent + totalLate;
+        long totalExpected = (long) students.size() * schoolDays;
 
-        double averageAttendance = AttendanceRateCalculator.rate(totalPresent + totalLate, totalRecorded);
+        double averageAttendance = AttendanceRateCalculator.rate(totalPresent + totalLate, totalExpected);
         int studentsBelowThreshold = (int) students.stream().filter(StudentAttendanceSummaryDTO::belowThreshold)
                 .count();
 
@@ -67,6 +77,6 @@ public class GenerateTermAttendanceSummaryUseCase {
                 .mapToLong(s -> s.present() + s.late()).sum();
 
         return new TermAttendanceSummaryDTO(students, students.size(), averageAttendance, studentsBelowThreshold,
-                totalPresent, totalAbsent, totalLate, totalBoys, totalGirls, presentBoys, presentGirls, threshold);
+                totalPresent, totalAbsent, totalLate, totalBoys, totalGirls, presentBoys, presentGirls, threshold, schoolDays);
     }
 }

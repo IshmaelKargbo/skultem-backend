@@ -88,6 +88,7 @@ public interface PaymentJpaRepository
             where p.schoolId = :schoolId
             and p.createdAt between :start and :end
             and (c is null or c.level in :levels)
+            and p.fee.system = false
             """)
     BigDecimal sumPaymentsBySchoolAndDateRangeForLevels(@Param("schoolId") String schoolId,
             @Param("start") Instant start, @Param("end") Instant end, @Param("levels") Collection<Level> levels);
@@ -114,6 +115,8 @@ public interface PaymentJpaRepository
             LEFT JOIN f.clazz c
             WHERE p.schoolId = :schoolId
             AND (c IS NULL OR c.level IN :levels)
+            AND f.system = false
+            AND f.academicYear.active = true
             GROUP BY f.category.name
             """)
     List<FeeCategoryRevenue> sumRevenueByCategoryForLevels(@Param("schoolId") String schoolId,

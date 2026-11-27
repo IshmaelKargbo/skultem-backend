@@ -32,6 +32,7 @@ public class PublicMarketingController {
     private final TestimonialService testimonialService;
     private final com.moriba.skultem.application.services.MarketingVideoService videoService;
     private final BlogPostService blogPostService;
+    private final com.moriba.skultem.application.services.BlogCategoryService blogCategoryService;
     private final ContactMessageService contactMessageService;
     private final com.moriba.skultem.application.services.PlatformSettingsService platformSettings;
 
@@ -48,11 +49,20 @@ public class PublicMarketingController {
         return new ApiResponse<>("success", 200, "Videos fetched successfully", videoService.listPublished());
     }
 
+    // The categories that have published posts, in display order, each with its published post count.
+    @GetMapping("/blog/categories")
+    public ApiResponse<List<com.moriba.skultem.application.dto.BlogCategoryDTO>> categories() {
+        return new ApiResponse<>("success", 200, "Blog categories fetched successfully",
+                blogCategoryService.listPublished());
+    }
+
+    // category: a category's slug (from /blog/categories) to list only its posts.
     @GetMapping("/blog")
     public ApiResponse<List<BlogPostDTO>> posts(
             @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "10") Integer size, @RequestParam(defaultValue = "1") Integer page) {
-        var res = blogPostService.listPublished(page, size, tag);
+        var res = blogPostService.listPublished(page, size, tag, category);
         Map<String, Object> meta = Map.of(
                 "page", res.getNumber() + 1,
                 "size", res.getSize(),

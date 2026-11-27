@@ -13,5 +13,7 @@ public record CreateCalendarEventDTO(
         @NotNull(message = "End date is required") Instant endDate,
         String location,
         // Which management section it's for; left out = the caller's own section / the whole school.
-        String managementSectionId) {
+        String managementSectionId,
+        // No school on these days; left out = yes for a holiday, no for an event (on edit: unchanged).
+        Boolean noSchool) {
 }

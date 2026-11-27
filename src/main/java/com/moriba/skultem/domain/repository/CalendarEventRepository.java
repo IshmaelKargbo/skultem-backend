@@ -22,6 +22,9 @@ public interface CalendarEventRepository {
     // Whole-school events starting at or after from, soonest first.
     List<CalendarEvent> findUpcomingSchoolWide(String schoolId, java.time.Instant from, int limit);
 
+    // Whole-school entries the school is closed for (no school on those days).
+    List<CalendarEvent> findNoSchoolDays(String schoolId);
+
     // Whole-school rows plus those for one of these sections; sectionIds null = no limit.
     Page<CalendarEvent> findVisibleBySchoolId(String schoolId, Collection<String> sectionIds, Pageable pageable);
 }

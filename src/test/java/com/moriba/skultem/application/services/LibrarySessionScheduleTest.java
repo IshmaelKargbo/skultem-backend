@@ -14,7 +14,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -53,11 +52,14 @@ class LibrarySessionScheduleTest {
     private HolidayRepository holidayRepo;
     @Mock
     private TimetableRepository timetableRepo;
-    @InjectMocks
+    @Mock
+    private com.moriba.skultem.domain.repository.CalendarEventRepository calendarRepo;
     private LibrarySessionSchedule schedule;
 
     @BeforeEach
     void setUp() {
+        schedule = new LibrarySessionSchedule(academicYearRepo, termRepo,
+                new SchoolClosedDays(holidayRepo, calendarRepo), timetableRepo);
         var year = mock(AcademicYear.class);
         when(year.getId()).thenReturn("year");
         when(academicYearRepo.findActiveBySchool("school")).thenReturn(Optional.of(year));

@@ -41,6 +41,8 @@ public class GenerateClassAttendanceSummaryUseCase {
     private final ClassRepository classRepo;
     private final SectionScopeService sectionScopeService;
     private final AttendanceRulesResolver attendanceRulesResolver;
+    private final ResolveTermSchoolDaysUseCase resolveTermSchoolDaysUseCase;
+    private final com.moriba.skultem.domain.repository.EnrollmentRepository enrollmentRepo;
 
     public ClassAttendanceSummaryDTO execute(String schoolId, String academicYearId, String termId) {
         var school = schoolRepo.findById(schoolId).orElseThrow(() -> new NotFoundException("School not found"));
@@ -58,8 +60,12 @@ public class GenerateClassAttendanceSummaryUseCase {
             endDate = term.getEndDate();
         }
 
-        var rows = attendanceRepo.attendanceCountsBySchoolAndDateRange(schoolId, academicYear.getId(), startDate,
-                endDate);
+        // Every student is measured against the school days so far; a day with no mark counts as absent.
+        long schoolDays = resolveTermSchoolDaysUseCase.between(schoolId, academicYear.getId(), startDate, endDate)
+                .size();
+
+        var rows = withUnmarked(attendanceRepo.attendanceCountsBySchoolAndDateRange(schoolId, academicYear.getId(),
+                startDate, endDate), academicYear.getId(), schoolId);
 
         // A section-limited caller compares only the classes of their own section(s).
         var scope = sectionScopeService.effective();
@@ -90,16 +96,15 @@ public class GenerateClassAttendanceSummaryUseCase {
             String streamId = (String) row[4];
             String streamName = (String) row[5];
             String gender = row[8] != null ? row[8].toString() : null;
-            long presentOrLate = ((Number) row[9]).longValue();
-            long late = ((Number) row[10]).longValue();
-            long totalRecorded = ((Number) row[11]).longValue();
+            long presentOrLate = Math.min(((Number) row[9]).longValue(), schoolDays);
+            long late = Math.min(((Number) row[10]).longValue(), presentOrLate);
 
             String key = classId + "|" + sectionId + "|" + streamId;
             var acc = groups.computeIfAbsent(key,
                     k -> new ClassAccumulator(classId, sectionId, streamId, buildLabel(className, sectionName, streamName)));
 
             long presentOnly = presentOrLate - late;
-            long absent = totalRecorded - presentOrLate;
+            long absent = schoolDays - presentOrLate;
 
             acc.totalStudents++;
             acc.present += presentOnly;
@@ -148,7 +153,36 @@ public class GenerateClassAttendanceSummaryUseCase {
         long totalStudents = classRows.stream().mapToLong(ClassAttendanceSummaryRowDTO::totalStudents).sum();
 
         return new ClassAttendanceSummaryDTO(classRows, termLabel, classRows.size(), totalStudents, schoolAverage,
-                classesBelowThreshold, schoolBoys, schoolGirls, schoolPresentBoys, schoolPresentGirls);
+                classesBelowThreshold, schoolBoys, schoolGirls, schoolPresentBoys, schoolPresentGirls, (int) schoolDays);
+    }
+
+    // The query's rows plus an all-zero row for every active enrollment it has nothing for, so a student (or a
+    // whole class) never marked in the period still shows, missing every school day. Kept in the query's own
+    // order: class display order, then section, then stream.
+    private java.util.List<Object[]> withUnmarked(java.util.List<Object[]> rows, String academicYearId, String schoolId) {
+        var seen = new java.util.HashSet<String>();
+        rows.forEach(r -> seen.add((String) r[6]));
+        var order = new java.util.HashMap<String, Integer>();
+        var all = new ArrayList<Object[]>(rows);
+        boolean added = false;
+        for (var e : enrollmentRepo.findAllByAcademicSchoolId(academicYearId, schoolId)) {
+            if (e.getClazz() != null) order.put(e.getClazz().getId(), e.getClazz().getDisplayOrder());
+            if (e.getStatus() != com.moriba.skultem.domain.model.Enrollment.Status.ACTIVE || e.getClazz() == null
+                    || e.getSection() == null || e.getStudent() == null || !seen.add(e.getId())) {
+                continue;
+            }
+            added = true;
+            all.add(new Object[] { e.getClazz().getId(), e.getClazz().getName(), e.getSection().getId(),
+                    e.getSection().getName(), e.getStream() == null ? null : e.getStream().getId(),
+                    e.getStream() == null ? null : e.getStream().getName(), e.getId(), e.getStudent().getId(),
+                    e.getStudent().getGender(), 0L, 0L, 0L });
+        }
+        if (!added) return rows;
+        all.sort(java.util.Comparator
+                .comparingInt((Object[] r) -> order.getOrDefault((String) r[0], Integer.MAX_VALUE))
+                .thenComparing(r -> r[3] == null ? "" : (String) r[3])
+                .thenComparing(r -> r[5] == null ? "" : (String) r[5]));
+        return all;
     }
 
     private String buildLabel(String className, String sectionName, String streamName) {

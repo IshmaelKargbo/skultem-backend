@@ -36,43 +36,51 @@ public class BlogPostService {
 
     private final BlogPostJpaRepository repo;
     private final R2StorageService storage;
+    private final BlogCategoryService categoryService;
 
-    // Admin: every post, drafts included, newest first. List rows carry no body.
-    public Page<BlogPostDTO> list(int page, int size) {
-        return repo.findAll(PageableMapper.toPage(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
-                .map(e -> toDTO(e, false));
+    // Admin: every post, drafts included, newest first. List rows carry no body. category: a category id,
+    // "none" for posts without one, or blank for all.
+    public Page<BlogPostDTO> list(int page, int size, String category) {
+        boolean none = "none".equalsIgnoreCase(category == null ? "" : category.trim());
+        UUID categoryId = none ? null : categoryService.resolve(category);
+        var categories = categoryService.byId();
+        return repo.findForAdmin(categoryId, none,
+                PageableMapper.toPage(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .map(e -> toDTO(e, false, categories));
     }
 
     public BlogPostDTO get(String id) {
-        return toDTO(find(id), true);
+        return toDTO(find(id), true, categoryService.byId());
     }
 
     public BlogPostDTO create(SaveBlogPostDTO param) {
         var now = Instant.now();
         var entity = BlogPostEntity.builder().id(UUID.randomUUID()).createdAt(now).build();
         apply(entity, param, now);
-        return toDTO(repo.save(entity), true);
+        return toDTO(repo.save(entity), true, categoryService.byId());
     }
 
     public BlogPostDTO update(String id, SaveBlogPostDTO param) {
         var entity = find(id);
         apply(entity, param, Instant.now());
-        return toDTO(repo.save(entity), true);
+        return toDTO(repo.save(entity), true, categoryService.byId());
     }
 
     public void delete(String id) {
         repo.delete(find(id));
     }
 
-    // Public: published posts only.
-    public Page<BlogPostDTO> listPublished(int page, int size, String tag) {
+    // Public: published posts only. category: a category's slug, or blank for every category.
+    public Page<BlogPostDTO> listPublished(int page, int size, String tag, String category) {
         var pageable = PageRequest.of(Math.max(page, 1) - 1, Math.min(Math.max(size, 1), 50));
-        return repo.findPublished(tag == null ? "" : tag.trim(), pageable).map(e -> toDTO(e, false));
+        var categories = categoryService.byId();
+        return repo.findPublished(tag == null ? "" : tag.trim(), categoryService.idForSlug(category), pageable)
+                .map(e -> toDTO(e, false, categories));
     }
 
     public BlogPostDTO getPublished(String slug) {
         return toDTO(repo.findBySlugAndPublishedTrue(slug)
-                .orElseThrow(() -> new NotFoundException("Post not found")), true);
+                .orElseThrow(() -> new NotFoundException("Post not found")), true, categoryService.byId());
     }
 
     // A photo for a post: shrunk and stored, and its public URL handed back to be added to the post's photos.
@@ -137,6 +145,7 @@ public class BlogPostService {
         e.setImages(images.isEmpty() ? null : String.join("\n", images));
         e.setCoverImageUrl(images.isEmpty() ? null : images.get(0));
         e.setAuthorName(blankToNull(p.authorName()));
+        e.setCategoryId(categoryService.resolve(p.categoryId()));
         e.setTags(p.tags() == null ? null : p.tags().stream().map(t -> t.trim().toLowerCase(Locale.ROOT))
                 .filter(t -> !t.isEmpty() && !t.contains(",")).distinct().reduce((a, b) -> a + "," + b).orElse(null));
 
@@ -148,7 +157,11 @@ public class BlogPostService {
         e.setUpdatedAt(now);
     }
 
+    // Used by the site's own pages (/blog/categories), so no post may have it.
+    private static final java.util.Set<String> RESERVED_SLUGS = java.util.Set.of("categories");
+
     private boolean taken(String slug, BlogPostEntity self) {
+        if (RESERVED_SLUGS.contains(slug)) return true;
         return self.getId() != null && self.getCreatedAt() != null && repo.existsById(self.getId())
                 ? repo.existsBySlugAndIdNot(slug, self.getId())
                 : repo.existsBySlug(slug);
@@ -163,7 +176,7 @@ public class BlogPostService {
     // For the form's live check: is this slug well formed and not used by another post (the one being edited
     // may keep its own).
     public boolean slugAvailable(String slug, String excludeId) {
-        if (!isValidSlug(slug)) {
+        if (!isValidSlug(slug) || RESERVED_SLUGS.contains(slug)) {
             return false;
         }
         if (excludeId == null || excludeId.isBlank()) {
@@ -185,7 +198,9 @@ public class BlogPostService {
         return v == null || v.isBlank() ? null : v.trim();
     }
 
-    private static BlogPostDTO toDTO(BlogPostEntity e, boolean withContent) {
+    private static BlogPostDTO toDTO(BlogPostEntity e, boolean withContent,
+            java.util.Map<UUID, com.moriba.skultem.infrastructure.persistence.entity.BlogCategoryEntity> categories) {
+        var category = e.getCategoryId() == null ? null : categories.get(e.getCategoryId());
         List<String> tags = e.getTags() == null || e.getTags().isBlank() ? List.of()
                 : Arrays.asList(e.getTags().split(","));
         List<String> images = e.getImages() == null || e.getImages().isBlank() ? List.of()
@@ -193,6 +208,8 @@ public class BlogPostService {
         return new BlogPostDTO(e.getId().toString(), e.getTitle(), e.getSlug(), e.getExcerpt(),
                 // Cleaned on the way out too, so posts saved before cleaning existed are just as safe.
                 withContent ? BlogHtmlSanitizer.clean(e.getContent()) : null, e.getCoverImageUrl(), images, e.getAuthorName(), tags, e.isPublished(),
-                e.getPublishedAt(), e.getCreatedAt(), e.getUpdatedAt());
+                e.getPublishedAt(), e.getCreatedAt(), e.getUpdatedAt(),
+                category == null ? null : category.getId().toString(), category == null ? null : category.getName(),
+                category == null ? null : category.getSlug());
     }
 }

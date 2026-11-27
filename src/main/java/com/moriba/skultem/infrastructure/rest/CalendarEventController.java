@@ -50,7 +50,7 @@ public class CalendarEventController {
             @Valid @RequestBody CreateCalendarEventDTO param) {
         var type = Type.valueOf(param.type());
         var res = createCalendarEventUseCase.execute(school, userId, param.title(), param.description(), type,
-                param.startDate(), param.endDate(), param.location(), param.managementSectionId());
+                param.startDate(), param.endDate(), param.location(), param.managementSectionId(), param.noSchool());
         return new ApiResponse<>("success", 200, "Entry added successfully", res);
     }
 
@@ -92,7 +92,7 @@ public class CalendarEventController {
             @Valid @RequestBody UpdateCalendarEventDTO param) {
         var type = Type.valueOf(param.type());
         var res = updateCalendarEventUseCase.execute(school, id, param.title(), param.description(), type,
-                param.startDate(), param.endDate(), param.location());
+                param.startDate(), param.endDate(), param.location(), param.noSchool());
         return new ApiResponse<>("success", 200, "Entry updated successfully", res);
     }
 
